@@ -25,22 +25,24 @@ function calcChecks(pwd: string) {
   };
 }
 
-export function ChangePasswordForm({ initialNew }: { initialNew?: string }) {
+export function ChangePasswordForm({
+  initialNew,
+  successRedirect = "/dashboard",
+}: {
+  initialNew?: string;
+  successRedirect?: string;
+}) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(changePasswordAction, initial);
   const [pwd, setPwd] = React.useState(initialNew ?? "");
 
   React.useEffect(() => {
     if (state.ok) {
-      const dest =
-        typeof window !== "undefined" && window.location.pathname === "/change-password"
-          ? "/dashboard"
-          : "/dashboard";
-      // 改密后强制重新登录更安全，但此处保持已登录状态跳转
-      router.push(dest);
+      // 改密后跳角色对应首页（JWT 不会自动更新，所以走 router.push + router.refresh）
+      router.push(successRedirect);
       router.refresh();
     }
-  }, [state, router]);
+  }, [state, router, successRedirect]);
 
   const checks = calcChecks(pwd);
   const strength = [checks.len, checks.letter, checks.digit].filter(Boolean).length;
