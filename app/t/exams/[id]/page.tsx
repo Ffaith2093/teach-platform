@@ -105,6 +105,9 @@ export default async function TeacherExamDetailPage({
     }),
   ]);
   const totalAttempts = attemptStats.reduce((s, x) => s + x._count._all, 0);
+  const pendingGradeCount = attemptStats
+    .filter((x) => x.status === "SUBMITTED" || x.status === "GRADING")
+    .reduce((s, x) => s + x._count._all, 0);
 
   const tabs: { key: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { key: "overview", label: "概览", icon: ListChecks },
@@ -180,6 +183,7 @@ export default async function TeacherExamDetailPage({
                 isOwner={isOwner}
                 hasAttempts={totalAttempts > 0}
                 questionCount={exam.questions.length}
+                pendingGradeCount={pendingGradeCount}
               />
             </div>
           </div>

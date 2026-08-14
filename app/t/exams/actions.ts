@@ -9,7 +9,7 @@ import type { ResultMode } from "@prisma/client";
 
 // ========== 权限工具 ==========
 
-async function requireCourseTeacher(courseId: string, minRole: "OWNER" | "ASSISTANT" = "ASSISTANT") {
+export async function requireCourseTeacher(courseId: string, minRole: "OWNER" | "ASSISTANT" = "ASSISTANT") {
   const session = await requireSession();
   if (session.user.role !== "TEACHER") {
     throw new Error("仅教师可执行此操作");
@@ -27,7 +27,7 @@ async function requireCourseTeacher(courseId: string, minRole: "OWNER" | "ASSIST
   return { session, role: ct.role };
 }
 
-async function requireExamAccess(examId: string, minRole: "OWNER" | "ASSISTANT" = "ASSISTANT") {
+export async function requireExamAccess(examId: string, minRole: "OWNER" | "ASSISTANT" = "ASSISTANT") {
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
     select: { id: true, courseId: true, status: true },

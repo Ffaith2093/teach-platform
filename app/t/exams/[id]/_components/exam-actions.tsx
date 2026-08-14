@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Send, CheckCircle2, Loader2, Trash2, Archive } from "lucide-react";
+import { ClipboardCheck, Send, Loader2, Trash2, Archive } from "lucide-react";
 import {
   publishExamAction,
   unpublishExamAction,
@@ -17,12 +18,14 @@ export function ExamActions({
   isOwner,
   hasAttempts,
   questionCount,
+  pendingGradeCount,
 }: {
   examId: string;
   status: "DRAFT" | "PUBLISHED" | "CLOSED";
   isOwner: boolean;
   hasAttempts: boolean;
   questionCount: number;
+  pendingGradeCount: number;
 }) {
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
@@ -41,6 +44,19 @@ export function ExamActions({
 
   return (
     <div className="flex items-center gap-2">
+      {hasAttempts && status !== "DRAFT" && (
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/t/exams/${examId}/grade`}>
+            <ClipboardCheck className="h-3.5 w-3.5" />
+            批改
+            {pendingGradeCount > 0 && (
+              <span className="num ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-warning px-1.5 text-[10px] font-medium text-warning-foreground">
+                {pendingGradeCount}
+              </span>
+            )}
+          </Link>
+        </Button>
+      )}
       {status === "DRAFT" && (
         <Button
           size="sm"
