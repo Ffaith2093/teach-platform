@@ -173,11 +173,37 @@ export async function transferStudentsAction(input: z.input<typeof transferSchem
     ? { id: { in: parsed.studentIds } }
     : { classId: parsed.fromClassId! };
 
-  const result = await prisma.user.updateMany({
+  // 先查要被转的学生 IDs（updateMany 不返回行）
+  const targetStudents = await prisma.user.findMany({
     where,
+    select: { id: true },
+  });
+  const targetIds = targetStudents.map((s) => s.id);
+
+  const result = await prisma.user.updateMany({
+    where: { id: { in: targetIds } },
     data: { classId: parsed.toClassId },
   });
+
+  // 给每个被转学生发通知（指明新班级）
+  if (targetIds.length > 0) {
+    const toClass = await prisma.class.findUnique({
+      where: { id: parsed.toClassId },
+      select: { name: true, grade: { select: { name: true } } },
+    });
+    if (toClass) {
+      const { notifyMany } = await import("@/lib/notifications");
+      await notifyMany({
+        userIds: targetIds,
+        title: "班级调整通知",
+        body: `您已转入 ${toClass.grade.name} · ${toClass.name}`,
+        href: "/my-class",
+      });
+    }
+  }
+
   revalidatePath("/admin/students");
+  revalidatePath("/notifications");
   return result.count;
 }
 

@@ -19,6 +19,7 @@ import {
   UserCog,
   LogOut,
   Boxes,
+  Bell,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -54,6 +55,12 @@ const studentNav: NavSection[] = [
     ],
   },
   { label: "练习", items: [{ href: "/problems", label: "题库练习", icon: Code }] },
+  {
+    label: "消息",
+    items: [
+      { href: "/notifications", label: "通知中心", icon: Bell },
+    ],
+  },
 ];
 
 const teacherNav: NavSection[] = [
@@ -87,6 +94,12 @@ const teacherNav: NavSection[] = [
       { href: "/t/analytics", label: "成绩分析", icon: BarChart3 },
     ],
   },
+  {
+    label: "消息",
+    items: [
+      { href: "/t/notifications", label: "通知中心", icon: Bell },
+    ],
+  },
 ];
 
 const adminNav: NavSection[] = [
@@ -112,9 +125,10 @@ const adminNav: NavSection[] = [
 interface SidebarShellProps {
   role: "ADMIN" | "TEACHER" | "STUDENT";
   user: { name: string; subtitle: string; initial: string };
+  unreadNotifications?: number;
 }
 
-export function SidebarShell({ role, user }: SidebarShellProps) {
+export function SidebarShell({ role, user, unreadNotifications = 0 }: SidebarShellProps) {
   const pathname = usePathname();
   const sections = role === "ADMIN" ? adminNav : role === "TEACHER" ? teacherNav : studentNav;
   const roleLabel = role === "ADMIN" ? "管理员" : role === "TEACHER" ? "教师端" : "学生端";
@@ -141,6 +155,8 @@ export function SidebarShell({ role, user }: SidebarShellProps) {
               const active =
                 pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
               const Icon = item.icon;
+              const isNotifications = item.href === "/notifications" || item.href === "/t/notifications";
+              const badge = isNotifications ? unreadNotifications : 0;
               return (
                 <Link
                   key={item.href}
@@ -153,7 +169,12 @@ export function SidebarShell({ role, user }: SidebarShellProps) {
                   )}
                 >
                   <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {badge > 0 && (
+                    <span className="num inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-medium text-danger-foreground">
+                      {badge > 99 ? "99+" : badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}

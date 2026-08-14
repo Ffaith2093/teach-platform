@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle, Check, Clock, Loader2 } from "lucide-react";
 import { saveAnswerAction, submitExamAction } from "@/app/(student)/exams/actions";
 import type { Difficulty, QuestionType } from "@prisma/client";
+import { CodeEditor } from "@/components/code-editor";
 
 type Q = {
   index: number;
@@ -345,15 +346,13 @@ function QuestionCard({
           )}
 
           {q.type === "PROGRAMMING" && (
-            <textarea
-              value={
-                typeof value === "string" ? value : (q.problem?.starterCode ?? "")
-              }
-              onChange={(e) => onChange(e.target.value)}
-              spellCheck={false}
-              rows={14}
-              className="w-full rounded-lg border border-border bg-muted/30 p-3 font-mono text-xs leading-relaxed outline-none focus:border-primary"
-              placeholder="在此编写代码…"
+            <CodeEditor
+              value={typeof value === "string" ? value : (q.problem?.starterCode ?? "")}
+              onChange={(v) => onChange(v)}
+              language="python"
+              height={300}
+              minLines={14}
+              aria-label="Python 代码编辑器"
             />
           )}
         </div>

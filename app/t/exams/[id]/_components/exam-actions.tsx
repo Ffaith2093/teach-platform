@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ClipboardCheck, Send, Loader2, Trash2, Archive } from "lucide-react";
+import { ClipboardCheck, Send, Loader2, Trash2, Archive, Activity } from "lucide-react";
 import {
   publishExamAction,
   unpublishExamAction,
@@ -44,6 +44,14 @@ export function ExamActions({
 
   return (
     <div className="flex items-center gap-2">
+      {status !== "DRAFT" && (
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/t/exams/${examId}/monitor`}>
+            <Activity className="h-3.5 w-3.5" />
+            监考
+          </Link>
+        </Button>
+      )}
       {hasAttempts && status !== "DRAFT" && (
         <Button asChild variant="outline" size="sm">
           <Link href={`/t/exams/${examId}/grade`}>

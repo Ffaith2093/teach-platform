@@ -20,6 +20,7 @@ import {
 import type { Difficulty } from "@prisma/client";
 import { submitProblemAction } from "@/app/(student)/assignments/actions";
 import { usePollSubmission } from "@/hooks/use-poll-submission";
+import { CodeEditor } from "@/components/code-editor";
 
 const DIFFICULTY_LABELS: Record<Difficulty, { label: string; tone: "success" | "warning" | "danger" }> = {
   EASY: { label: "入门", tone: "success" },
@@ -205,14 +206,13 @@ export function ProblemSubmit({
               <span className="font-medium text-muted-foreground">你的代码（Python 3）</span>
               <span className="num text-subtle-foreground">{code.length} 字符</span>
             </div>
-            <textarea
+            <CodeEditor
               value={code}
-              onChange={(e) => setCode(e.target.value)}
-              spellCheck={false}
-              placeholder="# 在此输入你的代码"
-              rows={14}
-              className="block w-full rounded-lg border border-border bg-muted/30 px-3 py-2.5 font-mono text-[13px] leading-relaxed text-foreground focus:border-primary focus:bg-card focus:outline-none"
-              style={{ tabSize: 4 }}
+              onChange={setCode}
+              language="python"
+              height={300}
+              minLines={14}
+              aria-label="Python 代码编辑器"
             />
           </div>
           {state?.error && (

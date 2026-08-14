@@ -31,7 +31,7 @@ const STATUS_LABELS: Record<SubmissionStatus, { label: string; tone: "default" |
 export default async function StudentAssignmentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; course?: string }>;
 }) {
   const session = await auth();
   const userId = session!.user.id;
@@ -93,10 +93,20 @@ export default async function StudentAssignmentsPage({
     );
   }
 
+  // 过滤：可选 ?course=xxx
+  const filterCourseId = sp.course && myCourseIds.includes(sp.course) ? sp.course : null;
+  const scopeCourseIds = filterCourseId ? [filterCourseId] : myCourseIds;
+  const filterCourse = filterCourseId
+    ? await prisma.course.findUnique({
+        where: { id: filterCourseId },
+        select: { id: true, title: true },
+      })
+    : null;
+
   // 拉所有该课程下发布的作业
   const assignments = await prisma.assignment.findMany({
     where: {
-      courseId: { in: myCourseIds },
+      courseId: { in: scopeCourseIds },
       publishedAt: { not: null },
     },
     orderBy: { dueAt: "asc" },
@@ -127,11 +137,11 @@ export default async function StudentAssignmentsPage({
     mySubByAssignment.set(a.id, sub);
   }
 
-  // 全局 stats
+  // 全局 stats（按当前 scope）
   const [pendingCount, submittedCount, gradedCount, overdueCount] = await Promise.all([
     prisma.assignment.count({
       where: {
-        courseId: { in: myCourseIds },
+        courseId: { in: scopeCourseIds },
         publishedAt: { not: null },
         dueAt: { gte: now },
         submissions: { none: { studentId: userId } },
@@ -141,19 +151,19 @@ export default async function StudentAssignmentsPage({
       where: {
         studentId: userId,
         status: "SUBMITTED",
-        assignment: { courseId: { in: myCourseIds }, publishedAt: { not: null } },
+        assignment: { courseId: { in: scopeCourseIds }, publishedAt: { not: null } },
       },
     }),
     prisma.assignmentSubmission.count({
       where: {
         studentId: userId,
         status: "GRADED",
-        assignment: { courseId: { in: myCourseIds }, publishedAt: { not: null } },
+        assignment: { courseId: { in: scopeCourseIds }, publishedAt: { not: null } },
       },
     }),
     prisma.assignment.count({
       where: {
-        courseId: { in: myCourseIds },
+        courseId: { in: scopeCourseIds },
         publishedAt: { not: null },
         dueAt: { lt: now },
         submissions: { none: { studentId: userId } },
@@ -190,13 +200,27 @@ export default async function StudentAssignmentsPage({
 
   return (
     <>
-      <Topbar crumbs={[{ label: "我的作业" }]} />
+      <Topbar
+        crumbs={
+          filterCourse
+            ? [
+                { label: "我的课程", href: "/courses" },
+                { label: filterCourse.title, href: `/courses/${filterCourse.id}` },
+                { label: "作业" },
+              ]
+            : [{ label: "我的作业" }]
+        }
+      />
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">我的作业</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {filterCourse ? `${filterCourse.title} · 作业` : "我的作业"}
+            </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              下方为您布置的作业与提交记录，按截止时间排序。
+              {filterCourse
+                ? "本课程下为您布置的作业，按截止时间排序。"
+                : "下方为您布置的作业与提交记录，按截止时间排序。"}
             </p>
           </div>
 

@@ -24,7 +24,7 @@ type StatusFilter = "all" | "upcoming" | "available" | "in_progress" | "submitte
 export default async function StudentExamsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; course?: string }>;
 }) {
   const session = await auth();
   const userId = session!.user.id;
@@ -51,10 +51,20 @@ export default async function StudentExamsPage({
   });
   const myCourseIds = courseIds.map((c) => c.courseId);
 
+  // 过滤：可选 ?course=xxx
+  const filterCourseId = sp.course && myCourseIds.includes(sp.course) ? sp.course : null;
+  const scopeCourseIds = filterCourseId ? [filterCourseId] : myCourseIds;
+  const filterCourse = filterCourseId
+    ? await prisma.course.findUnique({
+        where: { id: filterCourseId },
+        select: { id: true, title: true },
+      })
+    : null;
+
   // 所有课程下的考试（含历史）+ 我的 attempts
   const allExams = await prisma.exam.findMany({
     where: {
-      courseId: { in: myCourseIds },
+      courseId: { in: scopeCourseIds },
       status: { in: ["PUBLISHED", "CLOSED"] },
     },
     include: {
@@ -131,13 +141,27 @@ export default async function StudentExamsPage({
 
   return (
     <>
-      <Topbar crumbs={[{ label: "我的考试" }]} />
+      <Topbar
+        crumbs={
+          filterCourse
+            ? [
+                { label: "我的课程", href: "/courses" },
+                { label: filterCourse.title, href: `/courses/${filterCourse.id}` },
+                { label: "考试" },
+              ]
+            : [{ label: "我的考试" }]
+        }
+      />
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">我的考试</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {filterCourse ? `${filterCourse.title} · 考试` : "我的考试"}
+            </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              您所在班级的已发布考试。按开考时间排序。
+              {filterCourse
+                ? "本课程的已发布考试。按开考时间排序。"
+                : "您所在班级的已发布考试。按开考时间排序。"}
             </p>
           </div>
 

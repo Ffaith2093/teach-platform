@@ -7,6 +7,7 @@ import { Topbar } from "@/components/shell/topbar";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, Users, GraduationCap, BookOpen, FileText, Mail, Hash, ChevronRight, TableProperties } from "lucide-react";
 import { GradebookTab } from "./_components/gradebook-tab";
+import { AnnounceForm } from "./_components/announce-form";
 
 export const metadata = { title: "班级详情" };
 
@@ -185,6 +186,11 @@ export default async function TeacherClassDetailPage({
                   </span>
                 </div>
               </div>
+              <AnnounceForm
+                classId={cls.id}
+                classLabel={`${cls.grade.name} · ${cls.name}`}
+                studentCount={cls.students.filter((s) => s.status === "ACTIVE").length}
+              />
             </div>
           </div>
 

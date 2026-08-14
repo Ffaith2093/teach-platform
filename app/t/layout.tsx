@@ -10,17 +10,22 @@ export default async function TeacherLayout({ children }: { children: React.Reac
     redirect("/login?error=forbidden");
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: {
-      name: true,
-      subjects: true,
-      mustChangePassword: true,
-      classTeachers: {
-        select: { class: { select: { grade: { select: { name: true } } } } },
+  const [user, unreadCount] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        name: true,
+        subjects: true,
+        mustChangePassword: true,
+        classTeachers: {
+          select: { class: { select: { grade: { select: { name: true } } } } },
+        },
       },
-    },
-  });
+    }),
+    prisma.notification.count({
+      where: { userId: session.user.id, isRead: false },
+    }),
+  ]);
   // 用 DB 真值，不用 JWT 里登录时的值（改密后 JWT 不会自动更新）
   if (user?.mustChangePassword) redirect("/change-password");
 
@@ -38,6 +43,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
           subtitle,
           initial: (user?.name ?? "师").slice(0, 1),
         }}
+        unreadNotifications={unreadCount}
       />
       <div className="flex min-w-0 flex-1 flex-col">{children}</div>
     </div>
