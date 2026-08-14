@@ -5,18 +5,19 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Topbar } from "@/components/shell/topbar";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Users, GraduationCap, BookOpen, FileText, Mail, Hash, ChevronRight } from "lucide-react";
+import { ChevronLeft, Users, GraduationCap, BookOpen, FileText, Mail, Hash, ChevronRight, TableProperties } from "lucide-react";
+import { GradebookTab } from "./_components/gradebook-tab";
 
 export const metadata = { title: "班级详情" };
 
-type Tab = "roster" | "performance" | "courses";
+type Tab = "roster" | "performance" | "gradebook" | "courses";
 
 export default async function TeacherClassDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; courseId?: string; kind?: string }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
@@ -68,7 +69,13 @@ export default async function TeacherClassDetailPage({
   if (!cls) notFound();
 
   const activeTab: Tab =
-    sp.tab === "performance" ? "performance" : sp.tab === "courses" ? "courses" : "roster";
+    sp.tab === "performance"
+      ? "performance"
+      : sp.tab === "gradebook"
+        ? "gradebook"
+        : sp.tab === "courses"
+          ? "courses"
+          : "roster";
 
   // 性能数据：班级下每个学生的提交统计
   const studentIds = cls.students.filter((s) => s.status === "ACTIVE").map((s) => s.id);
@@ -129,6 +136,7 @@ export default async function TeacherClassDetailPage({
   const tabs: { key: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { key: "roster", label: "花名册", icon: Users },
     { key: "performance", label: "成绩概览", icon: FileText },
+    { key: "gradebook", label: "成绩单", icon: TableProperties },
     { key: "courses", label: "所属课程", icon: BookOpen },
   ];
 
@@ -210,6 +218,13 @@ export default async function TeacherClassDetailPage({
               gradedCount={gradedScores.length}
               recentAssignments={recentAssignments}
               totalStudents={studentIds.length}
+            />
+          )}
+
+          {activeTab === "gradebook" && (
+            <GradebookTab
+              classId={cls.id}
+              searchParams={{ courseId: sp.courseId, kind: sp.kind }}
             />
           )}
 

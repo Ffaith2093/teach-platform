@@ -5,25 +5,23 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Topbar } from "@/components/shell/topbar";
-import { formatDate, relativeTime } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import {
   ChevronLeft,
   Library,
   FileText,
-  Users,
   Clock,
-  CheckCircle2,
-  AlertCircle,
-  Server,
+  BarChart3,
   ListChecks,
 } from "lucide-react";
 import type { Difficulty, ExamStatus, QuestionType } from "@prisma/client";
 import { QuestionsPanel } from "./_components/questions-panel";
 import { ExamActions } from "./_components/exam-actions";
+import { AnalyticsTab } from "./_components/analytics-tab";
 
 export const metadata = { title: "试卷详情" };
 
-type Tab = "overview" | "questions" | "monitor";
+type Tab = "overview" | "questions" | "analytics";
 
 const STATUS_LABEL: Record<ExamStatus, { label: string; tone: "default" | "success" | "warning" }> = {
   DRAFT: { label: "草稿", tone: "default" },
@@ -90,7 +88,7 @@ export default async function TeacherExamDetailPage({
     exam.status === "PUBLISHED" && exam.closeAt < now ? "CLOSED" : exam.status;
 
   const activeTab: Tab =
-    sp.tab === "questions" ? "questions" : sp.tab === "monitor" ? "monitor" : "overview";
+    sp.tab === "questions" ? "questions" : sp.tab === "analytics" ? "analytics" : "overview";
 
   // stats
   const [attemptStats, inProgressCount, submittedCount] = await Promise.all([
@@ -112,7 +110,7 @@ export default async function TeacherExamDetailPage({
   const tabs: { key: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { key: "overview", label: "概览", icon: ListChecks },
     { key: "questions", label: `题目（${exam.questions.length}）`, icon: Library },
-    { key: "monitor", label: "监考", icon: Server },
+    { key: "analytics", label: "分析", icon: BarChart3 },
   ];
 
   // 可用编程题（教师本人或公开）
@@ -254,15 +252,7 @@ export default async function TeacherExamDetailPage({
             />
           )}
 
-          {activeTab === "monitor" && (
-            <MonitorTab
-              totalAttempts={totalAttempts}
-              inProgressCount={inProgressCount}
-              submittedCount={submittedCount}
-              isDraft={isDraft}
-              isPublished={exam.status === "PUBLISHED"}
-            />
-          )}
+          {activeTab === "analytics" && <AnalyticsTab examId={exam.id} />}
         </div>
       </main>
     </>
@@ -364,54 +354,3 @@ function Setting({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
-function MonitorTab({
-  totalAttempts,
-  isDraft,
-  isPublished,
-}: {
-  totalAttempts: number;
-  inProgressCount: number;
-  submittedCount: number;
-  isDraft: boolean;
-  isPublished: boolean;
-}) {
-  if (isDraft) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-          <Server className="h-8 w-8 text-muted-foreground" />
-          <p className="text-sm font-medium text-foreground">试卷尚未发布</p>
-          <p className="text-xs text-muted-foreground">发布后这里将展示实时监考数据。</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!isPublished) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-          <AlertCircle className="h-8 w-8 text-muted-foreground" />
-          <p className="text-sm font-medium text-foreground">考试已关闭</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardContent className="px-6 py-10 text-center">
-          <Server className="mx-auto h-8 w-8 text-muted-foreground" />
-          <p className="mt-3 text-sm font-medium text-foreground">实时监考模块将在 P5.2 接入</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            完整功能包括学生作答进度、剩余时间、IP/设备、强制收卷。
-          </p>
-          <p className="mt-4 num text-xs text-muted-foreground">
-            当前参考：<span className="font-medium text-foreground">{totalAttempts}</span> 人次
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
