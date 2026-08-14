@@ -385,3 +385,97 @@ export async function deleteAssignmentAction(assignmentId: string) {
   revalidatePath("/t/assignments");
   redirect("/t/assignments");
 }
+
+// ========== 批改学生作业 ==========
+
+const gradeSchema = z.object({
+  submissionId: z.string().min(1),
+  manualScore: z.coerce
+    .number()
+    .int()
+    .min(0, "分数不能小于 0")
+    .max(10000, "分数过大"),
+  feedback: z.string().max(2000).optional().or(z.literal("")),
+});
+
+export type GradeAssignmentState = {
+  error?: string;
+  fieldErrors?: Partial<Record<keyof z.infer<typeof gradeSchema>, string>>;
+  ok?: true;
+};
+
+export async function gradeAssignmentAction(
+  _prev: GradeAssignmentState | undefined,
+  formData: FormData,
+): Promise<GradeAssignmentState> {
+  const parsed = gradeSchema.safeParse({
+    submissionId: formData.get("submissionId"),
+    manualScore: formData.get("manualScore"),
+    feedback: formData.get("feedback") || undefined,
+  });
+  if (!parsed.success) {
+    const fieldErrors: NonNullable<GradeAssignmentState["fieldErrors"]> = {};
+    for (const issue of parsed.error.issues) {
+      const key = issue.path[0] as keyof z.infer<typeof gradeSchema>;
+      if (key) fieldErrors[key] = issue.message;
+    }
+    return { error: "请检查输入", fieldErrors };
+  }
+
+  const session = await requireSession();
+  if (session.user.role !== "TEACHER") {
+    return { error: "仅教师可批改" };
+  }
+  const teacherId = session.user.id;
+
+  // 校验：该 submission 属于当前教师有权批改的课程
+  const sub = await prisma.assignmentSubmission.findUnique({
+    where: { id: parsed.data.submissionId },
+    include: {
+      assignment: {
+        select: {
+          id: true,
+          totalScore: true,
+          courseId: true,
+          publishedAt: true,
+        },
+      },
+    },
+  });
+  if (!sub) return { error: "提交记录不存在" };
+  if (!sub.assignment.publishedAt) {
+    return { error: "未发布的作业没有可批改的提交" };
+  }
+
+  const ct = await prisma.courseTeacher.findUnique({
+    where: { courseId_teacherId: { courseId: sub.assignment.courseId, teacherId } },
+  });
+  if (!ct || (ct.role !== "OWNER" && ct.role !== "ASSISTANT")) {
+    return { error: "您无权限批改此作业的学生" };
+  }
+
+  // finalScore = min(autoScore + manualScore, totalScore)
+  // manualScore 在这里是教师最终给分（默认就是手动填写的总分）
+  // 公式：finalScore = min(parsed.data.manualScore, totalScore)
+  // autoScore 字段保留作参考
+  const finalScore = Math.min(parsed.data.manualScore, sub.assignment.totalScore);
+
+  await prisma.assignmentSubmission.update({
+    where: { id: parsed.data.submissionId },
+    data: {
+      manualScore: parsed.data.manualScore,
+      finalScore,
+      feedback: parsed.data.feedback || null,
+      gradedById: teacherId,
+      gradedAt: new Date(),
+      status: "GRADED",
+    },
+  });
+
+  revalidatePath(`/t/assignments/${sub.assignment.id}`);
+  revalidatePath(`/t/assignments/${sub.assignment.id}/grade`);
+  revalidatePath(`/t/grading`);
+  revalidatePath(`/assignments/${sub.assignment.id}`);
+
+  return { ok: true };
+}

@@ -24,6 +24,8 @@ export type JudgeStatus =
 export interface JudgeCaseInput {
   input: string;
   expected: string;
+  isSample?: boolean; // 学生可见的实际输出
+  score?: number; // 该用例分值
 }
 
 export interface JudgeLimits {
@@ -35,14 +37,16 @@ export interface JudgeCaseResult {
   status: JudgeStatus;
   timeMs: number;
   memoryKb?: number;
-  actualOutput?: string;
+  actualOutput?: string; // 仅 isSample=true 时返回给学生
   errorMsg?: string;
+  score: number; // 通过则得满分，否则 0
 }
 
 export interface JudgeRunResult {
   status: JudgeStatus; // 整体：取第一个非 ACCEPTED
   passedCount: number;
   totalCount: number;
+  totalScore: number; // 累加通过用例分值
   cases: JudgeCaseResult[];
 }
 
@@ -64,6 +68,7 @@ function runOneCase(
   mainPy: string,
   input: string,
   timeLimitMs: number,
+  score: number,
 ): Promise<JudgeCaseResult> {
   return new Promise((resolve) => {
     const startedAt = Date.now();
@@ -87,7 +92,7 @@ function runOneCase(
 
       // 1. 超时（SIGKILL 是我们或 Node timeout 触发的）
       if (signal === "SIGKILL" && timeMs >= timeLimitMs) {
-        return resolve({ status: "TLE", timeMs, errorMsg: "执行超时" });
+        return resolve({ status: "TLE", timeMs, score: 0, errorMsg: "执行超时" });
       }
 
       // 2. 语法错误
@@ -99,13 +104,14 @@ function runOneCase(
         return resolve({
           status: "COMPILE_ERROR",
           timeMs,
+          score: 0,
           errorMsg: stderr.slice(0, 2000),
         });
       }
 
       // 3. OOM（粗略：stderr 里有 MemoryError）
       if (stderr.includes("MemoryError")) {
-        return resolve({ status: "MLE", timeMs, errorMsg: "内存超限" });
+        return resolve({ status: "MLE", timeMs, score: 0, errorMsg: "内存超限" });
       }
 
       // 4. 非零退出码 → RUNTIME_ERROR
@@ -113,12 +119,13 @@ function runOneCase(
         return resolve({
           status: "RUNTIME_ERROR",
           timeMs,
+          score: 0,
           errorMsg: stderr.slice(0, 2000) || `exit code ${code}`,
         });
       }
 
       // 5. 退出码 0，输出比对交给调用方（已知 expected）
-      resolve({ status: "ACCEPTED", timeMs, actualOutput: stdout });
+      resolve({ status: "ACCEPTED", timeMs, score, actualOutput: stdout });
     });
 
     child.on("error", (err) => {
@@ -126,6 +133,7 @@ function runOneCase(
       resolve({
         status: "SYSTEM_ERROR",
         timeMs: Date.now() - startedAt,
+        score: 0,
         errorMsg: err.message,
       });
     });
@@ -152,13 +160,15 @@ export async function runJudge(
 
     const cases: JudgeCaseResult[] = [];
     for (const tc of testCases) {
-      const r = await runOneCase(mainPy, tc.input, limits.timeLimitMs);
+      const caseScore = tc.score ?? 0;
+      const r = await runOneCase(mainPy, tc.input, limits.timeLimitMs, caseScore);
       // 输出比对
       if (r.status === "ACCEPTED") {
         const ok = looseEqual(r.actualOutput ?? "", tc.expected);
         cases.push({
           ...r,
           status: ok ? "ACCEPTED" : "WRONG_ANSWER",
+          score: ok ? caseScore : 0,
         });
       } else {
         cases.push(r);
@@ -168,11 +178,13 @@ export async function runJudge(
     // 整体状态：第一个非 ACCEPTED
     const firstFail = cases.find((c) => c.status !== "ACCEPTED");
     const passed = cases.filter((c) => c.status === "ACCEPTED").length;
+    const totalScore = cases.reduce((s, c) => s + c.score, 0);
 
     return {
       status: firstFail ? firstFail.status : "ACCEPTED",
       passedCount: passed,
       totalCount: cases.length,
+      totalScore,
       cases,
     };
   } catch (e) {
@@ -180,9 +192,11 @@ export async function runJudge(
       status: "SYSTEM_ERROR",
       passedCount: 0,
       totalCount: testCases.length,
+      totalScore: 0,
       cases: testCases.map(() => ({
         status: "SYSTEM_ERROR" as const,
         timeMs: 0,
+        score: 0,
         errorMsg: (e as Error).message,
       })),
     };
