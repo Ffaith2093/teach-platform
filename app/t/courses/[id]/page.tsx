@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Topbar } from "@/components/shell/topbar";
 import { Badge } from "@/components/ui/badge";
 import { relativeTime } from "@/lib/utils";
-import { ChevronLeft, BookOpen, Users, FileText, GraduationCap, Archive } from "lucide-react";
+import { ChevronLeft, BookOpen, Users, FileText, GraduationCap, Archive, Folder } from "lucide-react";
 import type { CourseCategory, CourseTeacherRole } from "@prisma/client";
 import { EditCourseButton } from "./_components/edit-course-button";
 import { ArchiveCourseButton } from "./_components/archive-course-button";
@@ -202,12 +202,21 @@ export default async function TeacherCourseDetailPage({
                     </b>{" "}
                     名学生。
                   </p>
-                  <Link
-                    href={`/t/courses/${course.id}/students`}
-                    className="mt-4 inline-flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-4 text-sm font-medium hover:bg-muted"
-                  >
-                    查看完整学生名单 →
-                  </Link>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Link
+                      href={`/t/courses/${course.id}/students`}
+                      className="inline-flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-4 text-sm font-medium hover:bg-muted"
+                    >
+                      查看完整学生名单 →
+                    </Link>
+                    <Link
+                      href={`/t/courses/${course.id}/resources`}
+                      className="inline-flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-4 text-sm font-medium hover:bg-muted"
+                    >
+                      <Folder className="h-3.5 w-3.5 text-muted-foreground" />
+                      资源管理（{course._count.resources}）
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
             </div>
