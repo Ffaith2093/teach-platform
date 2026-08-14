@@ -18,6 +18,7 @@ import {
   Settings,
   UserCog,
   LogOut,
+  Boxes,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -65,10 +66,16 @@ const teacherNav: NavSection[] = [
     ],
   },
   {
+    label: "题库",
+    items: [
+      { href: "/t/problems", label: "我的编程题", icon: Code },
+      { href: "/t/banks", label: "我的题库", icon: Boxes },
+    ],
+  },
+  {
     label: "考核",
     items: [
       { href: "/t/assignments", label: "作业", icon: FileText },
-      { href: "/t/problems", label: "题库", icon: Code },
       { href: "/t/exams", label: "试卷", icon: Library },
       { href: "/t/grading", label: "批改", icon: ClipboardCheck },
     ],
