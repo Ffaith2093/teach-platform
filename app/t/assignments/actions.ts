@@ -1,0 +1,387 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { requireSession } from "@/lib/auth/guard";
+
+// ========== 教师课程权限工具 ==========
+
+async function requireCourseTeacher(courseId: string, minRole: "OWNER" | "ASSISTANT" = "ASSISTANT") {
+  const session = await requireSession();
+  if (session.user.role !== "TEACHER") {
+    throw new Error("仅教师可执行此操作");
+  }
+  const ct = await prisma.courseTeacher.findUnique({
+    where: { courseId_teacherId: { courseId, teacherId: session.user.id } },
+  });
+  if (!ct) throw new Error("您不在该课程的教师团队中");
+  if (minRole === "OWNER" && ct.role !== "OWNER") {
+    throw new Error("仅主讲教师可执行此操作");
+  }
+  if (minRole === "ASSISTANT" && ct.role !== "OWNER" && ct.role !== "ASSISTANT") {
+    throw new Error("权限不足");
+  }
+  return { session, role: ct.role };
+}
+
+// 工具：根据 assignmentId 反查 courseId + 校验权限
+async function requireAssignmentAccess(assignmentId: string, minRole: "OWNER" | "ASSISTANT" = "ASSISTANT") {
+  const assignment = await prisma.assignment.findUnique({
+    where: { id: assignmentId },
+    select: { id: true, courseId: true, publishedAt: true },
+  });
+  if (!assignment) throw new Error("作业不存在");
+  const ctx = await requireCourseTeacher(assignment.courseId, minRole);
+  return { assignment, ...ctx };
+}
+
+// ========== 创建作业 ==========
+
+const createAssignmentSchema = z.object({
+  courseId: z.string().min(1, "请选择课程"),
+  title: z.string().min(1, "作业标题不能为空").max(100),
+  description: z.string().max(2000).optional().or(z.literal("")),
+  dueAt: z.string().min(1, "请选择截止时间"),
+  allowLate: z.boolean().default(true),
+  latePenalty: z.coerce.number().int().min(0).max(100).default(20),
+  // 编程题挂载：[{ problemId, score }]
+  problems: z
+    .array(
+      z.object({
+        problemId: z.string(),
+        score: z.coerce.number().int().min(0).max(1000),
+      }),
+    )
+    .default([]),
+  publish: z.boolean().default(false),
+});
+
+export type CreateAssignmentState = {
+  error?: string;
+  fieldErrors?: Partial<Record<keyof z.infer<typeof createAssignmentSchema>, string>>;
+  ok?: true;
+  assignmentId?: string;
+};
+
+/**
+ * 教师创建作业（一次完成基本信息 + 挂载编程题）
+ * - publish=false: 创建为草稿（publishedAt=null），可后续编辑
+ * - publish=true: 立即发布（publishedAt=now()），不再允许编辑基本信息
+ * - problems 可为空，totalScore 从 problems 累加；空时为 0
+ */
+export async function createAssignmentAction(
+  _prev: CreateAssignmentState,
+  formData: FormData,
+): Promise<CreateAssignmentState> {
+  const session = await requireSession();
+  if (session.user.role !== "TEACHER") {
+    return { error: "仅教师可创建作业" };
+  }
+  const teacherId = session.user.id;
+
+  // 解析 problems（JSON in hidden field）& publish checkbox
+  const problemsRaw = formData.get("problems")?.toString() ?? "[]";
+  let problems: { problemId: string; score: number }[] = [];
+  try {
+    problems = JSON.parse(problemsRaw);
+  } catch {
+    return { error: "题目数据格式错误" };
+  }
+
+  const parsed = createAssignmentSchema.safeParse({
+    courseId: formData.get("courseId"),
+    title: formData.get("title"),
+    description: formData.get("description") || undefined,
+    dueAt: formData.get("dueAt"),
+    allowLate: formData.get("allowLate") === "on",
+    latePenalty: formData.get("latePenalty") || 20,
+    problems,
+    publish: formData.get("publish") === "1",
+  });
+  if (!parsed.success) {
+    const fieldErrors: NonNullable<CreateAssignmentState["fieldErrors"]> = {};
+    for (const issue of parsed.error.issues) {
+      const key = issue.path[0] as keyof z.infer<typeof createAssignmentSchema>;
+      if (key) fieldErrors[key] = issue.message;
+    }
+    return { error: "请检查输入", fieldErrors };
+  }
+
+  // 校验：教师必须在该课程团队
+  const ct = await prisma.courseTeacher.findUnique({
+    where: { courseId_teacherId: { courseId: parsed.data.courseId, teacherId } },
+  });
+  if (!ct || (ct.role !== "OWNER" && ct.role !== "ASSISTANT")) {
+    return { error: "您无权限在该课程创建作业" };
+  }
+
+  // 校验：dueAt 必须晚于 now
+  const dueAt = new Date(parsed.data.dueAt);
+  if (Number.isNaN(dueAt.getTime())) {
+    return { error: "截止时间格式无效" };
+  }
+  if (!parsed.data.publish && dueAt.getTime() < Date.now()) {
+    return { fieldErrors: { dueAt: "截止时间须晚于当前时间" } };
+  }
+
+  // 校验：所有编程题必须存在（authorId=me 或 isPublic）
+  if (problems.length > 0) {
+    const valid = await prisma.problem.findMany({
+      where: {
+        id: { in: problems.map((p) => p.problemId) },
+        OR: [{ authorId: teacherId }, { isPublic: true }],
+      },
+      select: { id: true },
+    });
+    if (valid.length !== new Set(problems.map((p) => p.problemId)).size) {
+      return { error: "部分编程题不可用（需本人创建或公开）" };
+    }
+  }
+
+  const totalScore = problems.reduce((s, p) => s + p.score, 0);
+
+  try {
+    const assignmentId = await prisma.$transaction(async (tx) => {
+      const a = await tx.assignment.create({
+        data: {
+          courseId: parsed.data.courseId,
+          creatorId: teacherId,
+          title: parsed.data.title,
+          description: parsed.data.description || "",
+          dueAt,
+          allowLate: parsed.data.allowLate,
+          latePenalty: parsed.data.latePenalty,
+          totalScore,
+          publishedAt: parsed.data.publish ? new Date() : null,
+        },
+      });
+      if (problems.length > 0) {
+        await tx.assignmentProblem.createMany({
+          data: problems.map((p, i) => ({
+            assignmentId: a.id,
+            problemId: p.problemId,
+            score: p.score,
+            order: i,
+          })),
+        });
+      }
+      return a.id;
+    });
+    revalidatePath("/t/assignments");
+    revalidatePath(`/t/courses/${parsed.data.courseId}`);
+    redirect(`/t/assignments/${assignmentId}`);
+  } catch (e) {
+    if (e instanceof Error && e.message === "NEXT_REDIRECT") throw e;
+    throw e;
+  }
+}
+
+// ========== 修改作业基本信息（仅 DRAFT） ==========
+
+const updateAssignmentSchema = z.object({
+  title: z.string().min(1).max(100),
+  description: z.string().max(2000).optional().or(z.literal("")),
+  dueAt: z.string().min(1),
+  allowLate: z.boolean().default(true),
+  latePenalty: z.coerce.number().int().min(0).max(100).default(20),
+});
+
+export type UpdateAssignmentState = {
+  error?: string;
+  fieldErrors?: Partial<Record<keyof z.infer<typeof updateAssignmentSchema>, string>>;
+  ok?: boolean;
+};
+
+export async function updateAssignmentAction(
+  assignmentId: string,
+  _prev: UpdateAssignmentState,
+  formData: FormData,
+): Promise<UpdateAssignmentState> {
+  const { assignment } = await requireAssignmentAccess(assignmentId);
+  if (assignment.publishedAt) {
+    return { error: "已发布的作业不可修改基本信息" };
+  }
+  const parsed = updateAssignmentSchema.safeParse({
+    title: formData.get("title"),
+    description: formData.get("description") || undefined,
+    dueAt: formData.get("dueAt"),
+    allowLate: formData.get("allowLate") === "on",
+    latePenalty: formData.get("latePenalty") || 20,
+  });
+  if (!parsed.success) {
+    const fieldErrors: NonNullable<UpdateAssignmentState["fieldErrors"]> = {};
+    for (const issue of parsed.error.issues) {
+      const key = issue.path[0] as keyof z.infer<typeof updateAssignmentSchema>;
+      if (key) fieldErrors[key] = issue.message;
+    }
+    return { error: "请检查输入", fieldErrors };
+  }
+  const dueAt = new Date(parsed.data.dueAt);
+  if (Number.isNaN(dueAt.getTime())) {
+    return { error: "截止时间格式无效" };
+  }
+  await prisma.assignment.update({
+    where: { id: assignmentId },
+    data: {
+      title: parsed.data.title,
+      description: parsed.data.description || "",
+      dueAt,
+      allowLate: parsed.data.allowLate,
+      latePenalty: parsed.data.latePenalty,
+    },
+  });
+  revalidatePath(`/t/assignments/${assignmentId}`);
+  return { ok: true };
+}
+
+// ========== 添加编程题 ==========
+
+const addProblemSchema = z.object({
+  problemId: z.string(),
+  score: z.coerce.number().int().min(1).max(1000),
+});
+
+export async function addProblemToAssignmentAction(
+  assignmentId: string,
+  _prev: { error?: string; ok?: boolean } | undefined,
+  formData: FormData,
+) {
+  const { assignment, session } = await requireAssignmentAccess(assignmentId);
+  if (assignment.publishedAt) {
+    return { error: "已发布的作业不可再修改题目" };
+  }
+
+  const parsed = addProblemSchema.safeParse({
+    problemId: formData.get("problemId"),
+    score: formData.get("score"),
+  });
+  if (!parsed.success) return { error: "请选择题目并填写分值" };
+
+  // 编程题必须可用（作者本人 or 公开）
+  const problem = await prisma.problem.findUnique({
+    where: { id: parsed.data.problemId },
+    select: { authorId: true, isPublic: true },
+  });
+  if (!problem || (problem.authorId !== session.user.id && !problem.isPublic)) {
+    return { error: "编程题不可用" };
+  }
+
+  // 重复检测
+  const existing = await prisma.assignmentProblem.findUnique({
+    where: { assignmentId_problemId: { assignmentId, problemId: parsed.data.problemId } },
+  });
+  if (existing) return { error: "该题已在作业中" };
+
+  // 添加并更新 totalScore
+  const lastOrder = await prisma.assignmentProblem.findFirst({
+    where: { assignmentId },
+    orderBy: { order: "desc" },
+    select: { order: true },
+  });
+  const nextOrder = (lastOrder?.order ?? -1) + 1;
+
+  await prisma.$transaction([
+    prisma.assignmentProblem.create({
+      data: {
+        assignmentId,
+        problemId: parsed.data.problemId,
+        score: parsed.data.score,
+        order: nextOrder,
+      },
+    }),
+    prisma.assignment.update({
+      where: { id: assignmentId },
+      data: { totalScore: { increment: parsed.data.score } },
+    }),
+  ]);
+  revalidatePath(`/t/assignments/${assignmentId}`);
+  return { ok: true };
+}
+
+export async function removeProblemFromAssignmentAction(
+  assignmentId: string,
+  problemId: string,
+) {
+  const { assignment } = await requireAssignmentAccess(assignmentId);
+  if (assignment.publishedAt) {
+    throw new Error("已发布的作业不可修改题目");
+  }
+  const ap = await prisma.assignmentProblem.findUnique({
+    where: { assignmentId_problemId: { assignmentId, problemId } },
+  });
+  if (!ap) return;
+
+  await prisma.$transaction([
+    prisma.assignmentProblem.delete({
+      where: { assignmentId_problemId: { assignmentId, problemId } },
+    }),
+    prisma.assignment.update({
+      where: { id: assignmentId },
+      data: { totalScore: { decrement: ap.score } },
+    }),
+  ]);
+  revalidatePath(`/t/assignments/${assignmentId}`);
+}
+
+// ========== 发布 / 撤回 ==========
+
+export async function publishAssignmentAction(assignmentId: string) {
+  const { assignment } = await requireAssignmentAccess(assignmentId);
+  if (assignment.publishedAt) return; // 已是发布态
+
+  // 必须有题目
+  const count = await prisma.assignmentProblem.count({ where: { assignmentId } });
+  if (count === 0) throw new Error("请先挂载至少一道编程题再发布");
+
+  // dueAt 必须晚于 now
+  const full = await prisma.assignment.findUnique({
+    where: { id: assignmentId },
+    select: { dueAt: true },
+  });
+  if (!full || full.dueAt.getTime() < Date.now()) {
+    throw new Error("截止时间须晚于当前时间");
+  }
+
+  await prisma.assignment.update({
+    where: { id: assignmentId },
+    data: { publishedAt: new Date() },
+  });
+  revalidatePath(`/t/assignments/${assignmentId}`);
+  revalidatePath("/t/assignments");
+}
+
+export async function unpublishAssignmentAction(assignmentId: string) {
+  const { assignment } = await requireAssignmentAccess(assignmentId);
+  if (!assignment.publishedAt) return;
+
+  // 仅当无任何提交时可撤回
+  const subCount = await prisma.assignmentSubmission.count({ where: { assignmentId } });
+  if (subCount > 0) throw new Error("已有学生提交，无法撤回发布");
+
+  await prisma.assignment.update({
+    where: { id: assignmentId },
+    data: { publishedAt: null },
+  });
+  revalidatePath(`/t/assignments/${assignmentId}`);
+  revalidatePath("/t/assignments");
+}
+
+// ========== 删除（OWNER 专属） ==========
+
+export async function deleteAssignmentAction(assignmentId: string) {
+  const { assignment } = await requireAssignmentAccess(assignmentId, "OWNER");
+
+  // 有提交则禁止删除（保护学生成绩）
+  if (assignment.publishedAt) {
+    const subCount = await prisma.assignmentSubmission.count({ where: { assignmentId } });
+    if (subCount > 0) {
+      throw new Error("已有学生提交，无法删除。请改用「撤回发布」");
+    }
+  }
+
+  await prisma.assignment.delete({ where: { id: assignmentId } });
+  revalidatePath("/t/assignments");
+  redirect("/t/assignments");
+}
