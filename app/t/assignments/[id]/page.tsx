@@ -16,6 +16,7 @@ import {
   ClipboardCheck,
   Clock,
   BarChart3,
+  Download,
 } from "lucide-react";
 import { ProblemsPanel } from "./_components/problems-panel";
 import { AssignmentActions } from "./_components/assignment-actions";
@@ -172,6 +173,43 @@ export default async function TeacherAssignmentDetailPage({
   });
   const subByStudent = new Map(submissions.map((s) => [s.studentId, s]));
 
+  // ========== 每题编程提交（用于明细 + CSV 导出） ==========
+  // Submissions 表：contextType=ASSIGNMENT, contextId=AssignmentSubmission.id, problemId
+  // 每个 (attempt, problem) 取最新一条
+  const attemptSubIds = submissions.map((s) => s.id);
+  const problemIds = problems.map((p) => p.problemId);
+
+  const perProblemSubs =
+    attemptSubIds.length > 0 && problemIds.length > 0
+      ? await prisma.submission.findMany({
+          where: {
+            contextType: "ASSIGNMENT",
+            contextId: { in: attemptSubIds },
+            problemId: { in: problemIds },
+          },
+          orderBy: { createdAt: "desc" },
+          select: {
+            contextId: true,
+            problemId: true,
+            score: true,
+            status: true,
+          },
+        })
+      : [];
+  const scoreByAttemptProblem = new Map<string, { score: number; status: string }>();
+  for (const s of perProblemSubs) {
+    const key = `${s.contextId}:${s.problemId}`;
+    if (!scoreByAttemptProblem.has(key)) {
+      scoreByAttemptProblem.set(key, { score: s.score, status: s.status });
+    }
+  }
+  const problemsForTab = problems.map((p) => ({
+    problemId: p.problemId,
+    title: p.problem.title,
+    score: p.score,
+    order: p.order,
+  }));
+
   // 进度率：已提交+已批改 / 学生总数
   const submittedCount = statusCounts.SUBMITTED + statusCounts.GRADED + statusCounts.RETURNED;
   const gradedFinalScores = submissions
@@ -324,6 +362,7 @@ export default async function TeacherAssignmentDetailPage({
 
           {activeTab === "submissions" && (
             <SubmissionsTab
+              assignmentId={assignment.id}
               allStudents={allStudents}
               subByStudent={Object.fromEntries(
                 submissions.map((s) => [
@@ -337,8 +376,13 @@ export default async function TeacherAssignmentDetailPage({
                   },
                 ]),
               )}
+              problems={problemsForTab}
+              scoreByAttemptProblem={Object.fromEntries(
+                [...scoreByAttemptProblem.entries()].map(([k, v]) => [k, v]),
+              )}
               totalScore={assignment.totalScore}
               isPublished={!isDraft}
+              dueAt={assignment.dueAt}
             />
           )}
         </div>
@@ -488,15 +532,23 @@ function StatusBox({
 }
 
 function SubmissionsTab({
+  assignmentId,
   allStudents,
   subByStudent,
+  problems,
+  scoreByAttemptProblem,
   totalScore,
   isPublished,
+  dueAt,
 }: {
+  assignmentId: string;
   allStudents: Array<{ id: string; name: string; studentNo: string | null; className: string; gradeName: string }>;
   subByStudent: Record<string, { id: string; status: SubmissionStatus; finalScore: number | null; submittedAt: Date | null; gradedAt: Date | null }>;
+  problems: Array<{ problemId: string; title: string; score: number; order: number }>;
+  scoreByAttemptProblem: Record<string, { score: number; status: string }>;
   totalScore: number;
   isPublished: boolean;
+  dueAt: Date;
 }) {
   // 按班级分组
   const byClass = new Map<string, typeof allStudents>();
@@ -526,6 +578,21 @@ function SubmissionsTab({
         </div>
       )}
 
+      {/* 操作行：导出 CSV */}
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">
+          按班级展示所有学生的提交情况。带 <span className="font-mono text-warning">迟</span> 标记表示迟交。
+        </p>
+        <a
+          href={`/api/assignments/${assignmentId}/submissions.csv`}
+          download
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+        >
+          <Download className="h-3.5 w-3.5" />
+          导出 CSV
+        </a>
+      </div>
+
       {[...byClass.entries()].map(([className, students]) => {
         const submitted = students.filter((s) => subByStudent[s.id] != null).length;
         return (
@@ -541,65 +608,146 @@ function SubmissionsTab({
                   <b className="text-foreground">{students.length}</b>
                 </span>
               </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/30 text-left text-xs font-medium text-muted-foreground">
-                    <th className="px-6 py-2.5">学号</th>
-                    <th className="px-6 py-2.5">姓名</th>
-                    <th className="px-6 py-2.5">提交状态</th>
-                    <th className="px-6 py-2.5">得分</th>
-                    <th className="px-6 py-2.5">提交时间</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {students.map((s) => {
-                    const sub = subByStudent[s.id];
-                    return (
-                      <tr key={s.id} className="hover:bg-muted/20">
-                        <td className="px-6 py-2.5 num font-mono text-xs text-muted-foreground">
-                          {s.studentNo ?? "—"}
-                        </td>
-                        <td className="px-6 py-2.5 font-medium text-foreground">{s.name}</td>
-                        <td className="px-6 py-2.5">
-                          {sub ? (
-                            <Badge variant={STATUS_LABELS[sub.status].tone}>
-                              {STATUS_LABELS[sub.status].label}
-                            </Badge>
-                          ) : (
-                            <span className="text-xs text-subtle-foreground">未提交</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-2.5 num">
-                          {sub?.finalScore != null ? (
-                            <span
-                              className={
-                                sub.finalScore >= totalScore * 0.8
-                                  ? "text-success"
-                                  : sub.finalScore >= totalScore * 0.6
-                                    ? "text-foreground"
-                                    : "text-danger"
-                              }
-                            >
-                              {sub.finalScore} / {totalScore}
-                            </span>
-                          ) : (
-                            <span className="text-subtle-foreground">—</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-2.5 text-xs text-muted-foreground num">
-                          {sub?.submittedAt
-                            ? relativeTime(sub.submittedAt)
-                            : "—"}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/30 text-left text-xs font-medium text-muted-foreground">
+                      <th className="px-3 py-2.5 whitespace-nowrap">学号</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">姓名</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">状态</th>
+                      {problems.map((p) => (
+                        <th
+                          key={p.problemId}
+                          className="px-2 py-2.5 text-center whitespace-nowrap"
+                          title={`第${p.order + 1}题 · ${p.title}（满分 ${p.score}）`}
+                        >
+                          <div className="text-xs">第{p.order + 1}题</div>
+                          <div className="num text-[11px] text-subtle-foreground">
+                            /{p.score}
+                          </div>
+                        </th>
+                      ))}
+                      <th className="px-3 py-2.5 text-right whitespace-nowrap">总分</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">提交时间</th>
+                      <th className="px-3 py-2.5 whitespace-nowrap">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {students.map((s) => {
+                      const sub = subByStudent[s.id];
+                      const late =
+                        sub?.submittedAt && sub.submittedAt > dueAt;
+                      return (
+                        <tr key={s.id} className="hover:bg-muted/20">
+                          <td className="px-3 py-2.5 num font-mono text-xs text-muted-foreground whitespace-nowrap">
+                            {s.studentNo ?? "—"}
+                          </td>
+                          <td className="px-3 py-2.5 font-medium text-foreground whitespace-nowrap">
+                            {s.name}
+                            {late && (
+                              <span className="ml-1.5 inline-flex items-center rounded bg-warning-subtle px-1.5 py-0.5 text-[10px] font-medium text-warning">
+                                迟
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5 whitespace-nowrap">
+                            {sub ? (
+                              <Badge variant={STATUS_LABELS[sub.status].tone}>
+                                {STATUS_LABELS[sub.status].label}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-subtle-foreground">未提交</span>
+                            )}
+                          </td>
+                          {problems.map((p) => {
+                            const cell = sub
+                              ? scoreByAttemptProblem[`${sub.id}:${p.problemId}`]
+                              : undefined;
+                            const score = cell?.score;
+                            const tone = scoreTone(score, p.score);
+                            return (
+                              <td
+                                key={p.problemId}
+                                className="px-2 py-2.5 text-center num text-xs whitespace-nowrap"
+                              >
+                                {score != null ? (
+                                  <span
+                                    className={
+                                      tone === "success"
+                                        ? "text-success font-medium"
+                                        : tone === "warning"
+                                          ? "text-warning"
+                                          : tone === "danger"
+                                            ? "text-danger"
+                                            : "text-foreground"
+                                    }
+                                  >
+                                    {score}
+                                  </span>
+                                ) : (
+                                  <span className="text-subtle-foreground">—</span>
+                                )}
+                              </td>
+                            );
+                          })}
+                          <td className="px-3 py-2.5 num text-right whitespace-nowrap">
+                            {sub?.finalScore != null ? (
+                              <span
+                                className={
+                                  sub.finalScore >= totalScore * 0.8
+                                    ? "font-medium text-success"
+                                    : sub.finalScore >= totalScore * 0.6
+                                      ? "text-foreground"
+                                      : "text-danger"
+                                }
+                              >
+                                {sub.finalScore}
+                                <span className="ml-0.5 text-xs text-muted-foreground">
+                                  / {totalScore}
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-subtle-foreground">—</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5 text-xs text-muted-foreground num whitespace-nowrap">
+                            {sub?.submittedAt
+                              ? relativeTime(sub.submittedAt)
+                              : "—"}
+                          </td>
+                          <td className="px-3 py-2.5 whitespace-nowrap">
+                            {sub ? (
+                              <Link
+                                href={`/t/assignments/${assignmentId}/grade`}
+                                className="text-xs text-primary hover:underline"
+                              >
+                                批改
+                              </Link>
+                            ) : (
+                              <span className="text-subtle-foreground">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
         );
       })}
     </div>
   );
+}
+
+/** 单题得分色阶：≥0.8 绿 / ≥0.5 普通 / <0.5 黄 / 满分警告红（0 分或极端低） */
+function scoreTone(score: number | undefined, fullScore: number): "success" | "warning" | "danger" | "muted" {
+  if (score == null) return "muted";
+  if (fullScore <= 0) return "muted";
+  const rate = score / fullScore;
+  if (rate >= 0.8) return "success";
+  if (rate >= 0.5) return "muted";
+  if (rate >= 0.25) return "warning";
+  return "danger";
 }
