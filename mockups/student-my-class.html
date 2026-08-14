@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>我的班级 · 高一(3)班 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --pink:#EC4899; --pink-subtle:#FCE7F3;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0; --border-strong:#CBD5E1;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171; --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --pink:#F472B6; --pink-subtle:#4A1232;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548; --border-strong:#3D4A60;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--surface);color:var(--fg);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--primary),#38BDF8);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--accent-subtle);color:var(--accent);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto;min-height:0}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);margin-bottom:2px;transition:background .18s,color .18s}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;
+         background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,#0EA5E9,#38BDF8);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:14px;
+        padding:0 24px;border-bottom:1px solid var(--border);background:var(--bg)}
+.searchbox{flex:1;max-width:480px;position:relative}
+.searchbox input{width:100%;height:36px;padding:0 14px 0 38px;border-radius:8px;border:1px solid var(--border);
+                 background:var(--surface);font-size:13.5px;color:var(--fg);outline:none;transition:.18s}
+.searchbox input:focus{border-color:var(--primary);background:var(--card)}
+.searchbox svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--subtle)}
+.top-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;
+          display:flex;transition:background .18s,color .18s;position:relative}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+.icon-btn .dot{position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--danger);border:2px solid var(--bg)}
+.icon-btn{position:relative}
+.icon-btn .dot{position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--danger);border:2px solid var(--bg)}
+
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;
+       font-size:11px;font-weight:500;white-space:nowrap}
+.badge i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.b-w{background:var(--warning-subtle);color:var(--warning)}
+.b-d{background:var(--danger-subtle);color:var(--danger)}
+.b-p{background:var(--primary-subtle);color:var(--primary)}
+.b-s{background:var(--success-subtle);color:var(--success)}
+.b-a{background:var(--accent-subtle);color:var(--accent)}
+.b-n{background:var(--purple-subtle);color:var(--purple)}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:13px;font-weight:500;transition:background .18s}
+.btn:hover{background:var(--primary-hover)}
+.btn.ghost{background:var(--card);color:var(--muted);border:1px solid var(--border)}
+
+.content{padding:28px 32px 48px;max-width:1320px;width:100%;margin:0 auto}
+
+/* 班级头 */
+.cls-hero{padding:24px 28px;border-radius:16px;background:linear-gradient(135deg,#0EA5E9,#38BDF8);color:#fff;
+          position:relative;overflow:hidden;margin-bottom:18px}
+.cls-hero::after{content:'';position:absolute;right:-30px;top:-30px;width:180px;height:180px;border-radius:50%;
+                 background:rgba(255,255,255,.08)}
+.cls-hero::before{content:'';position:absolute;right:80px;bottom:-40px;width:120px;height:120px;border-radius:50%;
+                  background:rgba(255,255,255,.06)}
+.cls-hero-top{display:flex;align-items:center;gap:14px;margin-bottom:14px;position:relative;z-index:1}
+.cls-hero-top .ic{width:54px;height:54px;border-radius:13px;background:rgba(255,255,255,.18);
+                  display:flex;align-items:center;justify-content:center;font-size:24px;backdrop-filter:blur(8px)}
+.cls-hero-top h1{font-size:26px;font-weight:700;letter-spacing:-.02em}
+.cls-hero-top .sub{font-size:13px;opacity:.85;margin-top:3px}
+.cls-hero-stats{display:flex;gap:32px;position:relative;z-index:1}
+.cls-hero-stats .col{display:flex;flex-direction:column;gap:2px}
+.cls-hero-stats .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.cls-hero-stats .lb{font-size:11.5px;opacity:.8}
+
+/* 主区 */
+.twocol{display:grid;grid-template-columns:1fr 360px;gap:20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px}
+.card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-h h2{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.card-h .more{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:4px}
+.card-h .more:hover{color:var(--primary)}
+
+/* 班级同学列表 */
+.students{display:flex;flex-direction:column}
+.students .t-head{display:grid;grid-template-columns:80px 1fr 140px 90px 90px 60px;
+                  padding:8px 12px;font-size:11.5px;font-weight:600;color:var(--muted);
+                  background:var(--surface);border-radius:8px;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.students .t-head .right{text-align:right}
+.students .t-row{display:grid;grid-template-columns:80px 1fr 140px 90px 90px 60px;
+                 align-items:center;padding:10px 12px;border-radius:8px;transition:.15s;font-size:13px}
+.students .t-row:hover{background:var(--surface)}
+.students .t-row:not(:last-child){border-bottom:1px solid var(--border)}
+.students .t-row.me{background:var(--primary-subtle)}
+.students .t-row.me:hover{background:var(--primary-subtle)}
+.students .stu-id{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;color:var(--subtle);font-variant-numeric:tabular-nums}
+.students .stu-name{display:flex;align-items:center;gap:10px;min-width:0}
+.students .stu-name .av{width:32px;height:32px;border-radius:50%;color:#fff;font-size:12px;font-weight:600;
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.students .stu-name .av.me{outline:2px solid var(--primary);outline-offset:2px}
+.students .stu-name .nm{font-weight:500;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.students .stu-name .me-badge{background:var(--primary);color:#fff;font-size:9px;font-weight:600;
+                              padding:1px 5px;border-radius:3px;flex-shrink:0}
+.students .stu-name .rank{font-size:10.5px;color:var(--warning);font-weight:600;flex-shrink:0}
+.students .att{display:flex;flex-direction:column;gap:4px}
+.students .att .top{display:flex;justify-content:space-between;font-size:12px;font-variant-numeric:tabular-nums}
+.students .att .top .v{font-weight:600;color:var(--fg)}
+.students .att .top .v.hi{color:var(--success)}
+.students .att .top .v.lo{color:var(--danger)}
+.students .att .bar{height:5px;border-radius:999px;background:var(--surface);overflow:hidden}
+.students .att .bar span{display:block;height:100%;border-radius:999px;background:var(--success)}
+.students .att .bar span.mid{background:var(--warning)}
+.students .att .bar span.lo{background:var(--danger)}
+.students .num-cell{font-variant-numeric:tabular-nums;font-weight:600;color:var(--fg);text-align:right}
+.students .num-cell .lb{display:block;font-size:10.5px;font-weight:400;color:var(--muted);margin-top:1px}
+.students .row-act{display:flex;gap:6px;justify-content:flex-end}
+.students .row-act .ib{padding:5px;border-radius:6px;color:var(--muted);transition:.15s;display:flex;font-size:14px}
+.students .row-act .ib:hover{background:var(--primary-subtle);color:var(--primary)}
+
+/* 公告 */
+.annlist{display:flex;flex-direction:column;gap:10px}
+.ann{padding:12px 14px;border-radius:10px;background:var(--surface);border-left:3px solid var(--primary)}
+.ann.urgent{border-left-color:var(--danger);background:var(--danger-subtle)}
+.ann.info{border-left-color:var(--accent)}
+.ann .h{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.ann .h svg{font-size:14px;color:var(--primary)}
+.ann.urgent .h svg{color:var(--danger)}
+.ann.info .h svg{color:var(--accent)}
+.ann .h .badge{margin-left:auto}
+.ann .p{margin-top:6px;font-size:12.5px;color:var(--muted);line-height:1.6}
+.ann .ft{margin-top:8px;font-size:11px;color:var(--subtle);display:flex;justify-content:space-between}
+
+/* 近期考试 */
+.test-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px dashed var(--border)}
+.test-row:last-child{border-bottom:none}
+.test-ic{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.test-ic.ex{background:var(--purple-subtle);color:var(--purple)}
+.test-info{flex:1;min-width:0}
+.test-info .t{font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.test-info .s{font-size:11.5px;color:var(--muted);margin-top:2px}
+.test-score{font-variant-numeric:tabular-nums;font-weight:600;font-size:15px;color:var(--fg)}
+.test-score .of{font-size:11px;color:var(--muted);font-weight:400;margin-left:2px}
+.test-score .rank{font-size:11px;color:var(--muted);font-weight:400;margin-left:6px}
+
+@media (max-width:1100px){
+  .twocol{grid-template-columns:1fr}
+  .roster{grid-template-columns:repeat(6,1fr)}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="i-dash" viewBox="0 0 24 24"><path d="M3 12L12 3l9 9"/><path d="M5 10v10a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V10"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+<symbol id="i-grade" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13l2 2 4-4"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
+<symbol id="i-hist" viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 106 5.3L3 8"/><path d="M12 7v5l4 2"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-5"/></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 002.5 2.5z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+<symbol id="i-alarm" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3L2 6M19 3l3 3"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7c.6.5 1 1.3 1 2v.3h6v-.3c0-.7.4-1.5 1-2A7 7 0 0012 2z"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4a2 2 0 01-2-2V5a2 2 0 012-2h2M18 9h2a2 2 0 002-2V5a2 2 0 00-2-2h-2M6 3h12v8a6 6 0 11-12 0V3zM9 21h6M12 17v4"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 22V4a2 2 0 012-2h11l-3 5 3 5H6"/></symbol>
+</defs>
+</svg>
+
+<div class="app">
+
+<aside class="side">
+  <div class="logo">
+      <div class="logo-mark">Py</div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">学生端</span>
+    </div>
+  <nav class="nav">
+    <a class="nav-item" href="student-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+    <a class="nav-item active" href="student-my-class.html"><svg><use href="#i-class"/></svg>我的班级</a>
+    <a class="nav-item" href="student-courses.html"><svg><use href="#i-book"/></svg>我的课程</a>
+    <a class="nav-item" href="student-assignments.html"><svg><use href="#i-file"/></svg>作业<span class="nav-count">2</span></a>
+    <a class="nav-item" href="student-problems.html"><svg><use href="#i-code"/></svg>题库练习</a>
+    <a class="nav-item" href="student-submissions.html"><svg><use href="#i-hist"/></svg>提交记录</a>
+    <a class="nav-item" href="student-exams.html"><svg><use href="#i-clip"/></svg>考试</a>
+      <a class="nav-item" href="student-grades.html"><svg><use href="#i-grade"/></svg>成绩单</a>
+
+  </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈思雨</div>
+        <div class="s">高一(3)班</div>
+      </div>
+    </div>
+  
+</aside>
+
+<main class="main">
+
+  <header class="topbar">
+    <div class="searchbox">
+      <svg><use href="#i-search"/></svg>
+      <input placeholder="搜索同学姓名、班级动态..." />
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" title="通知"><svg><use href="#i-bell"/></svg><span class="dot"></span></button>
+      <button class="icon-btn" title="主题" onclick="tt()"><svg><use href="#i-sun" id="use-theme"/></svg></button></div>
+  </header>
+
+  <div class="content">
+
+    <!-- hero -->
+    <div class="cls-hero">
+      <div class="cls-hero-top">
+        <div class="ic"><svg><use href="#i-class"/></svg></div>
+        <div>
+          <h1>2024 级 高一(3)班</h1>
+        </div>
+      </div>
+    </div>
+
+    <!-- 两栏 -->
+    <div class="twocol">
+
+      <!-- 左 -->
+      <section style="display:flex;flex-direction:column;gap:18px">
+
+        <!-- 班级同学列表 -->
+        <div class="card">
+          <div class="card-h">
+            <h2>班级同学 · 45 人</h2>
+            <div style="display:flex;align-items:center;gap:8px">
+              <select style="height:28px;padding:0 24px 0 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-size:12px;color:var(--fg);outline:none;cursor:pointer;font-family:inherit">
+                <option>按出勤率 ↓</option>
+                <option>按通过题数 ↓</option>
+                <option>按提交次数 ↓</option>
+                <option>按学号</option>
+              </select>
+              <a class="more" href="#">导出名单 <svg><use href="#i-chev"/></svg></a>
+            </div>
+          </div>
+
+          <div class="students">
+            <div class="t-head">
+              <div>学号</div>
+              <div>姓名</div>
+              <div>出勤率</div>
+              <div class="right">通过题数</div>
+              <div class="right">提交次数</div>
+              <div class="right">操作</div>
+            </div>
+
+            <div class="t-row">
+              <div class="stu-id">S0007</div>
+              <div class="stu-name">
+                <div class="av" style="background:linear-gradient(135deg,#F59E0B,#FBBF24)">李</div>
+                <div class="nm">李宇航</div>
+                <span class="rank">★ No.1</span>
+              </div>
+              <div class="att">
+                <div class="top"><span>本月</span><span class="v hi">100%</span></div>
+                <div class="bar"><span style="width:100%"></span></div>
+              </div>
+              <div class="num-cell">52<span class="lb">/ 62 题</span></div>
+              <div class="num-cell">186</div>
+              <div class="row-act"><a class="ib" title="查看"><svg><use href="#i-search"/></svg></a></div>
+            </div>
+
+            <div class="t-row me">
+              <div class="stu-id">S0001</div>
+              <div class="stu-name">
+                <div class="av me" style="background:linear-gradient(135deg,#0EA5E9,#38BDF8)">陈</div>
+                <div class="nm">陈思雨</div>
+                <span class="me-badge">我</span>
+                <span class="rank">★ No.3</span>
+              </div>
+              <div class="att">
+                <div class="top"><span>本月</span><span class="v hi">98%</span></div>
+                <div class="bar"><span style="width:98%"></span></div>
+              </div>
+              <div class="num-cell">48<span class="lb">/ 62 题</span></div>
+              <div class="num-cell">152</div>
+              <div class="row-act"><a class="ib" title="查看"><svg><use href="#i-search"/></svg></a></div>
+            </div>
+
+            <div class="t-row">
+              <div class="stu-id">S0008</div>
+              <div class="stu-name">
+                <div class="av" style="background:linear-gradient(135deg,#EC4899,#F472B6)">王</div>
+                <div class="nm">王诗琪</div>
+                <span class="rank">★ No.2</span>
+              </div>
+              <div class="att">
+                <div class="top"><span>本月</span><span class="v hi">96%</span></div>
+                <div class="bar"><span style="width:96%"></span></div>
+              </div>
+              <div class="num-cell">50<span class="lb">/ 62 题</span></div>
+              <div class="num-cell">168</div>
+              <div class="row-act"><a class="ib" title="查看"><svg><use href="#i-search"/></svg></a></div>
+            </div>
+
+            <div class="t-row">
+              <div class="stu-id">S0012</div>
+              <div class="stu-name">
+                <div class="av" style="background:linear-gradient(135deg,#FB923C,#FDBA74)">张</div>
+                <div class="nm">张子轩</div>
+              </div>
+              <div class="att">
+                <div class="top"><span>本月</span><span class="v hi">95%</span></div>
+                <div class="bar"><span style="width:95%"></span></div>
+              </div>
+              <div class="num-cell">44<span class="lb">/ 62 题</span></div>
+              <div class="num-cell">134</div>
+              <div class="row-act"><a class="ib" title="查看"><svg><use href="#i-search"/></svg></a></div>
+            </div>
+
+            <div class="t-row">
+              <div class="stu-id">S0019</div>
+              <div class="stu-name">
+                <div class="av" style="background:linear-gradient(135deg,#8B5CF6,#A78BFA)">刘</div>
+                <div class="nm">刘思源</div>
+              </div>
+              <div class="att">
+                <div class="top"><span>本月</span><span class="v hi">94%</span></div>
+                <div class="bar"><span style="width:94%"></span></div>
+              </div>
+              <div class="num-cell">42<span class="lb">/ 62 题</span></div>
+              <div class="num-cell">128</div>
+              <div class="row-act"><a class="ib" title="查看"><svg><use href="#i-search"/></svg></a></div>
+            </div>
+
+            <div class="t-row">
+              <div class="stu-id">S0023</div>
+              <div class="stu-name">
+                <div class="av" style="background:linear-gradient(135deg,#10B981,#34D399)">赵</div>
+                <div class="nm">赵雨萱</div>
+                <span class="rank">★ No.4</span>
+              </div>
+              <div class="att">
+                <div class="top"><span>本月</span><span class="v hi">92%</span></div>
+                <div class="bar"><span style="width:92%"></span></div>
+              </div>
+              <div class="num-cell">46<span class="lb">/ 62 题</span></div>
+              <div class="num-cell">142</div>
+              <div class="row-act"><a class="ib" title="查看"><svg><use href="#i-search"/></svg></a></div>
+            </div>
+
+            <div class="t-row">
+              <div class="stu-id">S0011</div>
+              <div class="stu-name">
+                <div class="av" style="background:linear-gradient(135deg,#F59E0B,#FBBF24)">孙</div>
+                <div class="nm">孙启明</div>
+              </div>
+              <div class="att">
+                <div class="top"><span>本月</span><span class="v hi">90%</span></div>
+                <div class="bar"><span style="width:90%"></span></div>
+              </div>
+              <div class="num-cell">40<span class="lb">/ 62 题</span></div>
+              <div class="num-cell">118</div>
+              <div class="row-act"><a class="ib" title="查看"><svg><use href="#i-search"/></svg></a></div>
+            </div>
+
+            <div class="t-row">
+              <div class="stu-id">S0028</div>
+              <div class="stu-name">
+                <div class="av" style="background:linear-gradient(135deg,#EF4444,#F87171)">周</div>
+                <div class="nm">周雅婷</div>
+              </div>
+              <div class="att">
+                <div class="top"><span>本月</span><span class="v">88%</span></div>
+                <div class="bar"><span style="width:88%"></span></div>
+              </div>
+              <div class="num-cell">38<span class="lb">/ 62 题</span></div>
+              <div class="num-cell">112</div>
+              <div class="row-act"><a class="ib" title="查看"><svg><use href="#i-search"/></svg></a></div>
+            </div>
+
+            <div class="t-row">
+              <div class="stu-id">S0031</div>
+              <div class="stu-name">
+                <div class="av" style="background:linear-gradient(135deg,#8B5CF6,#A78BFA)">林</div>
+                <div class="nm">林逸涵</div>
+              </div>
+              <div class="att">
+                <div class="top"><span>本月</span><span class="v">85%</span></div>
+                <div class="bar"><span style="width:85%"></span></div>
+              </div>
+              <div class="num-cell">36<span class="lb">/ 62 题</span></div>
+              <div class="num-cell">104</div>
+              <div class="row-act"><a class="ib" title="查看"><svg><use href="#i-search"/></svg></a></div>
+            </div>
+
+            <div class="t-row">
+              <div class="stu-id">S0034</div>
+              <div class="stu-name">
+                <div class="av" style="background:linear-gradient(135deg,#14B8A6,#2DD4BF)">徐</div>
+                <div class="nm">徐梦琪</div>
+              </div>
+              <div class="att">
+                <div class="top"><span>本月</span><span class="v">82%</span></div>
+                <div class="bar"><span style="width:82%"></span></div>
+              </div>
+              <div class="num-cell">32<span class="lb">/ 62 题</span></div>
+              <div class="num-cell">98</div>
+              <div class="row-act"><a class="ib" title="查看"><svg><use href="#i-search"/></svg></a></div>
+            </div>
+
+            <div class="t-row">
+              <div class="stu-id">S0037</div>
+              <div class="stu-name">
+                <div class="av" style="background:linear-gradient(135deg,#3B82F6,#60A5FA)">杨</div>
+                <div class="nm">杨晨阳</div>
+              </div>
+              <div class="att">
+                <div class="top"><span>本月</span><span class="v">80%</span></div>
+                <div class="bar"><span style="width:80%"></span></div>
+              </div>
+              <div class="num-cell">28<span class="lb">/ 62 题</span></div>
+              <div class="num-cell">86</div>
+              <div class="row-act"><a class="ib" title="查看"><svg><use href="#i-search"/></svg></a></div>
+            </div>
+
+            <div class="t-row">
+              <div class="stu-id">S0041</div>
+              <div class="stu-name">
+                <div class="av" style="background:linear-gradient(135deg,#A855F7,#C084FC)">何</div>
+                <div class="nm">何梓涵</div>
+              </div>
+              <div class="att">
+                <div class="top"><span>本月</span><span class="v">78%</span></div>
+                <div class="bar"><span style="width:78%"></span></div>
+              </div>
+              <div class="num-cell">26<span class="lb">/ 62 题</span></div>
+              <div class="num-cell">82</div>
+              <div class="row-act"><a class="ib" title="查看"><svg><use href="#i-search"/></svg></a></div>
+            </div>
+
+            <div class="t-row">
+              <div class="stu-id">S0043</div>
+              <div class="stu-name">
+                <div class="av" style="background:linear-gradient(135deg,#EC4899,#F472B6)">黄</div>
+                <div class="nm">黄睿婕</div>
+              </div>
+              <div class="att">
+                <div class="top"><span>本月</span><span class="v mid">72%</span></div>
+                <div class="bar"><span class="mid" style="width:72%"></span></div>
+              </div>
+              <div class="num-cell">22<span class="lb">/ 62 题</span></div>
+              <div class="num-cell">74</div>
+              <div class="row-act"><a class="ib" title="查看"><svg><use href="#i-search"/></svg></a></div>
+            </div>
+
+            <div class="t-row">
+              <div class="stu-id">S0044</div>
+              <div class="stu-name">
+                <div class="av" style="background:linear-gradient(135deg,#0EA5E9,#38BDF8)">马</div>
+                <div class="nm">马思远</div>
+              </div>
+              <div class="att">
+                <div class="top"><span>本月</span><span class="v mid">68%</span></div>
+                <div class="bar"><span class="mid" style="width:68%"></span></div>
+              </div>
+              <div class="num-cell">20<span class="lb">/ 62 题</span></div>
+              <div class="num-cell">68</div>
+              <div class="row-act"><a class="ib" title="查看"><svg><use href="#i-search"/></svg></a></div>
+            </div>
+
+            <div class="t-row">
+              <div class="stu-id">S0046</div>
+              <div class="stu-name">
+                <div class="av" style="background:linear-gradient(135deg,#FB923C,#FDBA74)">罗</div>
+                <div class="nm">罗子琪</div>
+              </div>
+              <div class="att">
+                <div class="top"><span>本月</span><span class="v mid">65%</span></div>
+                <div class="bar"><span class="mid" style="width:65%"></span></div>
+              </div>
+              <div class="num-cell">18<span class="lb">/ 62 题</span></div>
+              <div class="num-cell">62</div>
+              <div class="row-act"><a class="ib" title="查看"><svg><use href="#i-search"/></svg></a></div>
+            </div>
+
+            <div class="t-row">
+              <div class="stu-id">S0048</div>
+              <div class="stu-name">
+                <div class="av" style="background:linear-gradient(135deg,#10B981,#34D399)">宋</div>
+                <div class="nm">宋佳怡</div>
+              </div>
+              <div class="att">
+                <div class="top"><span>本月</span><span class="v mid">62%</span></div>
+                <div class="bar"><span class="mid" style="width:62%"></span></div>
+              </div>
+              <div class="num-cell">14<span class="lb">/ 62 题</span></div>
+              <div class="num-cell">54</div>
+              <div class="row-act"><a class="ib" title="查看"><svg><use href="#i-search"/></svg></a></div>
+            </div>
+
+          </div>
+
+          <div style="display:flex;justify-content:center;padding:14px 0 0">
+            <button class="btn ghost" style="font-size:12px;padding:6px 14px">展开剩余 30 人（按出勤率排序）</button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- 右 -->
+      <aside style="display:flex;flex-direction:column;gap:18px">
+
+        <!-- 班级公告 -->
+        <div class="card">
+          <div class="card-h"><h2>班级公告</h2></div>
+          <div class="annlist">
+
+            <div class="ann urgent">
+              <div class="h">
+                <svg><use href="#i-alarm"/></svg>
+                期中模拟考试通知
+                <span class="badge b-d">紧急</span>
+              </div>
+              <div class="p">本周五（8/15）下午 14:00-16:00 进行期中模拟，请提前 15 分钟进入考场。考试范围：第 1-5 章。</div>
+              <div class="ft"><span>陈老师</span><span>2 小时前</span></div>
+            </div>
+
+            <div class="ann">
+              <div class="h">
+                <svg><use href="#i-pin"/></svg>
+                校运动会报名
+                <span class="badge b-p">活动</span>
+              </div>
+              <div class="p">第 18 届校运动会报名开始，请有意参加的同学本周日 24:00 前扫码登记。</div>
+              <div class="ft"><span>陈老师</span><span>昨天 18:30</span></div>
+            </div>
+
+            <div class="ann info">
+              <div class="h">
+                <svg><use href="#i-bulb"/></svg>
+                班级平均分突破新高
+                <span class="badge b-a">喜讯</span>
+              </div>
+              <div class="p">上周末编程马拉松，3 班平均分首次突破 90，达到 92.6，超过 4 班 2.4 分。</div>
+              <div class="ft"><span>王建国 老师</span><span>2 天前</span></div>
+            </div>
+
+            <div class="ann">
+              <div class="h">
+                <svg><use href="#i-trophy"/></svg>
+                表彰：本期优秀学员
+                <span class="badge b-s">表彰</span>
+              </div>
+              <div class="p">本月综合评分前 3：李宇航、陈思雨、王诗琪，每人 +20 积分。</div>
+              <div class="ft"><span>陈老师</span><span>3 天前</span></div>
+            </div>
+
+          </div>
+        </div>
+
+      </aside>
+
+  </div>
+
+</main>
+
+</div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+function tt(){
+  var d=document.documentElement.classList.toggle('dark');
+  document.getElementById('use-theme').setAttribute('href', d?'#i-moon':'#i-sun');
+  localStorage.setItem('theme', d?'dark':'light');
+}
+if(localStorage.getItem('theme')==='dark'){
+  document.documentElement.classList.add('dark');
+  document.getElementById('use-theme').setAttribute('href','#i-moon');
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A0024 期中考试 - Python 数据处理 · 编辑 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+  /* 题型色 */
+  --qt-choice:#0EA5E9;   --qt-choice-bg:#E0F2FE;
+  --qt-blank:#F59E0B;    --qt-blank-bg:#FEF3C7;
+  --qt-essay:#8B5CF6;    --qt-essay-bg:#EDE9FE;
+  --qt-code:#10B981;     --qt-code-bg:#D1FAE5;
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --primary-muted:#0C4A6E;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171; --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+  --qt-choice:#38BDF8; --qt-choice-bg:#0C334A;
+  --qt-blank:#FBBF24;  --qt-blank-bg:#422D06;
+  --qt-essay:#A78BFA;  --qt-essay-bg:#2A1B4D;
+  --qt-code:#34D399;   --qt-code-bg:#063B2A;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--primary);
+           display:flex;align-items:center;justify-content:center;color:var(--primary-fg);font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--accent-subtle);color:var(--accent);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-label+.nav-label,.nav-item+.nav-label{padding-top:24px}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--warning),var(--danger));
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumb b{color:var(--fg);font-weight:500}
+.crumb .aid{font-family:"SF Mono",Menlo,Consolas,monospace;color:var(--muted);font-size:12.5px;
+            background:var(--surface);padding:2px 7px;border-radius:5px;margin:0 4px}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:background .18s,color .18s}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost svg{font-size:14px}
+
+/* 编辑头 */
+.edit-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+           padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.edit-head .id-block{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.edit-head .aid{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;
+                padding:4px 10px;border-radius:6px;background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+.edit-head .st{font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:999px;
+               background:var(--success-subtle);color:var(--success)}
+.edit-head .st.draft{background:var(--warning-subtle);color:var(--warning)}
+.edit-head h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-top:6px}
+.edit-head .meta{margin-top:6px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.edit-head .meta b{color:var(--fg);font-weight:500}
+.edit-head .acts{display:flex;gap:8px;flex-wrap:wrap}
+
+.editor-grid{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:flex-start}
+@media(max-width:1100px){ .editor-grid{grid-template-columns:1fr} }
+
+.ed-card{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.ed-card-hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);
+            background:var(--surface);font-size:13px;font-weight:600;letter-spacing:.02em}
+html.dark .ed-card-hd{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.ed-card-hd svg{font-size:15px;color:var(--muted)}
+.ed-card-hd .hint{margin-left:auto;font-size:11.5px;font-weight:400;color:var(--muted)}
+.ed-card-bd{padding:18px}
+.ed-card-ft{padding:12px 18px;border-top:1px solid var(--border);background:var(--surface);
+            font-size:12px;color:var(--muted);line-height:1.6}
+html.dark .ed-card-ft{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+
+.fm{display:flex;flex-direction:column;gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12.5px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:4px}
+.field-hint{font-size:11.5px;color:var(--subtle);line-height:1.5}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+input[type=text],input[type=number],input[type=date],input[type=time],input[type=datetime-local],
+select,textarea{padding:9px 12px;border:1px solid var(--border);border-radius:8px;
+                background:var(--surface);color:var(--fg);font-size:14px;outline:none;transition:.18s;
+                font-family:inherit;resize:vertical;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);background:var(--card)}
+textarea{min-height:80px;line-height:1.6}
+select{-webkit-appearance:none;appearance:none;
+       background:var(--surface) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") no-repeat right 10px center;padding-right:32px}
+
+/* segmented */
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;padding:3px;background:var(--surface);gap:2px}
+.seg button{padding:6px 14px;border-radius:5px;font-size:13px;color:var(--muted);font-weight:500;transition:.18s}
+.seg button:hover{color:var(--fg)}
+.seg button.on{background:var(--card);color:var(--primary);box-shadow:var(--shadow);font-weight:600}
+.seg.compact button{padding:5px 10px;font-size:12px}
+
+/* 班级多选 */
+.class-list{display:flex;flex-direction:column;gap:6px}
+.class-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;
+           background:var(--surface);font-size:13px;cursor:pointer;transition:.18s}
+.class-row:hover{background:var(--card)}
+.class-row input{accent-color:var(--primary);cursor:pointer}
+.class-row .name{font-weight:500}
+.class-row .meta{margin-left:auto;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* 题目配置 */
+.qc-meta{display:flex;align-items:center;gap:14px;font-size:12.5px;color:var(--muted);
+         margin-bottom:14px;flex-wrap:wrap;padding:10px 14px;background:var(--surface);border-radius:8px}
+.qc-meta b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+.qc-meta .stats{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.qc-meta .qt-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.qc-meta .qt-chip .d{width:5px;height:5px;border-radius:50%;background:currentColor}
+.qc-meta .qt-chip.q-choice{background:var(--qt-choice-bg);color:var(--qt-choice)}
+.qc-meta .qt-chip.q-blank{background:var(--qt-blank-bg);color:var(--qt-blank)}
+.qc-meta .qt-chip.q-essay{background:var(--qt-essay-bg);color:var(--qt-essay)}
+.qc-meta .qt-chip.q-code{background:var(--qt-code-bg);color:var(--qt-code)}
+
+/* 题卡 */
+.qcard{border:1px solid var(--border);border-radius:10px;background:var(--card);margin-bottom:12px;overflow:hidden;transition:.18s}
+.qcard:hover{border-color:color-mix(in srgb,var(--primary) 30%,var(--border))}
+.qcard-hd{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);
+          border-bottom:1px solid transparent;transition:.18s}
+html.dark .qcard-hd{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.qcard.open .qcard-hd{border-bottom-color:var(--border)}
+.qcard-hd .q-num{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12px;color:var(--muted);
+                 padding:3px 7px;background:var(--card);border:1px solid var(--border);border-radius:4px;font-weight:600;min-width:36px;text-align:center}
+.qcard-hd .q-type{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:5px;font-size:11.5px;font-weight:600}
+.qcard-hd .q-type .d{width:5px;height:5px;border-radius:50%;background:currentColor}
+.qcard-hd .q-type.q-choice{background:var(--qt-choice-bg);color:var(--qt-choice)}
+.qcard-hd .q-type.q-blank{background:var(--qt-blank-bg);color:var(--qt-blank)}
+.qcard-hd .q-type.q-essay{background:var(--qt-essay-bg);color:var(--qt-essay)}
+.qcard-hd .q-type.q-code{background:var(--qt-code-bg);color:var(--qt-code)}
+.qcard-hd .q-score{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);margin-left:6px}
+.qcard-hd .q-score input{width:56px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;
+                        background:var(--card);color:var(--fg);font-size:12px;text-align:center;font-variant-numeric:tabular-nums}
+.qcard-hd .q-locked{font-size:10.5px;padding:2px 7px;border-radius:4px;background:var(--surface);
+                    color:var(--subtle);border:1px dashed var(--border);cursor:help}
+.qcard-hd .ops{margin-left:auto;display:flex;gap:3px}
+.qcard-hd .ops button{width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;
+                      color:var(--subtle);transition:.18s;font-size:13px}
+.qcard-hd .ops button:hover{background:var(--card);color:var(--fg)}
+.qcard-hd .ops button.danger:hover{background:var(--danger-subtle);color:var(--danger)}
+.qcard-hd .ops button.toggle svg{transition:transform .18s}
+.qcard.open .qcard-hd .ops button.toggle svg{transform:rotate(180deg)}
+
+.qcard-bd{padding:14px 16px;display:none}
+.qcard.open .qcard-bd{display:block}
+
+/* 题卡 body - 通用 */
+.q-stem{width:100%;min-height:64px;padding:10px 12px;border:1px solid var(--border);border-radius:7px;
+        background:var(--surface);color:var(--fg);font-size:13.5px;line-height:1.6;outline:none;transition:.18s;resize:vertical;font-family:inherit}
+.q-stem:focus{border-color:var(--primary);background:var(--card)}
+.q-explain{width:100%;min-height:50px;padding:9px 12px;border:1px solid var(--border);border-radius:7px;
+           background:var(--surface);color:var(--fg);font-size:13px;line-height:1.55;outline:none;transition:.18s;resize:vertical;font-family:inherit;margin-top:10px}
+.q-explain:focus{border-color:var(--primary);background:var(--card)}
+.q-row{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+
+/* 选择题 */
+.q-opts{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.q-opt{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:7px;
+       background:var(--surface);transition:.18s}
+.q-opt:hover{background:var(--card)}
+.q-opt .lbl{width:22px;height:22px;border-radius:5px;background:var(--card);border:1px solid var(--border);
+           display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--muted);flex-shrink:0}
+.q-opt.correct .lbl{background:var(--success);color:#fff;border-color:transparent}
+.q-opt.correct{background:var(--success-subtle);border-color:color-mix(in srgb,var(--success) 40%,var(--border))}
+.q-opt input[type=text]{flex:1;padding:5px 8px;border:1px solid transparent;background:transparent;font-size:13px;
+                        color:var(--fg);border-radius:4px;outline:none;transition:.18s}
+.q-opt input[type=text]:focus{border-color:var(--border);background:var(--card)}
+.q-opt .correct-btn{font-size:11px;padding:4px 8px;border-radius:5px;color:var(--subtle);font-weight:500;transition:.18s}
+.q-opt .correct-btn:hover{color:var(--success);background:var(--success-subtle)}
+.q-opt.correct .correct-btn{color:var(--success);background:var(--success-subtle);font-weight:600}
+.q-opt .del{width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;
+            color:var(--subtle);transition:.18s;opacity:0}
+.q-opt:hover .del{opacity:1}
+.q-opt .del:hover{background:var(--danger-subtle);color:var(--danger)}
+
+/* 填空题 */
+.q-blank-answer{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;
+                background:var(--surface);color:var(--fg);font-family:"SF Mono",Menlo,Consolas,monospace;
+                font-size:13px;outline:none;transition:.18s;margin-top:10px}
+.q-blank-answer:focus{border-color:var(--primary);background:var(--card)}
+
+/* 简答题 */
+.q-essay-ta{min-height:90px;padding:10px 12px;border:1px solid var(--border);border-radius:7px;
+            background:var(--surface);color:var(--fg);font-size:13.5px;line-height:1.6;outline:none;
+            transition:.18s;resize:vertical;width:100%;font-family:inherit;margin-top:10px}
+.q-essay-ta:focus{border-color:var(--primary);background:var(--card)}
+
+/* 编程题 - 题库关联 */
+.q-bank-search{position:relative;margin-top:10px}
+.q-bank-search input{padding-left:34px;padding-right:96px}
+.q-bank-search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--subtle);font-size:15px;z-index:1}
+.q-bank-search .q-bank-more{position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  font-size:11.5px;color:var(--primary);display:inline-flex;align-items:center;gap:3px;
+  padding:4px 9px;border-radius:6px;transition:.18s;z-index:2;font-weight:500}
+.q-bank-search .q-bank-more:hover{background:var(--primary-subtle)}
+.q-bank-search .q-bank-more svg{position:static;transform:none;color:inherit;font-size:12px}
+.q-bank-results{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:20;max-height:280px;overflow-y:auto;
+                background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-md);display:none}
+.q-bank-results.show{display:block}
+.q-bank-result{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;transition:.18s;border-bottom:1px solid var(--border)}
+.q-bank-result:last-child{border-bottom:none}
+.q-bank-result:hover{background:var(--surface)}
+.q-bank-result .pid{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11px;color:var(--muted);
+                    background:var(--surface);padding:2px 6px;border-radius:4px;font-weight:500}
+.q-bank-result .ti{flex:1;font-size:13px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.q-bank-result .mt{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.q-bank-result .df{display:inline-flex;gap:1px;color:var(--warning);font-size:11px}
+.q-bank-result .df .off{color:var(--border)}
+
+.q-bank-linked{display:flex;align-items:center;gap:12px;margin-top:10px;padding:12px 14px;
+               border:1px solid var(--primary-muted);border-radius:8px;background:var(--primary-subtle)}
+.q-bank-linked .pi{width:36px;height:36px;border-radius:8px;background:var(--card);color:var(--primary);
+                  display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.q-bank-linked .info{flex:1;min-width:0}
+.q-bank-linked .info h4{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.q-bank-linked .info p{font-size:11.5px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.q-bank-linked .score{display:flex;align-items:center;gap:6px;flex-shrink:0;font-size:12px;color:var(--muted)}
+.q-bank-linked .score input{width:60px;padding:5px 8px;border:1px solid var(--border);border-radius:5px;
+                            background:var(--card);color:var(--fg);font-size:13px;text-align:center;font-variant-numeric:tabular-nums;font-weight:600}
+.q-bank-linked .unlink{width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;
+                       color:var(--subtle);transition:.18s}
+.q-bank-linked .unlink:hover{background:var(--card);color:var(--danger)}
+
+/* 添加题目 popover */
+.add-q-wrap{position:relative;display:flex;justify-content:center;padding:14px 0 0;margin-top:14px;
+            border-top:1px dashed var(--border)}
+.add-q-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;
+           border:1px dashed var(--border);font-size:13px;color:var(--muted);font-weight:500;transition:.18s}
+.add-q-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--card)}
+.add-pop{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);z-index:30;
+         display:none;background:var(--card);border:1px solid var(--border);border-radius:10px;
+         box-shadow:var(--shadow-md);padding:6px;min-width:520px}
+.add-pop.show{display:flex;gap:6px}
+.add-pop button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 12px;
+               border-radius:7px;flex:1;transition:.18s;text-align:center;border:1px solid transparent}
+.add-pop button:hover{background:var(--surface);border-color:var(--border)}
+.add-pop button .pi{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.add-pop button.q-choice .pi{background:var(--qt-choice-bg);color:var(--qt-choice)}
+.add-pop button.q-blank .pi{background:var(--qt-blank-bg);color:var(--qt-blank)}
+.add-pop button.q-essay .pi{background:var(--qt-essay-bg);color:var(--qt-essay)}
+.add-pop button.q-code .pi{background:var(--qt-code-bg);color:var(--qt-code)}
+.add-pop button b{font-size:12.5px;font-weight:600;color:var(--fg);line-height:1.2}
+.add-pop button small{font-size:11px;color:var(--muted);font-weight:400;line-height:1.3}
+
+/* 规则行 */
+.rule-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.rule-row:last-child{border-bottom:none}
+.rule-row .lbl{flex:1;font-size:13px;color:var(--fg)}
+.rule-row .lbl small{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+.rule-row .ctrls{display:flex;align-items:center;gap:8px;flex-shrink:0}
+
+/* 开关 */
+.sw{position:relative;width:36px;height:20px;background:var(--border);border-radius:999px;cursor:pointer;transition:.18s;flex-shrink:0}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;
+           transition:transform .18s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.sw.on{background:var(--primary)}
+.sw.on::after{transform:translateX(16px)}
+
+/* 关联课程 / 操作记录 */
+.course-card{padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface)}
+.course-card h4{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.course-card p{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:8px}
+.course-card .cls{display:flex;flex-wrap:wrap;gap:4px}
+.course-card .cls span{padding:2px 8px;font-size:11px;background:var(--card);border:1px solid var(--border);border-radius:4px;color:var(--muted)}
+
+.op-log{padding:0;list-style:none}
+.op-log li{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--muted)}
+.op-log li:last-child{border-bottom:none}
+.op-log .dot{width:6px;height:6px;border-radius:50%;background:var(--muted);margin-top:7px;flex-shrink:0}
+.op-log .dot.ok{background:var(--success)}
+.op-log .dot.p{background:var(--primary)}
+.op-log b{color:var(--fg);font-weight:500}
+.op-log small{display:block;font-size:11px;color:var(--subtle);margin-top:1px}
+
+.ov-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.ov-stats .b{padding:10px;background:var(--surface);border-radius:8px}
+.ov-stats .nm{font-size:18px;font-weight:700;color:var(--fg);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.ov-stats .lb{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* foot-bar */
+.foot-bar{position:sticky;bottom:0;margin:0 -32px -32px;padding:14px 32px;
+          background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(8px);
+          border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;z-index:10}
+.foot-bar .info{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.foot-bar .info svg{color:var(--subtle)}
+.foot-bar .acts{display:flex;gap:8px;flex-wrap:wrap}
+.foot-bar .save-state{font-size:12px;color:var(--muted);margin-right:8px;display:inline-flex;align-items:center;gap:5px}
+.foot-bar .save-state.dirty{color:var(--warning)}
+.foot-bar .save-state .dot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.foot-bar .save-state.dirty .dot{background:var(--warning)}
+.foot-bar .save-state.saved{color:var(--success)}
+.foot-bar .save-state.saved .dot{background:var(--success)}
+
+/* empty qstate */
+.q-empty{padding:40px 20px;text-align:center;border:1px dashed var(--border);border-radius:10px;color:var(--muted)}
+.q-empty svg{font-size:28px;color:var(--subtle);margin-bottom:8px}
+.q-empty p{font-size:13px;margin-top:4px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+
+@media(max-width:900px){
+  .field-row,.field-row-3{grid-template-columns:1fr}
+  .add-pop{min-width:auto;left:0;right:0;transform:none;flex-direction:column}
+  .content{padding:24px 20px}
+  .foot-bar{margin:0 -20px -24px;padding:12px 20px}
+}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-cap" viewBox="0 0 24 24"><path d="M2 9 12 4l10 5-10 5z"/><path d="M6 11v5c0 1 3 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M3 9 12 3l9 6"/><path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"/><path d="M9 22V12h6v10"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6M16 6l6 6-6 6"/></symbol>
+<symbol id="i-bank" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11M9 8v11M15 8v11M19 8v11"/><path d="M3 22h18"/></symbol>
+<symbol id="i-grading" viewBox="0 0 24 24"><path d="M9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+<symbol id="i-monitoring" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3v6L4 19a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-10V3"/><path d="M8 3h8M7 14h10"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="m21.7 18-9-15.3a1 1 0 0 0-1.7 0L1.3 18a1 1 0 0 0 .9 1.5h18.6a1 1 0 0 0 .9-1.5z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-bell-r" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/><path d="M2 2l20 20"/></symbol>
+<symbol id="i-circ" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></symbol>
+<symbol id="i-judge" viewBox="0 0 24 24"><path d="m12 2 3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></symbol>
+<symbol id="i-type" viewBox="0 0 24 24"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-cap"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">教师端</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">教学</p>
+      <a class="nav-item" href="teacher-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <a class="nav-item"><svg><use href="#i-class"/></svg>我的班级</a>
+      <a class="nav-item" href="teacher-courses.html"><svg><use href="#i-book"/></svg>课程</a>
+      <p class="nav-label">考核</p>
+      <a class="nav-item" href="teacher-assignments.html?type=assignment"><svg><use href="#i-file"/></svg>作业<span class="nav-count">3</span></a>
+      <a class="nav-item" id="nav-problems" href="teacher-problems.html"><svg><use href="#i-code"/></svg>题库</a>
+      <a class="nav-item" href="teacher-assignments.html?type=exam"><svg><use href="#i-bank"/></svg>试卷</a>
+      <a class="nav-item"><svg><use href="#i-grading"/></svg>批改<span class="nav-count">24</span></a>
+      <p class="nav-label">分析</p>
+      <a class="nav-item"><svg><use href="#i-monitoring"/></svg>考试监控</a>
+      <a class="nav-item"><svg><use href="#i-chart"/></svg>成绩分析</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">王</div>
+      <div>
+        <div class="n">王建国</div>
+        <div class="s">信息技术 · 高一段</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb"><a href="teacher-assignments.html"><b>考核</b></a> / <span id="crumb-type">作业</span> / <span class="aid" id="crumb-aid">A0024</span></span>
+      <div class="top-actions">
+        <button class="icon-btn" onclick="tt()"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <a class="anim" href="teacher-assignments.html" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)">
+          <svg style="font-size:14px"><use href="#i-arrow-l"/></svg>返回列表
+        </a>
+
+        <div class="edit-head anim" style="animation-delay:.04s">
+          <div>
+            <div class="id-block">
+              <span class="aid">A0024</span>
+              <span class="st" id="status-pill">进行中</span>
+              <span style="font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--purple-subtle);color:var(--purple)">试卷</span>
+            </div>
+            <h1 id="prob-h1">期中考试 - Python 数据处理</h1>
+            <p class="meta">
+              <span>创建于 <b>2024-11-08</b></span>
+              <span>最近编辑 <b>2024-11-10 16:42</b></span>
+              <span>关联课程 <b>Python 编程入门</b></span>
+              <span>共 <b id="meta-qcnt">5</b> 道题 · 总分 <b id="meta-score">100</b></span>
+            </p>
+          </div>
+          <div class="acts">
+            <button class="btn-ghost" onclick="previewAsn()"><svg><use href="#i-eye"/></svg>预览</button>
+            <button class="btn-ghost" onclick="dryRun()"><svg><use href="#i-flask"/></svg>试运行</button>
+            <button class="btn-ghost" onclick="saveDraft()"><svg><use href="#i-clock"/></svg>保存草稿</button>
+            <button class="btn" onclick="publish()"><svg><use href="#i-check"/></svg>发布</button>
+          </div>
+        </div>
+
+        <div class="editor-grid">
+
+          <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+
+            <!-- 1. 基础信息 -->
+            <div class="ed-card anim" style="animation-delay:.08s">
+              <div class="ed-card-hd"><svg><use href="#i-info"/></svg>基础信息<span class="hint">学生可见</span></div>
+              <div class="ed-card-bd">
+                <div class="fm">
+                  <div class="field">
+                    <label>标题<span style="color:var(--danger);font-weight:700">*</span></label>
+                    <input type="text" id="title-input" value="期中考试 - Python 数据处理">
+                  </div>
+                  <div class="field">
+                    <label>简介</label>
+                    <textarea placeholder="本次考试的目标、范围、注意事项…">考查 Python 数据处理能力，覆盖文件 I/O、数据清洗、统计计算。满分 100 分，时长 120 分钟。</textarea>
+                  </div>
+                  <div class="field-row">
+                    <div class="field">
+                      <label>类型</label>
+                      <div class="seg" id="type-seg">
+                        <button class="on" data-type="assignment">作业</button>
+                        <button data-type="exam" class="on">试卷</button>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label>关联课程<span style="color:var(--danger);font-weight:700">*</span></label>
+                      <select>
+                        <option>Python 编程入门</option>
+                        <option>数据结构与算法</option>
+                        <option>算法竞赛入门</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label>关联班级<span class="hint" style="margin-left:6px">至少选 1 个</span></label>
+                    <div class="class-list" id="class-list">
+                      <label class="class-row"><input type="checkbox" checked>
+                        <span class="name">高一 (3) 班</span>
+                        <span class="meta">42 人</span>
+                      </label>
+                      <label class="class-row"><input type="checkbox" checked>
+                        <span class="name">高一 (4) 班</span>
+                        <span class="meta">44 人</span>
+                      </label>
+                      <label class="class-row"><input type="checkbox">
+                        <span class="name">高一 (5) 班</span>
+                        <span class="meta">40 人</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. 时间安排 -->
+            <div class="ed-card anim" style="animation-delay:.12s">
+              <div class="ed-card-hd"><svg><use href="#i-clock"/></svg>时间安排<span class="hint" id="time-hint">试卷 · 严格限时</span></div>
+              <div class="ed-card-bd">
+                <div class="field-row" id="time-row">
+                  <div class="field">
+                    <label id="open-lbl">开放时间<span style="color:var(--danger);font-weight:700">*</span></label>
+                    <input type="datetime-local" value="2024-11-15T09:00">
+                    <span class="field-hint" id="open-hint">考试开始时间，学生可入场</span>
+                  </div>
+                  <div class="field">
+                    <label id="close-lbl">截止时间<span style="color:var(--danger);font-weight:700">*</span></label>
+                    <input type="datetime-local" value="2024-11-15T23:59">
+                    <span class="field-hint" id="close-hint">超过此时长将自动交卷</span>
+                  </div>
+                </div>
+                <div id="exam-only" style="display:flex;gap:12px;margin-top:14px">
+                  <div class="field" style="flex:1">
+                    <label>考试时长<span style="color:var(--danger);font-weight:700">*</span></label>
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <input type="number" value="120" min="10" max="600" step="10" style="width:120px">
+                      <span style="font-size:12px;color:var(--muted)">分钟</span>
+                      <span style="font-size:11.5px;color:var(--subtle);margin-left:8px">学生入场后开始计时</span>
+                    </div>
+                  </div>
+                  <div class="field" style="flex:1">
+                    <label>组卷方式</label>
+                    <div class="seg compact">
+                      <button class="on">固定组卷</button>
+                      <button>抽题</button>
+                    </div>
+                    <span class="field-hint" style="margin-top:6px">抽题时按设置的规则从题库随机抽取（v1 暂未启用）</span>
+                  </div>
+                </div>
+                <div id="assignment-only" style="display:none;margin-top:14px">
+                  <div class="rule-row" style="border-bottom:none;padding-top:0">
+                    <div class="lbl">
+                      补交策略
+                      <small>截止后是否允许学生继续提交</small>
+                    </div>
+                    <div class="ctrls">
+                      <div class="seg compact">
+                        <button>允许</button>
+                        <button class="on">截止后 3 天</button>
+                        <button>不允许</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. 题目配置 -->
+            <div class="ed-card anim" style="animation-delay:.16s">
+              <div class="ed-card-hd">
+                <svg><use href="#i-list"/></svg>题目配置
+                <span class="hint">类型创建后锁定 · 可上下移 / 删除</span>
+              </div>
+              <div class="ed-card-bd">
+                <div class="qc-meta">
+                  <div class="stats">
+                    <span>共 <b id="qc-total">5</b> 题</span>
+                    <span>总分 <b id="qc-score">100</b> / 100</span>
+                    <span style="display:flex;align-items:center;gap:5px" id="qc-dist">
+                      <span class="qt-chip q-code"><span class="d"></span>编程 <b id="qc-cnt-code" style="margin-left:2px">3</b></span>
+                      <span class="qt-chip q-blank"><span class="d"></span>填空 <b id="qc-cnt-blank" style="margin-left:2px">1</b></span>
+                      <span class="qt-chip q-essay"><span class="d"></span>简答 <b id="qc-cnt-essay" style="margin-left:2px">1</b></span>
+                    </span>
+                  </div>
+                  <span style="margin-left:auto;display:flex;align-items:center;gap:4px;color:var(--warning)">
+                    <svg style="font-size:12px"><use href="#i-warn"/></svg>总分已达上限
+                  </span>
+                </div>
+
+                <div id="qlist">
+
+                  <!-- Q1 编程题：两数之和 -->
+                  <div class="qcard open" data-qtype="code" data-qid="P0001">
+                    <div class="qcard-hd">
+                      <span class="q-num">#1</span>
+                      <span class="q-type q-code"><span class="d"></span>编程题</span>
+                      <span class="q-score">分值 <input type="number" value="20" min="1"> 分</span>
+                      <span class="q-locked" title="题目创建后类型不可修改">类型已锁定</span>
+                      <div class="ops">
+                        <button class="up" title="上移"><svg><use href="#i-up"/></svg></button>
+                        <button class="down" title="下移"><svg><use href="#i-down"/></svg></button>
+                        <button class="toggle" title="折叠/展开"><svg><use href="#i-down"/></svg></button>
+                        <button class="del danger" title="删除"><svg><use href="#i-trash"/></svg></button>
+                      </div>
+                    </div>
+                    <div class="qcard-bd">
+                      <div class="q-bank-linked">
+                        <div class="pi"><svg><use href="#i-code"/></svg></div>
+                        <div class="info">
+                          <h4>
+                            <span style="font-family:'SF Mono',monospace;font-size:11.5px;color:var(--muted);background:var(--card);padding:2px 7px;border-radius:4px">P0001</span>
+                            两数之和
+                            <span class="diff" style="display:inline-flex;gap:1px;color:var(--warning);font-size:12px">
+                              <span>★</span><span class="off">★</span><span class="off">★</span><span class="off">★</span><span class="off">★</span>
+                            </span>
+                          </h4>
+                          <p>来源：Python 编程入门 · 第 3 章 · 通过率 82.4% · 已被 4 份试卷引用</p>
+                        </div>
+                        <div class="score">分值 <input type="number" value="20" min="1"> 分</div>
+                        <button class="unlink" title="取消关联"><svg><use href="#i-x"/></svg></button>
+                      </div>
+                      <div class="q-row">
+                        <svg style="font-size:13px;color:var(--muted)"><use href="#i-info"/></svg>
+                        <span>用例与判题规则沿用题库定义 · 隐藏用例的实际输出对学生不可见</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Q2 编程题：列表去重 -->
+                  <div class="qcard open" data-qtype="code">
+                    <div class="qcard-hd">
+                      <span class="q-num">#2</span>
+                      <span class="q-type q-code"><span class="d"></span>编程题</span>
+                      <span class="q-score">分值 <input type="number" value="20" min="1"> 分</span>
+                      <span class="q-locked">类型已锁定</span>
+                      <div class="ops">
+                        <button class="up"><svg><use href="#i-up"/></svg></button>
+                        <button class="down"><svg><use href="#i-down"/></svg></button>
+                        <button class="toggle"><svg><use href="#i-down"/></svg></button>
+                        <button class="del danger"><svg><use href="#i-trash"/></svg></button>
+                      </div>
+                    </div>
+                    <div class="qcard-bd">
+                      <div class="q-bank-search">
+                        <svg><use href="#i-search"/></svg>
+                        <input placeholder="搜索题库题目（按 ID / 标题 / 标签）">
+                        <a class="q-bank-more" href="teacher-problems.html"><svg><use href="#i-bank"/></svg>查看全部</a>
+                        <div class="q-bank-results">
+                          <div class="q-bank-result">
+                            <span class="pid">P0002</span>
+                            <span class="ti">列表去重</span>
+                            <span class="df"><span>★</span><span>★</span><span class="off">★</span><span class="off">★</span><span class="off">★</span></span>
+                            <span class="mt">Python 编程入门</span>
+                          </div>
+                          <div class="q-bank-result">
+                            <span class="pid">P0007</span>
+                            <span class="ti">合并有序数组</span>
+                            <span class="df"><span>★</span><span>★</span><span>★</span><span class="off">★</span><span class="off">★</span></span>
+                            <span class="mt">数据结构与算法</span>
+                          </div>
+                          <div class="q-bank-result">
+                            <span class="pid">P0012</span>
+                            <span class="ti">字符串反转</span>
+                            <span class="df"><span>★</span><span class="off">★</span><span class="off">★</span><span class="off">★</span><span class="off">★</span></span>
+                            <span class="mt">Python 编程入门</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="q-row" style="color:var(--muted)">
+                        <svg style="font-size:13px"><use href="#i-info"/></svg>
+                        <span>请搜索并选择一道已发布的题库题目</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Q3 编程题：词频统计 -->
+                  <div class="qcard" data-qtype="code" data-qid="P0018">
+                    <div class="qcard-hd">
+                      <span class="q-num">#3</span>
+                      <span class="q-type q-code"><span class="d"></span>编程题</span>
+                      <span class="q-score">分值 <input type="number" value="20" min="1"> 分</span>
+                      <span class="q-locked">类型已锁定</span>
+                      <div class="ops">
+                        <button class="up"><svg><use href="#i-up"/></svg></button>
+                        <button class="down"><svg><use href="#i-down"/></svg></button>
+                        <button class="toggle"><svg><use href="#i-down"/></svg></button>
+                        <button class="del danger"><svg><use href="#i-trash"/></svg></button>
+                      </div>
+                    </div>
+                    <div class="qcard-bd">
+                      <div class="q-bank-linked">
+                        <div class="pi"><svg><use href="#i-code"/></svg></div>
+                        <div class="info">
+                          <h4>
+                            <span style="font-family:'SF Mono',monospace;font-size:11.5px;color:var(--muted);background:var(--card);padding:2px 7px;border-radius:4px">P0018</span>
+                            读取文件并统计词频
+                            <span class="diff" style="display:inline-flex;gap:1px;color:var(--warning);font-size:12px">
+                              <span>★</span><span>★</span><span>★</span><span class="off">★</span><span class="off">★</span>
+                            </span>
+                          </h4>
+                          <p>来源：Python 编程入门 · 第 5 章 · 通过率 67.3%</p>
+                        </div>
+                        <div class="score">分值 <input type="number" value="20" min="1"> 分</div>
+                        <button class="unlink"><svg><use href="#i-x"/></svg></button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Q4 填空题 -->
+                  <div class="qcard" data-qtype="blank">
+                    <div class="qcard-hd">
+                      <span class="q-num">#4</span>
+                      <span class="q-type q-blank"><span class="d"></span>填空题</span>
+                      <span class="q-score">分值 <input type="number" value="10" min="1"> 分</span>
+                      <span class="q-locked">类型已锁定</span>
+                      <div class="ops">
+                        <button class="up"><svg><use href="#i-up"/></svg></button>
+                        <button class="down"><svg><use href="#i-down"/></svg></button>
+                        <button class="toggle"><svg><use href="#i-down"/></svg></button>
+                        <button class="del danger"><svg><use href="#i-trash"/></svg></button>
+                      </div>
+                    </div>
+                    <div class="qcard-bd">
+                      <textarea class="q-stem" placeholder="题干，用 ___ 标记空位">Python 中用于将字符串转换为整数的内置函数是 ___ ，将整数转换为字符串的是 ___ 。</textarea>
+                      <input class="q-blank-answer" placeholder="参考答案，多个答案用 | 分隔" value="int | str">
+                      <div class="q-row">
+                        <span>评分方式</span>
+                        <div class="seg compact">
+                          <button class="on">完全匹配</button>
+                          <button>包含关键词</button>
+                        </div>
+                        <span style="margin-left:auto;color:var(--subtle)">判分时不区分大小写，自动去除首尾空格</span>
+                      </div>
+                      <textarea class="q-explain" placeholder="解析（可选，学生提交后可见）">int() 用于解析字符串为整数，str() 用于将其他类型转为字符串。二者均为 Python 内置函数。</textarea>
+                    </div>
+                  </div>
+
+                  <!-- Q5 简答题 -->
+                  <div class="qcard" data-qtype="essay">
+                    <div class="qcard-hd">
+                      <span class="q-num">#5</span>
+                      <span class="q-type q-essay"><span class="d"></span>简答题</span>
+                      <span class="q-score">分值 <input type="number" value="30" min="1"> 分</span>
+                      <span class="q-locked">类型已锁定</span>
+                      <div class="ops">
+                        <button class="up"><svg><use href="#i-up"/></svg></button>
+                        <button class="down"><svg><use href="#i-down"/></svg></button>
+                        <button class="toggle"><svg><use href="#i-down"/></svg></button>
+                        <button class="del danger"><svg><use href="#i-trash"/></svg></button>
+                      </div>
+                    </div>
+                    <div class="qcard-bd">
+                      <textarea class="q-stem" placeholder="题干">请解释 Python 中列表（list）与元组（tuple）的区别，并各举一个典型使用场景。</textarea>
+                      <textarea class="q-essay-ta" placeholder="参考答案 / 关键得分点">列表是可变序列（支持增删改），元组是不可变序列（创建后不能修改）。列表适用于需要动态修改的数据集合（如累积结果、用户输入序列），元组适用于不希望被修改的固定数据（如函数返回的多个值、字典的 key、作为记录使用）。</textarea>
+                      <textarea class="q-explain" placeholder="评分要点（每行一个）">1. 正确说出可变 vs 不可变（6 分）
+2. 性能差异：元组略快于列表（4 分）
+3. 列表典型场景：动态数据集合（10 分）
+4. 元组典型场景：固定数据 / 字典 key（10 分）</textarea>
+                      <div class="q-row">
+                        <span>字数限制</span>
+                        <input type="number" value="500" min="50" step="50" style="width:100px">
+                        <span style="color:var(--subtle)">字 · 超过可提交但会标记提示</span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <div class="add-q-wrap">
+                  <button class="add-q-btn" onclick="toggleAddQ(event)">
+                    <svg><use href="#i-plus"/></svg>添加题目
+                  </button>
+                  <div class="add-pop" id="add-pop">
+                    <button onclick="addQuestion('choice')" class="q-choice">
+                      <div class="pi"><svg><use href="#i-circ"/></svg></div>
+                      <b>选择题</b>
+                      <small>单选或多选 · 4-6 个选项</small>
+                    </button>
+                    <button onclick="addQuestion('blank')" class="q-blank">
+                      <div class="pi"><svg><use href="#i-type"/></svg></div>
+                      <b>填空题</b>
+                      <small>支持多空 · 多种匹配方式</small>
+                    </button>
+                    <button onclick="addQuestion('essay')" class="q-essay">
+                      <div class="pi"><svg><use href="#i-list"/></svg></div>
+                      <b>简答题</b>
+                      <small>主观题 · 人工批改</small>
+                    </button>
+                    <button onclick="addQuestion('code')" class="q-code">
+                      <div class="pi"><svg><use href="#i-code"/></svg></div>
+                      <b>编程题</b>
+                      <small>从题库关联 · 自动评测</small>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. 作答规则 -->
+            <div class="ed-card anim" style="animation-delay:.20s">
+              <div class="ed-card-hd">
+                <svg><use href="#i-judge"/></svg>作答规则
+                <span class="hint" id="rules-hint">试卷 · 严格模式</span>
+              </div>
+              <div class="ed-card-bd">
+
+                <!-- 通用：提交次数 -->
+                <div class="rule-row">
+                  <div class="lbl">
+                    提交次数限制
+                    <small>每名学生最多可提交几次</small>
+                  </div>
+                  <div class="ctrls">
+                    <div class="seg compact">
+                      <button>不限</button>
+                      <button>3 次</button>
+                      <button class="on">1 次</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 试卷专属 -->
+                <div id="rules-exam">
+                  <div class="rule-row">
+                    <div class="lbl">切屏检测<small>离开考试页面超过 N 秒自动提交</small></div>
+                    <div class="ctrls">
+                      <span style="font-size:12px;color:var(--muted)">超过</span>
+                      <input type="number" value="10" min="0" style="width:60px;text-align:center">
+                      <span style="font-size:12px;color:var(--muted)">秒</span>
+                      <div class="sw on" style="margin-left:8px" onclick="this.classList.toggle('on')"></div>
+                    </div>
+                  </div>
+                  <div class="rule-row">
+                    <div class="lbl">答案可见时机<small>学生在何时可以查看参考答案与得分</small></div>
+                    <div class="ctrls">
+                      <div class="seg compact">
+                        <button>提交后立即</button>
+                        <button class="on">截止后统一</button>
+                        <button>批改后</button>
+                        <button>不公布</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="rule-row">
+                    <div class="lbl">题序与选项打乱<small>每位学生看到的题目与选项顺序不同</small></div>
+                    <div class="ctrls" style="gap:14px">
+                      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg)">
+                        <input type="checkbox" checked style="accent-color:var(--primary)">题序
+                      </label>
+                      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--fg)">
+                        <input type="checkbox" checked style="accent-color:var(--primary)">选项
+                      </label>
+                    </div>
+                  </div>
+                  <div class="rule-row">
+                    <div class="lbl">自动交卷<small>到截止时间时自动提交未完成的考试</small></div>
+                    <div class="ctrls"><div class="sw on" onclick="this.classList.toggle('on')"></div></div>
+                  </div>
+                </div>
+
+                <!-- 作业专属 -->
+                <div id="rules-assignment" style="display:none">
+                  <div class="rule-row">
+                    <div class="lbl">允许文字作答<small>学生可以提交文字说明（对应 textContent）</small></div>
+                    <div class="ctrls"><div class="sw on" onclick="this.classList.toggle('on')"></div></div>
+                  </div>
+                  <div class="rule-row">
+                    <div class="lbl">允许附件<small>学生可以上传文件（PDF / 图片 / 代码包）</small></div>
+                    <div class="ctrls"><div class="sw" onclick="this.classList.toggle('on')"></div></div>
+                  </div>
+                  <div class="rule-row">
+                    <div class="lbl">迟交扣分<small>补交时按比例扣减总分</small></div>
+                    <div class="ctrls">
+                      <input type="number" value="20" min="0" max="100" style="width:60px;text-align:center">
+                      <span style="font-size:12px;color:var(--muted)">%</span>
+                    </div>
+                  </div>
+                  <div class="rule-row">
+                    <div class="lbl">排行榜<small>提交后学生可看到班级排名</small></div>
+                    <div class="ctrls"><div class="sw" onclick="this.classList.toggle('on')"></div></div>
+                  </div>
+                  <div class="rule-row">
+                    <div class="lbl">互评<small>提交后由其他同学匿名评分</small></div>
+                    <div class="ctrls">
+                      <div class="sw" onclick="togglePeer(this)"></div>
+                      <span id="peer-extra" style="display:none">
+                        <span style="font-size:12px;color:var(--muted)">每人评</span>
+                        <input type="number" value="3" min="1" style="width:50px;text-align:center">
+                        <span style="font-size:12px;color:var(--muted)">份</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- 5. 通知 -->
+            <div class="ed-card anim" style="animation-delay:.24s">
+              <div class="ed-card-hd"><svg><use href="#i-bell-r"/></svg>通知与提醒<span class="hint">学生端的提醒策略</span></div>
+              <div class="ed-card-bd">
+                <div class="rule-row">
+                  <div class="lbl">发布时通知<small>学生端立即收到「新的作业 / 考试」提醒</small></div>
+                  <div class="ctrls"><div class="sw on" onclick="this.classList.toggle('on')"></div></div>
+                </div>
+                <div class="rule-row">
+                  <div class="lbl">截止前再次提醒<small>在截止前 N 小时向未交学生推送</small></div>
+                  <div class="ctrls">
+                    <div class="sw on" onclick="toggleBefore(this)"></div>
+                    <span id="before-extra">
+                      <span style="font-size:12px;color:var(--muted)">提前</span>
+                      <input type="number" value="24" min="1" style="width:60px;text-align:center">
+                      <span style="font-size:12px;color:var(--muted)">小时</span>
+                    </span>
+                  </div>
+                </div>
+                <div class="rule-row" id="late-remind-row">
+                  <div class="lbl">补交截止后通知<small>补交窗口关闭时提醒未提交学生</small></div>
+                  <div class="ctrls"><div class="sw" onclick="this.classList.toggle('on')"></div></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 右侧栏 -->
+          <aside class="anim" style="animation-delay:.10s;position:sticky;top:88px;display:flex;flex-direction:column;gap:16px">
+
+            <div class="ed-card">
+              <div class="ed-card-hd"><svg><use href="#i-info"/></svg>总览</div>
+              <div class="ed-card-bd" style="padding-top:14px;padding-bottom:14px">
+                <div class="ov-stats">
+                  <div class="b"><div class="nm" id="ov-q">5</div><div class="lb">题目数</div></div>
+                  <div class="b"><div class="nm" id="ov-score">100</div><div class="lb">总分</div></div>
+                  <div class="b"><div class="nm" id="ov-cls">2</div><div class="lb">班级数</div></div>
+                  <div class="b"><div class="nm" id="ov-stu">86</div><div class="lb">应交人数</div></div>
+                </div>
+                <div style="margin-top:12px;padding:10px 12px;background:var(--primary-subtle);border-radius:8px;font-size:12px;color:var(--primary);display:flex;align-items:flex-start;gap:8px">
+                  <svg style="font-size:14px;margin-top:1px;flex-shrink:0"><use href="#i-info"/></svg>
+                  <span>题型与分值均衡：编程 60% · 填空 10% · 简答 30%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="ed-card">
+              <div class="ed-card-hd"><svg><use href="#i-book"/></svg>关联课程</div>
+              <div class="ed-card-bd" style="padding-top:12px;padding-bottom:12px">
+                <div class="course-card">
+                  <h4>
+                    <svg style="color:var(--primary)"><use href="#i-book"/></svg>
+                    Python 编程入门
+                  </h4>
+                  <p>面向高一年级的编程基础课程，覆盖变量、流程控制、函数、文件 I/O 等核心内容。</p>
+                  <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+                    <span>已选班级</span>
+                    <span class="cls"><span>高一 (3) 班</span><span>高一 (4) 班</span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ed-card">
+              <div class="ed-card-hd"><svg><use href="#i-clock"/></svg>操作记录</div>
+              <div class="ed-card-bd" style="padding-top:6px;padding-bottom:6px">
+                <ul class="op-log">
+                  <li><span class="dot ok"></span><div><b>王建国</b> · 编辑了题目 #2<small>2024-11-10 16:42</small></div></li>
+                  <li><span class="dot p"></span><div><b>王建国</b> · 发布<small>2024-11-08 10:30</small></div></li>
+                  <li><span class="dot"></span><div><b>王建国</b> · 创建试卷<small>2024-11-08 10:08</small></div></li>
+                </ul>
+              </div>
+            </div>
+
+          </aside>
+
+        </div>
+
+        <div class="foot-bar anim" style="animation-delay:.28s">
+          <span class="info">
+            <svg><use href="#i-info"/></svg>
+            <span class="save-state saved" id="save-state"><span class="dot"></span>所有更改已保存 · 5 分钟前</span>
+          </span>
+          <div class="acts">
+            <button class="btn-ghost" onclick="discard()">放弃修改</button>
+            <button class="btn-ghost" onclick="saveDraft()"><svg><use href="#i-clock"/></svg>保存草稿</button>
+            <button class="btn" onclick="publish()"><svg><use href="#i-check"/></svg>发布</button>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+/* ================= 类型切换 ================= */
+var TYPE = 'exam';  // current type
+
+function setType(t){
+  TYPE = t;
+  document.querySelectorAll('#type-seg button').forEach(function(b){
+    b.classList.toggle('on', b.dataset.type === t);
+  });
+  // 时间安排
+  document.getElementById('exam-only').style.display = t === 'exam' ? '' : 'none';
+  document.getElementById('assignment-only').style.display = t === 'assignment' ? '' : 'none';
+  document.getElementById('time-hint').textContent = t === 'exam' ? '试卷 · 严格限时' : '作业 · 允许补交';
+  document.getElementById('open-hint').textContent = t === 'exam' ? '考试开始时间，学生可入场' : '最早可见时间（可立即可见）';
+  document.getElementById('close-hint').textContent = t === 'exam' ? '超过截止时间将自动交卷' : '超过截止时间按补交策略处理';
+  // 规则
+  document.getElementById('rules-exam').style.display = t === 'exam' ? '' : 'none';
+  document.getElementById('rules-assignment').style.display = t === 'assignment' ? '' : 'none';
+  document.getElementById('rules-hint').textContent = t === 'exam' ? '试卷 · 严格模式' : '作业 · 灵活模式';
+  // 通知
+  document.getElementById('late-remind-row').style.display = t === 'assignment' ? '' : 'none';
+  // header chip
+  document.querySelector('.edit-head .id-block span:nth-child(3)').textContent = t === 'exam' ? '试卷' : '作业';
+  document.getElementById('crumb-type').textContent = t === 'exam' ? '试卷' : '作业';
+}
+document.querySelectorAll('#type-seg button').forEach(function(b){
+  b.addEventListener('click', function(){ setType(b.dataset.type); markDirty(); });
+});
+
+/* ================= 题目卡 ================= */
+// toggle 折叠
+document.addEventListener('click', function(e){
+  if(e.target.closest('.qcard-hd .toggle')){
+    var card = e.target.closest('.qcard');
+    card.classList.toggle('open');
+  }
+});
+// 点击 header 区域但不是按钮时也能 toggle
+document.querySelectorAll('.qcard-hd').forEach(function(hd){
+  hd.addEventListener('click', function(e){
+    if(e.target.closest('button,input,select,textarea,.q-locked,.q-score,.q-type,.q-num')) return;
+    hd.closest('.qcard').classList.toggle('open');
+  });
+});
+
+// 题目列表事件委托
+document.getElementById('qlist').addEventListener('click', function(e){
+  var card = e.target.closest('.qcard');
+  if(!card) return;
+
+  if(e.target.closest('.del')){
+    Modal.confirm({
+      title: '删除这道题？',
+      body: ['题目 ' + card.querySelector('.q-num').textContent + ' 将从作业中移除','题目不会从题库删除','该操作可撤销（点保存草稿前）'],
+      confirmText: '删除',
+      danger: true,
+      onConfirm: function(){
+        card.remove();
+        renumberQ();
+        refreshQcStats();
+        markDirty();
+        toast('已删除题目');
+      }
+    });
+  } else if(e.target.closest('.up')){
+    if(card.previousElementSibling) card.parentNode.insertBefore(card, card.previousElementSibling);
+    renumberQ();
+    markDirty();
+  } else if(e.target.closest('.down')){
+    if(card.nextElementSibling) card.parentNode.insertBefore(card.nextElementSibling, card);
+    renumberQ();
+    markDirty();
+  }
+});
+
+// 重编号
+function renumberQ(){
+  document.querySelectorAll('#qlist .qcard').forEach(function(c, i){
+    c.querySelector('.q-num').textContent = '#' + (i + 1);
+  });
+}
+
+// 实时统计
+function refreshQcStats(){
+  var cards = document.querySelectorAll('#qlist .qcard');
+  var sum = 0, code = 0, blank = 0, essay = 0, choice = 0;
+  cards.forEach(function(c){
+    var t = c.dataset.qtype;
+    var sc = parseInt(c.querySelector('.q-score input').value || 0, 10);
+    sum += sc;
+    if(t === 'code') code++;
+    else if(t === 'blank') blank++;
+    else if(t === 'essay') essay++;
+    else if(t === 'choice') choice++;
+  });
+  document.getElementById('qc-total').textContent = cards.length;
+  document.getElementById('qc-score').textContent = sum;
+  document.getElementById('meta-qcnt').textContent = cards.length;
+  document.getElementById('meta-score').textContent = sum;
+  document.getElementById('ov-q').textContent = cards.length;
+  document.getElementById('ov-score').textContent = sum;
+  document.getElementById('qc-cnt-code').textContent = code;
+  document.getElementById('qc-cnt-blank').textContent = blank;
+  document.getElementById('qc-cnt-essay').textContent = essay;
+  // 选中的没渲染但保持占位
+  var distEl = document.getElementById('qc-dist');
+  // 显示/隐藏对应 chip
+  // （如果 choice=0 则隐藏；为简洁起见此处一直显示所有 chip）
+}
+document.addEventListener('input', function(e){
+  if(e.target.matches('#qlist .q-score input, #class-list input, .q-bank-linked .score input')){
+    refreshQcStats();
+    if(!e.target.matches('#qlist .q-score input')) markDirty();
+  }
+});
+
+/* ================= 添加题目 ================= */
+function toggleAddQ(e){
+  e.stopPropagation();
+  document.getElementById('add-pop').classList.toggle('show');
+}
+document.addEventListener('click', function(){
+  document.getElementById('add-pop').classList.remove('show');
+});
+document.getElementById('add-pop').addEventListener('click', function(e){ e.stopPropagation(); });
+
+function addQuestion(type){
+  document.getElementById('add-pop').classList.remove('show');
+  var idx = document.querySelectorAll('#qlist .qcard').length + 1;
+  var typeMap = {
+    choice: { name: '选择题', cls: 'q-choice' },
+    blank:  { name: '填空题', cls: 'q-blank' },
+    essay:  { name: '简答题', cls: 'q-essay' },
+    code:   { name: '编程题', cls: 'q-code' }
+  };
+  var m = typeMap[type];
+  var card = document.createElement('div');
+  card.className = 'qcard open';
+  card.dataset.qtype = type;
+  card.innerHTML =
+    '<div class="qcard-hd">' +
+      '<span class="q-num">#'+idx+'</span>' +
+      '<span class="q-type '+m.cls+'"><span class="d"></span>'+m.name+'</span>' +
+      '<span class="q-score">分值 <input type="number" value="10" min="1"> 分</span>' +
+      '<span class="q-locked" title="题目创建后类型不可修改">类型已锁定</span>' +
+      '<div class="ops">' +
+        '<button class="up" title="上移"><svg><use href="#i-up"/></svg></button>' +
+        '<button class="down" title="下移"><svg><use href="#i-down"/></svg></button>' +
+        '<button class="toggle" title="折叠/展开"><svg><use href="#i-down"/></svg></button>' +
+        '<button class="del danger" title="删除"><svg><use href="#i-trash"/></svg></button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="qcard-bd">' + getQBody(type) + '</div>';
+  document.getElementById('qlist').appendChild(card);
+  refreshQcStats();
+  markDirty();
+  // 滚动到新卡片
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function getQBody(type){
+  if(type === 'choice'){
+    return '<textarea class="q-stem" placeholder="题干"></textarea>' +
+      '<div class="q-row"><span>类型</span><div class="seg compact"><button class="on">单选</button><button>多选</button></div></div>' +
+      '<div class="q-opts">' +
+        optRow('A', false) + optRow('B', false) + optRow('C', false) + optRow('D', false) +
+      '</div>' +
+      '<div style="margin-top:8px"><button class="btn-ghost" style="font-size:12px;padding:4px 10px" onclick="addOpt(this)"><svg><use href="#i-plus"/></svg>添加选项</button></div>' +
+      '<textarea class="q-explain" placeholder="解析（可选）"></textarea>';
+  }
+  if(type === 'blank'){
+    return '<textarea class="q-stem" placeholder="题干，用 ___ 标记空位"></textarea>' +
+      '<input class="q-blank-answer" placeholder="参考答案，多个答案用 | 分隔">' +
+      '<div class="q-row"><span>评分方式</span><div class="seg compact"><button class="on">完全匹配</button><button>包含关键词</button></div></div>' +
+      '<textarea class="q-explain" placeholder="解析（可选）"></textarea>';
+  }
+  if(type === 'essay'){
+    return '<textarea class="q-stem" placeholder="题干"></textarea>' +
+      '<textarea class="q-essay-ta" placeholder="参考答案 / 关键得分点"></textarea>' +
+      '<textarea class="q-explain" placeholder="评分要点（每行一个）"></textarea>' +
+      '<div class="q-row"><span>字数限制</span><input type="number" value="500" min="50" step="50" style="width:100px"><span style="color:var(--subtle)">字</span></div>';
+  }
+  if(type === 'code'){
+    return '<div class="q-bank-search">' +
+        '<svg><use href="#i-search"/></svg>' +
+        '<input placeholder="搜索题库题目" onfocus="showBankResults(this)" oninput="showBankResults(this)">' +
+        '<a class="q-bank-more" href="teacher-problems.html"><svg><use href="#i-bank"/></svg>查看全部</a>' +
+        '<div class="q-bank-results"></div>' +
+      '</div>' +
+      '<div class="q-row" style="color:var(--muted)"><svg style="font-size:13px"><use href="#i-info"/></svg><span>请搜索并选择一道已发布的题库题目</span></div>';
+  }
+  return '';
+}
+
+function optRow(letter, correct){
+  return '<div class="q-opt' + (correct ? ' correct' : '') + '">' +
+    '<span class="lbl">'+letter+'</span>' +
+    '<input type="text" placeholder="选项 '+letter+'">' +
+    '<button class="correct-btn" onclick="toggleCorrect(this)">' + (correct ? '✓ 正确' : '设为正确') + '</button>' +
+    '<button class="del" onclick="delOpt(this)"><svg style="font-size:14px"><use href="#i-x"/></svg></button>' +
+  '</div>';
+}
+function addOpt(btn){
+  var opts = btn.parentElement.previousElementSibling;
+  var letters = ['A','B','C','D','E','F'];
+  var n = opts.querySelectorAll('.q-opt').length;
+  if(n >= 6){ toast('最多 6 个选项'); return; }
+  var div = document.createElement('div');
+  div.innerHTML = optRow(letters[n], false);
+  opts.appendChild(div.firstElementChild);
+  markDirty();
+}
+function toggleCorrect(btn){
+  var opt = btn.closest('.q-opt');
+  opt.classList.toggle('correct');
+  btn.textContent = opt.classList.contains('correct') ? '✓ 正确' : '设为正确';
+  markDirty();
+}
+function delOpt(btn){
+  var opt = btn.closest('.q-opt');
+  var opts = opt.parentElement;
+  if(opts.querySelectorAll('.q-opt').length <= 2){ toast('至少需要 2 个选项'); return; }
+  opt.remove();
+  // 重新标注字母
+  var letters = ['A','B','C','D','E','F'];
+  opts.querySelectorAll('.q-opt').forEach(function(o, i){
+    o.querySelector('.lbl').textContent = letters[i];
+  });
+  markDirty();
+}
+
+function showBankResults(input){
+  var r = input.parentElement.querySelector('.q-bank-results');
+  var v = input.value.trim();
+  // mock 数据
+  var data = [
+    { pid: 'P0001', ti: '两数之和', df: 1, src: 'Python 编程入门' },
+    { pid: 'P0002', ti: '列表去重', df: 2, src: 'Python 编程入门' },
+    { pid: 'P0007', ti: '合并有序数组', df: 3, src: '数据结构与算法' },
+    { pid: 'P0012', ti: '字符串反转', df: 1, src: 'Python 编程入门' },
+    { pid: 'P0018', ti: '读取文件并统计词频', df: 3, src: 'Python 编程入门' },
+    { pid: 'P0023', ti: '最长回文子串', df: 4, src: '算法竞赛入门' }
+  ];
+  var html = '';
+  data.forEach(function(d){
+    if(v && (d.ti.indexOf(v) === -1) && (d.pid.toLowerCase().indexOf(v.toLowerCase()) === -1)) return;
+    var stars = '<span class="df">' + Array.from({length: 5}, function(_, i){
+      return '<span' + (i >= d.df ? ' class="off"' : '') + '>★</span>';
+    }).join('') + '</span>';
+    html += '<div class="q-bank-result" onclick="linkBank(this)">' +
+      '<span class="pid">'+d.pid+'</span>' +
+      '<span class="ti">'+d.ti+'</span>' +
+      stars +
+      '<span class="mt">'+d.src+'</span>' +
+    '</div>';
+  });
+  r.innerHTML = html;
+  r.classList.add('show');
+}
+function linkBank(el){
+  var pid = el.querySelector('.pid').textContent;
+  var ti = el.querySelector('.ti').textContent;
+  var src = el.querySelector('.mt').textContent;
+  var df = el.querySelectorAll('.df > span:not(.off)').length;
+  var card = el.closest('.qcard');
+  var body = card.querySelector('.qcard-bd');
+  var stars = Array.from({length: 5}, function(_, i){
+    return '<span' + (i >= df ? ' class="off"' : '') + '>★</span>';
+  }).join('');
+  body.innerHTML =
+    '<div class="q-bank-linked">' +
+      '<div class="pi"><svg><use href="#i-code"/></svg></div>' +
+      '<div class="info">' +
+        '<h4>' +
+          '<span style="font-family:SF Mono,monospace;font-size:11.5px;color:var(--muted);background:var(--card);padding:2px 7px;border-radius:4px">'+pid+'</span>' +
+          ti +
+          ' <span class="diff" style="display:inline-flex;gap:1px;color:var(--warning);font-size:12px">'+stars+'</span>' +
+        '</h4>' +
+        '<p>来源：'+src+'</p>' +
+      '</div>' +
+      '<div class="score">分值 <input type="number" value="20" min="1"> 分</div>' +
+      '<button class="unlink" onclick="unlinkBank(this)"><svg><use href="#i-x"/></svg></button>' +
+    '</div>' +
+    '<div class="q-row">' +
+      '<svg style="font-size:13px;color:var(--muted)"><use href="#i-info"/></svg>' +
+      '<span>用例与判题规则沿用题库定义 · 隐藏用例的实际输出对学生不可见</span>' +
+    '</div>';
+  markDirty();
+  refreshQcStats();
+}
+function unlinkBank(btn){
+  var card = btn.closest('.qcard');
+  linkBank_reset(card);
+  markDirty();
+}
+function linkBank_reset(card){
+  card.querySelector('.qcard-bd').innerHTML = getQBody('code');
+}
+
+/* ================= 顶部按钮 ================= */
+function previewAsn(){
+  Modal.confirm({
+    title: '以学生视角预览？',
+    body: ['将以只读模式打开学生考试 / 作业页面','用于检查排版、题目显示与交互','不会提交任何答案'],
+    confirmText: '打开预览',
+    onConfirm: function(){
+      var aid = document.getElementById('crumb-aid').textContent;
+      location.href = 'teacher-assignments-preview.html?aid=' + aid;
+    }
+  });
+}
+function dryRun(){
+  Modal.confirm({
+    title: '试运行当前试卷？',
+    body: ['将使用一份标准答案对所有题目跑一遍','用于检查题目配置、时间设置与判分逻辑','约需 5-8 秒'],
+    confirmText: '开始试运行',
+    onConfirm: function(){ toast('试运行完成 · 5/5 通过'); }
+  });
+}
+function saveDraft(){
+  markSaved('草稿已保存 · 刚刚');
+  toast('草稿已保存');
+}
+function publish(){
+  Modal.confirm({
+    title: '发布该' + (TYPE === 'exam' ? '试卷' : '作业') + '？',
+    body: ['关联班级的学生端将立即收到通知',
+           TYPE === 'exam' ? '考试开始时间到达后学生方可入场' : '学生可开始提交，遵循补交策略',
+           '发布后如需修改，可能影响已开始作答的学生'],
+    confirmText: '发布',
+    onConfirm: function(){
+      var pill = document.getElementById('status-pill');
+      pill.textContent = '进行中';
+      pill.classList.remove('draft');
+      markSaved('已发布 · 刚刚');
+      toast((TYPE === 'exam' ? '试卷 ' : '作业 ') + document.getElementById('crumb-aid').textContent + ' 已发布');
+    }
+  });
+}
+function discard(){
+  Modal.confirm({
+    title: '放弃当前所有修改？',
+    body: ['将恢复为上次保存的版本','已修改但未保存的内容将丢失'],
+    confirmText: '放弃修改', danger: true,
+    onConfirm: function(){ markSaved('已恢复上次保存 · 5 分钟前'); toast('已恢复'); }
+  });
+}
+
+/* ================= 保存状态 ================= */
+function markDirty(){
+  var s = document.getElementById('save-state');
+  s.className = 'save-state dirty';
+  s.innerHTML = '<span class="dot"></span>有未保存的修改';
+}
+function markSaved(text){
+  var s = document.getElementById('save-state');
+  s.className = 'save-state saved';
+  s.innerHTML = '<span class="dot"></span>' + text;
+}
+document.addEventListener('input', function(e){
+  if(e.target.matches('input,textarea,select') && !e.target.matches('#qlist .q-score input, .q-bank-linked .score input')){
+    markDirty();
+  }
+});
+
+/* ================= 互评 / 截止前提醒 ================= */
+function togglePeer(sw){
+  sw.classList.toggle('on');
+  document.getElementById('peer-extra').style.display = sw.classList.contains('on') ? '' : 'none';
+  markDirty();
+}
+function toggleBefore(sw){
+  sw.classList.toggle('on');
+  document.getElementById('before-extra').style.display = sw.classList.contains('on') ? '' : 'none';
+  markDirty();
+}
+
+/* ================= Seg / Switch 通用 ================= */
+document.addEventListener('click', function(e){
+  if(e.target.matches('.seg button')){
+    var seg = e.target.parentElement;
+    seg.querySelectorAll('button').forEach(function(b){ b.classList.remove('on'); });
+    e.target.classList.add('on');
+    markDirty();
+  }
+});
+
+/* ================= 初始化 ================= */
+refreshQcStats();
+</script>
+</body>
+</html>

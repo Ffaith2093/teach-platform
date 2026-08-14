@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>我的成绩单 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --pink:#EC4899; --pink-subtle:#FCE7F3;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+  --shadow-lg:0 8px 24px -8px rgba(15,23,42,.10);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171;  --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --pink:#F472B6; --pink-subtle:#4A1232;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--surface);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+/* ============== 侧栏 ============== */
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--primary),#38BDF8);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--accent-subtle);color:var(--accent);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--primary),#38BDF8);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+/* ============== 主区 ============== */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted)}
+.crumb b{color:var(--fg);font-weight:500}
+.search{position:relative;flex:1;max-width:380px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--subtle)}
+.search input{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--border);border-radius:8px;
+              background:var(--surface);color:var(--fg);font-size:14px;outline:none;transition:.18s}
+.search input::placeholder{color:var(--subtle)}
+.search input:focus{border-color:var(--primary);background:var(--card)}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:.18s;position:relative}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+.icon-btn .dot{position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--danger);border:2px solid var(--bg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:1140px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+           padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.page-sub{margin-top:4px;font-size:14px;color:var(--muted);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.page-sub .sep{width:4px;height:4px;border-radius:50%;background:var(--border)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s;background:var(--card)}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+
+/* 学期筛选 */
+.term-pick{display:inline-flex;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:3px;gap:2px}
+.term-pick button{padding:5px 12px;border-radius:5px;font-size:12.5px;color:var(--muted);font-weight:500;transition:.18s}
+.term-pick button.on{background:var(--primary);color:var(--primary-fg)}
+
+/* ============== 概览统计 ============== */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.card{border:1px solid var(--border);border-radius:12px;background:var(--card);padding:20px}
+.stat-top{display:flex;align-items:flex-start;justify-content:space-between}
+.stat-label{font-size:13px;color:var(--muted)}
+.ic{padding:7px;border-radius:8px;display:flex;font-size:16px}
+.ic-p{background:var(--primary-subtle);color:var(--primary)}
+.ic-a{background:var(--accent-subtle);color:var(--accent)}
+.ic-s{background:var(--success-subtle);color:var(--success)}
+.ic-w{background:var(--warning-subtle);color:var(--warning)}
+.ic-v{background:var(--purple-subtle);color:var(--purple)}
+.stat-num{margin-top:10px;font-size:28px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1;color:var(--fg)}
+.stat-num .u{font-size:14px;font-weight:500;color:var(--subtle);margin-left:4px}
+.stat-foot{margin-top:6px;font-size:12px;color:var(--subtle);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.stat-foot .delta-up{color:var(--success);font-weight:600}
+.stat-foot .delta-down{color:var(--danger);font-weight:600}
+.stat-foot .delta-flat{color:var(--muted);font-weight:600}
+.stat-foot svg{font-size:11px}
+
+/* ============== 两栏图表 ============== */
+.charts{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
+.chart-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.chart-h h3{font-size:15px;font-weight:600}
+.chart-h .meta{font-size:11.5px;color:var(--subtle)}
+.chart-h .legend{display:flex;align-items:center;gap:14px;font-size:11.5px;color:var(--muted)}
+.chart-h .legend .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle}
+
+.chart-host{position:relative;height:240px}
+.chart-host svg{display:block;width:100%;height:100%}
+.chart-host .axis{fill:var(--subtle);font-size:10.5px;font-family:"SF Mono",Menlo,Consolas,monospace}
+.chart-host .grid{stroke:var(--border);stroke-dasharray:2 3}
+.chart-host .axis-line{stroke:var(--border)}
+.chart-host .bar{fill:var(--primary);transition:fill .18s;cursor:pointer}
+.chart-host .bar:hover{fill:var(--primary-hover)}
+.chart-host .bar.class-bar{fill:var(--accent)}
+.chart-host .bar-label{fill:var(--fg);font-size:11px;text-anchor:middle;font-weight:600;font-variant-numeric:tabular-nums}
+.chart-host .line-my{stroke:var(--primary);stroke-width:2.5;fill:none}
+.chart-host .line-class{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:4 3;fill:none}
+.chart-host .dot-my{fill:var(--primary);stroke:var(--card);stroke-width:2}
+.chart-host .dot-class{fill:var(--card);stroke:var(--muted);stroke-width:1.5}
+.chart-host .vline{stroke:var(--warning);stroke-dasharray:3 3;stroke-width:1}
+.chart-host .vline-label{fill:var(--warning);font-size:10.5px;font-weight:600}
+
+/* ============== 成绩汇总表 ============== */
+.table{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.t-head{display:grid;grid-template-columns:1.6fr 90px 90px 110px 110px 90px 80px;gap:0;
+        padding:13px 20px;background:var(--surface);font-size:11px;font-weight:600;color:var(--muted);
+        letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);align-items:center;text-align:center}
+.t-row{display:grid;grid-template-columns:1.6fr 90px 90px 110px 110px 90px 80px;gap:0;
+       padding:14px 20px;align-items:center;border-bottom:1px solid var(--border);transition:background .18s;text-align:center}
+.t-row:last-child{border-bottom:none}
+.t-row:hover{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.t-row > div{display:flex;justify-content:center;align-items:center;min-width:0}
+
+.t-course{display:flex;align-items:center;gap:12px;min-width:0;text-align:left;justify-content:flex-start}
+.t-course-ic{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+             font-size:15px;flex-shrink:0}
+.t-course-ic.c-data{background:var(--primary-subtle);color:var(--primary)}
+.t-course-ic.c-algo{background:var(--purple-subtle);color:var(--purple)}
+.t-course-ic.c-ai{background:var(--pink-subtle);color:var(--pink)}
+.t-course-info h3{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-start}
+.t-course-info p{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+.score{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.score.s{color:var(--success)}
+.score.w{color:var(--warning)}
+.score.d{color:var(--danger)}
+
+.delta{display:inline-flex;align-items:center;gap:3px;font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums;padding:2px 7px;border-radius:4px}
+.delta.up{background:var(--success-subtle);color:var(--success)}
+.delta.down{background:var(--danger-subtle);color:var(--danger)}
+.delta.flat{background:var(--surface);color:var(--muted)}
+.delta svg{font-size:9px}
+
+.rank-pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.rank-pill .n{color:var(--fg)}
+.rank-pill .t{color:var(--subtle);font-weight:500}
+.rank-pill.top{color:var(--warning)}
+.rank-pill.top .n{color:var(--warning)}
+
+/* ============== Tabs ============== */
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--border)}
+.tab{padding:11px 16px;font-size:13.5px;font-weight:500;color:var(--muted);position:relative;cursor:pointer;transition:.18s;
+     display:flex;align-items:center;gap:6px}
+.tab:hover{color:var(--fg)}
+.tab.on{color:var(--primary)}
+.tab.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--primary);border-radius:1px 1px 0 0}
+.tab .num{font-size:10.5px;padding:1px 7px;border-radius:999px;background:var(--surface);color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+.tab.on .num{background:var(--primary-subtle);color:var(--primary)}
+
+.tab-panel{padding-top:18px;display:none}
+.tab-panel.on{display:block}
+
+/* 明细表（作业 / 考试） */
+.detail-table{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.detail-table .t-head{grid-template-columns:1.6fr 80px 110px 110px 90px 110px 90px}
+.detail-table .t-row{grid-template-columns:1.6fr 80px 110px 110px 90px 110px 90px}
+.dt-title{display:flex;align-items:center;gap:8px;justify-content:flex-start;text-align:left}
+.dt-title .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dt-title .dot.t-assignment{background:var(--primary)}
+.dt-title .dot.t-exam{background:var(--purple)}
+.dt-title h3{font-size:13.5px;font-weight:500}
+.dt-title p{font-size:11.5px;color:var(--muted);margin-top:2px}
+.score-bar{flex:1;height:6px;background:var(--surface);border-radius:999px;overflow:hidden;max-width:80px;margin-right:8px}
+html.dark .score-bar{background:var(--border)}
+.score-bar span{display:block;height:100%;background:var(--primary);border-radius:999px}
+.score-bar span.s{background:var(--success)}
+.score-bar span.w{background:var(--warning)}
+.score-bar span.d{background:var(--danger)}
+
+.foot{padding:14px 20px;border-top:1px solid var(--border);background:var(--surface);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted)}
+html.dark .foot{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
+       padding:64px 24px;border:1px dashed var(--border);border-radius:12px;background:var(--card)}
+.empty-ic{padding:18px;border-radius:50%;background:var(--primary-subtle);color:var(--primary);font-size:24px;display:flex}
+.empty h3{margin-top:18px;font-size:15px;font-weight:600}
+.empty p{margin-top:6px;max-width:320px;text-align:center;font-size:13px;line-height:1.7;color:var(--muted)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+
+@media(max-width:1100px){
+  .side{display:none}
+  .charts{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr}
+}
+@media(max-width:720px){
+  .stats{grid-template-columns:1fr}
+  .content{padding:24px 20px}
+  .topbar{padding:0 20px}
+  .table .t-head,.table .t-row,
+  .detail-table .t-head,.detail-table .t-row{grid-template-columns:1.5fr 70px 70px 90px 70px;gap:8px}
+  .table .t-head>div:nth-child(4),
+  .table .t-row>div:nth-child(4),
+  .table .t-head>div:nth-child(7),
+  .table .t-row>div:nth-child(7),
+  .detail-table .t-head>div:nth-child(3),
+  .detail-table .t-row>div:nth-child(3),
+  .detail-table .t-head>div:nth-child(5),
+  .detail-table .t-row>div:nth-child(5),
+  .detail-table .t-head>div:nth-child(7),
+  .detail-table .t-row>div:nth-child(7){display:none}
+}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M3 9 12 3l9 6"/><path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"/><path d="M9 22V12h6v10"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6M16 6l6 6-6 6"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></symbol>
+<symbol id="i-grade" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13l2 2 4-4"/></symbol>
+<symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></symbol>
+<symbol id="i-flat" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-export" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+</svg>
+
+<div class="app">
+
+  <!-- ============ 侧栏 ============ -->
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark">Py</div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">学生端</span>
+    </div>
+    <nav class="nav">
+      <a class="nav-item" href="student-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <a class="nav-item" href="student-my-class.html"><svg><use href="#i-class"/></svg>我的班级</a>
+      <a class="nav-item" href="student-courses.html"><svg><use href="#i-book"/></svg>我的课程</a>
+      <a class="nav-item" href="student-assignments.html"><svg><use href="#i-file"/></svg>作业<span class="nav-count">2</span></a>
+      <a class="nav-item" href="student-problems.html"><svg><use href="#i-code"/></svg>题库练习</a>
+      <a class="nav-item" href="student-submissions.html"><svg><use href="#i-clip"/></svg>提交记录</a>
+      <a class="nav-item" href="student-exams.html"><svg><use href="#i-clock"/></svg>考试</a>
+      <a class="nav-item active" href="student-grades.html"><svg><use href="#i-grade"/></svg>成绩单</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈思雨</div>
+        <div class="s">高一(3)班 · 学号 S0421</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb"><b>成绩</b> / 我的成绩单</span>
+      <div class="search">
+        <svg><use href="#i-search"/></svg>
+        <input placeholder="搜索课程名 / 作业名…">
+      </div>
+      <div class="top-actions">
+        <div class="term-pick">
+          <button>2025 秋</button>
+          <button class="on">2026 春</button>
+          <button>全部</button>
+        </div>
+        <button class="btn-ghost"><svg><use href="#i-export"/></svg>导出 PDF</button>
+        <button class="icon-btn"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg><span class="dot"></span></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <!-- 页头 -->
+        <div class="page-head anim">
+          <div>
+            <h1>我的成绩单</h1>
+            <p class="page-sub">
+              <span><b class="num">2026 春季学期</b></span>
+              <span class="sep"></span>
+              <span>5 门课程</span>
+              <span class="sep"></span>
+              <span>作业 12 份 · 已批 11</span>
+              <span class="sep"></span>
+              <span>考试 4 场 · 已结束 3</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- 概览 -->
+        <div class="stats anim" style="animation-delay:.04s">
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">综合均分</span>
+              <div class="ic ic-p"><svg><use href="#i-grade"/></svg></div></div>
+            <p class="stat-num">88.6<span class="u">/ 100</span></p>
+            <p class="stat-foot">较上学期 <span class="delta-up">+3.2</span></p>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">班级排名</span>
+              <div class="ic ic-v"><svg><use href="#i-chart"/></svg></div></div>
+            <p class="stat-num">5<span class="u">/ 50</span></p>
+            <p class="stat-foot">前 <b>10%</b> · 较上月 <span class="delta-up">↑ 2</span></p>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">优秀率</span>
+              <div class="ic ic-s"><svg><use href="#i-up"/></svg></div></div>
+            <p class="stat-num">83%<span class="u"></span></p>
+            <p class="stat-foot">≥ 85 分项目占 <b>15 / 18</b></p>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">待努力</span>
+              <div class="ic ic-w"><svg><use href="#i-down"/></svg></div></div>
+            <p class="stat-num">2<span class="u">项</span></p>
+            <p class="stat-foot">递归 · 链表，建议重做</p>
+          </div>
+        </div>
+
+        <!-- 双栏图表 -->
+        <div class="charts anim" style="animation-delay:.08s">
+
+          <!-- 左 · 课程均分柱状图（含班级平均对比线） -->
+          <div class="card">
+            <div class="chart-h">
+              <h3>各课程综合均分</h3>
+              <div class="legend">
+                <span><span class="dot" style="background:var(--primary)"></span>我的得分</span>
+                <span><span class="dot" style="background:var(--accent)"></span>班级平均</span>
+              </div>
+            </div>
+            <div class="chart-host">
+              <svg viewBox="0 0 600 240" preserveAspectRatio="none">
+                <!-- 网格 -->
+                <line class="grid" x1="60" y1="30" x2="580" y2="30"/>
+                <line class="grid" x1="60" y1="75" x2="580" y2="75"/>
+                <line class="grid" x1="60" y1="120" x2="580" y2="120"/>
+                <line class="grid" x1="60" y1="165" x2="580" y2="165"/>
+                <line class="grid" x1="60" y1="210" x2="580" y2="210"/>
+                <!-- y 轴标签 -->
+                <text class="axis" x="50" y="33" text-anchor="end">100</text>
+                <text class="axis" x="50" y="78" text-anchor="end">90</text>
+                <text class="axis" x="50" y="123" text-anchor="end">80</text>
+                <text class="axis" x="50" y="168" text-anchor="end">70</text>
+                <text class="axis" x="50" y="213" text-anchor="end">60</text>
+                <line class="axis-line" x1="60" y1="210" x2="580" y2="210"/>
+                <!-- 课程柱：每门课 2 柱（我 / 班均），宽度 24，间隔 10，组间隔 50 -->
+                <!-- 组 1 · Python 程序设计基础 -->
+                <rect class="bar" x="78" y="50" width="22" height="160" rx="3"/>
+                <rect class="bar class-bar" x="103" y="62" width="22" height="148" rx="3"/>
+                <text class="axis" x="101" y="225" text-anchor="middle" style="font-size:10.5px;fill:var(--muted)">Python</text>
+                <!-- 组 2 · 数据结构与算法 -->
+                <rect class="bar" x="178" y="42" width="22" height="168" rx="3"/>
+                <rect class="bar class-bar" x="203" y="78" width="22" height="132" rx="3"/>
+                <text class="axis" x="201" y="225" text-anchor="middle" style="font-size:10.5px;fill:var(--muted)">数据结构</text>
+                <!-- 组 3 · 网络基础 -->
+                <rect class="bar" x="278" y="68" width="22" height="142" rx="3"/>
+                <rect class="bar class-bar" x="303" y="86" width="22" height="124" rx="3"/>
+                <text class="axis" x="301" y="225" text-anchor="middle" style="font-size:10.5px;fill:var(--muted)">网络基础</text>
+                <!-- 组 4 · AI 入门 -->
+                <rect class="bar" x="378" y="80" width="22" height="130" rx="3"/>
+                <rect class="bar class-bar" x="403" y="92" width="22" height="118" rx="3"/>
+                <text class="axis" x="401" y="225" text-anchor="middle" style="font-size:10.5px;fill:var(--muted)">AI 入门</text>
+                <!-- 组 5 · Python 数学建模 -->
+                <rect class="bar" x="478" y="56" width="22" height="154" rx="3"/>
+                <rect class="bar class-bar" x="503" y="72" width="22" height="138" rx="3"/>
+                <text class="axis" x="501" y="225" text-anchor="middle" style="font-size:10.5px;fill:var(--muted)">数学建模</text>
+                <!-- 柱顶数字 -->
+                <text class="bar-label" x="89" y="44">94</text>
+                <text class="bar-label" x="114" y="56">88</text>
+                <text class="bar-label" x="189" y="36">95</text>
+                <text class="bar-label" x="214" y="72">82</text>
+                <text class="bar-label" x="289" y="62">88</text>
+                <text class="bar-label" x="314" y="80">85</text>
+                <text class="bar-label" x="389" y="74">86</text>
+                <text class="bar-label" x="414" y="86">84</text>
+                <text class="bar-label" x="489" y="50">93</text>
+                <text class="bar-label" x="514" y="66">90</text>
+              </svg>
+            </div>
+          </div>
+
+          <!-- 右 · 学期趋势折线 -->
+          <div class="card">
+            <div class="chart-h">
+              <h3>学期趋势</h3>
+              <div class="legend">
+                <span><span class="dot" style="background:var(--primary)"></span>我</span>
+                <span><span class="dot" style="background:var(--muted)"></span>班级</span>
+              </div>
+            </div>
+            <div class="chart-host">
+              <svg viewBox="0 0 380 240" preserveAspectRatio="none">
+                <!-- 网格 -->
+                <line class="grid" x1="40" y1="30" x2="370" y2="30"/>
+                <line class="grid" x1="40" y1="75" x2="370" y2="75"/>
+                <line class="grid" x1="40" y1="120" x2="370" y2="120"/>
+                <line class="grid" x1="40" y1="165" x2="370" y2="165"/>
+                <line class="grid" x1="40" y1="210" x2="370" y2="210"/>
+                <text class="axis" x="32" y="33" text-anchor="end">100</text>
+                <text class="axis" x="32" y="78" text-anchor="end">90</text>
+                <text class="axis" x="32" y="123" text-anchor="end">80</text>
+                <text class="axis" x="32" y="168" text-anchor="end">70</text>
+                <text class="axis" x="32" y="213" text-anchor="end">60</text>
+                <line class="axis-line" x1="40" y1="210" x2="370" y2="210"/>
+                <!-- x 轴 · 8 周 -->
+                <text class="axis" x="60"  y="225" text-anchor="middle">W1</text>
+                <text class="axis" x="105" y="225" text-anchor="middle">W2</text>
+                <text class="axis" x="150" y="225" text-anchor="middle">W3</text>
+                <text class="axis" x="195" y="225" text-anchor="middle">W4</text>
+                <text class="axis" x="240" y="225" text-anchor="middle">W5</text>
+                <text class="axis" x="285" y="225" text-anchor="middle">W6</text>
+                <text class="axis" x="330" y="225" text-anchor="middle">W7</text>
+                <!-- 我：82 → 85 → 88 → 84 → 90 → 92 → 91 → 88.6 -->
+                <polyline class="line-my" points="60,150 105,135 150,120 195,140 240,110 285,98 330,108 350,116"/>
+                <circle class="dot-my" cx="60"  cy="150" r="4"/>
+                <circle class="dot-my" cx="105" cy="135" r="4"/>
+                <circle class="dot-my" cx="150" cy="120" r="4"/>
+                <circle class="dot-my" cx="195" cy="140" r="4"/>
+                <circle class="dot-my" cx="240" cy="110" r="4"/>
+                <circle class="dot-my" cx="285" cy="98"  r="4"/>
+                <circle class="dot-my" cx="330" cy="108" r="4"/>
+                <!-- 班级：80 → 81 → 82 → 81 → 83 → 84 → 85 → 85.4 -->
+                <polyline class="line-class" points="60,160 105,154 150,150 195,154 240,142 285,138 330,132 350,128"/>
+                <circle class="dot-class" cx="60"  cy="160" r="3.5"/>
+                <circle class="dot-class" cx="105" cy="154" r="3.5"/>
+                <circle class="dot-class" cx="150" cy="150" r="3.5"/>
+                <circle class="dot-class" cx="195" cy="154" r="3.5"/>
+                <circle class="dot-class" cx="240" cy="142" r="3.5"/>
+                <circle class="dot-class" cx="285" cy="138" r="3.5"/>
+                <circle class="dot-class" cx="330" cy="132" r="3.5"/>
+                <!-- 期末及格线 60（虚线）-->
+                <line class="vline" x1="40" y1="210" x2="370" y2="210"/>
+                <!-- 当前点高亮 -->
+                <circle cx="350" cy="116" r="6" fill="none" stroke="var(--primary)" stroke-width="2" opacity=".35"/>
+              </svg>
+            </div>
+            <p class="meta" style="font-size:11.5px;color:var(--subtle);margin-top:8px">
+              最近 7 周成绩均值 · W7 当前 88.6，班级均值 85.4
+            </p>
+          </div>
+        </div>
+
+        <!-- 课程成绩汇总表 -->
+        <div class="table anim" style="animation-delay:.12s">
+          <div class="t-head">
+            <div>课程</div>
+            <div>作业均分</div>
+            <div>考试均分</div>
+            <div>综合分</div>
+            <div>班级均分</div>
+            <div>排名</div>
+            <div>趋势</div>
+          </div>
+
+          <div class="t-row">
+            <div class="t-course">
+              <div class="t-course-ic c-data"><svg><use href="#i-book"/></svg></div>
+              <div class="t-course-info">
+                <h3>Python 程序设计基础</h3>
+                <p>王建国 · 5 份作业 · 2 场考试</p>
+              </div>
+            </div>
+            <div><span class="score s">95.2</span></div>
+            <div><span class="score s">92.5</span></div>
+            <div><span class="score s">94.2</span></div>
+            <div><span style="color:var(--muted);font-weight:500">88.0</span></div>
+            <div><span class="rank-pill top"><b class="n">2</b><span class="t">/ 50</span></span></div>
+            <div><span class="delta up"><svg><use href="#i-up"/></svg>+2.1</span></div>
+          </div>
+
+          <div class="t-row">
+            <div class="t-course">
+              <div class="t-course-ic c-algo"><svg><use href="#i-code"/></svg></div>
+              <div class="t-course-info">
+                <h3>数据结构与算法</h3>
+                <p>王建国 · 3 份作业 · 1 场考试</p>
+              </div>
+            </div>
+            <div><span class="score s">94.0</span></div>
+            <div><span class="score s">96.0</span></div>
+            <div><span class="score s">94.7</span></div>
+            <div><span style="color:var(--muted);font-weight:500">82.4</span></div>
+            <div><span class="rank-pill top"><b class="n">1</b><span class="t">/ 50</span></span></div>
+            <div><span class="delta up"><svg><use href="#i-up"/></svg>+1.4</span></div>
+          </div>
+
+          <div class="t-row">
+            <div class="t-course">
+              <div class="t-course-ic c-data"><svg><use href="#i-book"/></svg></div>
+              <div class="t-course-info">
+                <h3>计算机网络基础</h3>
+                <p>李雪 · 2 份作业 · 0 考试</p>
+              </div>
+            </div>
+            <div><span class="score s">88.0</span></div>
+            <div><span style="color:var(--subtle)">—</span></div>
+            <div><span class="score s">88.0</span></div>
+            <div><span style="color:var(--muted);font-weight:500">85.1</span></div>
+            <div><span class="rank-pill"><b class="n">8</b><span class="t">/ 50</span></span></div>
+            <div><span class="delta flat"><svg><use href="#i-flat"/></svg>0.0</span></div>
+          </div>
+
+          <div class="t-row">
+            <div class="t-course">
+              <div class="t-course-ic c-ai"><svg><use href="#i-book"/></svg></div>
+              <div class="t-course-info">
+                <h3>走进人工智能</h3>
+                <p>李雪 · 1 份作业 · 1 场考试</p>
+              </div>
+            </div>
+            <div><span class="score w">78.0</span></div>
+            <div><span class="score s">90.0</span></div>
+            <div><span class="score">86.0</span></div>
+            <div><span style="color:var(--muted);font-weight:500">83.8</span></div>
+            <div><span class="rank-pill"><b class="n">12</b><span class="t">/ 50</span></span></div>
+            <div><span class="delta down"><svg><use href="#i-down"/></svg>-1.2</span></div>
+          </div>
+
+          <div class="t-row">
+            <div class="t-course">
+              <div class="t-course-ic c-algo"><svg><use href="#i-book"/></svg></div>
+              <div class="t-course-info">
+                <h3>Python 数学建模</h3>
+                <p>陈教授 · 1 份作业 · 0 考试</p>
+              </div>
+            </div>
+            <div><span class="score s">93.0</span></div>
+            <div><span style="color:var(--subtle)">—</span></div>
+            <div><span class="score s">93.0</span></div>
+            <div><span style="color:var(--muted);font-weight:500">89.5</span></div>
+            <div><span class="rank-pill top"><b class="n">3</b><span class="t">/ 48</span></span></div>
+            <div><span class="delta up"><svg><use href="#i-up"/></svg>+0.5</span></div>
+          </div>
+        </div>
+
+        <!-- 详情 Tab -->
+        <div class="anim" style="animation-delay:.16s">
+          <div class="tabs">
+            <div class="tab on" data-p="assignments"><svg><use href="#i-file"/></svg>作业明细 <span class="num">12</span></div>
+            <div class="tab" data-p="exams"><svg><use href="#i-clip"/></svg>考试明细 <span class="num">4</span></div>
+            <div class="tab" data-p="comments"><svg><use href="#i-info"/></svg>教师评语 <span class="num">6</span></div>
+          </div>
+
+          <!-- 作业明细 -->
+          <div class="tab-panel on" data-p="assignments">
+            <div class="detail-table">
+              <div class="t-head">
+                <div>作业</div>
+                <div>提交时间</div>
+                <div>分值</div>
+                <div>班级均分</div>
+                <div>排名</div>
+                <div>得分</div>
+                <div>状态</div>
+              </div>
+              <div class="t-row">
+                <div class="dt-title"><span class="dot t-assignment"></span><div><h3>第 5 章作业 · 文件 I/O</h3><p>Python 程序设计基础 · 王建国</p></div></div>
+                <div style="font-size:12.5px;color:var(--muted)">8/12 22:14</div>
+                <div><span class="score s">100</span></div>
+                <div>78.4</div>
+                <div>3</div>
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:center"><div class="score-bar"><span class="s" style="width:100%"></span></div><span style="font-weight:600;font-variant-numeric:tabular-nums">100</span></div>
+                </div>
+                <div><span style="color:var(--success);font-size:12px;font-weight:500">已批改</span></div>
+              </div>
+              <div class="t-row">
+                <div class="dt-title"><span class="dot t-assignment"></span><div><h3>第 4 章作业 · 函数与递归</h3><p>Python 程序设计基础 · 王建国</p></div></div>
+                <div style="font-size:12.5px;color:var(--muted)">8/5 21:03</div>
+                <div><span class="score s">95</span></div>
+                <div>82.1</div>
+                <div>5</div>
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:center"><div class="score-bar"><span class="s" style="width:95%"></span></div><span style="font-weight:600;font-variant-numeric:tabular-nums">95</span></div>
+                </div>
+                <div><span style="color:var(--success);font-size:12px;font-weight:500">已批改</span></div>
+              </div>
+              <div class="t-row">
+                <div class="dt-title"><span class="dot t-assignment"></span><div><h3>递归与分治基础</h3><p>数据结构与算法 · 王建国</p></div></div>
+                <div style="font-size:12.5px;color:var(--muted)">8/8 23:47</div>
+                <div><span class="score s">92</span></div>
+                <div>74.6</div>
+                <div>4</div>
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:center"><div class="score-bar"><span class="s" style="width:92%"></span></div><span style="font-weight:600;font-variant-numeric:tabular-nums">92</span></div>
+                </div>
+                <div><span style="color:var(--success);font-size:12px;font-weight:500">已批改</span></div>
+              </div>
+              <div class="t-row">
+                <div class="dt-title"><span class="dot t-assignment"></span><div><h3>链表与指针操作</h3><p>数据结构与算法 · 王建国</p></div></div>
+                <div style="font-size:12.5px;color:var(--muted)">7/30 20:11</div>
+                <div><span class="score w">76</span></div>
+                <div>78.0</div>
+                <div>22</div>
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:center"><div class="score-bar"><span class="w" style="width:76%"></span></div><span style="font-weight:600;font-variant-numeric:tabular-nums">76</span></div>
+                </div>
+                <div><span style="color:var(--warning);font-size:12px;font-weight:500">建议重做</span></div>
+              </div>
+              <div class="t-row">
+                <div class="dt-title"><span class="dot t-assignment"></span><div><h3>OSI 七层模型梳理</h3><p>计算机网络基础 · 李雪</p></div></div>
+                <div style="font-size:12.5px;color:var(--muted)">7/22 18:30</div>
+                <div><span class="score s">90</span></div>
+                <div>83.2</div>
+                <div>7</div>
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:center"><div class="score-bar"><span class="s" style="width:90%"></span></div><span style="font-weight:600;font-variant-numeric:tabular-nums">90</span></div>
+                </div>
+                <div><span style="color:var(--success);font-size:12px;font-weight:500">已批改</span></div>
+              </div>
+              <div class="t-row">
+                <div class="dt-title"><span class="dot t-assignment"></span><div><h3>机器学习概念报告</h3><p>走进人工智能 · 李雪</p></div></div>
+                <div style="font-size:12.5px;color:var(--muted)">—</div>
+                <div><span class="score w">78</span></div>
+                <div>82.5</div>
+                <div>18</div>
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:center"><div class="score-bar"><span class="w" style="width:78%"></span></div><span style="font-weight:600;font-variant-numeric:tabular-nums">78</span></div>
+                </div>
+                <div><span style="color:var(--warning);font-size:12px;font-weight:500">建议重做</span></div>
+              </div>
+              <div class="t-row">
+                <div class="dt-title"><span class="dot t-assignment"></span><div><h3>综合练习 · 文件 I/O</h3><p>Python 程序设计基础 · 王建国</p></div></div>
+                <div style="font-size:12.5px;color:var(--warning)">待提交</div>
+                <div><span style="color:var(--subtle)">—</span></div>
+                <div>—</div>
+                <div>—</div>
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:center"><div class="score-bar"><span style="width:0"></span></div><span style="color:var(--subtle)">未交</span></div>
+                </div>
+                <div><span style="color:var(--danger);font-size:12px;font-weight:500">未交</span></div>
+              </div>
+              <div class="foot">
+                <span>显示前 <b style="color:var(--fg)">7</b> 条 · 共 <b style="color:var(--fg)">12</b> 份作业</span>
+                <a href="student-assignments.html">查看全部作业 →</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- 考试明细 -->
+          <div class="tab-panel" data-p="exams">
+            <div class="detail-table">
+              <div class="t-head">
+                <div>考试</div>
+                <div>参加时间</div>
+                <div>分值</div>
+                <div>班级均分</div>
+                <div>排名</div>
+                <div>得分</div>
+                <div>状态</div>
+              </div>
+              <div class="t-row">
+                <div class="dt-title"><span class="dot t-exam"></span><div><h3>期中模拟 · 算法竞赛入门</h3><p>数据结构与算法 · 90 分钟</p></div></div>
+                <div style="font-size:12.5px;color:var(--muted)">8/10</div>
+                <div><span class="score s">96</span></div>
+                <div>82.0</div>
+                <div>1</div>
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:center"><div class="score-bar"><span class="s" style="width:96%"></span></div><span style="font-weight:600;font-variant-numeric:tabular-nums">96</span></div>
+                </div>
+                <div><span style="color:var(--success);font-size:12px;font-weight:500">已出分</span></div>
+              </div>
+              <div class="t-row">
+                <div class="dt-title"><span class="dot t-exam"></span><div><h3>单元测 · 基础语法</h3><p>Python 程序设计基础 · 45 分钟</p></div></div>
+                <div style="font-size:12.5px;color:var(--muted)">7/15</div>
+                <div><span class="score s">92</span></div>
+                <div>85.6</div>
+                <div>5</div>
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:center"><div class="score-bar"><span class="s" style="width:92%"></span></div><span style="font-weight:600;font-variant-numeric:tabular-nums">92</span></div>
+                </div>
+                <div><span style="color:var(--success);font-size:12px;font-weight:500">已出分</span></div>
+              </div>
+              <div class="t-row">
+                <div class="dt-title"><span class="dot t-exam"></span><div><h3>小测 · AI 概念辨析</h3><p>走进人工智能 · 30 分钟</p></div></div>
+                <div style="font-size:12.5px;color:var(--muted)">7/28</div>
+                <div><span class="score s">90</span></div>
+                <div>84.0</div>
+                <div>6</div>
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:center"><div class="score-bar"><span class="s" style="width:90%"></span></div><span style="font-weight:600;font-variant-numeric:tabular-nums">90</span></div>
+                </div>
+                <div><span style="color:var(--success);font-size:12px;font-weight:500">已出分</span></div>
+              </div>
+              <div class="t-row">
+                <div class="dt-title"><span class="dot t-exam"></span><div><h3>期末模拟考 · Python 综合</h3><p>Python 程序设计基础 · 120 分钟</p></div></div>
+                <div style="font-size:12.5px;color:var(--primary)">8/20</div>
+                <div><span style="color:var(--subtle)">—</span></div>
+                <div>—</div>
+                <div>—</div>
+                <div>
+                  <div style="display:flex;align-items:center;justify-content:center"><div class="score-bar"><span style="width:0"></span></div><span style="color:var(--primary);font-size:12px">未开始</span></div>
+                </div>
+                <div><span style="color:var(--primary);font-size:12px;font-weight:500">未开始</span></div>
+              </div>
+              <div class="foot">
+                <span>共 <b style="color:var(--fg)">4</b> 场考试 · <b style="color:var(--success)">3</b> 已结束 · <b style="color:var(--primary)">1</b> 未开始</span>
+                <a href="student-exams.html">查看全部考试 →</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- 教师评语 -->
+          <div class="tab-panel" data-p="comments">
+            <div class="card" style="padding:0;overflow:hidden">
+              <div style="padding:24px 28px;border-bottom:1px solid var(--border)">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#38BDF8);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600">王</div>
+                  <div>
+                    <div style="font-size:13.5px;font-weight:600">王建国 · 任课教师</div>
+                    <div style="font-size:11.5px;color:var(--muted)">2026-08-12 14:32 · Python 程序设计基础</div>
+                  </div>
+                </div>
+                <p style="margin-top:14px;font-size:13.5px;color:var(--fg);line-height:1.7">
+                  陈思雨这学期在 Python 基础部分进步明显，第 5 章文件 I/O 的作业写得非常工整，注释也清晰。<b>建议</b>：递归部分还需要再练，分治思想理解稍弱，下次课单独辅导。
+                </p>
+              </div>
+
+              <div style="padding:24px 28px;border-bottom:1px solid var(--border)">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--purple),#EC4899);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600">王</div>
+                  <div>
+                    <div style="font-size:13.5px;font-weight:600">王建国 · 任课教师</div>
+                    <div style="font-size:11.5px;color:var(--muted)">2026-08-10 16:08 · 数据结构与算法</div>
+                  </div>
+                </div>
+                <p style="margin-top:14px;font-size:13.5px;color:var(--fg);line-height:1.7">
+                  期中模拟拿到 96 分班级第 1，链表反转和二分查找的代码非常干净。<b>注意</b>：链表与指针操作那一份在边界条件（空链表、单节点）上漏判了，建议重做巩固。
+                </p>
+              </div>
+
+              <div style="padding:24px 28px">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--success));color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600">李</div>
+                  <div>
+                    <div style="font-size:13.5px;font-weight:600">李雪 · 任课教师</div>
+                    <div style="font-size:11.5px;color:var(--muted)">2026-08-08 09:15 · 走进人工智能</div>
+                  </div>
+                </div>
+                <p style="margin-top:14px;font-size:13.5px;color:var(--fg);line-height:1.7">
+                  机器学习概念报告内容有点偏概念，建议多读一些 sklearn 的入门示例，下次小测重点会考察。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+// Tab 切换
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click', function(){
+    document.querySelectorAll('.tab').forEach(function(x){ x.classList.remove('on'); });
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('on'); });
+    t.classList.add('on');
+    var p = document.querySelector('.tab-panel[data-p="' + t.dataset.p + '"]');
+    if (p) p.classList.add('on');
+  });
+});
+
+// 学期切换
+document.querySelectorAll('.term-pick button').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('.term-pick button').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    toast('已切换到 ' + b.textContent);
+  });
+});
+</script>
+
+</body>
+</html>

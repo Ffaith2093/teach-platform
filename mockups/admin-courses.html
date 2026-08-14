@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>课程管理 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+  /* 课程分类色 */
+  --cat-data:#0EA5E9;        --cat-data-bg:#E0F2FE;
+  --cat-algo:#10B981;        --cat-algo-bg:#D1FAE5;
+  --cat-ai:#8B5CF6;          --cat-ai-bg:#EDE9FE;
+  --cat-net:#F97316;         --cat-net-bg:#FFEDD5;
+  --cat-inter:#64748B;       --cat-inter-bg:#F1F5F9;
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171;  --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+  --cat-data:#38BDF8;        --cat-data-bg:#0C334A;
+  --cat-algo:#34D399;        --cat-algo-bg:#063B2A;
+  --cat-ai:#A78BFA;          --cat-ai-bg:#2A1B4D;
+  --cat-net:#FB923C;         --cat-net-bg:#422106;
+  --cat-inter:#94A3B8;       --cat-inter-bg:#1E293B;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--purple);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--purple),#EC4899);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted)}
+.crumb b{color:var(--fg);font-weight:500}
+.search{position:relative;flex:1;max-width:380px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--subtle)}
+.search input{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--border);border-radius:8px;
+              background:var(--surface);color:var(--fg);font-size:14px;outline:none;transition:.18s}
+.search input::placeholder{color:var(--subtle)}
+.search input:focus{border-color:var(--primary);background:var(--card)}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:background .18s,color .18s}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:1140px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+           padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.page-sub{margin-top:4px;font-size:14px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+
+/* 分类筛选 chips */
+.cat-tabs{display:flex;gap:8px;flex-wrap:wrap;padding:14px;
+           border:1px solid var(--border);border-radius:12px;background:var(--card)}
+.cat-tab{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:10px;font-size:13px;
+         color:var(--muted);background:var(--card);border:1px solid var(--border);font-weight:500;
+         transition:.18s;cursor:pointer}
+.cat-tab:hover{border-color:var(--border-strong)}
+.cat-tab.on{background:var(--card);color:var(--fg);box-shadow:var(--shadow);font-weight:600}
+.cat-tab-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cat-tab.c-data .cat-tab-dot{background:var(--cat-data)}
+.cat-tab.c-algo .cat-tab-dot{background:var(--cat-algo)}
+.cat-tab.c-ai .cat-tab-dot{background:var(--cat-ai)}
+.cat-tab.c-net .cat-tab-dot{background:var(--cat-net)}
+.cat-tab.c-inter .cat-tab-dot{background:var(--cat-inter)}
+.cat-tab .cnt{font-size:11px;padding:1px 7px;border-radius:999px;font-weight:600;font-variant-numeric:tabular-nums;
+              background:var(--surface);color:var(--muted)}
+html.dark .cat-tab .cnt{background:var(--border)}
+.cat-tab.on .cnt{background:var(--primary);color:var(--primary-fg)}
+
+/* 课程表 */
+.table{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.t-head{display:grid;grid-template-columns:2.4fr 130px 1.2fr 110px 80px;gap:16px;padding:14px 20px;
+        background:var(--surface);font-size:11px;font-weight:600;color:var(--muted);
+        letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);align-items:center}
+.t-head > div{text-align:center}
+html.dark .t-head{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.t-row{display:grid;grid-template-columns:2.4fr 130px 1.2fr 110px 80px;gap:16px;padding:16px 20px;
+       align-items:center;border-bottom:1px solid var(--border);transition:background .18s}
+.t-row:last-child{border-bottom:none}
+.t-row:hover{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.t-row.archived{opacity:.7}
+.t-row > div{text-align:center;display:flex;justify-content:center;align-items:center;min-width:0}
+.t-row.archived{opacity:.7}
+
+.t-course{display:flex;align-items:center;gap:12px;min-width:0}
+.t-course-ic{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+             font-size:18px;flex-shrink:0}
+.t-course-ic.c-data{background:var(--cat-data-bg);color:var(--cat-data)}
+.t-course-ic.c-algo{background:var(--cat-algo-bg);color:var(--cat-algo)}
+.t-course-ic.c-ai{background:var(--cat-ai-bg);color:var(--cat-ai)}
+.t-course-ic.c-net{background:var(--cat-net-bg);color:var(--cat-net)}
+.t-course-ic.c-inter{background:var(--cat-inter-bg);color:var(--cat-inter)}
+.t-course-info h3{font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.t-course-info p{font-size:12px;color:var(--muted);margin-top:2px;text-align:center}
+
+.cat-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:6px;
+           font-size:12px;font-weight:600;letter-spacing:.02em}
+.cat-badge .dot{width:6px;height:6px;border-radius:50%}
+.cat-badge.c-data{background:var(--cat-data-bg);color:var(--cat-data)}
+.cat-badge.c-data .dot{background:var(--cat-data)}
+.cat-badge.c-algo{background:var(--cat-algo-bg);color:var(--cat-algo)}
+.cat-badge.c-algo .dot{background:var(--cat-algo)}
+.cat-badge.c-ai{background:var(--cat-ai-bg);color:var(--cat-ai)}
+.cat-badge.c-ai .dot{background:var(--cat-ai)}
+.cat-badge.c-net{background:var(--cat-net-bg);color:var(--cat-net)}
+.cat-badge.c-net .dot{background:var(--cat-net)}
+.cat-badge.c-inter{background:var(--cat-inter-bg);color:var(--cat-inter)}
+.cat-badge.c-inter .dot{background:var(--cat-inter)}
+
+.owner{display:flex;align-items:center;justify-content:center;min-width:0}
+.owner p{font-size:13px;font-weight:500;color:var(--fg)}
+
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
+.pill.live{background:var(--success-subtle);color:var(--success)}
+.pill.archived{background:var(--surface);color:var(--subtle);border:1px solid var(--border)}
+html.dark .pill.archived{background:var(--border)}
+
+.t-ops{display:flex;gap:6px;justify-content:center}
+.t-ops button,.t-ops a{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+              color:var(--subtle);transition:.18s}
+.t-ops button:hover,.t-ops a:hover{background:var(--surface);color:var(--fg)}
+.t-ops button.danger:hover{background:var(--danger-subtle);color:var(--danger)}
+
+.foot{padding:20px 28px;border-top:1px solid var(--border);background:var(--surface);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted)}
+html.dark .foot{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+
+@media(max-width:1100px){
+  .side{display:none}
+  .t-head,.t-row{grid-template-columns:2fr 100px 1fr 80px;gap:12px}
+  .t-head .h3,.t-row .owner{display:none}
+  .content{padding:24px 20px}
+  .topbar{padding:0 20px}
+}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M3 9 12 3l9 6"/><path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"/><path d="M9 22V12h6v10"/></symbol>
+<symbol id="i-grad" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="m20.6 13.4-8.2 8.2a2 2 0 0 1-2.8 0l-7-7A2 2 0 0 1 2 13.2V4a2 2 0 0 1 2-2h9.2a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+<symbol id="i-exam" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="3" rx="1"/><path d="M9 11h6M9 14h6M9 17h3"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M21.7 7.3a2.5 2.5 0 0 0-3.5 0L8 17.5 6 22l4.5-2L20 10.5a2.5 2.5 0 0 0 0-3.5z"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-archive" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="5" rx="1"/><path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/></symbol>
+<symbol id="i-restore" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8"/><path d="M3 3v5h5"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></symbol>
+<symbol id="i-set" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></symbol>
+<symbol id="i-judge" viewBox="0 0 24 24"><path d="m12 2 3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-shield"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">管理员</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">总览</p>
+      <a class="nav-item" href="admin-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <p class="nav-label">组织</p>
+      <a class="nav-item" href="admin-students.html"><svg><use href="#i-users"/></svg>学生</a>
+      <a class="nav-item" href="admin-teachers.html"><svg><use href="#i-grad"/></svg>教师</a>
+      <p class="nav-label">内容</p>
+      <a class="nav-item" href="admin-exams.html"><svg><use href="#i-exam"/></svg>考试<span class="nav-count">47</span></a>
+<a class="nav-item active"><svg><use href="#i-book"/></svg>课程</a>
+      <a class="nav-item" href="admin-banks.html"><svg><use href="#i-tag"/></svg>题库</a>
+      <p class="nav-label">系统</p>
+      <a class="nav-item" href="admin-judge-queue.html"><svg><use href="#i-judge"/></svg>评测队列<span class="nav-count">2</span></a>
+      <a class="nav-item" href="admin-settings.html"><svg><use href="#i-set"/></svg>系统设置</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈主任</div>
+        <div class="s">系统管理员</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb"><b>内容</b> / 课程</span>
+      <div class="search">
+        <svg><use href="#i-search"/></svg>
+        <input placeholder="搜索课程名、所有者姓名…">
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <div class="page-head anim">
+          <div>
+            <h1>课程管理</h1>
+            <p class="page-sub">全校所有课程的统一视图 · 按分类查看 · 管理所有者与共享者</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-ghost"><svg><use href="#i-info"/></svg>分类说明</button>
+          </div>
+        </div>
+
+        <!-- 分类筛选 -->
+        <div class="cat-tabs anim" style="animation-delay:.04s">
+          <div class="cat-tab on">
+            <span class="cat-tab-dot"></span>
+            全部课程 <span class="cnt">28</span>
+          </div>
+          <div class="cat-tab c-data">
+            <span class="cat-tab-dot"></span>
+            数据 <span class="cnt">8</span>
+          </div>
+          <div class="cat-tab c-algo">
+            <span class="cat-tab-dot"></span>
+            算法 <span class="cnt">10</span>
+          </div>
+          <div class="cat-tab c-ai">
+            <span class="cat-tab-dot"></span>
+            人工智能 <span class="cnt">6</span>
+          </div>
+          <div class="cat-tab c-net">
+            <span class="cat-tab-dot"></span>
+            计算机网络 <span class="cnt">3</span>
+          </div>
+          <div class="cat-tab c-inter">
+            <span class="cat-tab-dot"></span>
+            多学科交叉 <span class="cnt">1</span>
+          </div>
+        </div>
+
+        <!-- 课程表 -->
+        <div class="table anim" style="animation-delay:.08s">
+          <div class="t-head">
+            <div class="h1">课程</div>
+            <div class="h2">分类</div>
+            <div class="h3">创建者</div>
+            <div class="h6">状态</div>
+            <div class="h7">操作</div>
+          </div>
+
+          <!-- 在用课程 -->
+          <div class="t-row">
+            <div class="t-course">
+              <div class="t-course-ic c-data"><svg><use href="#i-book"/></svg></div>
+              <div class="t-course-info">
+                <h3>Python 数据处理基础 <span class="pill live">在用</span></h3>
+                <p>2025-2026 学年 上学期 · 8 个作业 · 12 套试卷</p>
+              </div>
+            </div>
+            <div><span class="cat-badge c-data"><span class="dot"></span>数据</span></div>
+            <div>
+              <div class="owner"><p>王建国</p></div>
+            </div>
+            <div><span class="pill live">● 在用</span></div>
+            <div class="t-ops">
+              <a href="admin-courses-edit.html" title="编辑"><svg><use href="#i-edit"/></svg></a>
+              
+    <button data-confirm-title="归档该课程？"
+    data-confirm-body="归档后教师无法将该课程加入新作业
+已有的引用与学生成绩不受影响
+归档课程可随时恢复"
+    data-confirm-text="归档课程" data-confirm-toast="课程已归档"><svg><use href="#i-archive"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row">
+            <div class="t-course">
+              <div class="t-course-ic c-algo"><svg><use href="#i-book"/></svg></div>
+              <div class="t-course-info">
+                <h3>数据结构与算法 <span class="pill live">在用</span></h3>
+                <p>2025-2026 学年 上学期 · 6 个作业 · 8 套试卷</p>
+              </div>
+            </div>
+            <div><span class="cat-badge c-algo"><span class="dot"></span>算法</span></div>
+            <div>
+              <div class="owner"><p>王建国</p></div>
+            </div>
+            <div><span class="pill live">● 在用</span></div>
+            <div class="t-ops">
+              <a href="admin-courses-edit.html" title="编辑"><svg><use href="#i-edit"/></svg></a>
+              
+    <button data-confirm-title="归档该课程？"
+    data-confirm-body="归档后教师无法将该课程加入新作业
+已有的引用与学生成绩不受影响
+归档课程可随时恢复"
+    data-confirm-text="归档课程" data-confirm-toast="课程已归档"><svg><use href="#i-archive"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row">
+            <div class="t-course">
+              <div class="t-course-ic c-algo"><svg><use href="#i-book"/></svg></div>
+              <div class="t-course-info">
+                <h3>排序与查找 <span class="pill live">在用</span></h3>
+                <p>2025-2026 学年 上学期 · 4 个作业 · 6 套试卷</p>
+              </div>
+            </div>
+            <div><span class="cat-badge c-algo"><span class="dot"></span>算法</span></div>
+            <div>
+              <div class="owner"><p>张明远</p></div>
+            </div>
+            <div><span class="pill live">● 在用</span></div>
+            <div class="t-ops">
+              <a href="admin-courses-edit.html" title="编辑"><svg><use href="#i-edit"/></svg></a>
+              
+    <button data-confirm-title="归档该课程？"
+    data-confirm-body="归档后教师无法将该课程加入新作业
+已有的引用与学生成绩不受影响
+归档课程可随时恢复"
+    data-confirm-text="归档课程" data-confirm-toast="课程已归档"><svg><use href="#i-archive"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row">
+            <div class="t-course">
+              <div class="t-course-ic c-ai"><svg><use href="#i-book"/></svg></div>
+              <div class="t-course-info">
+                <h3>走进人工智能 <span class="pill live">在用</span></h3>
+                <p>2025-2026 学年 上学期 · 3 个作业 · 4 套试卷</p>
+              </div>
+            </div>
+            <div><span class="cat-badge c-ai"><span class="dot"></span>人工智能</span></div>
+            <div>
+              <div class="owner"><p>李雪</p></div>
+            </div>
+            <div><span class="pill live">● 在用</span></div>
+            <div class="t-ops">
+              <a href="admin-courses-edit.html" title="编辑"><svg><use href="#i-edit"/></svg></a>
+              
+    <button data-confirm-title="归档该课程？"
+    data-confirm-body="归档后教师无法将该课程加入新作业
+已有的引用与学生成绩不受影响
+归档课程可随时恢复"
+    data-confirm-text="归档课程" data-confirm-toast="课程已归档"><svg><use href="#i-archive"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row">
+            <div class="t-course">
+              <div class="t-course-ic c-net"><svg><use href="#i-book"/></svg></div>
+              <div class="t-course-info">
+                <h3>计算机网络入门 <span class="pill live">在用</span></h3>
+                <p>2025-2026 学年 上学期 · 5 个作业 · 3 套试卷</p>
+              </div>
+            </div>
+            <div><span class="cat-badge c-net"><span class="dot"></span>计算机网络</span></div>
+            <div>
+              <div class="owner"><p>林志远</p></div>
+            </div>
+            <div><span class="pill live">● 在用</span></div>
+            <div class="t-ops">
+              <a href="admin-courses-edit.html" title="编辑"><svg><use href="#i-edit"/></svg></a>
+              
+    <button data-confirm-title="归档该课程？"
+    data-confirm-body="归档后教师无法将该课程加入新作业
+已有的引用与学生成绩不受影响
+归档课程可随时恢复"
+    data-confirm-text="归档课程" data-confirm-toast="课程已归档"><svg><use href="#i-archive"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row">
+            <div class="t-course">
+              <div class="t-course-ic c-inter"><svg><use href="#i-book"/></svg></div>
+              <div class="t-course-info">
+                <h3>Python 与数学建模 <span class="pill live">在用</span></h3>
+                <p>2025-2026 学年 上学期 · 4 个作业 · 5 套试卷</p>
+              </div>
+            </div>
+            <div><span class="cat-badge c-inter"><span class="dot"></span>多学科交叉</span></div>
+            <div>
+              <div class="owner"><p>陈教授</p></div>
+            </div>
+            <div><span class="pill live">● 在用</span></div>
+            <div class="t-ops">
+              <a href="admin-courses-edit.html" title="编辑"><svg><use href="#i-edit"/></svg></a>
+              
+    <button data-confirm-title="归档该课程？"
+    data-confirm-body="归档后教师无法将该课程加入新作业
+已有的引用与学生成绩不受影响
+归档课程可随时恢复"
+    data-confirm-text="归档课程" data-confirm-toast="课程已归档"><svg><use href="#i-archive"/></svg></button>
+            </div>
+          </div>
+
+          <!-- 已归档 -->
+          <div class="t-row archived">
+            <div class="t-course">
+              <div class="t-course-ic c-data" style="opacity:.5"><svg><use href="#i-book"/></svg></div>
+              <div class="t-course-info">
+                <h3 style="color:var(--muted)">Python 入门（2024 春）<span class="pill archived">已归档</span></h3>
+                <p>2024-2025 学年 下学期 · 历史数据保留</p>
+              </div>
+            </div>
+            <div><span class="cat-badge c-data" style="opacity:.6"><span class="dot"></span>数据</span></div>
+            <div>
+              <div class="owner"><p>何静怡</p></div>
+            </div>
+            <div><span class="pill archived">已归档</span></div>
+            <div class="t-ops">
+              
+    <button title="恢复"
+    data-confirm-title="恢复该课程？"
+    data-confirm-body="恢复后教师可将该课程加入新作业
+历史引用自动重新生效"
+    data-confirm-text="恢复课程" data-confirm-toast="课程已恢复"><svg><use href="#i-restore"/></svg></button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 页脚 -->
+        <div class="foot anim" style="animation-delay:.12s">
+          <span>共 <b style="color:var(--fg)">28</b> 门课程 · 显示前 7 条 · <b style="color:var(--success)">27</b> 在用 · <b style="color:var(--subtle)">1</b> 已归档</span>
+          
+    <button class="btn-ghost"
+    data-confirm-title="批量调整分类尚未支持"
+    data-confirm-body="当前只支持单个课程的分类调整
+批量功能将在下一版本上线"
+    data-confirm-text="知道了" data-confirm-toast=""><svg><use href="#i-edit"/></svg>批量调整分类</button>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+</body>
+</html>

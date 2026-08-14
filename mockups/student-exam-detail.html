@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第 4 章测验 · 考试 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --pink:#EC4899; --pink-subtle:#FCE7F3;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0; --border-strong:#CBD5E1;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171; --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --pink:#F472B6; --pink-subtle:#4A1232;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548; --border-strong:#3D4A60;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--surface);color:var(--fg);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--primary),#38BDF8);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--accent-subtle);color:var(--accent);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto;min-height:0}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);margin-bottom:2px;transition:background .18s,color .18s}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;
+         background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,#0EA5E9,#38BDF8);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:14px;
+        padding:0 24px;border-bottom:1px solid var(--border);background:var(--bg)}
+.searchbox{flex:1;max-width:480px;position:relative}
+.searchbox input{width:100%;height:36px;padding:0 14px 0 38px;border-radius:8px;border:1px solid var(--border);
+                 background:var(--surface);font-size:13.5px;color:var(--fg);outline:none;transition:.18s}
+.searchbox input:focus{border-color:var(--primary);background:var(--card)}
+.searchbox svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--subtle)}
+.top-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;
+          display:flex;transition:background .18s,color .18s;position:relative}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+.icon-btn .dot{position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--danger);border:2px solid var(--bg)}
+
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;
+       font-size:11px;font-weight:500;white-space:nowrap}
+.badge i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.b-w{background:var(--warning-subtle);color:var(--warning)}
+.b-d{background:var(--danger-subtle);color:var(--danger)}
+.b-p{background:var(--primary-subtle);color:var(--primary)}
+.b-s{background:var(--success-subtle);color:var(--success)}
+.b-a{background:var(--accent-subtle);color:var(--accent)}
+.b-n{background:var(--purple-subtle);color:var(--purple)}
+.b-m{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:13px;font-weight:500;transition:background .18s}
+.btn:hover{background:var(--primary-hover)}
+.btn.ghost{background:var(--card);color:var(--muted);border:1px solid var(--border)}
+.btn.sm{padding:5px 12px;font-size:12px}
+.btn.lg{padding:12px 28px;font-size:14.5px;border-radius:10px}
+
+.content{padding:28px 32px 48px;max-width:1100px;width:100%;margin:0 auto}
+
+.breadcrumb{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:7px;margin-bottom:14px}
+.breadcrumb a:hover{color:var(--primary)}
+.breadcrumb svg{font-size:10px;color:var(--subtle)}
+
+/* 考试头 */
+.ex-hero{padding:22px 26px;border-radius:16px;background:var(--card);border:1px solid var(--border);
+         margin-bottom:18px;display:flex;align-items:flex-start;gap:18px}
+.ex-hero .ic{width:56px;height:56px;border-radius:14px;background:var(--primary-subtle);color:var(--primary);
+             display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.ex-hero .hb{flex:1;min-width:0}
+.ex-hero h1{font-size:21px;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ex-hero .sub{margin-top:7px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ex-hero .sub .sep{color:var(--border-strong)}
+.ex-hero .act{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.ex-hero .act .hint{font-size:11.5px;color:var(--subtle)}
+
+/* 关键信息 */
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.key{padding:16px 18px;border:1px solid var(--border);border-radius:12px;background:var(--card)}
+.key .lb{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.key .lb svg{font-size:13px}
+.key .v{margin-top:7px;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}
+.key .v small{font-size:12px;color:var(--muted);font-weight:400;margin-left:3px}
+.key .s{margin-top:3px;font-size:11.5px;color:var(--subtle)}
+.key.hl{border-color:var(--primary-muted);background:var(--primary-subtle)}
+.key.hl .v{color:var(--primary)}
+
+.twocol{display:grid;grid-template-columns:1fr 320px;gap:18px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px}
+.card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-h h2{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.card-h .x{font-size:12px;color:var(--muted)}
+
+.desc{font-size:13.5px;color:var(--muted);line-height:1.75}
+.desc b{color:var(--fg)}
+.desc p+p{margin-top:8px}
+
+/* 题型分布 */
+.qtype{display:flex;flex-direction:column;gap:10px}
+.qt{display:flex;align-items:center;gap:14px}
+.qt .nm{width:96px;flex-shrink:0;font-size:13px;font-weight:500}
+.qt .bar{flex:1;height:8px;border-radius:999px;background:var(--surface);overflow:hidden}
+.qt .bar span{display:block;height:100%;border-radius:999px}
+.qt .bar span.c1{background:var(--primary)}
+.qt .bar span.c2{background:var(--accent)}
+.qt .bar span.c3{background:var(--purple)}
+.qt .mt{width:120px;flex-shrink:0;text-align:right;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.qt .mt b{color:var(--fg);font-weight:600}
+
+/* 须知 */
+.rules{display:flex;flex-direction:column;gap:10px}
+.rule{display:flex;gap:10px;font-size:13px;color:var(--muted);line-height:1.65}
+.rule .ic{width:20px;height:20px;border-radius:6px;flex-shrink:0;margin-top:1px;
+          display:flex;align-items:center;justify-content:center;font-size:11px;
+          background:var(--primary-subtle);color:var(--primary)}
+.rule.warn .ic{background:var(--warning-subtle);color:var(--warning)}
+.rule.stop .ic{background:var(--danger-subtle);color:var(--danger)}
+.rule b{color:var(--fg)}
+
+/* 侧栏小卡 */
+.mini{display:flex;flex-direction:column;gap:9px}
+.mini-row{display:flex;align-items:center;justify-content:space-between;font-size:13px;
+          padding-bottom:9px;border-bottom:1px dashed var(--border)}
+.mini-row:last-child{border-bottom:none;padding-bottom:0}
+.mini-row .k{color:var(--muted)}
+.mini-row .v{font-weight:500;font-variant-numeric:tabular-nums}
+
+.teacher{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:10px;background:var(--surface)}
+.teacher .av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#0EA5E9,#38BDF8);
+             color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.teacher b{font-size:13.5px;font-weight:600;display:block}
+.teacher .s{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+/* 历史 */
+.hist{display:flex;flex-direction:column;gap:8px}
+.hrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;background:var(--surface)}
+.hrow .d{flex:1;min-width:0}
+.hrow .d .t{font-size:13px;font-weight:500}
+.hrow .d .m{font-size:11.5px;color:var(--subtle);margin-top:2px}
+.hrow .sc{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--success)}
+
+.note{margin-top:16px;padding:14px 16px;border-radius:12px;background:var(--warning-subtle);
+      border-left:3px solid var(--warning);font-size:12.5px;color:var(--fg);line-height:1.7}
+.note b{font-weight:600}
+
+.startbar{margin-top:20px;padding:20px 24px;border-radius:14px;background:var(--card);border:1px solid var(--border);
+          display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.startbar .sb-l{flex:1;min-width:220px}
+.startbar .sb-l .t{font-size:15px;font-weight:600}
+.startbar .sb-l .s{margin-top:4px;font-size:12.5px;color:var(--muted)}
+.chk{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted)}
+.chk input{width:15px;height:15px;accent-color:var(--primary)}
+
+@media (max-width:1000px){
+  .keys{grid-template-columns:repeat(2,1fr)}
+  .twocol{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="i-dash" viewBox="0 0 24 24"><path d="M3 12L12 3l9 9"/><path d="M5 10v10a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V10"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+<symbol id="i-grade" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13l2 2 4-4"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
+<symbol id="i-hist" viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 106 5.3L3 8"/><path d="M12 7v5l4 2"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-5"/></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 002.5 2.5z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+<symbol id="i-alarm" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3L2 6M19 3l3 3"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></symbol>
+<symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4a2 2 0 01-2-2V5a2 2 0 012-2h2M18 9h2a2 2 0 002-2V5a2 2 0 00-2-2h-2M6 3h12v8a6 6 0 11-12 0V3zM9 21h6M12 17v4"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></symbol>
+</defs>
+</svg>
+
+<div class="app">
+
+<aside class="side">
+  <div class="logo">
+      <div class="logo-mark">Py</div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">学生端</span>
+    </div>
+  <nav class="nav">
+    <a class="nav-item" href="student-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+    <a class="nav-item" href="student-my-class.html"><svg><use href="#i-class"/></svg>我的班级</a>
+    <a class="nav-item" href="student-courses.html"><svg><use href="#i-book"/></svg>我的课程</a>
+    <a class="nav-item" href="student-assignments.html"><svg><use href="#i-file"/></svg>作业<span class="nav-count">2</span></a>
+    <a class="nav-item" href="student-problems.html"><svg><use href="#i-code"/></svg>题库练习</a>
+    <a class="nav-item" href="student-submissions.html"><svg><use href="#i-hist"/></svg>提交记录</a>
+    <a class="nav-item active" href="student-exams.html"><svg><use href="#i-clip"/></svg>考试</a>
+      <a class="nav-item" href="student-grades.html"><svg><use href="#i-grade"/></svg>成绩单</a>
+
+  </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈思雨</div>
+        <div class="s">高一(3)班</div>
+      </div>
+    </div>
+  
+</aside>
+
+<main class="main">
+
+  <header class="topbar">
+    <div class="searchbox">
+      <svg><use href="#i-search"/></svg>
+      <input placeholder="搜索考试名称..." />
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" title="通知"><svg><use href="#i-bell"/></svg><span class="dot"></span></button>
+      <button class="icon-btn" title="主题" onclick="tt()"><svg><use href="#i-sun" id="use-theme"/></svg></button></div>
+  </header>
+
+  <div class="content">
+
+    <div class="breadcrumb">
+      <a href="student-exams.html">考试</a>
+      <svg><use href="#i-chev"/></svg>
+      <span>第 4 章测验 · 列表与字符串</span>
+    </div>
+
+    <!-- 考试头 -->
+    <div class="ex-hero">
+      <div class="ic"><svg><use href="#i-clip"/></svg></div>
+      <div class="hb">
+        <h1>第 4 章测验 · 列表与字符串
+          <span class="badge b-w"><i></i>待考</span>
+        </h1>
+        <div class="sub">
+          <span class="mono">E0002</span>
+          <span class="sep">·</span>
+          <span>Python 程序设计基础</span>
+          <span class="sep">·</span>
+          <span>王建国 老师</span>
+          <span class="sep">·</span>
+          <span>单元测验</span>
+        </div>
+        <div class="sub">
+          <svg style="font-size:13px"><use href="#i-alarm"/></svg>
+          <span>开放时间 <b style="color:var(--fg)">8/12 08:00 — 8/18 23:59</b></span>
+          <span class="sep">·</span>
+          <span>距截止 <b style="color:var(--warning)">6 天 9 小时</b></span>
+        </div>
+      </div>
+      <div class="act">
+        <a class="btn lg" href="student-exam-take.html?eid=E0002"><svg><use href="#i-play"/></svg>开始考试</a>
+        <span class="hint">开始后计时不可暂停</span>
+      </div>
+    </div>
+
+    <!-- 关键信息 -->
+    <div class="keys">
+      <div class="key hl">
+        <div class="lb"><svg><use href="#i-clock"/></svg>限时</div>
+        <div class="v">60 <small>分钟</small></div>
+        <div class="s">交卷后自动结束</div>
+      </div>
+      <div class="key">
+        <div class="lb"><svg><use href="#i-list"/></svg>题量</div>
+        <div class="v">12 <small>题</small></div>
+        <div class="s">选择 6 · 填空 3 · 编程 3</div>
+      </div>
+      <div class="key">
+        <div class="lb"><svg><use href="#i-target"/></svg>总分 / 及格</div>
+        <div class="v">100 <small>/ 60</small></div>
+        <div class="s">编程题按测试点给分</div>
+      </div>
+      <div class="key">
+        <div class="lb"><svg><use href="#i-hist"/></svg>可考次数</div>
+        <div class="v">1 <small>次</small></div>
+        <div class="s">已用 0 次</div>
+      </div>
+    </div>
+
+    <div class="twocol">
+      <section style="display:flex;flex-direction:column;gap:18px">
+
+        <!-- 考试说明 -->
+        <div class="card">
+          <div class="card-h"><h2>考试说明</h2></div>
+          <div class="desc">
+            <p>本次测验覆盖 <b>第 4 章《列表与字符串》</b> 全部内容，包括列表创建与切片、常用列表方法、列表推导式、字符串格式化与常用方法、以及列表与字符串的互相转换。</p>
+            <p>选择题与填空题提交后 <b>立即判分</b>；编程题提交后进入评测队列，按隐藏测试点通过比例给分，可在限时内 <b>反复提交</b>，以最后一次提交为准。</p>
+            <p>交卷后成绩与解析将在 <b>老师发布后</b> 可见，届时会收到站内通知。</p>
+          </div>
+        </div>
+
+        <!-- 题型分布 -->
+        <div class="card">
+          <div class="card-h">
+            <h2>题型分布</h2>
+            <span class="x">共 12 题 · 100 分</span>
+          </div>
+          <div class="qtype">
+            <div class="qt">
+              <div class="nm">选择题</div>
+              <div class="bar"><span class="c1" style="width:30%"></span></div>
+              <div class="mt">6 题 · <b>30 分</b></div>
+            </div>
+            <div class="qt">
+              <div class="nm">填空题</div>
+              <div class="bar"><span class="c2" style="width:15%"></span></div>
+              <div class="mt">3 题 · <b>15 分</b></div>
+            </div>
+            <div class="qt">
+              <div class="nm">编程题</div>
+              <div class="bar"><span class="c3" style="width:55%"></span></div>
+              <div class="mt">3 题 · <b>55 分</b></div>
+            </div>
+          </div>
+          <div class="note">
+            <b>提示：</b>编程题分值占比 55%，建议先花 20 分钟完成选择与填空，再把剩余 40 分钟留给 3 道编程题。
+          </div>
+        </div>
+
+        <!-- 考试须知 -->
+        <div class="card">
+          <div class="card-h"><h2>考试须知</h2></div>
+          <div class="rules">
+            <div class="rule">
+              <div class="ic"><svg><use href="#i-check"/></svg></div>
+              <div>点击「开始考试」后 <b>立刻开始计时</b>，剩余时间在答题页右上角显示，倒计时归零系统自动交卷。</div>
+            </div>
+            <div class="rule">
+              <div class="ic"><svg><use href="#i-check"/></svg></div>
+              <div>答案 <b>每 10 秒自动保存</b>一次。意外关闭页面或断网后，可在限时内重新进入继续作答，已答内容不会丢失。</div>
+            </div>
+            <div class="rule warn">
+              <div class="ic"><svg><use href="#i-warn"/></svg></div>
+              <div>本次考试 <b>启用切屏检测</b>。离开答题页面会被记录，超过 <b>3 次</b> 将提示老师复核。</div>
+            </div>
+            <div class="rule warn">
+              <div class="ic"><svg><use href="#i-warn"/></svg></div>
+              <div>编程题评测队列高峰时可能等待 5-15 秒，请 <b>提前提交</b>，不要留到最后一分钟。</div>
+            </div>
+            <div class="rule stop">
+              <div class="ic"><svg><use href="#i-ban"/></svg></div>
+              <div>禁止使用手机、参考资料与任何 AI 工具。允许使用 <b>草稿纸</b> 与页面内置的 Python 语法速查。</div>
+            </div>
+            <div class="rule stop">
+              <div class="ic"><svg><use href="#i-ban"/></svg></div>
+              <div>发现代码高度雷同将 <b>按 0 分处理</b> 并通知班主任。</div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <aside style="display:flex;flex-direction:column;gap:18px">
+
+        <!-- 考试信息 -->
+        <div class="card">
+          <div class="card-h"><h2>考试信息</h2></div>
+          <div class="mini">
+            <div class="mini-row"><span class="k">考试编号</span><span class="v mono">E0002</span></div>
+            <div class="mini-row"><span class="k">所属课程</span><span class="v">Python 程序设计基础</span></div>
+            <div class="mini-row"><span class="k">考试类型</span><span class="v">单元测验</span></div>
+            <div class="mini-row"><span class="k">参考班级</span><span class="v">高一(3)(4)班</span></div>
+            <div class="mini-row"><span class="k">应考人数</span><span class="v">89 人</span></div>
+            <div class="mini-row"><span class="k">已交卷</span><span class="v">31 人</span></div>
+            <div class="mini-row"><span class="k">切屏检测</span><span class="v" style="color:var(--warning)">已开启</span></div>
+            <div class="mini-row"><span class="k">成绩发布</span><span class="v">老师手动发布</span></div>
+          </div>
+        </div>
+
+        <!-- 出题老师 -->
+        <div class="card">
+          <div class="card-h"><h2>出题老师</h2></div>
+          <div class="teacher">
+            <div class="av">王</div>
+            <div style="flex:1;min-width:0">
+              <b>王建国 老师</b>
+              <div class="s">主讲 · 考试期间可提问格式问题</div>
+            </div>
+            <svg style="color:var(--subtle);font-size:16px"><use href="#i-chat"/></svg>
+          </div>
+        </div>
+
+    </div>
+
+    <!-- 开始条 -->
+    <div class="startbar">
+      <div class="sb-l">
+        <div class="t">准备好了吗？</div>
+        <div class="s">建议使用 Chrome 浏览器 · 关闭其它标签页 · 确保网络稳定</div>
+      </div>
+      <label class="chk"><input type="checkbox" checked />我已阅读并同意考试须知</label>
+      <a class="btn lg" href="student-exam-take.html?eid=E0002"><svg><use href="#i-play"/></svg>开始考试</a>
+      <a class="btn ghost" href="student-exams.html"><svg><use href="#i-back"/></svg>返回列表</a>
+    </div>
+
+  </div>
+
+</main>
+
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+function tt(){
+  var d=document.documentElement.classList.toggle('dark');
+  document.getElementById('use-theme').setAttribute('href', d?'#i-moon':'#i-sun');
+  localStorage.setItem('theme', d?'dark':'light');
+}
+if(localStorage.getItem('theme')==='dark'){
+  document.documentElement.classList.add('dark');
+  document.getElementById('use-theme').setAttribute('href','#i-moon');
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>新建教师 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171;  --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--purple);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--purple),#EC4899);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted)}
+.crumb b{color:var(--fg);font-weight:500}
+.search{position:relative;flex:1;max-width:380px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--subtle)}
+.search input{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--border);border-radius:8px;
+              background:var(--surface);color:var(--fg);font-size:14px;outline:none;transition:.18s}
+.search input::placeholder{color:var(--subtle)}
+.search input:focus{border-color:var(--primary);background:var(--card)}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:background .18s,color .18s}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+           padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.page-sub{margin-top:4px;font-size:14px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-purple{background:var(--purple);color:#fff}
+.btn-purple:hover{background:#7C3AED}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+
+/* ====== 顶部提示横幅 ====== */
+.banner{display:flex;gap:14px;padding:14px 18px;border-radius:10px;
+         border:1px solid color-mix(in srgb,var(--primary) 28%,transparent);
+         background:var(--primary-subtle)}
+html.dark .banner{border-color:color-mix(in srgb,var(--primary) 35%,transparent)}
+.banner-ic{width:36px;height:36px;border-radius:8px;background:var(--primary);color:#fff;
+            display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.banner-content{flex:1;min-width:0}
+.banner-content h4{font-size:14px;font-weight:600;color:var(--fg);margin-bottom:2px}
+.banner-content p{font-size:13px;color:var(--muted);line-height:1.6}
+.banner-content p b{color:var(--fg);font-weight:500}
+
+/* ====== 表单卡片 ====== */
+.form-card{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.form-head{display:flex;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid var(--border);background:var(--surface)}
+html.dark .form-head{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.form-head-num{width:28px;height:28px;border-radius:8px;background:var(--primary-subtle);color:var(--primary);
+               display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.form-head-text h3{font-size:15px;font-weight:600}
+.form-head-text p{font-size:12px;color:var(--muted);margin-top:2px}
+.form-head-tag{margin-left:auto;font-size:11px;padding:3px 10px;border-radius:999px;font-weight:500}
+.form-head-tag.req{background:var(--danger-subtle);color:var(--danger)}
+.form-head-tag.opt{background:var(--surface);color:var(--subtle);border:1px solid var(--border)}
+html.dark .form-head-tag.opt{background:var(--border)}
+
+.form-body{padding:24px 22px;display:flex;flex-direction:column;gap:20px}
+
+.field{display:flex;flex-direction:column;gap:6px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.field-row.cols-3{grid-template-columns:1fr 1fr 1fr}
+label.fl{font-size:13px;font-weight:500;color:var(--fg);display:flex;align-items:center;gap:4px}
+label.fl .req{color:var(--danger);font-size:13px}
+label.fl .opt{color:var(--subtle);font-weight:400;font-size:12px}
+label.fl .hint{margin-left:auto;font-size:11px;color:var(--subtle);font-weight:400}
+
+.input,.select,.textarea{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;
+                          background:var(--card);color:var(--fg);font-size:14px;outline:none;
+                          font-family:inherit;transition:border .18s,box-shadow .18s}
+.input:hover,.select:hover,.textarea:hover{border-color:var(--border-strong)}
+.input:focus,.select:focus,.textarea:focus{border-color:var(--primary);
+                                            box-shadow:0 0 0 3px var(--primary-subtle)}
+.input::placeholder{color:var(--subtle)}
+.input-suf{position:relative}
+.input-suf .input{padding-right:90px}
+.input-suf .suf-btn{position:absolute;right:6px;top:50%;transform:translateY(-50%);
+                    padding:5px 10px;border-radius:6px;background:var(--surface);color:var(--muted);
+                    font-size:11px;font-weight:500;border:1px solid var(--border);transition:.18s}
+.input-suf .suf-btn:hover{background:var(--primary-subtle);color:var(--primary);border-color:color-mix(in srgb,var(--primary) 30%,transparent)}
+
+.field-help{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;line-height:1.4}
+.field-help svg{font-size:13px}
+.field-help.warn{color:var(--warning)}
+.field-help.err{color:var(--danger)}
+.field-help.ok{color:var(--success)}
+
+/* 多选 chips（科目） */
+.chipset{display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid var(--border);border-radius:8px;
+          background:var(--surface);min-height:46px}
+html.dark .chipset{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-size:13px;
+      background:var(--card);border:1px solid var(--border);color:var(--muted);font-weight:500;transition:.18s;cursor:pointer}
+.chip:hover{border-color:var(--primary-muted);color:var(--fg)}
+.chip.on{background:var(--primary-subtle);color:var(--primary);border-color:color-mix(in srgb,var(--primary) 35%,transparent);font-weight:600}
+.chip svg{font-size:12px}
+.chip-add{padding:6px 12px;border-radius:999px;font-size:13px;background:transparent;
+          border:1px dashed var(--border-strong);color:var(--muted);font-weight:500;transition:.18s;cursor:pointer}
+.chip-add:hover{border-color:var(--primary);color:var(--primary)}
+.chip-add svg{font-size:12px}
+
+/* 单选 segment */
+.segment{display:flex;padding:4px;border:1px solid var(--border);border-radius:8px;background:var(--surface);gap:4px}
+html.dark .segment{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.segment-opt{flex:1;padding:8px 14px;border-radius:6px;font-size:13px;color:var(--muted);
+             text-align:center;font-weight:500;transition:.18s;cursor:pointer}
+.segment-opt:hover{color:var(--fg)}
+.segment-opt.on{background:var(--card);color:var(--fg);box-shadow:var(--shadow);font-weight:600}
+
+/* 切换 switch */
+.switch{position:relative;display:inline-flex;align-items:center;gap:10px;cursor:pointer}
+.switch input{display:none}
+.switch-track{width:36px;height:20px;background:var(--border);border-radius:999px;position:relative;transition:.18s}
+.switch-track::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;background:var(--card);
+                      border-radius:50%;transition:.18s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.switch input:checked + .switch-track{background:var(--primary)}
+.switch input:checked + .switch-track::after{left:18px}
+
+/* ====== 分配班级 ====== */
+.assign-banner{display:flex;gap:12px;padding:12px 16px;border-radius:8px;
+                border:1px solid color-mix(in srgb,var(--warning) 35%,transparent);
+                background:var(--warning-subtle);font-size:12px;color:var(--warning);line-height:1.5}
+html.dark .assign-banner{border-color:color-mix(in srgb,var(--warning) 45%,transparent)}
+.assign-banner b{color:var(--fg);font-weight:600}
+.assign-banner svg{font-size:16px;flex-shrink:0;margin-top:1px}
+
+.assign-grid{display:flex;flex-direction:column;gap:10px}
+.assign-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--border);
+             border-radius:10px;background:var(--card);transition:.18s}
+.assign-row:hover{border-color:var(--primary-muted)}
+.assign-row.on{border-color:var(--primary);background:color-mix(in srgb,var(--primary-subtle) 50%,var(--card))}
+html.dark .assign-row.on{background:color-mix(in srgb,var(--primary-subtle) 60%,var(--card))}
+.assign-row.skip{opacity:.55}
+.assign-row.skip:hover{opacity:.85}
+.checkbox{width:18px;height:18px;border:1.5px solid var(--border-strong);border-radius:5px;
+          display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.18s;background:var(--card);flex-shrink:0}
+.checkbox:hover{border-color:var(--primary)}
+.checkbox.on{background:var(--primary);border-color:var(--primary)}
+.checkbox.on svg{stroke:#fff;width:12px;height:12px;stroke-width:3}
+.checkbox.dis{cursor:not-allowed;background:var(--surface)}
+
+.assign-class{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.assign-class-ic{width:40px;height:40px;border-radius:10px;background:var(--primary-subtle);color:var(--primary);
+                 display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.assign-class-ic.free{background:var(--success-subtle);color:var(--success)}
+.assign-class-info h4{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.assign-class-info p{font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:6px}
+.assign-status{font-size:11px;padding:3px 9px;border-radius:999px;font-weight:500;display:inline-flex;align-items:center;gap:5px}
+.assign-status.free{background:var(--success-subtle);color:var(--success)}
+.assign-status.taken{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+html.dark .assign-status.taken{background:var(--border)}
+.assign-status.replace{background:var(--warning-subtle);color:var(--warning)}
+.assign-teacher{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.assign-teacher .av{width:24px;height:24px;border-radius:50%;color:#fff;font-size:11px;font-weight:600;
+                    display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.assign-teacher .av.t1{background:linear-gradient(135deg,#F97316,#EF4444)}
+.assign-teacher .av.t2{background:linear-gradient(135deg,#0EA5E9,#14B8A6)}
+.assign-teacher .av.t3{background:linear-gradient(135deg,#8B5CF6,#EC4899)}
+.assign-teacher .av.t4{background:linear-gradient(135deg,#10B981,#06B6D4)}
+.assign-teacher .av.t5{background:linear-gradient(135deg,#F59E0B,#FACC15)}
+
+.assign-action{font-size:12px;flex-shrink:0;margin-left:auto;display:flex;align-items:center;gap:6px}
+.assign-action .pill{font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500}
+.assign-action .pill.warn{background:var(--danger-subtle);color:var(--danger)}
+
+/* ====== 初始密码 ====== */
+.pw-preview{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:8px;
+             border:1px dashed var(--border-strong);background:var(--surface);font-family:"SF Mono",Menlo,Consolas,monospace}
+html.dark .pw-preview{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.pw-preview .pw{font-size:18px;font-weight:600;letter-spacing:.06em;color:var(--fg)}
+.pw-preview .regen{padding:6px 10px;border-radius:6px;background:var(--card);color:var(--muted);
+                   font-size:12px;border:1px solid var(--border);transition:.18s;font-family:inherit}
+.pw-preview .regen:hover{color:var(--primary)}
+.pw-preview .copy{padding:6px 12px;border-radius:6px;background:var(--primary);color:#fff;
+                  font-size:12px;font-weight:500;transition:.18s;font-family:inherit;display:flex;align-items:center;gap:5px}
+.pw-preview .copy:hover{background:var(--primary-hover)}
+
+/* ====== 底部粘性操作栏 ====== */
+.actionbar{position:sticky;bottom:0;margin-top:auto;display:flex;align-items:center;gap:16px;
+           padding:16px 24px;border:1px solid var(--border);border-radius:12px;
+           background:var(--card);box-shadow:var(--shadow-md);flex-wrap:wrap}
+.actionbar-info{flex:1;display:flex;align-items:center;gap:18px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.actionbar-info .tag{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:500}
+.actionbar-info .tag.ok{background:var(--success-subtle);color:var(--success)}
+.actionbar-info .tag.warn{background:var(--warning-subtle);color:var(--warning)}
+.actionbar-info .tag svg{width:13px;height:13px}
+.actionbar-actions{display:flex;gap:8px;margin-left:auto}
+
+/* ====== 页脚 ====== */
+.foot{padding:18px 22px;border-top:1px solid var(--border);background:var(--surface);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted)}
+html.dark .foot{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.foot .warn-tag{display:inline-flex;align-items:center;gap:5px;color:var(--warning);font-weight:500}
+.foot .warn-tag svg{stroke:var(--warning);width:14px;height:14px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+
+@media(max-width:1100px){
+  .side{display:none}
+  .field-row,.field-row.cols-3{grid-template-columns:1fr}
+  .content{padding:24px 20px}
+  .topbar{padding:0 20px}
+}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M3 9 12 3l9 6"/><path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"/><path d="M9 22V12h6v10"/></symbol>
+<symbol id="i-grad" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-set" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></symbol>
+<symbol id="i-judge" viewBox="0 0 24 24"><path d="m12 2 3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="m21.7 18-9-15.3a1 1 0 0 0-1.7 0L1.3 18a1 1 0 0 0 .9 1.5h18.6a1 1 0 0 0 .9-1.5z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+<symbol id="i-reload" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8"/><path d="M3 3v5h5"/></symbol>
+<symbol id="i-replace" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"/><path d="M3 21v-5h5"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></symbol>
+<symbol id="i-id" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h2M15 12h2M7 16h10"/></symbol>
+<symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 2 .6 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.5 2.9.6a2 2 0 0 1 1.7 2z"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="m20.6 13.4-8.2 8.2a2 2 0 0 1-2.8 0l-7-7A2 2 0 0 1 2 13.2V4a2 2 0 0 1 2-2h9.2a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+<symbol id="i-exam" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="3" rx="1"/><path d="M9 11h6M9 14h6M9 17h3"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-shield"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">管理员</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">总览</p>
+      <a class="nav-item" href="admin-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <p class="nav-label">组织</p>
+      <a class="nav-item" href="admin-students.html"><svg><use href="#i-users"/></svg>学生</a>
+      <a class="nav-item active"><svg><use href="#i-grad"/></svg>教师</a>
+      <p class="nav-label">内容</p>
+      <a class="nav-item" href="admin-exams.html"><svg><use href="#i-exam"/></svg>考试<span class="nav-count">47</span></a>
+<a class="nav-item" href="admin-courses.html"><svg><use href="#i-book"/></svg>课程</a>
+      <a class="nav-item" href="admin-banks.html"><svg><use href="#i-tag"/></svg>题库</a>
+      <p class="nav-label">系统</p>
+      <a class="nav-item" href="admin-judge-queue.html"><svg><use href="#i-judge"/></svg>评测队列<span class="nav-count">2</span></a>
+      <a class="nav-item" href="admin-settings.html"><svg><use href="#i-set"/></svg>系统设置</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈主任</div>
+        <div class="s">系统管理员</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb"><b>组织</b> / 教师 / 新建</span>
+      <div class="search">
+        <svg><use href="#i-search"/></svg>
+        <input placeholder="搜索工号、姓名、邮箱…">
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <div class="page-head anim">
+          <div>
+            <h1>新建教师账号</h1>
+            <p class="page-sub">创建即激活 · 初始密码请线下告知本人 · 可同时勾选授课班级</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-ghost"><svg><use href="#i-arrow-l"/></svg>返回列表</button>
+          </div>
+        </div>
+
+        <!-- 顶部提示 -->
+        <div class="banner anim" style="animation-delay:.04s">
+          <div class="banner-ic"><svg><use href="#i-info"/></svg></div>
+          <div class="banner-content">
+            <h4>教师账号由管理员直接创建</h4>
+            <p>创建后立即激活、可登录。<b>不再有「待审批」流程</b>，请确保线下已确认教师身份后再创建。账号创建后，<b>分配班级</b>这一步会自动占用所选班级，并替换该班原任课教师。</p>
+          </div>
+        </div>
+
+        <!-- Section 1: 账号信息 -->
+        <section class="form-card anim" style="animation-delay:.08s">
+          <div class="form-head">
+            <div class="form-head-num">1</div>
+            <div class="form-head-text">
+              <h3>账号信息</h3>
+              <p>姓名、工号、邮箱是登录与识别依据，一旦保存不可修改</p>
+            </div>
+            <span class="form-head-tag req">必填</span>
+          </div>
+          <div class="form-body">
+            <div class="field-row">
+              <div class="field">
+                <label class="fl">姓名 <span class="req">*</span></label>
+                <input class="input" placeholder="如：王建国" value="刘晓晨">
+                <p class="field-help"><svg><use href="#i-user"/></svg>系统内显示名，不可重复</p>
+              </div>
+              <div class="field">
+                <label class="fl">工号 <span class="req">*</span><span class="hint">校内唯一</span></label>
+                <div class="input-suf">
+                  <input class="input mono" placeholder="T + 4 位数字" value="T0042">
+                  <button class="suf-btn" onclick="autoGenTid(this)">自动生成</button>
+                </div>
+                <p class="field-help ok"><svg><use href="#i-check"/></svg>可用 · 也可作为登录账号</p>
+              </div>
+            </div>
+            <div class="field">
+              <label class="fl">邮箱 <span class="req">*</span><span class="hint">作为登录账号</span></label>
+              <input class="input" placeholder="teacher@school.edu" value="liuxc@school.edu">
+              <p class="field-help ok"><svg><use href="#i-check"/></svg>可用 · 首次登录后建议绑定微信</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 2: 教学信息 -->
+        <section class="form-card anim" style="animation-delay:.12s">
+          <div class="form-head">
+            <div class="form-head-num">2</div>
+            <div class="form-head-text">
+              <h3>教学信息</h3>
+              <p>用于筛选教师与排课参考</p>
+            </div>
+            <span class="form-head-tag opt">选填</span>
+          </div>
+          <div class="form-body">
+            <div class="field">
+              <label class="fl">教学科目 <span class="req">*</span><span class="hint">可多选</span></label>
+              <div class="chipset">
+                <span class="chip on" onclick="this.remove()">信息技术 <svg><use href="#i-x"/></svg></span>
+                <span class="chip on" onclick="this.remove()">通用技术 <svg><use href="#i-x"/></svg></span>
+                <span class="chip">人工智能</span>
+                <span class="chip">数据科学</span>
+                <span class="chip">机器人</span>
+                <span class="chip-add" onclick="addSubject()"><svg><use href="#i-plus"/></svg>自定义科目</span>
+              </div>
+              <p class="field-help">已选 2 项 · 用于「科目教师」筛选</p>
+            </div>
+
+            <div class="field">
+              <label class="fl">手机号 <span class="opt">(选填)</span></label>
+              <input class="input mono" placeholder="11 位手机号" value="138 0013 8000">
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 3: 分配班级 -->
+        <section class="form-card anim" style="animation-delay:.16s">
+          <div class="form-head">
+            <div class="form-head-num">3</div>
+            <div class="form-head-text">
+              <h3>分配授课班级</h3>
+              <p>每个班级只能有一位任课教师，勾选即占用</p>
+            </div>
+            <span class="form-head-tag opt">可后续调整</span>
+          </div>
+          <div class="form-body">
+
+            <div class="assign-banner">
+              <svg><use href="#i-warn"/></svg>
+              <span><b>勾选已被其他教师任课的班级</b>将自动顶替原教师，原教师会在工作台收到「已移交」通知。也可保存后单独调整。</span>
+            </div>
+
+            <div class="assign-grid">
+              <!-- 未分配 -->
+              <label class="assign-row">
+                <div class="checkbox on"><svg><use href="#i-check"/></svg></div>
+                <div class="assign-class">
+                  <div class="assign-class-ic free"><svg><use href="#i-class"/></svg></div>
+                  <div class="assign-class-info">
+                    <h4>高一(5)班 <span class="assign-status free">未分配</span></h4>
+                    <p>2024 级 · 当前 0 名学生 · 入学 2024</p>
+                  </div>
+                </div>
+                <div class="assign-action">
+                  <span class="pill warn">即将占用</span>
+                </div>
+              </label>
+
+              <!-- 已被占用的班级（即将顶替） -->
+              <label class="assign-row on">
+                <div class="checkbox on"><svg><use href="#i-check"/></svg></div>
+                <div class="assign-class">
+                  <div class="assign-class-ic"><svg><use href="#i-class"/></svg></div>
+                  <div class="assign-class-info">
+                    <h4>高一(3)班 <span class="assign-status replace">将顶替原教师</span></h4>
+                    <p>2024 级 · 当前 47 名学生 · 入学 2024</p>
+                  </div>
+                </div>
+                <div class="assign-teacher">
+                  <span style="color:var(--subtle)">现：</span>
+                  <div class="av t3">李</div>
+                  <span>李雪 · T0031</span>
+                </div>
+                <div class="assign-action">
+                  <span class="pill warn">将顶替</span>
+                </div>
+              </label>
+
+              <label class="assign-row">
+                <div class="checkbox"></div>
+                <div class="assign-class">
+                  <div class="assign-class-ic"><svg><use href="#i-class"/></svg></div>
+                  <div class="assign-class-info">
+                    <h4>高一(1)班 <span class="assign-status taken">王建国 · T0018</span></h4>
+                    <p>2024 级 · 当前 48 名学生 · 入学 2024</p>
+                  </div>
+                </div>
+                <div class="assign-teacher">
+                  <div class="av t1">王</div>
+                  <span>王建国 · T0018</span>
+                </div>
+                <div class="assign-action"></div>
+              </label>
+
+              <label class="assign-row">
+                <div class="checkbox"></div>
+                <div class="assign-class">
+                  <div class="assign-class-ic"><svg><use href="#i-class"/></svg></div>
+                  <div class="assign-class-info">
+                    <h4>高一(2)班 <span class="assign-status taken">陈教授 · T0024</span></h4>
+                    <p>2024 级 · 当前 46 名学生 · 入学 2024</p>
+                  </div>
+                </div>
+                <div class="assign-teacher">
+                  <div class="av t2">陈</div>
+                  <span>陈教授 · T0024</span>
+                </div>
+                <div class="assign-action"></div>
+              </label>
+
+              <label class="assign-row">
+                <div class="checkbox"></div>
+                <div class="assign-class">
+                  <div class="assign-class-ic"><svg><use href="#i-class"/></svg></div>
+                  <div class="assign-class-info">
+                    <h4>高一(4)班 <span class="assign-status taken">张明远 · T0033</span></h4>
+                    <p>2024 级 · 当前 49 名学生 · 入学 2024</p>
+                  </div>
+                </div>
+                <div class="assign-teacher">
+                  <div class="av t4">张</div>
+                  <span>张明远 · T0033</span>
+                </div>
+                <div class="assign-action"></div>
+              </label>
+
+              <label class="assign-row skip">
+                <div class="checkbox dis"></div>
+                <div class="assign-class">
+                  <div class="assign-class-ic" style="opacity:.5"><svg><use href="#i-class"/></svg></div>
+                  <div class="assign-class-info">
+                    <h4 style="color:var(--subtle)">高二(1)班 <span class="assign-status taken">林志远 · T0019</span></h4>
+                    <p style="color:var(--subtle)">2023 级 · 当前 45 名学生 · 入学 2023</p>
+                  </div>
+                </div>
+                <div class="assign-teacher">
+                  <div class="av t5" style="opacity:.5">林</div>
+                  <span style="color:var(--subtle)">林志远 · T0019</span>
+                </div>
+                <div class="assign-action">
+                  <span style="color:var(--subtle);font-size:11px">不在本年级</span>
+                </div>
+              </label>
+            </div>
+
+            <p class="field-help">已选 <b style="color:var(--primary)">2 个班级</b> · 其中 1 个需要顶替 · 保存后会自动同步这些班级所有现有课程的成员关系</p>
+          </div>
+        </section>
+
+        <!-- Section 4: 初始密码 -->
+        <section class="form-card anim" style="animation-delay:.20s">
+          <div class="form-head">
+            <div class="form-head-num">4</div>
+            <div class="form-head-text">
+              <h3>初始密码</h3>
+              <p>教师首次登录将强制修改</p>
+            </div>
+            <span class="form-head-tag req">必填</span>
+          </div>
+          <div class="form-body">
+            <div class="segment">
+              <div class="segment-opt on" onclick="pickSegment(this,0)">系统自动生成（推荐）</div>
+              <div class="segment-opt" onclick="pickSegment(this,1)">管理员自定义</div>
+            </div>
+
+            <div class="pw-preview">
+              <span class="pw">T0042-9K2mP4x</span>
+              <button class="regen" onclick="regenPw()"><svg><use href="#i-reload"/></svg> 重新生成</button>
+              <button class="copy" style="margin-left:auto" onclick="copyPw()"><svg><use href="#i-copy"/></svg>复制</button>
+            </div>
+            <p class="field-help"><svg><use href="#i-key"/></svg>长度 12 · 含大小写字母与数字 · 创建后仅展示一次，请截图或导出保存</p>
+
+            <label class="switch">
+              <input type="checkbox" checked>
+              <span class="switch-track"></span>
+              <span style="font-size:13px;color:var(--fg);font-weight:500">强制首次登录修改密码</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- 底部操作栏 -->
+        <div class="actionbar anim" style="animation-delay:.24s">
+          <div class="actionbar-info">
+            <span class="tag ok"><svg><use href="#i-check"/></svg>4 / 4 步已就绪</span>
+            <span style="color:var(--muted)">将创建 <b style="color:var(--fg)">刘晓晨</b> · 工号 <b style="color:var(--fg)" class="mono">T0042</b></span>
+            <span style="color:var(--muted)">占用 <b style="color:var(--primary)">2 个班级</b></span>
+          </div>
+          <div class="actionbar-actions">
+            <button class="btn-ghost" onclick="cancelCreate()">取消</button>
+            <button class="btn" onclick="confirmCreate()"><svg><use href="#i-check"/></svg>确认创建教师账号</button>
+          </div>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="foot anim" style="animation-delay:.28s">
+          <span class="warn-tag">
+            <svg><use href="#i-warn"/></svg>
+            创建后立即激活，教师可通过工号或邮箱登录；初始密码仅展示一次
+          </span>
+          <button class="btn-ghost"><svg><use href="#i-key"/></svg>查看密码策略</button>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+// 工号自动生成：T + 4 位数字
+function autoGenTid(btn){
+  var input = btn.parentNode.querySelector('input');
+  var n = String(Math.floor(1000 + Math.random()*9000));
+  input.value = 'T' + n;
+  toast('已生成工号 T'+n);
+}
+// 重新生成 12 位密码
+function regenPw(){
+  var c = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  var p = ''; for(var i=0;i<12;i++) p += c[Math.floor(Math.random()*c.length)];
+  document.querySelector('.pw').textContent = p;
+  toast('已重新生成密码');
+}
+// 复制密码
+function copyPw(){
+  var pw = document.querySelector('.pw').textContent;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(pw).then(function(){ toast('密码已复制'); });
+  } else {
+    var t = document.createElement('textarea'); t.value=pw; document.body.appendChild(t);
+    t.select(); document.execCommand('copy'); t.remove(); toast('密码已复制');
+  }
+}
+// 密码段切换
+function pickSegment(el, idx){
+  el.parentNode.querySelectorAll('.segment-opt').forEach(function(b){b.classList.remove('on')});
+  el.classList.add('on');
+  // 切换「管理员自定义」时给密码加可编辑输入框；这里仅切 UI 状态，密码刷新由 regenPw 触发
+  if(idx===1) toast('请在下方输入框设置自定义密码');
+}
+// 自定义科目：弹窗输入
+function addSubject(){
+  Modal.form({
+    title:'添加自定义科目',
+    fields:[{name:'name',label:'科目名称',placeholder:'例如：数据科学入门',required:true,maxlength:20}],
+    submitText:'添加',
+    onSubmit:function(v){
+      var chip = document.createElement('span');
+      chip.className = 'chip on';
+      chip.setAttribute('onclick','this.remove()');
+      chip.innerHTML = v.name + ' <svg><use href="#i-x"/></svg>';
+      var add = document.querySelector('.chip-add');
+      add.parentNode.insertBefore(chip, add);
+      toast('已添加科目「'+v.name+'」');
+    }
+  });
+}
+function cancelCreate(){
+  Modal.confirm({
+    title:'放弃创建？',
+    body:'已填写的信息不会保存',
+    confirmText:'放弃', danger:true,
+    onConfirm:function(){ location.href='admin-teachers.html'; }
+  });
+}
+function confirmCreate(){
+  Modal.confirm({
+    title:'确认创建教师账号？',
+    body:'创建后初始密码仅展示一次，请截图或导出保存',
+    confirmText:'创建',
+    onConfirm:function(){ toast('教师账号已创建'); setTimeout(function(){ location.href='admin-teachers.html'; }, 800); }
+  });
+}
+</script>
+</body>
+</html>

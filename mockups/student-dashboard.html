@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>工作台 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --pink:#EC4899; --pink-subtle:#FCE7F3;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0; --border-strong:#CBD5E1;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+  --shadow-lg:0 8px 24px -8px rgba(15,23,42,.10);
+  --cat-data:#0EA5E9; --cat-algo:#8B5CF6; --cat-ai:#EC4899;
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171; --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --pink:#F472B6; --pink-subtle:#4A1232;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548; --border-strong:#3D4A60;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--surface);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+/* ============== 侧栏（学生端） ============== */
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--primary),#38BDF8);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--accent-subtle);color:var(--accent);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto;min-height:0}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;
+         background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,#0EA5E9,#38BDF8);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+/* ============== 主区 ============== */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--surface)}
+
+/* 顶栏 */
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:14px;
+        padding:0 24px;border-bottom:1px solid var(--border);background:var(--bg)}
+.searchbox{flex:1;max-width:480px;position:relative}
+.searchbox input{width:100%;height:36px;padding:0 14px 0 38px;border-radius:8px;border:1px solid var(--border);
+                 background:var(--surface);font-size:13.5px;color:var(--fg);outline:none;transition:.18s}
+.searchbox input:focus{border-color:var(--primary);background:var(--card)}
+.searchbox svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--subtle)}
+.top-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;
+          display:flex;transition:background .18s,color .18s;position:relative}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+.icon-btn .dot{position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--danger);border:2px solid var(--bg)}
+
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:13px;font-weight:500;color:var(--muted);transition:.18s;background:var(--card)}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:13.5px;font-weight:500;
+     box-shadow:var(--shadow);transition:background .18s}
+.btn:hover{background:var(--primary-hover)}
+.btn svg{font-size:14px}
+
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;
+       font-size:11px;font-weight:500;white-space:nowrap}
+.badge i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.b-w{background:var(--warning-subtle);color:var(--warning)}
+.b-d{background:var(--danger-subtle);color:var(--danger)}
+.b-p{background:var(--primary-subtle);color:var(--primary)}
+.b-s{background:var(--success-subtle);color:var(--success)}
+.b-a{background:var(--accent-subtle);color:var(--accent)}
+.b-n{background:var(--purple-subtle);color:var(--purple)}
+.b-m{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+
+/* ============== 内容 ============== */
+.content{padding:28px 32px 48px;max-width:1320px;width:100%;margin:0 auto}
+.hi{margin-bottom:24px}
+.hi h1{font-size:24px;font-weight:700;letter-spacing:-.02em}
+.hi .sub{margin-top:6px;color:var(--muted);font-size:13.5px}
+.hi .sub b{color:var(--fg)}
+
+/* 待办 */
+.todo{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+.tcard{padding:18px 20px;border:1px solid var(--border);border-radius:14px;background:var(--card);
+       display:flex;align-items:flex-start;gap:14px;transition:.18s;cursor:pointer}
+.tcard:hover{border-color:var(--primary-muted);box-shadow:var(--shadow-md)}
+.tc-ic{width:46px;height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+       font-size:20px;flex-shrink:0}
+.tc-ic.w{background:var(--warning-subtle);color:var(--warning)}
+.tc-ic.p{background:var(--primary-subtle);color:var(--primary)}
+.tc-ic.a{background:var(--accent-subtle);color:var(--accent)}
+.tc-body{flex:1;min-width:0}
+.tc-body .h{display:flex;align-items:center;gap:8px}
+.tc-body .h b{font-size:15px;font-weight:600}
+.tc-body .desc{margin-top:3px;font-size:12.5px;color:var(--muted)}
+.tc-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.tc-li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--surface)}
+.tc-li:hover{background:var(--primary-subtle)}
+.tc-li .ti{flex:1;min-width:0;font-size:13px}
+.tc-li .ti b{font-weight:500}
+.tc-li .ti .sub{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
+.tc-li .arrow{color:var(--subtle);font-size:14px}
+.tc-empty{padding:14px;text-align:center;color:var(--subtle);font-size:13px;background:var(--surface);border-radius:8px}
+
+/* 两栏 */
+.twocol{display:grid;grid-template-columns:1fr 360px;gap:24px}
+.col{display:flex;flex-direction:column;gap:20px}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px}
+.card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-h h2{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.card-h .more{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:4px;transition:.15s}
+.card-h .more:hover{color:var(--primary)}
+.card-h .more svg{font-size:12px}
+
+/* 课程 */
+.courselist{display:flex;flex-direction:column;gap:10px}
+.course{padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--card);
+        display:flex;align-items:center;gap:14px;transition:.18s;cursor:pointer}
+.course:hover{border-color:var(--primary-muted);background:var(--surface)}
+.course-stripe{width:4px;align-self:stretch;border-radius:4px;flex-shrink:0}
+.course-ic{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+           font-size:20px;flex-shrink:0}
+.course-ic.cat-data{background:rgba(14,165,233,.12);color:var(--cat-data)}
+.course-ic.cat-algo{background:rgba(139,92,246,.12);color:var(--cat-algo)}
+.course-ic.cat-ai{background:rgba(236,72,153,.12);color:var(--cat-ai)}
+.course-body{flex:1;min-width:0}
+.course-body .t{font-size:14px;font-weight:600}
+.course-body .m{margin-top:3px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.course-body .m .sep{color:var(--border-strong)}
+.course-stat{display:flex;align-items:center;gap:18px;font-size:12px;color:var(--muted)}
+.course-stat .v{font-weight:600;color:var(--fg);font-size:14px;font-variant-numeric:tabular-nums;line-height:1}
+.course-stat .lb{font-size:11px;color:var(--muted);margin-top:3px;text-align:center}
+.course-stat .col-c{display:flex;flex-direction:column;align-items:center;gap:1px}
+.course-arrow{color:var(--subtle)}
+
+/* 班级公告 */
+.annlist{display:flex;flex-direction:column;gap:12px}
+.ann{padding:12px 14px;border-radius:10px;background:var(--surface);border-left:3px solid var(--primary)}
+.ann.urgent{border-left-color:var(--danger);background:var(--danger-subtle)}
+.ann.info{border-left-color:var(--accent)}
+.ann .h{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.ann .h .badge{margin-left:auto;font-size:10px}
+.ann .p{margin-top:6px;font-size:12.5px;color:var(--muted);line-height:1.6}
+.ann .ft{margin-top:8px;font-size:11px;color:var(--subtle);display:flex;justify-content:space-between}
+
+/* 班级信息 */
+.classinfo{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.classinfo .ci-ic{width:48px;height:48px;border-radius:11px;background:var(--primary-subtle);color:var(--primary);
+                  display:flex;align-items:center;justify-content:center;font-size:22px}
+.classinfo .ci-body{flex:1;min-width:0}
+.classinfo .ci-body b{font-size:15px;font-weight:600}
+.classinfo .ci-body .m{font-size:12px;color:var(--muted);margin-top:2px}
+.classstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}
+.cs{padding:10px;border-radius:9px;background:var(--surface);text-align:center}
+.cs .v{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--fg)}
+.cs .lb{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* 快速入口 */
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.qi{padding:14px;border:1px solid var(--border);border-radius:11px;background:var(--card);
+    display:flex;flex-direction:column;gap:8px;transition:.18s;cursor:pointer}
+.qi:hover{border-color:var(--primary-muted);box-shadow:var(--shadow-md)}
+.qi .ic{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.qi .ic.p{background:var(--primary-subtle);color:var(--primary)}
+.qi .ic.s{background:var(--success-subtle);color:var(--success)}
+.qi .ic.w{background:var(--warning-subtle);color:var(--warning)}
+.qi .ic.n{background:var(--purple-subtle);color:var(--purple)}
+.qi .t{font-size:13.5px;font-weight:600}
+.qi .m{font-size:11.5px;color:var(--muted)}
+
+@media (max-width:1100px){
+  .todo{grid-template-columns:1fr}
+  .twocol{grid-template-columns:1fr}
+  .quick{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================== icon sprite ============================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="i-dash" viewBox="0 0 24 24"><path d="M3 12L12 3l9 9"/><path d="M5 10v10a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V10"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+<symbol id="i-grade" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13l2 2 4-4"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
+<symbol id="i-hist" viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 106 5.3L3 8"/><path d="M12 7v5l4 2"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-5"/></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 002.5 2.5z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></symbol>
+<symbol id="i-arr" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+<symbol id="i-alarm" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3L2 6M19 3l3 3"/></symbol>
+<symbol id="i-up" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7c.6.5 1 1.3 1 2v.3h6v-.3c0-.7.4-1.5 1-2A7 7 0 0012 2z"/></symbol>
+<symbol id="i-clipboard" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></symbol>
+<symbol id="i-pencil" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+</defs>
+</svg>
+
+<div class="app">
+
+<!-- ============================== sidebar ============================== -->
+<aside class="side">
+  <div class="logo">
+      <div class="logo-mark">Py</div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">学生端</span>
+    </div>
+  <nav class="nav">
+    <a class="nav-item active" href="student-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+    <a class="nav-item" href="student-my-class.html"><svg><use href="#i-class"/></svg>我的班级</a>
+    <a class="nav-item" href="student-courses.html"><svg><use href="#i-book"/></svg>我的课程</a>
+    <a class="nav-item" href="student-assignments.html"><svg><use href="#i-file"/></svg>作业<span class="nav-count">2</span></a>
+    <a class="nav-item" href="student-problems.html"><svg><use href="#i-code"/></svg>题库练习</a>
+    <a class="nav-item" href="student-submissions.html"><svg><use href="#i-hist"/></svg>提交记录</a>
+    <a class="nav-item" href="student-exams.html"><svg><use href="#i-clip"/></svg>考试</a>
+      <a class="nav-item" href="student-grades.html"><svg><use href="#i-grade"/></svg>成绩单</a>
+
+  </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈思雨</div>
+        <div class="s">高一(3)班</div>
+      </div>
+    </div>
+  
+</aside>
+
+<!-- ============================== main ============================== -->
+<main class="main">
+
+  <!-- topbar -->
+  <header class="topbar">
+    <div class="searchbox">
+      <svg><use href="#i-search"/></svg>
+      <input placeholder="搜索作业、题目、课程资源..." />
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" title="通知"><svg><use href="#i-bell"/></svg><span class="dot"></span></button>
+      <button class="icon-btn" title="主题" onclick="tt()"><svg><use href="#i-sun" id="use-theme"/></svg></button></div>
+  </header>
+
+  <div class="content">
+
+    <!-- greeting -->
+    <div class="hi">
+      <h1>晚上好，陈思雨 👋</h1>
+      <div class="sub">今天是 2026 年 8 月 12 日 · 你在 <b>高一(3)班</b> · 本周已学习 <b>5 天</b></div>
+    </div>
+
+    <!-- 待办 -->
+    <div class="todo">
+      <!-- 未交作业 -->
+      <div class="tcard">
+        <div class="tc-ic w"><svg><use href="#i-clipboard"/></svg></div>
+        <div class="tc-body">
+          <div class="h"><b>待交作业</b><span class="badge b-w"><i></i>2 份</span></div>
+          <div class="desc">还有 2 份作业未提交，最快明晚截止</div>
+          <div class="tc-list">
+            <a class="tc-li" href="student-assignment.html?aid=A0024">
+              <div class="ti">
+                <b>综合练习 · 文件 I/O</b>
+                <span class="sub">Python 程序设计基础 · 王建国 · 剩 14 小时</span>
+              </div>
+              <span class="badge b-w">急</span>
+              <svg class="arrow"><use href="#i-chev"/></svg>
+            </a>
+            <a class="tc-li" href="student-assignment.html?aid=A0023">
+              <div class="ti">
+                <b>递归与分治基础</b>
+                <span class="sub">数据结构与算法 · 王建国 · 剩 2 天</span>
+              </div>
+              <span class="badge b-m">待办</span>
+              <svg class="arrow"><use href="#i-chev"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 进行中考试 -->
+      <div class="tcard">
+        <div class="tc-ic p"><svg><use href="#i-clip"/></svg></div>
+        <div class="tc-body">
+          <div class="h"><b>进行中考试</b><span class="badge b-p"><i></i>1 场</span></div>
+          <div class="desc">期中模拟卷 · 算法竞赛入门 · 剩余 47 分钟</div>
+          <div class="tc-list">
+            <a class="tc-li" href="student-exam-take.html?eid=E0003">
+              <div class="ti">
+                <b>算法竞赛入门 · 期中模拟</b>
+                <span class="sub">已作答 4 / 8 题 · 自动保存于 11:42</span>
+              </div>
+              <span class="badge b-p">继续</span>
+              <svg class="arrow"><use href="#i-chev"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 错题回顾 -->
+      <div class="tcard">
+        <div class="tc-ic a"><svg><use href="#i-bulb"/></svg></div>
+        <div class="tc-body">
+          <div class="h"><b>错题回顾</b><span class="badge b-a"><i></i>3 题</span></div>
+          <div class="desc">最近一周 · 算法类 2 / 语法类 1</div>
+          <div class="tc-list">
+            <a class="tc-li" href="student-problem-do.html?pid=P0017">
+              <div class="ti">
+                <b>二分查找边界条件</b>
+                <span class="sub">错 3 次 · 难度 中等 · 推荐重做</span>
+              </div>
+              <span class="badge b-d">重做</span>
+              <svg class="arrow"><use href="#i-chev"/></svg>
+            </a>
+            <a class="tc-li" href="student-problem-do.html?pid=P0012">
+              <div class="ti">
+                <b>递归求斐波那契 · 记忆化</b>
+                <span class="sub">错 1 次 · 难度 入门 · 推荐重做</span>
+              </div>
+              <span class="badge b-d">重做</span>
+              <svg class="arrow"><use href="#i-chev"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 两栏 -->
+    <div class="twocol">
+
+      <!-- 左 -->
+      <section class="col">
+
+        <!-- 我的课程 -->
+        <div class="card">
+          <div class="card-h"><h2>我的课程</h2><a class="more" href="student-courses.html">全部课程<svg><use href="#i-chev"/></svg></a></div>
+          <div class="courselist">
+
+            <a class="course" href="student-course-detail.html?cid=C0001">
+              <div class="course-stripe" style="background:var(--cat-data)"></div>
+              <div class="course-ic cat-data"><svg><use href="#i-book"/></svg></div>
+              <div class="course-body">
+                <div class="t">Python 程序设计基础</div>
+                <div class="m"><span>数据</span><span class="sep">·</span><span>第 5 章 · 文件 I/O</span><span class="sep">·</span><span>王建国</span></div>
+              </div>
+              <div class="course-stat">
+                <div class="col-c"><div class="v">94.2</div><div class="lb">平均分</div></div>
+                <div class="col-c"><div class="v">5/5</div><div class="lb">作业</div></div>
+              </div>
+              <svg class="course-arrow"><use href="#i-chev"/></svg>
+            </a>
+
+            <a class="course" href="student-course-detail.html?cid=C0002">
+              <div class="course-stripe" style="background:var(--cat-algo)"></div>
+              <div class="course-ic cat-algo"><svg><use href="#i-book"/></svg></div>
+              <div class="course-body">
+                <div class="t">数据结构与算法</div>
+                <div class="m"><span>算法</span><span class="sep">·</span><span>第 3 章 · 树</span><span class="sep">·</span><span>王建国</span></div>
+              </div>
+              <div class="course-stat">
+                <div class="col-c"><div class="v">88.7</div><div class="lb">平均分</div></div>
+                <div class="col-c"><div class="v">3/5</div><div class="lb">作业</div></div>
+              </div>
+              <svg class="course-arrow"><use href="#i-chev"/></svg>
+            </a>
+
+            <a class="course" href="student-course-detail.html?cid=C0003">
+              <div class="course-stripe" style="background:var(--cat-ai)"></div>
+              <div class="course-ic cat-ai"><svg><use href="#i-book"/></svg></div>
+              <div class="course-body">
+                <div class="t">算法竞赛入门</div>
+                <div class="m"><span>人工智能</span><span class="sep">·</span><span>选拔阶段 · 动态规划</span><span class="sep">·</span><span>王建国</span></div>
+              </div>
+              <div class="course-stat">
+                <div class="col-c"><div class="v">76.5</div><div class="lb">平均分</div></div>
+                <div class="col-c"><div class="v">2/3</div><div class="lb">作业</div></div>
+              </div>
+              <svg class="course-arrow"><use href="#i-chev"/></svg>
+            </a>
+
+          </div>
+        </div>
+
+
+      <!-- 右 -->
+      <aside class="col">
+
+        <!-- 我的班级 -->
+        <div class="card">
+          <div class="card-h"><h2>我的班级</h2><a class="more" href="student-my-class.html">详情<svg><use href="#i-chev"/></svg></a></div>
+          <div class="classinfo">
+            <div class="ci-ic"><svg><use href="#i-class"/></svg></div>
+            <div class="ci-body">
+              <b>高一(3)班</b>
+              <div class="m">班主任 · 陈老师</div>
+            </div>
+          </div>
+          <div class="classstats">
+            <div class="cs"><div class="v">45</div><div class="lb">同学</div></div>
+            <div class="cs"><div class="v">94.2</div><div class="lb">班平均</div></div>
+            <div class="cs"><div class="v">3</div><div class="lb">班级排名</div></div>
+          </div>
+        </div>
+
+        <!-- 班级公告 -->
+        <div class="card">
+          <div class="card-h"><h2>班级公告</h2><a class="more" href="student-my-class.html">查看全部<svg><use href="#i-chev"/></svg></a></div>
+          <div class="annlist">
+
+            <div class="ann urgent">
+              <div class="h">
+                <svg style="color:var(--danger)"><use href="#i-alarm"/></svg>
+                期中模拟考试通知
+                <span class="badge b-d">紧急</span>
+              </div>
+              <div class="p">本周五（8/15）下午 14:00-16:00 进行期中模拟，请提前 15 分钟进入考场。考试范围：第 1-5 章。</div>
+              <div class="ft"><span>陈老师</span><span>2 小时前</span></div>
+            </div>
+
+            <div class="ann">
+              <div class="h">
+                <svg style="color:var(--primary)"><use href="#i-pin"/></svg>
+                校运动会报名
+                <span class="badge b-p">活动</span>
+              </div>
+              <div class="p">第 18 届校运动会报名开始，请有意参加的同学本周日 24:00 前扫码登记。</div>
+              <div class="ft"><span>陈老师</span><span>昨天 18:30</span></div>
+            </div>
+
+            <div class="ann info">
+              <div class="h">
+                <svg style="color:var(--accent)"><use href="#i-bulb"/></svg>
+                班级平均分突破新高
+                <span class="badge b-a">喜讯</span>
+              </div>
+              <div class="p">上周末编程马拉松，3 班平均分首次突破 90，达到 92.6，超过 4 班 2.4 分。</div>
+              <div class="ft"><span>王建国 老师</span><span>2 天前</span></div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 学习周报 -->
+        <div class="card">
+          <div class="card-h"><h2>本周学习</h2></div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <svg style="color:var(--primary);font-size:18px"><use href="#i-code"/></svg>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:500">完成 18 / 22 题</div>
+                <div style="font-size:11.5px;color:var(--muted);margin-top:2px">通过率 82% · 较上周 +6%</div>
+              </div>
+              <span class="badge b-s">优秀</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <svg style="color:var(--success);font-size:18px"><use href="#i-file"/></svg>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:500">提交 4 份作业</div>
+                <div style="font-size:11.5px;color:var(--muted);margin-top:2px">平均得分 9 / 10 · 全班第 2</div>
+              </div>
+              <span class="badge b-s">top 5</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <svg style="color:var(--warning);font-size:18px"><use href="#i-clock"/></svg>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:500">学习时长 6.4 小时</div>
+                <div style="font-size:11.5px;color:var(--muted);margin-top:2px">日均 0.9 小时 · 距目标 +1.6</div>
+              </div>
+              <span class="badge b-w">差 1.6h</span>
+            </div>
+          </div>
+        </div>
+
+      </aside>
+
+  </div>
+
+  </div>
+
+</main>
+
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+function tt(){
+  var d=document.documentElement.classList.toggle('dark');
+  document.getElementById('use-theme').setAttribute('href', d?'#i-moon':'#i-sun');
+  localStorage.setItem('theme', d?'dark':'light');
+}
+if(localStorage.getItem('theme')==='dark'){
+  document.documentElement.classList.add('dark');
+  document.getElementById('use-theme').setAttribute('href','#i-moon');
+}
+</script>
+
+</body>
+</html>

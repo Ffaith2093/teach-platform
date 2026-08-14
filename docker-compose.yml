@@ -1,0 +1,54 @@
+# Python 教学平台 · 开发环境编排
+# 启动: docker compose up -d
+# 关闭: docker compose down
+# 重置数据: docker compose down -v
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pylearn-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pylearn
+      POSTGRES_PASSWORD: pylearn_dev
+      POSTGRES_DB: pylearn
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pylearn -d pylearn"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: pylearn-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  adminer:
+    image: adminer:4.8.1
+    container_name: pylearn-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  redis-data:

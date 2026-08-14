@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>综合练习 · 文件 I/O · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+  --qt-choice:#0EA5E9; --qt-choice-bg:#E0F2FE;
+  --qt-blank:#F59E0B;  --qt-blank-bg:#FEF3C7;
+  --qt-essay:#8B5CF6;  --qt-essay-bg:#EDE9FE;
+  --qt-code:#10B981;   --qt-code-bg:#D1FAE5;
+  --kw:#AF52A8; --fn:#4078BE; --str:#0A803C; --nm:#098658; --cmt:#6E7D91; --vr:#0F172A;
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --primary-muted:#0C4A6E;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171; --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+  --qt-choice:#38BDF8; --qt-choice-bg:#0C334A;
+  --qt-blank:#FBBF24;  --qt-blank-bg:#422D06;
+  --qt-essay:#A78BFA;  --qt-essay-bg:#2A1B4D;
+  --qt-code:#34D399;   --qt-code-bg:#063B2A;
+  --kw:#C586C0; --fn:#DCDCAA; --str:#CE9178; --nm:#B5CEA8; --cmt:#6A9955; --vr:#9CDCFE;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+/* ============== 侧栏（学生端） ============== */
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--primary);
+           display:flex;align-items:center;justify-content:center;color:var(--primary-fg);font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--accent-subtle);color:var(--accent);font-weight:500}
+
+.nav{flex:1;padding:16px 12px;overflow-y:auto;min-height:0}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-label+.nav-label,.nav-item+.nav-label{padding-top:24px}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;
+         background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,#0EA5E9,#38BDF8);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+/* ============== 主区 ============== */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+
+/* 顶栏（作业专属） */
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:14px;
+        padding:0 24px;border-bottom:1px solid var(--border);background:var(--bg)}
+.back{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;
+      font-size:14px;color:var(--muted);transition:.18s}
+.back:hover{background:var(--surface);color:var(--fg)}
+.back svg{font-size:14px}
+.vline{width:1px;height:20px;background:var(--border)}
+.atitle{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.atitle h1{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.atitle .meta{display:flex;align-items:center;gap:14px;margin-left:14px;font-size:12px;color:var(--muted)}
+.atitle .meta span{display:flex;align-items:center;gap:5px}
+.atitle .meta b{color:var(--fg);font-weight:500;font-variant-numeric:tabular-nums}
+
+.top-actions{display:flex;align-items:center;gap:8px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;
+          display:flex;transition:background .18s,color .18s}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:13px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost svg{font-size:14px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:13.5px;font-weight:500;
+     box-shadow:var(--shadow);transition:background .18s}
+.btn:hover{background:var(--primary-hover)}
+.btn svg{font-size:14px}
+
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;
+       font-size:11px;font-weight:500;white-space:nowrap}
+.badge i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.b-w{background:var(--warning-subtle);color:var(--warning)}
+.b-d{background:var(--danger-subtle);color:var(--danger)}
+.b-p{background:var(--primary-subtle);color:var(--primary)}
+.b-s{background:var(--success-subtle);color:var(--success)}
+.b-a{background:var(--accent-subtle);color:var(--accent)}
+
+.content{flex:1;display:flex;min-height:0}
+
+/* ============== 三栏 ============== */
+.col{display:flex;flex-direction:column;background:var(--card);min-width:0;min-height:0}
+.col-l{width:300px;flex-shrink:0;border-right:1px solid var(--border)}
+.col-c{flex:1;display:flex;flex-direction:column}
+.col-r{width:360px;flex-shrink:0;border-left:1px solid var(--border)}
+
+.col-hd{height:48px;flex-shrink:0;display:flex;align-items:center;gap:10px;padding:0 16px;
+        border-bottom:1px solid var(--border);background:var(--card)}
+.col-hd h3{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px}
+.col-hd h3 svg{font-size:14px;color:var(--muted)}
+.col-hd .right{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)}
+.scroll{flex:1;min-height:0;overflow-y:auto}
+
+/* ============== 左栏：题目大纲 ============== */
+.progress{padding:14px 16px;border-bottom:1px solid var(--border);background:var(--surface)}
+html.dark .progress{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.prog-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.prog-row h4{font-size:13px;font-weight:600}
+.prog-row .pct{font-size:13px;font-weight:600;color:var(--primary);font-variant-numeric:tabular-nums}
+.prog-bar{height:6px;background:var(--card);border-radius:999px;overflow:hidden;border:1px solid var(--border)}
+html.dark .prog-bar{background:var(--border);border-color:transparent}
+.prog-bar span{display:block;height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:999px}
+.prog-time{margin-top:10px;display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)}
+
+.qnav{padding:6px 0}
+.qnav-row{display:flex;align-items:flex-start;gap:11px;padding:10px 16px;cursor:pointer;
+          border-bottom:1px solid var(--border);transition:background .18s;position:relative}
+.qnav-row:last-child{border-bottom:none}
+.qnav-row:hover{background:var(--surface)}
+.qnav-row.on{background:var(--primary-subtle)}
+html.dark .qnav-row.on{background:color-mix(in srgb,var(--primary-subtle) 50%,transparent)}
+.qnav-row .num{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+              font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11px;font-weight:700;
+              background:var(--surface);color:var(--muted);border:1px solid var(--border);flex-shrink:0}
+.qnav-row.answered .num{background:var(--success-subtle);color:var(--success);border-color:transparent}
+.qnav-row.on .num{background:var(--primary);color:var(--primary-fg);border-color:var(--primary)}
+.qnav-row .body{flex:1;min-width:0}
+.qnav-row .body .top{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.qnav-row .body .top b{font-size:13px;font-weight:500;line-height:1.3}
+.qnav-row .body .qt{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;display:inline-flex;align-items:center;gap:3px}
+.qnav-row .body .qt svg{font-size:10px}
+.qnav-row .body .summary{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:3px;
+                        display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.qnav-row .body .row-foot{display:flex;align-items:center;gap:8px;margin-top:5px;font-size:10.5px;color:var(--subtle);font-variant-numeric:tabular-nums}
+.qnav-row .star{position:absolute;top:12px;right:14px;color:var(--subtle);font-size:12px;transition:.18s}
+.qnav-row.starred .star{color:var(--warning);fill:var(--warning-subtle)}
+
+.qt-c{background:var(--qt-choice-bg);color:var(--qt-choice)}
+.qt-b{background:var(--qt-blank-bg);color:var(--qt-blank)}
+.qt-e{background:var(--qt-essay-bg);color:var(--qt-essay)}
+.qt-p{background:var(--qt-code-bg);color:var(--qt-code)}
+
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.s{background:var(--success)}.dot.w{background:var(--warning)}.dot.d{background:var(--danger)}
+.dot.m{background:var(--subtle)}
+
+/* ============== 中栏：题面 + 作答 ============== */
+.q-head{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--card)}
+.q-head .qnav{display:flex;align-items:center;gap:4px}
+.q-head .qnav button{width:30px;height:30px;border-radius:6px;border:1px solid var(--border);
+                     display:flex;align-items:center;justify-content:center;color:var(--muted);transition:.18s}
+.q-head .qnav button:hover{background:var(--surface);color:var(--fg)}
+.q-head .qnav button:disabled{opacity:.4;cursor:not-allowed}
+.q-head .qsel{position:relative}
+.q-head .qsel .qb{padding:6px 28px 6px 12px;border:1px solid var(--border);border-radius:7px;
+                 background:var(--card);font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;transition:.18s}
+.q-head .qsel .qb:hover{border-color:var(--primary)}
+.q-head .qsel .qb .qt-chip{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;display:inline-flex;align-items:center;gap:3px}
+.q-head .qsel .qb .qt-chip svg{font-size:10px}
+.q-head .qsel .qb svg.chev{font-size:14px;color:var(--muted)}
+.q-head .qsel .menu{position:absolute;top:calc(100% + 4px);left:0;min-width:260px;background:var(--card);
+                    border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px -8px rgba(15,23,42,.2);
+                    padding:4px;z-index:30;display:none}
+.q-head .qsel.open .menu{display:block}
+.q-head .qsel .menu button{display:flex;width:100%;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;
+                           font-size:13px;color:var(--fg);text-align:left;transition:.18s}
+.q-head .qsel .menu button:hover{background:var(--surface)}
+.q-head .qsel .menu button .qt-chip{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;display:inline-flex;align-items:center;gap:3px}
+.q-head .qsel .menu button .qt-chip svg{font-size:10px}
+.q-head .qsel .menu button .check{margin-left:auto;font-size:12px}
+.q-head .qsel .menu button .check.s{color:var(--success)}
+.q-head .qsel .menu button .check.m{color:var(--subtle)}
+
+.q-head .qa{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.q-head .qa .star-btn{display:flex;align-items:center;gap:5px;padding:6px 10px;border:1px solid var(--border);
+                     border-radius:6px;color:var(--muted);font-size:12px;transition:.18s}
+.q-head .qa .star-btn:hover{border-color:var(--warning);color:var(--warning)}
+.q-head .qa .star-btn.on{background:var(--warning-subtle);color:var(--warning);border-color:transparent}
+.q-head .qa .score{font-size:13px;font-weight:600;color:var(--fg);font-variant-numeric:tabular-nums}
+.q-head .qa .score b{color:var(--primary);font-size:15px}
+
+.q-body{flex:1;min-height:0;overflow-y:auto;padding:20px 24px 100px;display:flex;flex-direction:column;gap:16px}
+
+.qcard{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.qcard-hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--surface)}
+html.dark .qcard-hd{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.qcard-hd .num{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:13px;font-weight:700;color:var(--primary);flex-shrink:0}
+.qcard-hd .title{font-size:14px;font-weight:600;flex:1;min-width:0}
+.qcard-hd .meta{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.qcard-hd .meta span{display:flex;align-items:center;gap:4px}
+
+.qcard-bd{padding:18px 20px}
+.qcard-bd p{font-size:13.5px;line-height:1.75;margin-bottom:10px;color:var(--fg)}
+.qcard-bd p:last-child{margin-bottom:0}
+.qcard-bd .code-inline{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;
+                       background:var(--surface);padding:2px 7px;border-radius:4px;color:var(--primary)}
+html.dark .code-inline{background:var(--border)}
+.qcard-bd .hint{margin-top:14px;border-left:2px solid var(--primary);border-radius:0 8px 8px 0;
+                background:color-mix(in srgb,var(--primary-subtle) 45%,transparent);padding:10px 14px}
+.qcard-bd .hint b{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--primary)}
+.qcard-bd .hint p{margin:5px 0 0;font-size:12.5px;color:var(--muted);line-height:1.7}
+
+/* ===== 作答区：选择 ===== */
+.ans-choices{display:flex;flex-direction:column;gap:10px}
+.ans-choice{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border:1px solid var(--border);
+            border-radius:9px;background:var(--card);cursor:pointer;transition:.18s}
+.ans-choice:hover{border-color:var(--primary);background:var(--surface)}
+.ans-choice.sel{border-color:var(--primary);background:var(--primary-subtle)}
+html.dark .ans-choice.sel{background:color-mix(in srgb,var(--primary-subtle) 50%,transparent)}
+.ans-choice .key{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+                 font-size:11px;font-weight:700;flex-shrink:0;background:var(--surface);color:var(--muted);
+                 border:1px solid var(--border)}
+.ans-choice.sel .key{background:var(--primary);color:var(--primary-fg);border-color:var(--primary)}
+.ans-choice .txt{flex:1;font-size:13.5px;line-height:1.6}
+.ans-choice .clear{margin-left:auto;display:none}
+.ans-choice.sel .clear{display:inline-flex;color:var(--subtle);font-size:11px;align-items:center;gap:4px;padding:4px 6px;border-radius:5px;transition:.18s}
+.ans-choice.sel .clear:hover{color:var(--danger)}
+
+/* ===== 作答区：填空 ===== */
+.ans-blanks{font-size:14px;line-height:2}
+.ans-blanks p{margin-bottom:14px}
+.ans-blanks input{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:13px;
+                  border:none;border-bottom:2px solid var(--border);background:transparent;
+                  padding:3px 6px;outline:none;width:140px;color:var(--primary);
+                  font-weight:600;text-align:center;transition:.18s}
+.ans-blanks input:focus{border-bottom-color:var(--primary);background:var(--primary-subtle)}
+html.dark .ans-blanks input:focus{background:color-mix(in srgb,var(--primary-subtle) 50%,transparent)}
+
+/* ===== 作答区：简答 ===== */
+.ans-essay{width:100%;padding:14px 16px;border:1px solid var(--border);border-radius:9px;
+           background:var(--card);font-size:13.5px;line-height:1.8;color:var(--fg);
+           font-family:inherit;outline:none;resize:vertical;min-height:200px;transition:.18s}
+.ans-essay:focus{border-color:var(--primary)}
+.ans-essay::placeholder{color:var(--subtle)}
+.essay-foot{display:flex;align-items:center;gap:8px;margin-top:10px}
+.essay-foot .attach{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;
+                    border:1px dashed var(--border);border-radius:7px;font-size:12px;color:var(--muted);
+                    transition:.18s}
+.essay-foot .attach:hover{border-color:var(--primary);color:var(--primary)}
+.essay-foot .count{margin-left:auto;font-size:11.5px;color:var(--subtle);font-variant-numeric:tabular-nums}
+.essay-foot .count b{color:var(--muted)}
+.essay-foot .count b.danger{color:var(--danger)}
+
+/* ===== 作答区：编程 ===== */
+.code-block{border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--card)}
+.code-hd{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;
+         background:var(--surface);border-bottom:1px solid var(--border)}
+html.dark .code-hd{background:color-mix(in srgb,var(--border) 40%,transparent)}
+.code-hd .file{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);font-family:"SF Mono",Menlo,Consolas,monospace}
+.code-hd .file svg{font-size:13px;color:var(--qt-code)}
+.code-hd .tools{display:flex;align-items:center;gap:8px}
+.code-hd .tools button{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;
+                      border:1px solid var(--border);border-radius:6px;font-size:11.5px;color:var(--muted);
+                      transition:.18s}
+.code-hd .tools button:hover{border-color:var(--primary);color:var(--primary)}
+.code-hd .tools button svg{font-size:12px}
+.code-hd .tools .save{color:var(--success)}
+.code-hd .tools .save svg{color:var(--success)}
+
+.code-body{flex:1;display:flex;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;line-height:21px;overflow:auto}
+.code-body .gutter{padding:10px 8px;text-align:right;color:var(--subtle);user-select:none;
+                   border-right:1px solid var(--border);
+                   background:color-mix(in srgb,var(--surface) 50%,transparent);min-width:36px}
+.code-body textarea{flex:1;padding:10px 14px;background:transparent;border:none;outline:none;resize:none;
+                    color:var(--fg);font-family:inherit;font-size:inherit;line-height:inherit;tab-size:4}
+.code-foot{display:flex;align-items:center;gap:14px;padding:6px 12px;font-size:11px;color:var(--subtle);
+           border-top:1px solid var(--border);background:var(--surface)}
+html.dark .code-foot{background:color-mix(in srgb,var(--border) 40%,transparent)}
+.code-foot .right{margin-left:auto;display:flex;align-items:center;gap:4px}
+
+.kw{color:var(--kw)}.fn{color:var(--fn)}.st{color:var(--str)}
+.nm{color:var(--nm)}.cm{color:var(--cmt)}.vr{color:var(--vr)}
+
+/* 上一题/下一题 浮动按钮 */
+.q-fab{position:sticky;bottom:0;display:flex;align-items:center;gap:8px;margin-top:6px;padding:14px 24px;
+       background:linear-gradient(180deg,transparent,var(--card) 30%);border-top:1px solid transparent}
+.q-fab .secondary{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border:1px solid var(--border);
+                  border-radius:7px;font-size:12.5px;color:var(--muted);transition:.18s}
+.q-fab .secondary:hover{background:var(--surface);color:var(--fg)}
+.q-fab .secondary:disabled{opacity:.4;cursor:not-allowed}
+.q-fab .primary{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:7px;
+                background:var(--primary);color:var(--primary-fg);font-size:13px;font-weight:500;
+                box-shadow:var(--shadow);transition:background .18s;margin-left:auto}
+.q-fab .primary:hover{background:var(--primary-hover)}
+.q-fab .run{border-color:var(--accent);color:var(--accent)}
+.q-fab .run:hover{background:var(--accent-subtle);color:var(--accent)}
+.q-fab .kbd{margin-left:8px;font-size:11px;color:var(--subtle);font-family:"SF Mono",Menlo,Consolas,monospace;
+            background:var(--surface);padding:2px 6px;border-radius:4px}
+
+/* ============== 右栏：题面摘要 + 提交 ============== */
+.qsum{padding:14px 16px;border-bottom:1px solid var(--border)}
+.qsum-hd{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.qsum-hd .num{width:22px;height:22px;border-radius:6px;background:var(--primary);color:var(--primary-fg);
+             display:flex;align-items:center;justify-content:center;font-family:"SF Mono",Menlo,Consolas,monospace;
+             font-size:11px;font-weight:700}
+.qsum-hd .qt{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600;display:inline-flex;align-items:center;gap:3px}
+.qsum-hd .qt svg{font-size:10px}
+.qsum-hd .ttl{flex:1;font-size:13px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qsum-bd{font-size:12.5px;line-height:1.7;color:var(--muted);max-height:120px;overflow:hidden;
+         display:-webkit-box;-webkit-line-clamp:5;line-clamp:5;-webkit-box-orient:vertical}
+
+.qsum-meta{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface)}
+html.dark .qsum-meta{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.qsum-meta .row{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted);padding:3px 0}
+.qsum-meta .row b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+.qsum-meta .row.big{margin-top:8px;padding-top:10px;border-top:1px solid var(--border);font-size:13px}
+.qsum-meta .row.big b{font-size:17px;color:var(--primary)}
+
+.progress-mini{padding:14px 16px;border-bottom:1px solid var(--border)}
+.progress-mini h5{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;
+                  margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.progress-mini h5 svg{font-size:12px}
+.progress-mini .pstat{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center}
+.progress-mini .pstat .n{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.progress-mini .pstat .lb{font-size:10.5px;color:var(--muted);margin-top:3px}
+.progress-mini .pstat .s .n{color:var(--success)}
+.progress-mini .pstat .w .n{color:var(--warning)}
+.progress-mini .pstat .m .n{color:var(--muted)}
+
+.shortcut-card{padding:12px 16px;border-bottom:1px solid var(--border)}
+.shortcut-card h5{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;
+                  margin-bottom:8px;display:flex;align-items:center;gap:6px;cursor:pointer}
+.shortcut-card h5 svg{font-size:12px;transition:transform .18s}
+.shortcut-card.open h5 svg{transform:rotate(90deg)}
+.shortcut-list{font-size:11.5px;color:var(--muted);line-height:1.9;display:none}
+.shortcut-card.open .shortcut-list{display:block}
+.shortcut-list kbd{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:10.5px;
+                   background:var(--surface);border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;
+                   padding:1px 6px;color:var(--fg);margin-right:6px;display:inline-block;min-width:14px;text-align:center}
+
+.actions{padding:14px 16px;display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--border);background:var(--card)}
+.actions .primary{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 14px;border-radius:8px;
+                  background:var(--primary);color:var(--primary-fg);font-size:13.5px;font-weight:500;
+                  box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s}
+.actions .primary:hover{background:var(--primary-hover)}
+.actions .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.actions .secondary{display:flex;align-items:center;justify-content:center;gap:5px;padding:9px;border-radius:8px;
+                    border:1px solid var(--border);font-size:12.5px;color:var(--muted);transition:.18s}
+.actions .secondary:hover{background:var(--surface);color:var(--fg)}
+
+.txt-s{color:var(--success)}.txt-w{color:var(--warning)}.txt-d{color:var(--danger)}.txt-p{color:var(--primary)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .28s ease-out both}
+
+@media(max-width:1380px){
+  .col-l{width:270px}
+  .col-r{width:320px}
+}
+@media(max-width:1200px){
+  .side{display:none}
+}
+@media(max-width:900px){
+  .col-r{display:none}
+}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-cap" viewBox="0 0 24 24"><path d="M2 9 12 4l10 5-10 5z"/><path d="M6 11v5c0 1 3 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M3 9 12 3l9 6"/><path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"/><path d="M9 22V12h6v10"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2 2 0 0 1 0-5H20"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6M16 6l6 6-6 6"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></symbol>
+<symbol id="i-grade" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13l2 2 4-4"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></symbol>
+<symbol id="i-hist" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="14" r="8"/><path d="M12 10v4"/><path d="M9 2h6"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="i-arrow-r" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="m6 3 14 9-14 9V3z"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
+<symbol id="i-fcode" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5"/></symbol>
+<symbol id="i-clip2" viewBox="0 0 24 24"><path d="M21.4 11.6 12.3 20.7a5 5 0 0 1-7-7L14.4 4.6a3.5 3.5 0 0 1 5 5L10.3 18.7a2 2 0 0 1-2.8-2.8L16 7.4"/></symbol>
+<symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+<symbol id="i-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2 15 8.5 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 9 8.5 12 2"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
+<symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></symbol>
+<symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></symbol>
+<symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8"/><path d="M3 3v5h5"/></symbol>
+<symbol id="i-format" viewBox="0 0 24 24"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark">Py</div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">学生端</span>
+    </div>
+    <nav class="nav">
+      <a class="nav-item" href="student-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <a class="nav-item" href="student-my-class.html"><svg><use href="#i-class"/></svg>我的班级</a>
+      <a class="nav-item" href="student-courses.html"><svg><use href="#i-book"/></svg>我的课程</a>
+      <a class="nav-item active" href="student-assignments.html"><svg><use href="#i-file"/></svg>作业<span class="nav-count">2</span></a>
+      <a class="nav-item" href="student-problems.html"><svg><use href="#i-code"/></svg>题库练习</a>
+      <a class="nav-item" href="student-submissions.html"><svg><use href="#i-hist"/></svg>提交记录</a>
+      <a class="nav-item" href="student-exams.html"><svg><use href="#i-clip"/></svg>考试</a>
+      <a class="nav-item" href="student-grades.html"><svg><use href="#i-grade"/></svg>成绩单</a>
+
+    </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈思雨</div>
+        <div class="s">高一(3)班</div>
+      </div>
+    </div>
+  
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <a class="back" href="student-assignments.html"><svg><use href="#i-arrow-l"/></svg>返回作业列表</a>
+      <div class="vline"></div>
+      <div class="atitle">
+        <h1>综合练习 · 文件 I/O</h1>
+        <div class="meta">
+          <span><svg><use href="#i-clock"/></svg>剩 <b>2 天 5 小时</b></span>
+          <span style="color:var(--success)"><svg><use href="#i-save"/></svg>已自动保存 <b>30 秒前</b></span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="btn-ghost"><svg><use href="#i-save"/></svg>保存草稿</button>
+        <button class="icon-btn"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg><span class="dot"></span></button>
+        <button class="btn"><svg><use href="#i-send"/></svg>提交作业</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- 左栏：题号大纲 -->
+      <section class="col col-l">
+
+        <div class="progress">
+          <div class="prog-row">
+            <h4>作答进度</h4>
+            <span class="pct"><span class="num">2</span> / <span class="num">4</span></span>
+          </div>
+          <div class="prog-bar"><span style="width:50%"></span></div>
+          <div class="prog-time"><svg><use href="#i-timer"/></svg>已用时 <b style="color:var(--fg);margin-left:2px">00:32:14</b></div>
+        </div>
+
+        <div class="qnav" id="qnav">
+
+          <div class="qnav-row answered starred" data-id="q1" data-status="answered">
+            <div class="num">#1</div>
+            <div class="body">
+              <div class="top">
+                <span class="qt qt-p"><svg><use href="#i-code"/></svg>编程</span>
+                <b>读取文件计算平均分</b>
+              </div>
+              <p class="summary">从 scores.txt 读取学生分数，输出平均分（保留 2 位小数）。</p>
+              <div class="row-foot"><span class="dot s"></span>已提交 · 12 分钟前</div>
+            </div>
+            <svg class="star" style="width:14px;height:14px"><use href="#i-star"/></svg>
+          </div>
+
+          <div class="qnav-row answered" data-id="q2" data-status="answered">
+            <div class="num">#2</div>
+            <div class="body">
+              <div class="top">
+                <span class="qt qt-p"><svg><use href="#i-code"/></svg>编程</span>
+                <b>学生信息写入 CSV</b>
+              </div>
+              <p class="summary">将 5 位学生的姓名 / 学号 / 成绩写入 students.csv。</p>
+              <div class="row-foot"><span class="dot s"></span>已提交 · 3 分钟前</div>
+            </div>
+          </div>
+
+          <div class="qnav-row on" data-id="q3" data-status="current">
+            <div class="num">#3</div>
+            <div class="body">
+              <div class="top">
+                <span class="qt qt-e"><svg><use href="#i-target"/></svg>简答</span>
+                <b>with 语句的作用</b>
+              </div>
+              <p class="summary">请说明 Python 文件操作中 with 语句的作用及其优势。</p>
+              <div class="row-foot"><span class="dot w"></span>当前题目</div>
+            </div>
+          </div>
+
+          <div class="qnav-row" data-id="q4" data-status="unanswered">
+            <div class="num">#4</div>
+            <div class="body">
+              <div class="top">
+                <span class="qt qt-e"><svg><use href="#i-target"/></svg>简答</span>
+                <b>二进制 vs 文本模式</b>
+              </div>
+              <p class="summary">解释 open() 中 'b' 与 't' 模式的区别及使用场景。</p>
+              <div class="row-foot"><span class="dot m"></span>未作答</div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 中栏：题目 + 作答 -->
+      <section class="col col-c">
+
+        <div class="q-head">
+          <div class="qnav">
+            <button id="qprev" disabled title="上一题"><svg style="transform:rotate(90deg)"><use href="#i-down"/></svg></button>
+          </div>
+          <div class="qsel" id="qsel">
+            <div class="qb" onclick="toggleQSel()">
+              <span class="qt-chip qt-e"><svg><use href="#i-target"/></svg>简答</span>
+              <span><b>#3</b> with 语句的作用</span>
+              <svg class="chev"><use href="#i-down"/></svg>
+            </div>
+            <div class="menu" id="qsel-menu">
+              <button data-q="q1"><span class="qt-chip qt-p"><svg><use href="#i-code"/></svg>编程</span><span>读取文件计算平均分</span><svg class="check s"><use href="#i-check"/></svg></button>
+              <button data-q="q2"><span class="qt-chip qt-p"><svg><use href="#i-code"/></svg>编程</span><span>学生信息写入 CSV</span><svg class="check s"><use href="#i-check"/></svg></button>
+              <button data-q="q3"><span class="qt-chip qt-e"><svg><use href="#i-target"/></svg>简答</span><span>with 语句的作用</span><svg class="check m"><use href="#i-circle"/></svg></button>
+              <button data-q="q4"><span class="qt-chip qt-e"><svg><use href="#i-target"/></svg>简答</span><span>二进制 vs 文本模式</span><svg class="check m"><use href="#i-circle"/></svg></button>
+            </div>
+          </div>
+          <div class="qnav">
+            <button id="qnext" title="下一题" onclick="nextQ()"><svg style="transform:rotate(-90deg)"><use href="#i-down"/></svg></button>
+          </div>
+
+          <div class="qa">
+            <button class="star-btn" id="starBtn" onclick="toggleStar()">
+              <svg style="width:13px;height:13px"><use href="#i-star"/></svg>
+              <span>标记</span>
+            </button>
+            <span class="score"><b class="num">0</b> / 20</span>
+          </div>
+        </div>
+
+        <div class="q-body anim">
+
+          <!-- 题面 -->
+          <div class="qcard">
+            <div class="qcard-hd">
+              <span class="num">#3</span>
+              <span class="title">with 语句的作用</span>
+              <span class="meta">
+                <span><svg style="color:var(--qt-essay)"><use href="#i-target"/></svg>简答题</span>
+                <span>·</span>
+                <span>满分 <b class="num" style="color:var(--fg)">20</b></span>
+                <span>·</span>
+                <span>建议用时 5 分钟</span>
+              </span>
+            </div>
+            <div class="qcard-bd">
+              <p>Python 文件操作中，<span class="code-inline">with</span> 语句用于打开文件。请详细回答：</p>
+              <p>1. <strong>with 语句的核心作用是什么？</strong>对比不使用 with 的传统写法，说明它解决了什么问题。</p>
+              <p>2. <strong>使用 with 有哪些优势？</strong>从资源管理、异常安全、代码可读性等角度说明。</p>
+              <p>3. <strong>with 背后的实现机制？</strong>简单说明上下文管理器（<span class="code-inline">__enter__</span> / <span class="code-inline">__exit__</span>）的作用。</p>
+              <div class="hint">
+                <b><svg><use href="#i-bulb"/></svg>作答提示</b>
+                <p>建议结合具体代码示例说明，例如 <span class="code-inline">with open('data.txt') as f:</span> 与传统的 <span class="code-inline">try...finally</span> 写法对比。</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 简答作答区 -->
+          <div class="qcard">
+            <div class="qcard-hd">
+              <span class="num" style="background:var(--qt-essay);color:#fff">作答</span>
+              <span class="title">你的答案</span>
+              <span class="meta">
+                <span><svg><use href="#i-save"/></svg>已自动暂存</span>
+              </span>
+            </div>
+            <div class="qcard-bd">
+              <textarea class="ans-essay" id="essay" placeholder="在这里输入你的答案…（限 500 字）"
+                        oninput="updateCount()"></textarea>
+              <div class="essay-foot">
+                <button class="attach" onclick="attachFile()">
+                  <svg><use href="#i-clip2"/></svg>附加文件
+                </button>
+                <span class="count">已输入 <b id="cnt">0</b> / 500 字</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 浮动操作条 -->
+          <div class="q-fab">
+            <button class="secondary" id="prevFab" disabled><svg style="transform:rotate(180deg)"><use href="#i-arrow-r"/></svg>上一题</button>
+            <button class="secondary" onclick="saveDraft()"><svg><use href="#i-save"/></svg>保存草稿</button>
+            <button class="primary" onclick="nextQ()">这题做完 <span class="kbd">Ctrl+↵</span></button>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 右栏：题面摘要 + 提交 -->
+      <section class="col col-r">
+
+        <div class="qsum">
+          <div class="qsum-hd">
+            <span class="num">3</span>
+            <span class="qt qt-e"><svg><use href="#i-target"/></svg>简答</span>
+            <span class="ttl">with 语句的作用</span>
+          </div>
+          <p class="qsum-bd">Python 文件操作中，with 语句用于打开文件。请详细回答：1. with 语句的核心作用是什么？对比不使用 with 的传统写法…</p>
+        </div>
+
+        <div class="qsum-meta">
+          <div class="row"><span>题型</span><b>简答题</b></div>
+          <div class="row"><span>分值</span><b class="num">20 分</b></div>
+          <div class="row"><span>建议用时</span><b>5 分钟</b></div>
+          <div class="row big"><span>本题预估得分</span><b class="num">—</b></div>
+        </div>
+
+        <div class="progress-mini">
+          <h5><svg><use href="#i-target"/></svg>整体进度</h5>
+          <div class="pstat">
+            <div class="s"><div class="n">2</div><div class="lb">已答</div></div>
+            <div class="w"><div class="n">1</div><div class="lb">当前</div></div>
+            <div class="m"><div class="n">1</div><div class="lb">未答</div></div>
+          </div>
+        </div>
+
+        <div class="shortcut-card open" id="shortcut-card">
+          <h5 onclick="toggleShortcut()"><svg><use href="#i-arrow-r"/></svg>键盘快捷键</h5>
+          <div class="shortcut-list">
+            <div><kbd>↓</kbd>下一题</div>
+            <div><kbd>↑</kbd>上一题</div>
+            <div><kbd>Ctrl</kbd>+<kbd>Enter</kbd>这题做完</div>
+            <div><kbd>S</kbd>保存草稿</div>
+            <div><kbd>T</kbd>标记题目</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="primary" onclick="submitAll()">
+            <svg><use href="#i-send"/></svg>
+            全部提交 <span style="opacity:.7;font-size:11px;margin-left:4px">4 题</span>
+          </button>
+          <div class="row">
+            <button class="secondary" onclick="saveDraft()">
+              <svg style="font-size:13px"><use href="#i-save"/></svg>
+              保存草稿
+            </button>
+            <button class="secondary" onclick="resetAns()">
+              <svg style="font-size:13px"><use href="#i-undo"/></svg>
+              清空作答
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+/* 侧栏 active · 已通过 HTML class="active" 在作业项完成 */
+
+/* 题号下拉 */
+function toggleQSel(){
+  document.getElementById('qsel').classList.toggle('open');
+}
+document.addEventListener('click', function(e){
+  if(!e.target.closest('#qsel')){
+    var qs = document.getElementById('qsel');
+    if(qs) qs.classList.remove('open');
+  }
+});
+document.querySelectorAll('#qsel-menu button').forEach(function(b){
+  b.addEventListener('click', function(){
+    var qid = b.dataset.q;
+    toast('已切换到 ' + qid.toUpperCase());
+    document.getElementById('qsel').classList.remove('open');
+  });
+});
+
+/* 左栏题号点击 */
+document.querySelectorAll('#qnav .qnav-row').forEach(function(r){
+  r.addEventListener('click', function(){
+    document.querySelectorAll('#qnav .qnav-row').forEach(function(x){ x.classList.remove('on'); });
+    r.classList.add('on');
+    var id = r.dataset.id;
+    var title = r.querySelector('b').textContent;
+    toast('已切换到 ' + id.toUpperCase() + ' · ' + title);
+  });
+});
+
+/* 标记题目 */
+function toggleStar(){
+  var btn = document.getElementById('starBtn');
+  btn.classList.toggle('on');
+  var on = btn.classList.contains('on');
+  toast(on ? '已标记本题（稍后再回来）' : '已取消标记');
+  /* 同步左侧题号 */
+  var row = document.querySelector('#qnav .qnav-row.on');
+  if(row) row.classList.toggle('starred', on);
+}
+
+/* 简答题字数 */
+function updateCount(){
+  var ta = document.getElementById('essay');
+  var n = ta.value.length;
+  var cnt = document.getElementById('cnt');
+  cnt.textContent = n;
+  cnt.classList.toggle('danger', n > 500);
+}
+
+/* 上一题 / 下一题 */
+function nextQ(){
+  toast('已保存本题作答 · 跳到下一题');
+}
+function prevQ(){
+  toast('跳到上一题');
+}
+
+/* 保存草稿 */
+function saveDraft(){
+  toast('草稿已保存');
+}
+
+/* 附加文件 */
+function attachFile(){
+  toast('附加文件（mock）· 实际逻辑待后端实现');
+}
+
+/* 清空作答 */
+function resetAns(){
+  Modal.confirm({
+    title: '清空当前题目的作答？',
+    body: ['此操作不可撤销，未保存的内容会丢失'],
+    confirmText: '确认清空', danger: true,
+    onConfirm: function(){
+      var ta = document.getElementById('essay');
+      ta.value = '';
+      updateCount();
+      toast('已清空作答');
+    }
+  });
+}
+
+/* 全部提交 */
+function submitAll(){
+  Modal.confirm({
+    title: '提交综合练习 · 文件 I/O？',
+    body: ['本次作业共 4 题，<b style="color:var(--warning)">还有 1 题未作答</b>（#4 二进制 vs 文本模式）',
+           '提交后无法修改，未作答题目将被记 0 分'],
+    confirmText: '确认提交',
+    onConfirm: function(){
+      toast('已提交作业 · 4/4 题 · 等待教师批改');
+    }
+  });
+}
+
+/* 快捷键卡片折叠 */
+function toggleShortcut(){
+  document.getElementById('shortcut-card').classList.toggle('open');
+}
+
+/* 全局快捷键 */
+document.addEventListener('keydown', function(e){
+  if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'){
+    if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){
+      e.preventDefault();
+      nextQ();
+    }
+    return;
+  }
+  if(e.key === 'ArrowDown' || e.key === 'ArrowRight'){
+    var rows = Array.from(document.querySelectorAll('#qnav .qnav-row'));
+    var idx = rows.findIndex(function(r){ return r.classList.contains('on'); });
+    var next = rows[idx + 1];
+    if(next) next.click();
+  } else if(e.key === 'ArrowUp' || e.key === 'ArrowLeft'){
+    var rows = Array.from(document.querySelectorAll('#qnav .qnav-row'));
+    var idx = rows.findIndex(function(r){ return r.classList.contains('on'); });
+    var prev = rows[idx - 1];
+    if(prev) prev.click();
+  } else if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){
+    nextQ();
+  } else if(e.key === 's' || e.key === 'S'){
+    saveDraft();
+  } else if(e.key === 't' || e.key === 'T'){
+    toggleStar();
+  }
+});
+
+/* 默认进入：Q3 已标记 starred */
+document.querySelector('#qnav .qnav-row.on').classList.add('starred');
+document.getElementById('starBtn').classList.add('on');
+</script>
+</body>
+</html>

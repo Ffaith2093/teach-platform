@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>课程资源 · Python 程序设计基础 · 教师工作台</title>
+<link rel="stylesheet" href="lib/theme.css" />
+<script src="lib/theme-boot.js"></script>
+<style>
+/* ==========================================================================
+   课程 · 资源管理
+   ========================================================================== */
+:root{
+  --cat-data:#0EA5E9;
+  --bg:#F7F8FA;
+  --surface:#FFFFFF;
+  --surface-2:#F1F5F9;
+  --border:#E2E8F0;
+  --border-strong:#CBD5E1;
+  --text:#0F172A;
+  --text-2:#475569;
+  --text-3:#94A3B8;
+  --primary:#0EA5E9;
+  --primary-hover:#0284C7;
+  --primary-subtle:rgba(14,165,233,.08);
+  --warn:#F59E0B;
+  --warn-subtle:rgba(245,158,11,.10);
+  --danger:#EF4444;
+  --success:#10B981;
+  --success-subtle:rgba(16,185,129,.10);
+  --pdf:#EF4444;
+  --doc:#3B82F6;
+  --ppt:#F97316;
+  --xls:#10B981;
+  --zip:#A855F7;
+  --code:#0EA5E9;
+  --md:#64748B;
+  --img:#EC4899;
+  --vid:#8B5CF6;
+  --ipynb:#F59E0B;
+}
+html.dark{
+  --bg:#0B1220;
+  --surface:#111A2E;
+  --surface-2:#0E1729;
+  --border:#1E2A44;
+  --border-strong:#334155;
+  --text:#E2E8F0;
+  --text-2:#94A3B8;
+  --text-3:#64748B;
+  --primary-subtle:rgba(14,165,233,.14);
+  --warn-subtle:rgba(245,158,11,.14);
+  --success-subtle:rgba(16,185,129,.14);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+a{color:inherit;text-decoration:none}
+svg.ic{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.ic-lg{width:18px;height:18px}
+svg.ic-sm{width:14px;height:14px}
+svg.ic-xs{width:12px;height:12px}
+
+/* layout */
+.layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+
+/* ============== sidebar ============== */
+aside{background:var(--surface);border-right:1px solid var(--border);padding:20px 14px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.brand-logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#0EA5E9,#38BDF8);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;letter-spacing:.5px}
+.brand-name{font-weight:600;font-size:15px}
+.brand-name small{display:block;font-size:11px;color:var(--text-3);font-weight:400;margin-top:1px}
+.nav-group{margin-bottom:18px}
+.nav-group h5{font-size:11px;color:var(--text-3);font-weight:500;letter-spacing:.8px;text-transform:uppercase;padding:0 10px 8px;margin:0}
+.nav-group ul{list-style:none;padding:0;margin:0}
+.nav-group li a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:var(--text-2);font-size:13.5px;cursor:pointer;transition:.15s}
+.nav-group li a:hover{background:var(--surface-2);color:var(--text)}
+.nav-group li a.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-group li a.active svg.ic{stroke:var(--primary)}
+.nav-group li a .badge{margin-left:auto;font-size:11px;background:var(--surface-2);color:var(--text-2);padding:1px 6px;border-radius:8px}
+
+/* ============== topbar ============== */
+header.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;gap:18px;position:sticky;top:0;z-index:10}
+.crumb-back{width:32px;height:32px;border-radius:8px;background:var(--surface-2);display:inline-flex;align-items:center;justify-content:center;color:var(--text-2);cursor:pointer;transition:.15s;border:none}
+.crumb-back:hover{background:var(--primary-subtle);color:var(--primary)}
+.crumb{font-size:13px;color:var(--text-3);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.crumb b{color:var(--text);font-weight:500}
+.crumb a{color:var(--text-3);transition:.15s}
+.crumb a:hover{color:var(--primary)}
+.crumb svg.ic{color:var(--text-3)}
+.top-title{display:flex;align-items:center;gap:12px;flex:none}
+.top-title .ct{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--cat-data),#38BDF8);display:flex;align-items:center;justify-content:center;color:#fff}
+.top-title h1{font-size:16px;font-weight:600;margin:0;line-height:1.2}
+.top-title h1 small{display:block;font-size:11.5px;color:var(--text-3);font-weight:400;margin-top:2px}
+.top-search{flex:1;max-width:360px;margin-left:8px;position:relative}
+.top-search input{width:100%;height:36px;padding:0 14px 0 36px;background:var(--surface-2);border:1px solid transparent;border-radius:10px;color:var(--text);font-size:13px;outline:none;transition:.15s}
+.top-search input:focus{background:var(--surface);border-color:var(--primary)}
+.top-search svg.ic{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-3)}
+.top-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.icon-btn{width:36px;height:36px;border-radius:9px;background:transparent;border:1px solid transparent;color:var(--text-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:.15s;position:relative}
+.icon-btn:hover{background:var(--surface-2);color:var(--text)}
+.icon-btn .dot{position:absolute;top:8px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--danger);border:2px solid var(--surface)}
+.userbox{display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border-radius:24px;background:var(--surface-2);cursor:pointer}
+.userbox .av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#0EA5E9,#38BDF8);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600}
+.userbox .name{font-size:13px;font-weight:500}
+
+/* ============== buttons ============== */
+.btn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:9px;font-size:13.5px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:.15s;font-family:inherit}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-ghost{background:transparent;color:var(--text-2);border-color:var(--border)}
+.btn-ghost:hover{background:var(--surface-2);color:var(--text)}
+
+/* ============== main ============== */
+main{padding:0 0 48px}
+
+/* page head */
+.page-head{display:flex;align-items:flex-end;gap:24px;margin-bottom:14px;padding:24px 32px 0;flex-wrap:wrap}
+.page-head .ph-left{flex:1;min-width:240px}
+.page-head h1{margin:0 0 4px;font-size:20px;font-weight:600;letter-spacing:-.3px}
+.page-head .sub{color:var(--text-3);font-size:13px}
+.page-head .ph-right{display:flex;gap:8px;flex-wrap:wrap}
+
+/* breadcrumb bar */
+.bc{padding:14px 32px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-3)}
+.bc a{color:var(--text-3)}
+.bc a:hover{color:var(--primary)}
+.bc svg.ic{color:var(--text-3)}
+.bc b{color:var(--text);font-weight:500}
+.bc .bcr{margin-left:auto;color:var(--text-3);font-size:12px}
+
+/* body wrap = sidebar-tree + main content */
+.split{display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 200px)}
+
+/* ============== tree ============== */
+.tree{background:var(--surface);border-right:1px solid var(--border);padding:18px 14px;overflow-y:auto}
+.tree h4{font-size:11px;color:var(--text-3);font-weight:500;letter-spacing:.8px;text-transform:uppercase;padding:0 6px 10px;margin:0}
+.tree ul{list-style:none;padding:0;margin:0}
+.tree li{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;cursor:pointer;color:var(--text-2);font-size:13px;transition:.12s;user-select:none}
+.tree li:hover{background:var(--surface-2);color:var(--text)}
+.tree li.on{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.tree li .caret{width:14px;height:14px;display:flex;align-items:center;justify-content:center;color:var(--text-3);transition:transform .12s;flex:none}
+.tree li .caret.open{transform:rotate(90deg)}
+.tree li .caret.empty{visibility:hidden}
+.tree li svg.folder-ic{color:var(--primary)}
+.tree li.on svg.folder-ic{color:var(--primary)}
+.tree li .count{margin-left:auto;font-size:11px;color:var(--text-3);font-weight:400}
+.tree li.on .count{color:var(--primary)}
+.tree ul.sub{padding-left:18px;margin-top:2px;display:none}
+.tree ul.sub.open{display:block}
+
+/* ============== main content ============== */
+.workspace{padding:0 32px 32px;background:var(--bg)}
+
+/* upload area */
+.upload{
+  border:2px dashed var(--border-strong);
+  border-radius:14px;
+  background:var(--surface);
+  padding:24px;
+  display:flex;align-items:center;gap:18px;
+  margin-bottom:16px;
+  transition:.15s;cursor:pointer;
+}
+.upload:hover{
+  border-color:var(--primary);
+  background:var(--primary-subtle);
+}
+.upload.drag{border-color:var(--primary);background:var(--primary-subtle);transform:scale(1.005)}
+.upload .up-ic{
+  width:56px;height:56px;border-radius:14px;
+  background:var(--primary-subtle);color:var(--primary);
+  display:flex;align-items:center;justify-content:center;flex:none;
+}
+.upload:hover .up-ic{background:var(--primary);color:#fff}
+.upload .up-info{flex:1;min-width:0}
+.upload .up-info h4{margin:0 0 3px;font-size:14.5px;font-weight:600}
+.upload .up-info p{margin:0;color:var(--text-3);font-size:12px}
+.upload .up-info p b{color:var(--text-2);font-weight:500}
+.upload .up-cta{display:flex;gap:8px}
+
+/* filter bar */
+.sub-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:14px}
+.sub-filter select{height:34px;padding:0 28px 0 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;outline:none;cursor:pointer;font-family:inherit}
+.sub-filter select:hover{border-color:var(--border-strong)}
+.sub-filter select:focus{border-color:var(--primary)}
+.sub-filter .seg{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.sub-filter .seg button{height:34px;padding:0 14px;background:var(--surface);border:none;color:var(--text-2);font-size:13px;cursor:pointer;font-family:inherit;transition:.15s;display:inline-flex;align-items:center;gap:5px}
+.sub-filter .seg button:hover{background:var(--surface-2);color:var(--text)}
+.sub-filter .seg button.on{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.sub-filter .seg button+button{border-left:1px solid var(--border)}
+.sub-filter .spacer{flex:1}
+.sub-filter .hint{font-size:12px;color:var(--text-3)}
+
+/* ============== grid ============== */
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.res-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:11px;padding:14px;
+  display:flex;flex-direction:column;gap:8px;
+  transition:.15s;position:relative;cursor:pointer;
+  min-height:148px;
+}
+.res-card:hover{border-color:var(--primary);box-shadow:0 2px 8px rgba(14,165,233,.08)}
+.res-card .menu-btn{
+  position:absolute;top:8px;right:8px;
+  width:24px;height:24px;border-radius:6px;background:transparent;border:none;
+  color:var(--text-3);cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  transition:.12s;
+}
+.res-card .menu-btn:hover{background:var(--surface-2);color:var(--text)}
+.res-head{display:flex;align-items:flex-start;gap:10px}
+.res-icon{
+  width:40px;height:48px;border-radius:6px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:700;font-size:11px;letter-spacing:.3px;
+  position:relative;
+}
+.res-icon::after{
+  content:'';position:absolute;top:0;right:0;
+  border-style:solid;border-width:0 8px 8px 0;
+  border-color:transparent rgba(0,0,0,.18) transparent transparent;
+  border-radius:0 6px 0 0;
+}
+.res-icon.pdf{background:var(--pdf)}
+.res-icon.doc{background:var(--doc)}
+.res-icon.ppt{background:var(--ppt)}
+.res-icon.xls{background:var(--xls)}
+.res-icon.zip{background:var(--zip)}
+.res-icon.code{background:var(--code)}
+.res-icon.md{background:var(--md)}
+.res-icon.img{background:var(--img)}
+.res-icon.vid{background:var(--vid)}
+.res-icon.ipynb{background:var(--ipynb)}
+
+.res-meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.res-name{font-size:13.5px;font-weight:500;line-height:1.35;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  word-break:break-all;
+}
+.res-foot{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--text-3);margin-top:auto}
+.res-foot .av{width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#0EA5E9,#38BDF8);color:#fff;font-size:9px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.res-foot .sep{color:var(--border-strong)}
+.res-foot .dl{display:inline-flex;align-items:center;gap:3px;color:var(--text-3)}
+.res-foot .dl svg.ic{stroke:currentColor}
+
+.chip{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:5px;font-size:11px;font-weight:500;background:var(--surface-2);color:var(--text-2)}
+.chip.pdf{background:rgba(239,68,68,.10);color:var(--pdf)}
+.chip.doc{background:rgba(59,130,246,.10);color:var(--doc)}
+.chip.ppt{background:rgba(249,115,22,.10);color:var(--ppt)}
+.chip.zip{background:rgba(168,85,247,.10);color:var(--zip)}
+.chip.code{background:rgba(14,165,233,.10);color:var(--code)}
+.chip.img{background:rgba(236,72,153,.10);color:var(--img)}
+.chip.ipynb{background:rgba(245,158,11,.10);color:var(--ipynb)}
+.chip.md{background:rgba(100,116,139,.10);color:var(--md)}
+
+/* list view */
+.list{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.list-row{display:grid;grid-template-columns:36px 1fr 90px 110px 130px 80px 32px;align-items:center;gap:14px;padding:12px 16px;border-bottom:1px solid var(--border);transition:.12s;cursor:pointer}
+.list-row:last-child{border-bottom:none}
+.list-row:hover{background:var(--primary-subtle)}
+.list-row.head{background:var(--surface-2);color:var(--text-3);font-size:11.5px;font-weight:500;letter-spacing:.4px;cursor:default}
+.list-row.head:hover{background:var(--surface-2)}
+.list-row .rname{font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list-row .rsub{font-size:11.5px;color:var(--text-3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list-row .meta{font-size:12px;color:var(--text-2)}
+.list-row .meta svg.ic{color:var(--text-3);margin-right:3px;vertical-align:-2px}
+.list-row .ic-mini{width:32px;height:36px;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:700}
+
+/* responsive */
+@media (max-width:1200px){
+  aside{display:none}
+  .layout{grid-template-columns:1fr}
+  .split{grid-template-columns:1fr}
+  .tree{display:none}
+  .grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></symbol>
+<symbol id="i-classes" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+<symbol id="i-clipboard" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
+<symbol id="i-stack" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+<symbol id="i-trend-up" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+<symbol id="i-folder-open" viewBox="0 0 24 24"><path d="M6 14l1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+<symbol id="i-cloud-up" viewBox="0 0 24 24"><path d="M16 16l-4-4-4 4"/><path d="M12 12v9"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
+</defs>
+</svg>
+
+<div class="layout">
+
+<!-- ============================== sidebar ============================== -->
+<aside>
+  <div class="brand">
+    <div class="brand-logo">教</div>
+    <div class="brand-name">教师工作台<small>Teaching Platform</small></div>
+  </div>
+  <div class="nav-group">
+    <h5>教学</h5>
+    <ul>
+      <li><a href="teacher-dashboard.html"><svg class="ic"><use href="#i-home"/></svg>工作台</a></li>
+      <li><a href="teacher-classes.html"><svg class="ic"><use href="#i-classes"/></svg>我的班级</a></li>
+      <li><a href="teacher-courses.html" class="active"><svg class="ic"><use href="#i-book"/></svg>课程</a></li>
+      <li><a><svg class="ic"><use href="#i-clipboard"/></svg>作业<span class="badge">3</span></a></li>
+      <li><a href="teacher-problems.html"><svg class="ic"><use href="#i-stack"/></svg>题库</a></li>
+    </ul>
+  </div>
+  <div class="nav-group">
+    <h5>考核</h5>
+    <ul>
+      <li><a><svg class="ic"><use href="#i-clipboard"/></svg>试卷</a></li>
+      <li><a><svg class="ic"><use href="#i-check"/></svg>批改<span class="badge">12</span></a></li>
+      <li><a><svg class="ic"><use href="#i-eye"/></svg>考试监控</a></li>
+    </ul>
+  </div>
+  <div class="nav-group">
+    <h5>分析</h5>
+    <ul>
+      <li><a><svg class="ic"><use href="#i-trend-up"/></svg>成绩分析</a></li>
+      <li><a><svg class="ic"><use href="#i-classes"/></svg>学情画像</a></li>
+    </ul>
+  </div>
+</aside>
+
+<div>
+
+<!-- topbar -->
+<header class="topbar">
+  <button class="crumb-back" onclick="history.length>1?history.back():location.href='teacher-course-detail.html?cid=C0001'" title="返回课程详情">
+    <svg class="ic"><use href="#i-back"/></svg>
+  </button>
+  <div class="crumb">
+    <a href="teacher-courses.html">课程</a>
+    <svg class="ic ic-xs"><use href="#i-chev"/></svg>
+    <a href="teacher-course-detail.html?cid=C0001">Python 程序设计基础</a>
+    <svg class="ic ic-xs"><use href="#i-chev"/></svg>
+    <b>课程资源</b>
+  </div>
+
+  <div class="top-search">
+    <svg class="ic"><use href="#i-search"/></svg>
+    <input placeholder="搜索文件名、标签..." />
+  </div>
+
+  <div class="top-actions">
+    <button class="icon-btn" title="通知"><svg class="ic"><use href="#i-bell"/></svg><span class="dot"></span></button>
+    <button class="icon-btn" title="主题" onclick="tt()"><svg class="ic"><use href="#i-sun" id="use-theme"/></svg></button>
+    <div class="userbox">
+      <div class="av">王</div>
+      <div class="name">王建国</div>
+    </div>
+  </div>
+</header>
+
+<!-- page head -->
+<div class="page-head">
+  <div class="ph-left">
+    <h1>课程资源管理</h1>
+    <div class="sub">Python 程序设计基础 · 共 24 个文件 · 全部学生可见</div>
+  </div>
+  <div class="ph-right">
+    <button class="btn btn-ghost" onclick="newFolder()"><svg class="ic"><use href="#i-folder"/></svg>新建文件夹</button>
+    <button class="btn btn-primary" onclick="uploadFiles()"><svg class="ic"><use href="#i-upload"/></svg>上传文件</button>
+  </div>
+</div>
+
+<!-- breadcrumb -->
+<div class="bc">
+  <a href="#" onclick="enterRoot()">课程</a>
+  <svg class="ic ic-xs"><use href="#i-chev"/></svg>
+  <a href="#" onclick="enterFolder('第一章')">第一章</a>
+  <svg class="ic ic-xs"><use href="#i-chev"/></svg>
+  <b>1.1 变量与类型</b>
+  <span class="bcr">3 个文件 · 上次更新 3 周前</span>
+</div>
+
+<!-- body -->
+<div class="split">
+
+  <!-- tree -->
+  <div class="tree">
+    <h4>目录</h4>
+    <ul>
+      <li onclick="enterRoot()">
+        <svg class="ic ic-sm"><use href="#i-folder"/></svg>
+        <span style="margin-left:6px">全部文件</span>
+        <span class="count">24</span>
+      </li>
+      <li onclick="toggleNode(this,'chap1')">
+        <span class="caret open"><svg class="ic ic-xs"><use href="#i-chev"/></svg></span>
+        <svg class="ic ic-sm folder-ic"><use href="#i-folder-open"/></svg>
+        <span>第一章</span>
+        <span class="count">8</span>
+      </li>
+      <ul class="sub open" id="sub-chap1">
+        <li class="on" onclick="enterSub('第一章','1.1 变量与类型',event)">
+          <span class="caret empty"><svg class="ic ic-xs"><use href="#i-chev"/></svg></span>
+          <svg class="ic ic-sm"><use href="#i-folder"/></svg>
+          <span>1.1 变量与类型</span>
+          <span class="count">3</span>
+        </li>
+        <li onclick="enterSub('第一章','1.2 控制流',event)">
+          <span class="caret empty"><svg class="ic ic-xs"><use href="#i-chev"/></svg></span>
+          <svg class="ic ic-sm"><use href="#i-folder"/></svg>
+          <span>1.2 控制流</span>
+          <span class="count">2</span>
+        </li>
+        <li onclick="enterSub('第一章','1.3 函数',event)">
+          <span class="caret empty"><svg class="ic ic-xs"><use href="#i-chev"/></svg></span>
+          <svg class="ic ic-sm"><use href="#i-folder"/></svg>
+          <span>1.3 函数</span>
+          <span class="count">3</span>
+        </li>
+      </ul>
+      <li onclick="toggleNode(this,'chap2')">
+        <span class="caret"><svg class="ic ic-xs"><use href="#i-chev"/></svg></span>
+        <svg class="ic ic-sm folder-ic"><use href="#i-folder"/></svg>
+        <span>第二章</span>
+        <span class="count">6</span>
+      </li>
+      <li onclick="enterFolder('资料')">
+        <span class="caret empty"><svg class="ic ic-xs"><use href="#i-chev"/></svg></span>
+        <svg class="ic ic-sm folder-ic"><use href="#i-folder"/></svg>
+        <span>资料</span>
+        <span class="count">5</span>
+      </li>
+      <li onclick="enterFolder('试卷')">
+        <span class="caret empty"><svg class="ic ic-xs"><use href="#i-chev"/></svg></span>
+        <svg class="ic ic-sm folder-ic"><use href="#i-folder"/></svg>
+        <span>试卷</span>
+        <span class="count">3</span>
+      </li>
+      <li onclick="enterFolder('其它')">
+        <span class="caret empty"><svg class="ic ic-xs"><use href="#i-chev"/></svg></span>
+        <svg class="ic ic-sm folder-ic"><use href="#i-folder"/></svg>
+        <span>其它</span>
+        <span class="count">2</span>
+      </li>
+    </ul>
+
+    <div style="margin-top:24px;padding:14px;background:var(--primary-subtle);border-radius:10px;font-size:12px;color:var(--text-2);line-height:1.6">
+      <div style="display:flex;align-items:center;gap:6px;color:var(--primary);font-weight:600;margin-bottom:4px">
+        <svg class="ic ic-sm"><use href="#i-info"/></svg>
+        存储说明
+      </div>
+      课程资源占课程 5 GB 空间，已使用 <b style="color:var(--primary)">1.2 GB</b>。单文件 ≤ 100 MB。
+    </div>
+  </div>
+
+  <!-- workspace -->
+  <div class="workspace">
+
+    <!-- upload area -->
+    <div class="upload" id="upload" onclick="uploadFiles()">
+      <div class="up-ic"><svg class="ic" style="width:24px;height:24px"><use href="#i-cloud-up"/></svg></div>
+      <div class="up-info">
+        <h4>拖拽文件到此处，或点击选择</h4>
+        <p>支持 <b>pdf · docx · pptx · xlsx · zip · py · ipynb · md · txt · png · jpg · mp4</b>，单文件 ≤ <b>100 MB</b></p>
+      </div>
+      <div class="up-cta">
+        <button class="btn btn-ghost" onclick="event.stopPropagation();uploadFiles()">
+          <svg class="ic"><use href="#i-plus"/></svg>选择文件
+        </button>
+      </div>
+    </div>
+
+    <!-- filter -->
+    <div class="sub-filter">
+      <select title="类型">
+        <option>全部类型</option>
+        <option>文档 · pdf/docx</option>
+        <option>代码 · py/ipynb</option>
+        <option>媒体 · png/jpg/mp4</option>
+        <option>压缩 · zip</option>
+      </select>
+      <select title="排序">
+        <option>按最新上传 ↓</option>
+        <option>按名称 ↑</option>
+        <option>按大小 ↓</option>
+        <option>按下载量 ↓</option>
+      </select>
+      <div class="seg" role="tablist" title="视图">
+        <button class="on" data-view="grid" onclick="switchView('grid',this)">
+          <svg class="ic ic-sm"><use href="#i-grid"/></svg>网格
+        </button>
+        <button data-view="list" onclick="switchView('list',this)">
+          <svg class="ic ic-sm"><use href="#i-list"/></svg>列表
+        </button>
+      </div>
+      <span class="spacer"></span>
+      <span class="hint">显示 3 / 3 文件</span>
+    </div>
+
+    <!-- grid view -->
+    <div class="grid" id="view-grid">
+
+      <div class="res-card">
+        <button class="menu-btn" onclick="event.stopPropagation();fileMenu(this,'01 课件.pdf')"><svg class="ic ic-sm"><use href="#i-more"/></svg></button>
+        <div class="res-head">
+          <div class="res-icon pdf">PDF</div>
+          <div class="res-meta">
+            <div class="res-name">01 课件.pdf</div>
+            <span class="chip pdf">文档</span>
+          </div>
+        </div>
+        <div class="res-foot">
+          <div class="av">王</div>
+          <span>王建国</span>
+          <span class="sep">·</span>
+          <span>3 周前</span>
+          <span class="sep">·</span>
+          <span class="dl"><svg class="ic ic-xs"><use href="#i-download"/></svg>24</span>
+          <span class="sep">·</span>
+          <span>2.1 MB</span>
+        </div>
+      </div>
+
+      <div class="res-card">
+        <button class="menu-btn" onclick="event.stopPropagation();fileMenu(this,'02 课堂练习.py')"><svg class="ic ic-sm"><use href="#i-more"/></svg></button>
+        <div class="res-head">
+          <div class="res-icon code">PY</div>
+          <div class="res-meta">
+            <div class="res-name">02 课堂练习.py</div>
+            <span class="chip code">代码</span>
+          </div>
+        </div>
+        <div class="res-foot">
+          <div class="av">王</div>
+          <span>王建国</span>
+          <span class="sep">·</span>
+          <span>3 周前</span>
+          <span class="sep">·</span>
+          <span class="dl"><svg class="ic ic-xs"><use href="#i-download"/></svg>42</span>
+          <span class="sep">·</span>
+          <span>4 KB</span>
+        </div>
+      </div>
+
+      <div class="res-card">
+        <button class="menu-btn" onclick="event.stopPropagation();fileMenu(this,'03 拓展阅读.md')"><svg class="ic ic-sm"><use href="#i-more"/></svg></button>
+        <div class="res-head">
+          <div class="res-icon md">MD</div>
+          <div class="res-meta">
+            <div class="res-name">03 拓展阅读.md</div>
+            <span class="chip md">文档</span>
+          </div>
+        </div>
+        <div class="res-foot">
+          <div class="av" style="background:linear-gradient(135deg,#8B5CF6,#A78BFA)">李</div>
+          <span>李明</span>
+          <span class="sep">·</span>
+          <span>2 周前</span>
+          <span class="sep">·</span>
+          <span class="dl"><svg class="ic ic-xs"><use href="#i-download"/></svg>18</span>
+          <span class="sep">·</span>
+          <span>12 KB</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- list view -->
+    <div class="list" id="view-list" style="display:none">
+      <div class="list-row head">
+        <div></div>
+        <div>文件名</div>
+        <div>类型</div>
+        <div>大小</div>
+        <div>上传者 · 时间</div>
+        <div style="text-align:right">下载</div>
+        <div></div>
+      </div>
+
+      <div class="list-row" onclick="openFile('01 课件.pdf')">
+        <div class="ic-mini" style="background:var(--pdf)">PDF</div>
+        <div><div class="rname">01 课件.pdf</div><div class="rsub">课程第 1.1 节配套课件</div></div>
+        <div><span class="chip pdf">文档</span></div>
+        <div class="meta">2.1 MB</div>
+        <div class="meta">王建国 · 3 周前</div>
+        <div class="meta" style="text-align:right"><svg class="ic ic-xs" style="vertical-align:-2px"><use href="#i-download"/></svg> 24</div>
+        <div><button class="menu-btn" onclick="event.stopPropagation();fileMenu(this,'01 课件.pdf')"><svg class="ic ic-sm"><use href="#i-more"/></svg></button></div>
+      </div>
+
+      <div class="list-row" onclick="openFile('02 课堂练习.py')">
+        <div class="ic-mini" style="background:var(--code)">PY</div>
+        <div><div class="rname">02 课堂练习.py</div><div class="rsub">变量与类型基础练习</div></div>
+        <div><span class="chip code">代码</span></div>
+        <div class="meta">4 KB</div>
+        <div class="meta">王建国 · 3 周前</div>
+        <div class="meta" style="text-align:right"><svg class="ic ic-xs" style="vertical-align:-2px"><use href="#i-download"/></svg> 42</div>
+        <div><button class="menu-btn" onclick="event.stopPropagation();fileMenu(this,'02 课堂练习.py')"><svg class="ic ic-sm"><use href="#i-more"/></svg></button></div>
+      </div>
+
+      <div class="list-row" onclick="openFile('03 拓展阅读.md')">
+        <div class="ic-mini" style="background:var(--md)">MD</div>
+        <div><div class="rname">03 拓展阅读.md</div><div class="rsub">Python 之禅与编码风格</div></div>
+        <div><span class="chip md">文档</span></div>
+        <div class="meta">12 KB</div>
+        <div class="meta">李明 · 2 周前</div>
+        <div class="meta" style="text-align:right"><svg class="ic ic-xs" style="vertical-align:-2px"><use href="#i-download"/></svg> 18</div>
+        <div><button class="menu-btn" onclick="event.stopPropagation();fileMenu(this,'03 拓展阅读.md')"><svg class="ic ic-sm"><use href="#i-more"/></svg></button></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- /main wrap -->
+</div><!-- /layout -->
+
+<script src="lib/admin-shared.js"></script>
+<script>
+/* 主题 */
+function tt(){
+  var d=document.documentElement.classList.toggle('dark');
+  document.getElementById('use-theme').setAttribute('href', d?'#i-moon':'#i-sun');
+  localStorage.setItem('theme', d?'dark':'light');
+}
+if(localStorage.getItem('theme')==='dark'){
+  document.documentElement.classList.add('dark');
+  document.getElementById('use-theme').setAttribute('href','#i-moon');
+}
+
+/* 目录树折叠 */
+function toggleNode(li, key){
+  var caret = li.querySelector('.caret');
+  var sub = document.getElementById('sub-' + key);
+  if(!sub) return;
+  var open = sub.classList.toggle('open');
+  if(caret) caret.classList.toggle('open', open);
+}
+
+/* 切换文件夹（根 / 一级） */
+function enterRoot(){
+  document.querySelectorAll('.tree li').forEach(function(x){ x.classList.remove('on'); });
+  document.querySelector('.tree li:first-child').classList.add('on');
+  updateBc(['课程']);
+  updateGrid('全部', [
+    {name:'01 课件.pdf', ic:'pdf', label:'PDF', chip:'pdf', type:'文档', who:'王建国', when:'3 周前', dl:24, size:'2.1 MB'},
+    {name:'02 课堂练习.py', ic:'code', label:'PY', chip:'code', type:'代码', who:'王建国', when:'3 周前', dl:42, size:'4 KB'},
+    {name:'03 拓展阅读.md', ic:'md', label:'MD', chip:'md', type:'文档', who:'李明', when:'2 周前', dl:18, size:'12 KB'},
+    {name:'04 课堂笔记.docx', ic:'doc', label:'DOC', chip:'doc', type:'文档', who:'王建国', when:'2 周前', dl:29, size:'48 KB'},
+    {name:'05 函数式编程.ipynb', ic:'ipynb', label:'IPYNB', chip:'ipynb', type:'代码', who:'王建国', when:'1 周前', dl:22, size:'86 KB'},
+    {name:'06 递归可视化.zip', ic:'zip', label:'ZIP', chip:'zip', type:'压缩', who:'李明', when:'1 周前', dl:15, size:'4.2 MB'},
+    {name:'07 课件 2.pptx', ic:'ppt', label:'PPT', chip:'ppt', type:'文档', who:'张老师', when:'1 周前', dl:31, size:'5.6 MB'},
+    {name:'08 流程图.png', ic:'img', label:'PNG', chip:'img', type:'媒体', who:'张老师', when:'3 周前', dl:36, size:'240 KB'}
+  ]);
+}
+
+function enterFolder(name){
+  document.querySelectorAll('.tree li').forEach(function(x){ x.classList.remove('on'); });
+  event.currentTarget && event.currentTarget.classList.add('on');
+  updateBc(['课程', name]);
+  // 用占位卡片
+  updateGrid(name, [
+    {name:name + ' · 课件.pdf', ic:'pdf', label:'PDF', chip:'pdf', type:'文档', who:'王建国', when:'2 周前', dl:18, size:'1.8 MB'},
+    {name:name + ' · 习题.docx', ic:'doc', label:'DOC', chip:'doc', type:'文档', who:'李明', when:'2 周前', dl:22, size:'56 KB'},
+    {name:name + ' · 拓展.py', ic:'code', label:'PY', chip:'code', type:'代码', who:'王建国', when:'1 周前', dl:14, size:'8 KB'},
+    {name:name + ' · 图示.png', ic:'img', label:'PNG', chip:'img', type:'媒体', who:'张老师', when:'1 周前', dl:9, size:'180 KB'}
+  ]);
+}
+
+function enterSub(parent, sub, ev){
+  ev.stopPropagation();
+  document.querySelectorAll('.tree li').forEach(function(x){ x.classList.remove('on'); });
+  ev.currentTarget.classList.add('on');
+  updateBc(['课程', parent, sub]);
+  updateGrid(sub, [
+    {name:'01 课件.pdf', ic:'pdf', label:'PDF', chip:'pdf', type:'文档', who:'王建国', when:'3 周前', dl:24, size:'2.1 MB'},
+    {name:'02 课堂练习.py', ic:'code', label:'PY', chip:'code', type:'代码', who:'王建国', when:'3 周前', dl:42, size:'4 KB'},
+    {name:'03 拓展阅读.md', ic:'md', label:'MD', chip:'md', type:'文档', who:'李明', when:'2 周前', dl:18, size:'12 KB'}
+  ]);
+}
+
+/* 面包屑 + 资源网格刷新 */
+function updateBc(items){
+  var bc = document.querySelector('.bc');
+  var html = '';
+  for(var i=0;i<items.length;i++){
+    if(i>0) html += '<svg class="ic ic-xs"><use href="#i-chev"/></svg>';
+    if(i<items.length-1) html += '<a href="#">' + items[i] + '</a>';
+    else html += '<b>' + items[i] + '</b>';
+  }
+  html += '<span class="bcr">' + items.length + ' 段路径 · 当前文件夹</span>';
+  bc.innerHTML = html;
+}
+
+function updateGrid(name, items){
+  var g = document.getElementById('view-grid');
+  var html = '';
+  items.forEach(function(it){
+    html += '<div class="res-card">'
+      + '<button class="menu-btn" onclick="event.stopPropagation();fileMenu(this,\'' + it.name + '\')"><svg class="ic ic-sm"><use href="#i-more"/></svg></button>'
+      + '<div class="res-head">'
+      + '<div class="res-icon ' + it.ic + '">' + it.label + '</div>'
+      + '<div class="res-meta"><div class="res-name">' + it.name + '</div>'
+      + '<span class="chip ' + it.chip + '">' + it.type + '</span></div>'
+      + '</div>'
+      + '<div class="res-foot">'
+      + '<div class="av">' + (it.who||'王').slice(-1) + '</div>'
+      + '<span>' + it.who + '</span>'
+      + '<span class="sep">·</span><span>' + it.when + '</span>'
+      + '<span class="sep">·</span><span class="dl"><svg class="ic ic-xs"><use href="#i-download"/></svg>' + it.dl + '</span>'
+      + '<span class="sep">·</span><span>' + it.size + '</span>'
+      + '</div></div>';
+  });
+  g.innerHTML = html;
+  // hint
+  document.querySelector('.sub-filter .hint').textContent = '显示 ' + items.length + ' / ' + items.length + ' 文件';
+}
+
+/* 视图切换 */
+function switchView(v, btn){
+  document.querySelectorAll('.sub-filter .seg button').forEach(function(b){ b.classList.remove('on'); });
+  btn.classList.add('on');
+  document.getElementById('view-grid').style.display = v==='grid' ? '' : 'none';
+  document.getElementById('view-list').style.display = v==='list' ? '' : 'none';
+}
+
+/* 文件菜单 */
+function fileMenu(btn, name){
+  var opts = [
+    { label:'下载文件', icon:'i-download', action:function(){ toast('已开始下载 ' + name); } },
+    { label:'重命名', icon:'i-edit', action:function(){
+      Modal.form({
+        title:'重命名文件',
+        fields:[{ name:'name', label:'新文件名', type:'text', required:true, value:name }],
+        submitText:'保存',
+        validate:function(v){ return v.name ? true : '请输入文件名'; },
+        onSubmit:function(v){ toast('已重命名为 ' + v.name); }
+      });
+    }},
+    { label:'删除文件', icon:'i-trash', danger:true, action:function(){
+      Modal.confirm({
+        title:'删除 ' + name + '？',
+        body:['文件将从课程资源中移除','已下载的学生本地副本不受影响','删除后可在「回收站」中找回 30 天'],
+        confirmText:'确认删除', danger:true,
+        onConfirm:function(){ toast('已移到回收站 · ' + name); }
+      });
+    }}
+  ];
+  var menu = document.createElement('div');
+  menu.style.cssText = 'position:absolute;top:36px;right:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:160px;padding:6px;z-index:50';
+  opts.forEach(function(o){
+    var it = document.createElement('div');
+    it.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:13px;color:' + (o.danger?'var(--danger)':'var(--text)') + ';transition:.12s';
+    it.innerHTML = '<svg class="ic ic-sm"><use href="#' + o.icon + '"/></svg>' + o.label;
+    it.onmouseover = function(){ it.style.background = 'var(--surface-2)'; };
+    it.onmouseout = function(){ it.style.background = ''; };
+    it.onclick = function(){ menu.remove(); o.action(); };
+    menu.appendChild(it);
+  });
+  // remove existing
+  document.querySelectorAll('.file-menu-pop').forEach(function(m){ m.remove(); });
+  menu.className = 'file-menu-pop';
+  btn.parentElement.appendChild(menu);
+  setTimeout(function(){
+    document.addEventListener('click', function close(){ menu.remove(); document.removeEventListener('click', close); }, { once:true });
+  }, 0);
+}
+
+/* 操作按钮 */
+function uploadFiles(){
+  toast('已选择文件 · 上传任务已加入队列');
+}
+function newFolder(){
+  Modal.form({
+    title:'新建文件夹',
+    fields:[
+      { name:'name', label:'文件夹名', type:'text', required:true, placeholder:'如：第四章' },
+      { name:'parent', label:'父目录', type:'select', required:true, options:[
+        { value:'root', label:'课程根目录' },
+        { value:'chap1', label:'第一章' },
+        { value:'chap2', label:'第二章' }
+      ]}
+    ],
+    submitText:'创建',
+    validate:function(v){ return v.name ? true : '请输入文件夹名'; },
+    onSubmit:function(v){ toast('已创建 ' + v.name); }
+  });
+}
+
+function openFile(name){ toast('打开 ' + name); }
+
+/* 拖拽态 */
+var up = document.getElementById('upload');
+['dragenter','dragover'].forEach(function(ev){
+  up.addEventListener(ev, function(e){ e.preventDefault(); up.classList.add('drag'); });
+});
+['dragleave','drop'].forEach(function(ev){
+  up.addEventListener(ev, function(e){ e.preventDefault(); up.classList.remove('drag'); });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* 主色 · sky */
+    --primary: 199 89% 48%;
+    --primary-hover: 200 98% 39%;
+    --primary-fg: 0 0% 100%;
+    --primary-subtle: 204 94% 94%;
+    --primary-muted: 201 94% 86%;
+
+    /* 点缀 · teal */
+    --accent: 173 80% 40%;
+    --accent-subtle: 166 76% 93%;
+
+    /* 语义色 */
+    --success: 160 84% 39%;
+    --success-subtle: 152 81% 94%;
+    --warning: 38 92% 50%;
+    --warning-subtle: 48 96% 89%;
+    --danger: 0 84% 60%;
+    --danger-subtle: 0 93% 94%;
+
+    /* 中性 · slate */
+    --background: 0 0% 100%;
+    --surface: 210 40% 98%;
+    --card: 0 0% 100%;
+    --border: 214 32% 91%;
+    --border-strong: 213 27% 84%;
+    --foreground: 222 47% 11%;
+    --muted-foreground: 215 16% 47%;
+    --subtle-foreground: 215 20% 65%;
+
+    --radius: 0.625rem;
+  }
+
+  .dark {
+    --primary: 199 89% 55%;
+    --primary-hover: 199 89% 64%;
+    --primary-fg: 222 47% 11%;
+    --primary-subtle: 200 60% 16%;
+    --primary-muted: 200 50% 26%;
+
+    --accent: 173 70% 50%;
+    --accent-subtle: 173 60% 15%;
+
+    --success: 160 70% 45%;
+    --success-subtle: 160 60% 14%;
+    --warning: 38 85% 58%;
+    --warning-subtle: 38 60% 16%;
+    --danger: 0 75% 65%;
+    --danger-subtle: 0 50% 18%;
+
+    --background: 222 47% 7%;
+    --surface: 222 43% 11%;
+    --card: 217 33% 13%;
+    --border: 217 25% 22%;
+    --border-strong: 215 20% 32%;
+    --foreground: 210 40% 96%;
+    --muted-foreground: 215 18% 65%;
+    --subtle-foreground: 215 16% 50%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-border;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer utilities {
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  .mono {
+    font-family: var(--font-mono), "SF Mono", Menlo, Consolas, monospace;
+  }
+}

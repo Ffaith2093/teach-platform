@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>题库管理 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+  /* 分类色 */
+  --cat-data:#0EA5E9;        --cat-data-bg:#E0F2FE;
+  --cat-algo:#10B981;        --cat-algo-bg:#D1FAE5;
+  --cat-ai:#8B5CF6;          --cat-ai-bg:#EDE9FE;
+  --cat-net:#F97316;         --cat-net-bg:#FFEDD5;
+  --cat-inter:#64748B;       --cat-inter-bg:#F1F5F9;
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171;  --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+  --cat-data:#38BDF8;        --cat-data-bg:#0C334A;
+  --cat-algo:#34D399;        --cat-algo-bg:#063B2A;
+  --cat-ai:#A78BFA;          --cat-ai-bg:#2A1B4D;
+  --cat-net:#FB923C;         --cat-net-bg:#422106;
+  --cat-inter:#94A3B8;       --cat-inter-bg:#1E293B;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--purple);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--purple),#EC4899);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted)}
+.crumb b{color:var(--fg);font-weight:500}
+.search{position:relative;flex:1;max-width:380px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--subtle)}
+.search input{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--border);border-radius:8px;
+              background:var(--surface);color:var(--fg);font-size:14px;outline:none;transition:.18s}
+.search input::placeholder{color:var(--subtle)}
+.search input:focus{border-color:var(--primary);background:var(--card)}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:background .18s,color .18s}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:1140px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+           padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.page-sub{margin-top:4px;font-size:14px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost svg{font-size:14px}
+.btn-danger{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+            background:var(--danger);color:#fff;font-size:14px;font-weight:500;
+            box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn-danger:hover{background:#DC2626;box-shadow:var(--shadow-md)}
+.btn-danger svg{font-size:16px}
+
+/* 标签页切换 */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 0 0;
+      background:var(--bg)}
+.tab{padding:14px 20px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;
+     position:relative;transition:color .18s;display:flex;align-items:center;gap:8px}
+.tab:hover{color:var(--fg)}
+.tab.on{color:var(--primary)}
+.tab.on::after{content:"";position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--primary);border-radius:2px}
+.tab svg{font-size:16px}
+.tab .cnt{font-size:11px;padding:1px 7px;border-radius:999px;font-weight:600;
+         background:var(--surface);color:var(--muted);font-variant-numeric:tabular-nums}
+.tab.on .cnt{background:var(--primary-subtle);color:var(--primary)}
+
+/* 统计 */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.card{border:1px solid var(--border);border-radius:12px;background:var(--card);padding:20px}
+.stat-top{display:flex;align-items:flex-start;justify-content:space-between}
+.stat-label{font-size:13px;color:var(--muted)}
+.ic{padding:7px;border-radius:8px;display:flex;font-size:16px}
+.ic-p{background:var(--primary-subtle);color:var(--primary)}
+.ic-a{background:var(--accent-subtle);color:var(--accent)}
+.ic-s{background:var(--success-subtle);color:var(--success)}
+.ic-w{background:var(--warning-subtle);color:var(--warning)}
+.stat-num{margin-top:10px;font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat-foot{margin-top:4px;font-size:12px;color:var(--subtle)}
+
+/* 分类筛选 */
+.cat-tabs{display:flex;gap:8px;flex-wrap:wrap;padding:14px;
+           border:1px solid var(--border);border-radius:12px;background:var(--card)}
+.cat-tab{display:flex;align-items:center;gap:8px;padding:7px 13px;border-radius:10px;font-size:13px;
+         color:var(--muted);background:var(--card);border:1px solid var(--border);font-weight:500;
+         transition:.18s;cursor:pointer}
+.cat-tab:hover{color:var(--fg)}
+.cat-tab.on{background:var(--card);color:var(--fg);box-shadow:var(--shadow);font-weight:600;border-color:transparent}
+.cat-tab-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cat-tab.c-data .cat-tab-dot{background:var(--cat-data)}
+.cat-tab.c-algo .cat-tab-dot{background:var(--cat-algo)}
+.cat-tab.c-ai .cat-tab-dot{background:var(--cat-ai)}
+.cat-tab.c-net .cat-tab-dot{background:var(--cat-net)}
+.cat-tab.c-inter .cat-tab-dot{background:var(--cat-inter)}
+.cat-tab .cnt{font-size:11px;padding:1px 7px;border-radius:999px;font-weight:600;font-variant-numeric:tabular-nums;
+              background:var(--surface);color:var(--muted)}
+html.dark .cat-tab .cnt{background:var(--border)}
+.cat-tab.on .cnt{background:var(--primary);color:var(--primary-fg)}
+
+/* 题目表 */
+.prob-table{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.pt-head{display:grid;grid-template-columns:36px 2.5fr 110px 90px 1.5fr 1fr 1fr 110px 80px;gap:14px;padding:12px 20px;
+         background:var(--surface);font-size:11px;font-weight:600;color:var(--muted);
+         letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);align-items:center}
+html.dark .pt-head{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.pt-row{display:grid;grid-template-columns:36px 2.5fr 110px 90px 1.5fr 1fr 1fr 110px 80px;gap:14px;padding:14px 20px;
+        align-items:center;border-bottom:1px solid var(--border);transition:background .18s}
+.pt-row:last-child{border-bottom:none}
+.pt-row:hover{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.pt-row.sel{background:color-mix(in srgb,var(--primary-subtle) 40%,transparent)}
+.pt-row input[type=checkbox],.pt-head input[type=checkbox]{width:15px;height:15px;accent-color:var(--primary);cursor:pointer;justify-self:center}
+
+.pt-title{display:flex;align-items:center;gap:12px;min-width:0}
+.pt-ic{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+       font-size:16px;flex-shrink:0;background:var(--primary-subtle);color:var(--primary)}
+.pt-ic.c-data{background:var(--cat-data-bg);color:var(--cat-data)}
+.pt-ic.c-algo{background:var(--cat-algo-bg);color:var(--cat-algo)}
+.pt-ic.c-ai{background:var(--cat-ai-bg);color:var(--cat-ai)}
+.pt-ic.c-net{background:var(--cat-net-bg);color:var(--cat-net)}
+.pt-ic.c-inter{background:var(--cat-inter-bg);color:var(--cat-inter)}
+.pt-info{min-width:0}
+.pt-info h3{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pt-info p{font-size:11.5px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:8px}
+
+.cat-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:6px;
+           font-size:12px;font-weight:600}
+.cat-badge .dot{width:6px;height:6px;border-radius:50%}
+.cat-badge.c-data{background:var(--cat-data-bg);color:var(--cat-data)}
+.cat-badge.c-data .dot{background:var(--cat-data)}
+.cat-badge.c-algo{background:var(--cat-algo-bg);color:var(--cat-algo)}
+.cat-badge.c-algo .dot{background:var(--cat-algo)}
+.cat-badge.c-ai{background:var(--cat-ai-bg);color:var(--cat-ai)}
+.cat-badge.c-ai .dot{background:var(--cat-ai)}
+.cat-badge.c-net{background:var(--cat-net-bg);color:var(--cat-net)}
+.cat-badge.c-net .dot{background:var(--cat-net)}
+.cat-badge.c-inter{background:var(--cat-inter-bg);color:var(--cat-inter)}
+.cat-badge.c-inter .dot{background:var(--cat-inter)}
+
+.diff{display:inline-flex;align-items:center;gap:2px;font-size:13px;color:var(--warning);font-variant-numeric:tabular-nums}
+.diff .off{color:var(--border)}
+.diff.l1 .s:nth-child(n+2){color:var(--border)}
+.diff.l2 .s:nth-child(n+3){color:var(--border)}
+.diff.l3 .s:nth-child(n+4){color:var(--border)}
+.diff.l4 .s:nth-child(n+5){color:var(--border)}
+
+.tag-stk{display:flex;flex-wrap:wrap;gap:4px;min-width:0}
+.tag-ch{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;
+        background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+html.dark .tag-ch{background:var(--border);border-color:transparent}
+.tag-ch.kind-c{background:#FEF3C7;color:#B45309}
+.tag-ch.kind-k{background:#DBEAFE;color:#1E40AF}
+.tag-ch.kind-t{background:#FCE7F3;color:#9D174D}
+
+.sub-stat{font-size:13px}
+.sub-stat .nm{font-size:16px;font-weight:600;color:var(--fg);font-variant-numeric:tabular-nums;line-height:1.2}
+.sub-stat .lb{font-size:11px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:5px}
+.pp-bar{width:60px;height:4px;border-radius:999px;background:var(--surface);overflow:hidden;flex-shrink:0}
+html.dark .pp-bar{background:var(--border)}
+.pp-bar span{display:block;height:100%;background:var(--success)}
+.pp-bar.warn span{background:var(--warning)}
+.pp-bar.bad span{background:var(--danger)}
+
+.author{display:flex;align-items:center;gap:8px;min-width:0}
+.author .av{width:26px;height:26px;border-radius:50%;color:#fff;font-size:10.5px;font-weight:600;
+             display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.author .av.t1{background:linear-gradient(135deg,#F97316,#EF4444)}
+.author .av.t2{background:linear-gradient(135deg,#0EA5E9,#14B8A6)}
+.author .av.t3{background:linear-gradient(135deg,#8B5CF6,#EC4899)}
+.author .av.t4{background:linear-gradient(135deg,#10B981,#06B6D4)}
+.author .av.t5{background:linear-gradient(135deg,#F59E0B,#FACC15)}
+.author-info p{font-size:12.5px;font-weight:500;line-height:1.2}
+.author-info span{font-size:11px;color:var(--muted)}
+
+.time{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.time b{color:var(--fg);font-weight:600}
+
+.t-ops{display:flex;gap:4px;justify-content:flex-end}
+.t-ops button,.t-ops a.t-ops-link{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+              color:var(--subtle);transition:.18s}
+.t-ops button:hover,.t-ops a.t-ops-link:hover{background:var(--surface);color:var(--fg)}
+.t-ops button.danger:hover{background:var(--danger-subtle);color:var(--danger)}
+
+/* 标签管理视图 */
+.tag-toolbar{display:grid;grid-template-columns:1fr 1.6fr;gap:16px}
+.add-tag{border:1px solid var(--border);border-radius:12px;background:var(--card);padding:20px}
+.add-tag h3{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.add-tag h3 .badge-new{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;background:var(--accent-subtle);color:var(--accent)}
+.add-tag p{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.5}
+.add-tag .field{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.add-tag .field label{font-size:12px;font-weight:500;color:var(--muted)}
+.add-tag .field input{padding:9px 12px;border:1px solid var(--border);border-radius:8px;
+                      background:var(--surface);color:var(--fg);font-size:13.5px;outline:none;transition:.18s}
+.add-tag .field input:focus{border-color:var(--primary);background:var(--card)}
+.color-pick{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.color-pick label{position:relative;width:28px;height:28px;border-radius:50%;cursor:pointer;
+                  border:2px solid var(--card);outline:1px solid var(--border);transition:.18s}
+.color-pick label:hover{outline-color:var(--primary)}
+.color-pick input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.color-pick input:checked + span{position:absolute;inset:3px;border-radius:50%;outline:2px solid var(--card);
+                                  box-shadow:0 0 0 2px var(--primary)}
+.color-pick .cp1{background:#FEF3C7}.color-pick .cp2{background:#DBEAFE}
+.color-pick .cp3{background:#FCE7F3}.color-pick .cp4{background:#D1FAE5}
+.color-pick .cp5{background:#E0F2FE}.color-pick .cp6{background:#EDE9FE}
+.color-pick .cp7{background:#FFEDD5}.color-pick .cp8{background:#F1F5F9}
+.add-tag .actions{margin-top:18px;display:flex;gap:8px;justify-content:flex-end}
+
+.tag-stat-panel{border:1px solid var(--border);border-radius:12px;background:var(--card);padding:20px}
+.tag-stat-panel h3{font-size:14px;font-weight:600}
+.tag-stat-panel p{font-size:12.5px;color:var(--muted);margin-top:4px}
+.tag-stat-grid{margin-top:16px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.tag-stat{background:var(--surface);padding:14px;border-radius:10px}
+.tag-stat .nm{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.tag-stat .lb{font-size:11.5px;color:var(--muted);margin-top:3px}
+.tag-stat.danger .nm{color:var(--danger)}
+
+/* 标签网格 */
+.tag-grid{margin-top:20px;border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.tg-head{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid var(--border);
+         background:var(--surface);font-size:12px;font-weight:600;color:var(--muted);
+         letter-spacing:.06em;text-transform:uppercase}
+html.dark .tg-head{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.tg-head .cnt{margin-left:auto;font-size:11px;padding:2px 9px;border-radius:999px;font-weight:600;
+              background:var(--primary-subtle);color:var(--primary);font-variant-numeric:tabular-nums;
+              text-transform:none;letter-spacing:0}
+.tg-search{display:flex;align-items:center;gap:6px;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--card)}
+.tg-search .ic-sch{padding:7px 9px;border-radius:7px;background:var(--surface);display:flex;color:var(--subtle)}
+.tg-search input{flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:7px;
+                 background:var(--surface);color:var(--fg);font-size:13px;outline:none;transition:.18s}
+.tg-search input:focus{border-color:var(--primary);background:var(--card)}
+.tg-search select{padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);
+                  color:var(--fg);font-size:13px;outline:none;cursor:pointer}
+
+.tg-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1px;background:var(--border)}
+.tg-card{background:var(--card);padding:16px;display:flex;flex-direction:column;gap:12px;
+         transition:background .18s}
+.tg-card:hover{background:var(--surface)}
+html.dark .tg-card:hover{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.tg-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.tg-card-info{flex:1;min-width:0}
+.tg-card-info h4{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tg-card-info p{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.5}
+.tg-card-actions{display:flex;gap:4px;flex-shrink:0}
+.tg-card-actions button{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+                        color:var(--subtle);transition:.18s;font-size:13px}
+.tg-card-actions button:hover{background:var(--surface);color:var(--fg)}
+.tg-card-actions button.danger:hover{background:var(--danger-subtle);color:var(--danger)}
+
+.tg-bar-row{display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--muted)}
+.tg-bar-row b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+.tg-bar{flex:1;height:5px;border-radius:999px;background:var(--surface);overflow:hidden}
+html.dark .tg-bar{background:var(--border)}
+.tg-bar span{display:block;height:100%;border-radius:999px}
+.tg-bar .filled{background:var(--primary)}
+.tg-bar .unused{background:var(--danger)}
+
+.tg-card-foot{display:flex;align-items:center;gap:8px;justify-content:space-between;font-size:11px;color:var(--muted);padding-top:10px;border-top:1px solid var(--border)}
+.tg-card-foot .author{display:flex;align-items:center;gap:5px}
+.tg-card-foot .author .av{width:18px;height:18px;font-size:9px}
+.tg-card-foot .danger-mark{color:var(--danger);font-weight:600;font-size:11px;display:inline-flex;align-items:center;gap:3px}
+
+/* 页脚 */
+.foot{padding:20px 28px;border-top:1px solid var(--border);background:var(--surface);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted)}
+html.dark .foot{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+
+@media(max-width:1100px){
+  .side{display:none}
+  .stats{grid-template-columns:1fr 1fr}
+  .pt-head,.pt-row{grid-template-columns:36px 2fr 100px 80px 1fr;gap:12px}
+  .pt-head .h4,.pt-head .h5,.pt-head .h6,
+  .pt-row > *:nth-child(5),.pt-row > *:nth-child(6),.pt-row > *:nth-child(7){display:none}
+  .tag-toolbar{grid-template-columns:1fr}
+  .content{padding:24px 20px}
+  .topbar{padding:0 20px}
+}
+@media(max-width:640px){
+  .stats{grid-template-columns:1fr}
+}
+
+/* 批量操作条 */
+.batch-bar{display:none;align-items:center;justify-content:space-between;gap:12px;
+           padding:12px 18px;margin-bottom:12px;border:1px solid var(--primary);border-radius:10px;
+           background:var(--primary-subtle);font-size:13.5px;flex-wrap:wrap}
+.batch-bar.show{display:flex}
+.batch-bar .left{display:flex;align-items:center;gap:10px;color:var(--primary);font-weight:500}
+.batch-bar .left svg{font-size:16px}
+.batch-bar .left b{font-size:15px;font-variant-numeric:tabular-nums}
+.batch-bar .right{display:flex;gap:8px;align-items:center}
+
+/* cat-tab 内的 info 按钮 */
+.cat-info{margin-left:4px;width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;
+          justify-content:center;color:var(--subtle);transition:.18s;cursor:pointer;opacity:0}
+.cat-tab:hover .cat-info{opacity:1}
+.cat-info:hover{background:var(--card);color:var(--primary)}
+.cat-info svg{font-size:11px}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M3 9 12 3l9 6"/><path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"/><path d="M9 22V12h6v10"/></symbol>
+<symbol id="i-grad" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="m20.6 13.4-8.2 8.2a2 2 0 0 1-2.8 0l-7-7A2 2 0 0 1 2 13.2V4a2 2 0 0 1 2-2h9.2a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+<symbol id="i-exam" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="3" rx="1"/><path d="M9 11h6M9 14h6M9 17h3"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M21.7 7.3a2.5 2.5 0 0 0-3.5 0L8 17.5 6 22l4.5-2L20 10.5a2.5 2.5 0 0 0 0-3.5z"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="m12 2 3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="m21.7 18-9-15.3a1 1 0 0 0-1.7 0L1.3 18a1 1 0 0 0 .9 1.5h18.6a1 1 0 0 0 .9-1.5z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></symbol>
+<symbol id="i-import" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5-5 5 5"/><path d="M12 15V3"/></symbol>
+<symbol id="i-set" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></symbol>
+<symbol id="i-judge" viewBox="0 0 24 24"><path d="m12 2 3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-shield"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">管理员</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">总览</p>
+      <a class="nav-item" href="admin-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <p class="nav-label">组织</p>
+      <a class="nav-item" href="admin-students.html"><svg><use href="#i-users"/></svg>学生</a>
+      <a class="nav-item" href="admin-teachers.html"><svg><use href="#i-grad"/></svg>教师</a>
+      <p class="nav-label">内容</p>
+      <a class="nav-item" href="admin-exams.html"><svg><use href="#i-exam"/></svg>考试<span class="nav-count">47</span></a>
+<a class="nav-item" href="admin-courses.html"><svg><use href="#i-book"/></svg>课程</a>
+      <a class="nav-item active"><svg><use href="#i-tag"/></svg>题库</a>
+      <p class="nav-label">系统</p>
+      <a class="nav-item" href="admin-judge-queue.html"><svg><use href="#i-judge"/></svg>评测队列<span class="nav-count">2</span></a>
+      <a class="nav-item" href="admin-settings.html"><svg><use href="#i-set"/></svg>系统设置</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈主任</div>
+        <div class="s">系统管理员</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb"><b>内容</b> / 题库</span>
+      <div class="search">
+        <svg><use href="#i-search"/></svg>
+        <input placeholder="搜索题目标题、标签…">
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <div class="page-head anim">
+          <div>
+            <h1>题库管理</h1>
+            <p class="page-sub">全校 Python 公共题目的统一视图 · 管理题目与使用情况 · 配置题目标签</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-ghost"><svg><use href="#i-import"/></svg>批量导入</button>
+            <button class="btn"><svg><use href="#i-plus"/></svg>新建题目</button>
+          </div>
+        </div>
+
+        <!-- 标签页 -->
+        <div class="tabs anim" style="animation-delay:.04s">
+          <div class="tab on"><svg><use href="#i-list"/></svg>公共题目 <span class="cnt">386</span></div>
+          <div class="tab"><svg><use href="#i-tag"/></svg>标签管理 <span class="cnt">24</span></div>
+        </div>
+
+        <!-- ============== 视图 1：公共题目 ============== -->
+        <div id="view-problems">
+
+          <!-- 统计 -->
+          <div class="stats anim" style="animation-delay:.08s">
+            <div class="card">
+              <div class="stat-top"><span class="stat-label">公共题总数</span>
+                <div class="ic ic-p"><svg><use href="#i-list"/></svg></div></div>
+              <p class="stat-num">386</p>
+              <p class="stat-foot">支持 Python 3.10+</p>
+            </div>
+            <div class="card">
+              <div class="stat-top"><span class="stat-label">已被作业使用</span>
+                <div class="ic ic-s"><svg><use href="#i-check"/></svg></div></div>
+              <p class="stat-num">218 <span style="font-size:14px;color:var(--muted);font-weight:500">/ 386</span></p>
+              <p class="stat-foot">56.5% 引用率</p>
+            </div>
+            <div class="card">
+              <div class="stat-top"><span class="stat-label">未被使用</span>
+                <div class="ic ic-w"><svg><use href="#i-warn"/></svg></div></div>
+              <p class="stat-num">168</p>
+              <p class="stat-foot">建议归档或重组</p>
+            </div>
+            <div class="card">
+              <div class="stat-top"><span class="stat-label">本月新增</span>
+                <div class="ic ic-a"><svg><use href="#i-plus"/></svg></div></div>
+              <p class="stat-num">24</p>
+              <p class="stat-foot"><b class="txt-s">+12%</b> 较上月</p>
+            </div>
+          </div>
+
+          <!-- 分类 + 难度筛选 -->
+          <div class="cat-tabs anim" style="animation-delay:.12s">
+            <div class="cat-tab on">
+              <span class="cat-tab-dot"></span>
+              全部分类 <span class="cnt">386</span>
+            </div>
+            <div class="cat-tab c-data">
+              <span class="cat-tab-dot"></span>
+              数据 <span class="cnt">98</span>
+              <span class="cat-info" onclick="showCatInfo('data',event)" title="分类说明"><svg><use href="#i-info"/></svg></span>
+            </div>
+            <div class="cat-tab c-algo">
+              <span class="cat-tab-dot"></span>
+              算法 <span class="cnt">142</span>
+              <span class="cat-info" onclick="showCatInfo('algo',event)" title="分类说明"><svg><use href="#i-info"/></svg></span>
+            </div>
+            <div class="cat-tab c-ai">
+              <span class="cat-tab-dot"></span>
+              人工智能 <span class="cnt">62</span>
+              <span class="cat-info" onclick="showCatInfo('ai',event)" title="分类说明"><svg><use href="#i-info"/></svg></span>
+            </div>
+            <div class="cat-tab c-net">
+              <span class="cat-tab-dot"></span>
+              计算机网络 <span class="cnt">48</span>
+              <span class="cat-info" onclick="showCatInfo('net',event)" title="分类说明"><svg><use href="#i-info"/></svg></span>
+            </div>
+            <div class="cat-tab c-inter">
+              <span class="cat-tab-dot"></span>
+              多学科交叉 <span class="cnt">36</span>
+              <span class="cat-info" onclick="showCatInfo('inter',event)" title="分类说明"><svg><use href="#i-info"/></svg></span>
+            </div>
+          </div>
+
+          <!-- 难度 + 操作 -->
+          <div class="cat-tabs anim" style="animation-delay:.14s;background:transparent;border:none;padding:0 4px">
+            <div class="cat-tab on">全部难度</div>
+            <div class="cat-tab">★ 入门 <span class="cnt">88</span></div>
+            <div class="cat-tab">★★ 简单 <span class="cnt">126</span></div>
+            <div class="cat-tab">★★★ 中等 <span class="cnt">108</span></div>
+            <div class="cat-tab">★★★★ 困难 <span class="cnt">52</span></div>
+            <div class="cat-tab">★★★★★ 挑战 <span class="cnt">12</span></div>
+          </div>
+
+          <!-- 题目表 -->
+          <!-- 批量操作条 -->
+          <div class="batch-bar" id="batch-bar">
+            <div class="left">
+              <svg><use href="#i-check"/></svg>
+              已选 <b id="sel-cnt">0</b> 道题
+            </div>
+            <div class="right">
+              <button class="btn-ghost" onclick="selectAll(false)">取消选择</button>
+              <button class="btn" onclick="batchCategory()"><svg><use href="#i-tag"/></svg>批量调整分类</button>
+            </div>
+          </div>
+
+          <div class="prob-table anim" style="animation-delay:.18s">
+            <div class="pt-head">
+              <div><input type="checkbox" id="sel-all" onchange="selectAll(this.checked)"></div>
+              <div>题目</div>
+              <div>分类</div>
+              <div>难度</div>
+              <div>标签</div>
+              <div>提交数</div>
+              <div>通过率</div>
+              <div>作者</div>
+              <div style="text-align:right">操作</div>
+            </div>
+
+            <div class="pt-row"><div><input type="checkbox" class="row-cb" onchange="updateSel()"></div>
+              <div class="pt-title">
+                <div class="pt-ic c-algo"><svg><use href="#i-list"/></svg></div>
+                <div class="pt-info">
+                  <h3>两数之和</h3>
+                  <p>ID P0001 · <span class="num">168 ms</span> 平均 · 输入输出</p>
+                </div>
+              </div>
+              <div><span class="cat-badge c-algo"><span class="dot"></span>算法</span></div>
+              <div><span class="diff l1"><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span></span></div>
+              <div class="tag-stk">
+                <span class="tag-ch kind-c">基础语法</span>
+                <span class="tag-ch kind-k">字典</span>
+              </div>
+              <div class="sub-stat"><div class="nm num">1,286</div><div class="lb">总提交</div></div>
+              <div class="sub-stat">
+                <div class="nm num">82.4%</div>
+                <div class="lb"><div class="pp-bar"><span style="width:82%"></span></div></div>
+              </div>
+              <div class="author"><div class="av t1">王</div><div class="author-info"><p>王建国</p><span>T0018</span></div></div>
+              <div class="t-ops">
+                <a class="t-ops-link" href="admin-banks-edit.html?P0001" title="编辑"><svg><use href="#i-edit"/></svg></a>                
+      <button title="删除" class="danger"
+      data-confirm-title="删除该题目？"
+      data-confirm-body="题目将从公共题库移除
+若被作业引用，相关作业的题目列表会自动跳过该题
+历史提交记录保留只读"
+      data-confirm-danger data-confirm-text="删除题目" data-confirm-toast="题目已删除"><svg><use href="#i-trash"/></svg></button>
+              </div>
+            </div>
+
+            <div class="pt-row"><div><input type="checkbox" class="row-cb" onchange="updateSel()"></div>
+              <div class="pt-title">
+                <div class="pt-ic c-data"><svg><use href="#i-list"/></svg></div>
+                <div class="pt-info">
+                  <h3>读取 CSV 并统计列均值</h3>
+                  <p>ID P0042 · <span class="num">412 ms</span> 平均 · 文件 I/O</p>
+                </div>
+              </div>
+              <div><span class="cat-badge c-data"><span class="dot"></span>数据</span></div>
+              <div><span class="diff l2"><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span></span></div>
+              <div class="tag-stk">
+                <span class="tag-ch kind-c">文件</span>
+                <span class="tag-ch kind-t">pandas</span>
+                <span class="tag-ch">+2</span>
+              </div>
+              <div class="sub-stat"><div class="nm num">684</div><div class="lb">总提交</div></div>
+              <div class="sub-stat">
+                <div class="nm num">61.2%</div>
+                <div class="lb"><div class="pp-bar warn"><span style="width:61%"></span></div></div>
+              </div>
+              <div class="author"><div class="av t3">李</div><div class="author-info"><p>李雪</p><span>T0031</span></div></div>
+              <div class="t-ops">
+                <a class="t-ops-link" href="admin-banks-edit.html?P0042" title="编辑"><svg><use href="#i-edit"/></svg></a>                
+      <button title="删除" class="danger"
+      data-confirm-title="删除该题目？"
+      data-confirm-body="题目将从公共题库移除
+若被作业引用，相关作业的题目列表会自动跳过该题
+历史提交记录保留只读"
+      data-confirm-danger data-confirm-text="删除题目" data-confirm-toast="题目已删除"><svg><use href="#i-trash"/></svg></button>
+              </div>
+            </div>
+
+            <div class="pt-row"><div><input type="checkbox" class="row-cb" onchange="updateSel()"></div>
+              <div class="pt-title">
+                <div class="pt-ic c-algo"><svg><use href="#i-list"/></svg></div>
+                <div class="pt-info">
+                  <h3>二叉树层序遍历</h3>
+                  <p>ID P0118 · <span class="num">256 ms</span> 平均 · BFS</p>
+                </div>
+              </div>
+              <div><span class="cat-badge c-algo"><span class="dot"></span>算法</span></div>
+              <div><span class="diff l4"><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span></span></div>
+              <div class="tag-stk">
+                <span class="tag-ch kind-k">队列</span>
+                <span class="tag-ch kind-k">树</span>
+                <span class="tag-ch kind-t">BFS</span>
+              </div>
+              <div class="sub-stat"><div class="nm num">412</div><div class="lb">总提交</div></div>
+              <div class="sub-stat">
+                <div class="nm num">38.7%</div>
+                <div class="lb"><div class="pp-bar bad"><span style="width:39%"></span></div></div>
+              </div>
+              <div class="author"><div class="av t1">王</div><div class="author-info"><p>王建国</p><span>T0018</span></div></div>
+              <div class="t-ops">
+                <a class="t-ops-link" href="admin-banks-edit.html?P0118" title="编辑"><svg><use href="#i-edit"/></svg></a>                
+      <button title="删除" class="danger"
+      data-confirm-title="删除该题目？"
+      data-confirm-body="题目将从公共题库移除
+若被作业引用，相关作业的题目列表会自动跳过该题
+历史提交记录保留只读"
+      data-confirm-danger data-confirm-text="删除题目" data-confirm-toast="题目已删除"><svg><use href="#i-trash"/></svg></button>
+              </div>
+            </div>
+
+            <div class="pt-row"><div><input type="checkbox" class="row-cb" onchange="updateSel()"></div>
+              <div class="pt-title">
+                <div class="pt-ic c-ai"><svg><use href="#i-list"/></svg></div>
+                <div class="pt-info">
+                  <h3>KNN 鸢尾花分类</h3>
+                  <p>ID P0203 · <span class="num">1.8 s</span> 平均 · sklearn</p>
+                </div>
+              </div>
+              <div><span class="cat-badge c-ai"><span class="dot"></span>人工智能</span></div>
+              <div><span class="diff l3"><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span></span></div>
+              <div class="tag-stk">
+                <span class="tag-ch kind-t">sklearn</span>
+                <span class="tag-ch kind-k">KNN</span>
+                <span class="tag-ch kind-t">分类</span>
+              </div>
+              <div class="sub-stat"><div class="nm num">298</div><div class="lb">总提交</div></div>
+              <div class="sub-stat">
+                <div class="nm num">72.1%</div>
+                <div class="lb"><div class="pp-bar"><span style="width:72%"></span></div></div>
+              </div>
+              <div class="author"><div class="av t3">李</div><div class="author-info"><p>李雪</p><span>T0031</span></div></div>
+              <div class="t-ops">
+                <a class="t-ops-link" href="admin-banks-edit.html?P0203" title="编辑"><svg><use href="#i-edit"/></svg></a>                
+      <button title="删除" class="danger"
+      data-confirm-title="删除该题目？"
+      data-confirm-body="题目将从公共题库移除
+若被作业引用，相关作业的题目列表会自动跳过该题
+历史提交记录保留只读"
+      data-confirm-danger data-confirm-text="删除题目" data-confirm-toast="题目已删除"><svg><use href="#i-trash"/></svg></button>
+              </div>
+            </div>
+
+            <div class="pt-row"><div><input type="checkbox" class="row-cb" onchange="updateSel()"></div>
+              <div class="pt-title">
+                <div class="pt-ic c-net"><svg><use href="#i-list"/></svg></div>
+                <div class="pt-info">
+                  <h3>解析 URL 协议与域名</h3>
+                  <p>ID P0312 · <span class="num">92 ms</span> 平均 · 字符串</p>
+                </div>
+              </div>
+              <div><span class="cat-badge c-net"><span class="dot"></span>计算机网络</span></div>
+              <div><span class="diff l2"><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span></span></div>
+              <div class="tag-stk">
+                <span class="tag-ch kind-c">字符串</span>
+                <span class="tag-ch kind-k">正则</span>
+              </div>
+              <div class="sub-stat"><div class="nm num">521</div><div class="lb">总提交</div></div>
+              <div class="sub-stat">
+                <div class="nm num">88.3%</div>
+                <div class="lb"><div class="pp-bar"><span style="width:88%"></span></div></div>
+              </div>
+              <div class="author"><div class="av t5">林</div><div class="author-info"><p>林志远</p><span>T0019</span></div></div>
+              <div class="t-ops">
+                <a class="t-ops-link" href="admin-banks-edit.html?P0312" title="编辑"><svg><use href="#i-edit"/></svg></a>                
+      <button title="删除" class="danger"
+      data-confirm-title="删除该题目？"
+      data-confirm-body="题目将从公共题库移除
+若被作业引用，相关作业的题目列表会自动跳过该题
+历史提交记录保留只读"
+      data-confirm-danger data-confirm-text="删除题目" data-confirm-toast="题目已删除"><svg><use href="#i-trash"/></svg></button>
+              </div>
+            </div>
+
+            <div class="pt-row"><div><input type="checkbox" class="row-cb" onchange="updateSel()"></div>
+              <div class="pt-title">
+                <div class="pt-ic c-data"><svg><use href="#i-list"/></svg></div>
+                <div class="pt-info">
+                  <h3>列表去重并保持顺序</h3>
+                  <p>ID P0028 · <span class="num">68 ms</span> 平均 · 集合</p>
+                </div>
+              </div>
+              <div><span class="cat-badge c-data"><span class="dot"></span>数据</span></div>
+              <div><span class="diff l1"><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span></span></div>
+              <div class="tag-stk">
+                <span class="tag-ch kind-k">集合</span>
+                <span class="tag-ch kind-c">基础语法</span>
+              </div>
+              <div class="sub-stat"><div class="nm num">2,148</div><div class="lb">总提交</div></div>
+              <div class="sub-stat">
+                <div class="nm num">91.5%</div>
+                <div class="lb"><div class="pp-bar"><span style="width:91%"></span></div></div>
+              </div>
+              <div class="author"><div class="av t1">王</div><div class="author-info"><p>王建国</p><span>T0018</span></div></div>
+              <div class="t-ops">
+                <a class="t-ops-link" href="admin-banks-edit.html?P0028" title="编辑"><svg><use href="#i-edit"/></svg></a>                
+      <button title="删除" class="danger"
+      data-confirm-title="删除该题目？"
+      data-confirm-body="题目将从公共题库移除
+若被作业引用，相关作业的题目列表会自动跳过该题
+历史提交记录保留只读"
+      data-confirm-danger data-confirm-text="删除题目" data-confirm-toast="题目已删除"><svg><use href="#i-trash"/></svg></button>
+              </div>
+            </div>
+
+            <div class="pt-row"><div><input type="checkbox" class="row-cb" onchange="updateSel()"></div>
+              <div class="pt-title">
+                <div class="pt-ic c-inter"><svg><use href="#i-list"/></svg></div>
+                <div class="pt-info">
+                  <h3>蒙特卡洛估算圆周率</h3>
+                  <p>ID P0527 · <span class="num">2.4 s</span> 平均 · 随机数</p>
+                </div>
+              </div>
+              <div><span class="cat-badge c-inter"><span class="dot"></span>多学科交叉</span></div>
+              <div><span class="diff l3"><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span></span></div>
+              <div class="tag-stk">
+                <span class="tag-ch kind-t">random</span>
+                <span class="tag-ch kind-c">数学</span>
+                <span class="tag-ch kind-t">模拟</span>
+              </div>
+              <div class="sub-stat"><div class="nm num">186</div><div class="lb">总提交</div></div>
+              <div class="sub-stat">
+                <div class="nm num">54.8%</div>
+                <div class="lb"><div class="pp-bar warn"><span style="width:55%"></span></div></div>
+              </div>
+              <div class="author"><div class="av t2">陈</div><div class="author-info"><p>陈教授</p><span>T0024</span></div></div>
+              <div class="t-ops">
+                <a class="t-ops-link" href="admin-banks-edit.html?P0527" title="编辑"><svg><use href="#i-edit"/></svg></a>                
+      <button title="删除" class="danger"
+      data-confirm-title="删除该题目？"
+      data-confirm-body="题目将从公共题库移除
+若被作业引用，相关作业的题目列表会自动跳过该题
+历史提交记录保留只读"
+      data-confirm-danger data-confirm-text="删除题目" data-confirm-toast="题目已删除"><svg><use href="#i-trash"/></svg></button>
+              </div>
+            </div>
+
+            <div class="pt-row"><div><input type="checkbox" class="row-cb" onchange="updateSel()"></div>
+              <div class="pt-title">
+                <div class="pt-ic c-algo"><svg><use href="#i-list"/></svg></div>
+                <div class="pt-info">
+                  <h3>动态规划：最长公共子序列</h3>
+                  <p>ID P0166 · <span class="num">328 ms</span> 平均 · DP</p>
+                </div>
+              </div>
+              <div><span class="cat-badge c-algo"><span class="dot"></span>算法</span></div>
+              <div><span class="diff l5"><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span><span class="s">★</span></span></div>
+              <div class="tag-stk">
+                <span class="tag-ch kind-k">动态规划</span>
+                <span class="tag-ch kind-k">二维数组</span>
+              </div>
+              <div class="sub-stat"><div class="nm num">142</div><div class="lb">总提交</div></div>
+              <div class="sub-stat">
+                <div class="nm num">28.4%</div>
+                <div class="lb"><div class="pp-bar bad"><span style="width:28%"></span></div></div>
+              </div>
+              <div class="author"><div class="av t4">张</div><div class="author-info"><p>张明远</p><span>T0033</span></div></div>
+              <div class="t-ops">
+                <a class="t-ops-link" href="admin-banks-edit.html?P0166" title="编辑"><svg><use href="#i-edit"/></svg></a>                
+      <button title="删除" class="danger"
+      data-confirm-title="删除该题目？"
+      data-confirm-body="题目将从公共题库移除
+若被作业引用，相关作业的题目列表会自动跳过该题
+历史提交记录保留只读"
+      data-confirm-danger data-confirm-text="删除题目" data-confirm-toast="题目已删除"><svg><use href="#i-trash"/></svg></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 页脚 -->
+          <div class="foot anim" style="animation-delay:.22s">
+            <span>共 <b style="color:var(--fg)">386</b> 道题 · 显示前 8 条 · 按创建时间倒序</span>
+            <div style="display:flex;gap:8px">
+              <button class="btn-ghost" onclick="batchCategory(true)"><svg><use href="#i-set"/></svg>批量调整分类</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ============== 视图 2：标签管理 ============== -->
+        <!-- 实际生产中通过 JS 切换显示；此 mockup 默认隐藏 -->
+        <div id="view-tags" style="display:none">
+
+          <!-- 顶部：新增 + 状态 -->
+          <div class="tag-toolbar anim" style="animation-delay:.08s">
+            <!-- 新增标签卡 -->
+            <div class="add-tag">
+              <h3>新增标签 <span class="badge-new">NEW</span></h3>
+              <p>为公共题目添加可复用的标签 · 选择展示色以便在题目列表里快速识别</p>
+              <div class="field">
+                <label>标签名称</label>
+                <input type="text" placeholder="例：图论 / 贪心 / 字符串">
+              </div>
+              <div class="field">
+                <label>展示色（用于题目标签 chips）</label>
+                <div class="color-pick">
+                  <label><input type="radio" name="cp" checked><span class="cp1"></span></label>
+                  <label><input type="radio" name="cp"><span class="cp2"></span></label>
+                  <label><input type="radio" name="cp"><span class="cp3"></span></label>
+                  <label><input type="radio" name="cp"><span class="cp4"></span></label>
+                  <label><input type="radio" name="cp"><span class="cp5"></span></label>
+                  <label><input type="radio" name="cp"><span class="cp6"></span></label>
+                  <label><input type="radio" name="cp"><span class="cp7"></span></label>
+                  <label><input type="radio" name="cp"><span class="cp8"></span></label>
+                </div>
+              </div>
+              <div class="actions">
+                <button class="btn-ghost">取消</button>
+                <button class="btn" onclick="addTag()"><svg><use href="#i-plus"/></svg>添加标签</button>
+              </div>
+            </div>
+
+            <!-- 状态面板 -->
+            <div class="tag-stat-panel">
+              <h3>标签库概况</h3>
+              <p>已纳入公共题目使用的全部标签 · 含关联数据</p>
+              <div class="tag-stat-grid">
+                <div class="tag-stat">
+                  <div class="nm num">24</div>
+                  <div class="lb">标签总数</div>
+                </div>
+                <div class="tag-stat">
+                  <div class="nm num" style="color:var(--success)">22</div>
+                  <div class="lb">已被题目使用</div>
+                </div>
+                <div class="tag-stat danger">
+                  <div class="nm num">2</div>
+                  <div class="lb">未使用 · 建议清理</div>
+                </div>
+                <div class="tag-stat">
+                  <div class="nm num">3</div>
+                  <div class="lb">本月新增</div>
+                </div>
+              </div>
+              <div style="margin-top:16px;padding:12px 14px;background:var(--surface);border-radius:8px;font-size:12.5px;color:var(--muted);line-height:1.6">
+                <b style="color:var(--fg);font-weight:600">提示：</b>删除已被题目引用的标签会同步解除关联 · 系统会列出受影响的题目供确认
+              </div>
+            </div>
+          </div>
+
+          <!-- 标签网格 -->
+          <div class="tag-grid anim" style="animation-delay:.12s">
+            <div class="tg-head">
+              全部标签
+              <span class="cnt">24 个</span>
+            </div>
+
+            <div class="tg-search">
+              <div class="ic-sch"><svg style="font-size:14px"><use href="#i-search"/></svg></div>
+              <input placeholder="按标签名搜索…">
+              <select>
+                <option>全部状态</option>
+                <option>使用中</option>
+                <option>未使用</option>
+              </select>
+              <select>
+                <option>按使用次数</option>
+                <option>按创建时间</option>
+                <option>按名称</option>
+              </select>
+            </div>
+
+            <div class="tg-list">
+
+              <!-- 标签卡片 -->
+              <div class="tg-card">
+                <div class="tg-card-top">
+                  <div class="tg-card-info">
+                    <h4><span class="tag-ch kind-c">基础语法</span> <span style="font-size:11px;color:var(--muted);font-weight:400">kind-c · 黄色</span></h4>
+                    <p>覆盖 Python 入门阶段的语法知识 · 创建于 2024-09</p>
+                  </div>
+                  <div class="tg-card-actions">
+                    <button title="编辑"><svg><use href="#i-edit"/></svg></button>
+                    
+      <button title="删除" class="danger"
+      data-confirm-title="删除该标签？"
+      data-confirm-body="标签将从题库移除
+引用了该标签的题目会失去这个分类，但题目本身保留
+历史搜索结果不受影响"
+      data-confirm-danger data-confirm-text="删除标签" data-confirm-toast="标签已删除"><svg><use href="#i-trash"/></svg></button>
+                  </div>
+                </div>
+                <div class="tg-bar-row"><b>68</b> 道题使用<span class="tg-bar"><span class="filled" style="width:100%"></span></span><b style="color:var(--success)">100%</b></div>
+                <div class="tg-card-foot">
+                  <div class="author"><div class="av t1">王</div>王建国</div>
+                  <span>8 个月前创建</span>
+                </div>
+              </div>
+
+              <div class="tg-card">
+                <div class="tg-card-top">
+                  <div class="tg-card-info">
+                    <h4><span class="tag-ch kind-k">字典</span> <span style="font-size:11px;color:var(--muted);font-weight:400">kind-k · 蓝色</span></h4>
+                    <p>哈希表类题型 · 常与 set / list 组合考察</p>
+                  </div>
+                  <div class="tg-card-actions">
+                    <button title="编辑"><svg><use href="#i-edit"/></svg></button>
+                    
+      <button title="删除" class="danger"
+      data-confirm-title="删除该标签？"
+      data-confirm-body="标签将从题库移除
+引用了该标签的题目会失去这个分类，但题目本身保留
+历史搜索结果不受影响"
+      data-confirm-danger data-confirm-text="删除标签" data-confirm-toast="标签已删除"><svg><use href="#i-trash"/></svg></button>
+                  </div>
+                </div>
+                <div class="tg-bar-row"><b>52</b> 道题使用<span class="tg-bar"><span class="filled" style="width:76%"></span></span><b>76%</b></div>
+                <div class="tg-card-foot">
+                  <div class="author"><div class="av t1">王</div>王建国</div>
+                  <span>8 个月前创建</span>
+                </div>
+              </div>
+
+              <div class="tg-card">
+                <div class="tg-card-top">
+                  <div class="tg-card-info">
+                    <h4><span class="tag-ch kind-t">pandas</span> <span style="font-size:11px;color:var(--muted);font-weight:400">kind-t · 粉色</span></h4>
+                    <p>第三方库 pandas 相关题目 · 需 import 验证</p>
+                  </div>
+                  <div class="tg-card-actions">
+                    <button title="编辑"><svg><use href="#i-edit"/></svg></button>
+                    
+      <button title="删除" class="danger"
+      data-confirm-title="删除该标签？"
+      data-confirm-body="标签将从题库移除
+引用了该标签的题目会失去这个分类，但题目本身保留
+历史搜索结果不受影响"
+      data-confirm-danger data-confirm-text="删除标签" data-confirm-toast="标签已删除"><svg><use href="#i-trash"/></svg></button>
+                  </div>
+                </div>
+                <div class="tg-bar-row"><b>34</b> 道题使用<span class="tg-bar"><span class="filled" style="width:50%"></span></span><b>50%</b></div>
+                <div class="tg-card-foot">
+                  <div class="author"><div class="av t3">李</div>李雪</div>
+                  <span>6 个月前创建</span>
+                </div>
+              </div>
+
+              <div class="tg-card">
+                <div class="tg-card-top">
+                  <div class="tg-card-info">
+                    <h4><span class="tag-ch kind-k">动态规划</span> <span style="font-size:11px;color:var(--muted);font-weight:400">kind-k · 蓝色</span></h4>
+                    <p>DP 类中高难度题型 · 含 LCS / 背包 / 区间 DP</p>
+                  </div>
+                  <div class="tg-card-actions">
+                    <button title="编辑"><svg><use href="#i-edit"/></svg></button>
+                    
+      <button title="删除" class="danger"
+      data-confirm-title="删除该标签？"
+      data-confirm-body="标签将从题库移除
+引用了该标签的题目会失去这个分类，但题目本身保留
+历史搜索结果不受影响"
+      data-confirm-danger data-confirm-text="删除标签" data-confirm-toast="标签已删除"><svg><use href="#i-trash"/></svg></button>
+                  </div>
+                </div>
+                <div class="tg-bar-row"><b>28</b> 道题使用<span class="tg-bar"><span class="filled" style="width:41%"></span></span><b>41%</b></div>
+                <div class="tg-card-foot">
+                  <div class="author"><div class="av t4">张</div>张明远</div>
+                  <span>4 个月前创建</span>
+                </div>
+              </div>
+
+              <div class="tg-card">
+                <div class="tg-card-top">
+                  <div class="tg-card-info">
+                    <h4><span class="tag-ch kind-t">sklearn</span> <span style="font-size:11px;color:var(--muted);font-weight:400">kind-t · 粉色</span></h4>
+                    <p>机器学习库相关 · 含分类、回归、聚类</p>
+                  </div>
+                  <div class="tg-card-actions">
+                    <button title="编辑"><svg><use href="#i-edit"/></svg></button>
+                    
+      <button title="删除" class="danger"
+      data-confirm-title="删除该标签？"
+      data-confirm-body="标签将从题库移除
+引用了该标签的题目会失去这个分类，但题目本身保留
+历史搜索结果不受影响"
+      data-confirm-danger data-confirm-text="删除标签" data-confirm-toast="标签已删除"><svg><use href="#i-trash"/></svg></button>
+                  </div>
+                </div>
+                <div class="tg-bar-row"><b>22</b> 道题使用<span class="tg-bar"><span class="filled" style="width:32%"></span></span><b>32%</b></div>
+                <div class="tg-card-foot">
+                  <div class="author"><div class="av t3">李</div>李雪</div>
+                  <span>5 个月前创建</span>
+                </div>
+              </div>
+
+              <div class="tg-card">
+                <div class="tg-card-top">
+                  <div class="tg-card-info">
+                    <h4><span class="tag-ch kind-c">字符串</span> <span style="font-size:11px;color:var(--muted);font-weight:400">kind-c · 黄色</span></h4>
+                    <p>字符串处理类 · 含切片 / 编码 / 正则</p>
+                  </div>
+                  <div class="tg-card-actions">
+                    <button title="编辑"><svg><use href="#i-edit"/></svg></button>
+                    
+      <button title="删除" class="danger"
+      data-confirm-title="删除该标签？"
+      data-confirm-body="标签将从题库移除
+引用了该标签的题目会失去这个分类，但题目本身保留
+历史搜索结果不受影响"
+      data-confirm-danger data-confirm-text="删除标签" data-confirm-toast="标签已删除"><svg><use href="#i-trash"/></svg></button>
+                  </div>
+                </div>
+                <div class="tg-bar-row"><b>19</b> 道题使用<span class="tg-bar"><span class="filled" style="width:28%"></span></span><b>28%</b></div>
+                <div class="tg-card-foot">
+                  <div class="author"><div class="av t5">林</div>林志远</div>
+                  <span>7 个月前创建</span>
+                </div>
+              </div>
+
+              <div class="tg-card">
+                <div class="tg-card-top">
+                  <div class="tg-card-info">
+                    <h4><span class="tag-ch kind-c">数学</span> <span style="font-size:11px;color:var(--muted);font-weight:400">kind-c · 黄色</span></h4>
+                    <p>数学建模与计算类 · 含数论、概率、几何</p>
+                  </div>
+                  <div class="tg-card-actions">
+                    <button title="编辑"><svg><use href="#i-edit"/></svg></button>
+                    
+      <button title="删除" class="danger"
+      data-confirm-title="删除该标签？"
+      data-confirm-body="标签将从题库移除
+引用了该标签的题目会失去这个分类，但题目本身保留
+历史搜索结果不受影响"
+      data-confirm-danger data-confirm-text="删除标签" data-confirm-toast="标签已删除"><svg><use href="#i-trash"/></svg></button>
+                  </div>
+                </div>
+                <div class="tg-bar-row"><b>15</b> 道题使用<span class="tg-bar"><span class="filled" style="width:22%"></span></span><b>22%</b></div>
+                <div class="tg-card-foot">
+                  <div class="author"><div class="av t2">陈</div>陈教授</div>
+                  <span>3 个月前创建</span>
+                </div>
+              </div>
+
+              <div class="tg-card">
+                <div class="tg-card-top">
+                  <div class="tg-card-info">
+                    <h4><span class="tag-ch kind-k">图论</span> <span style="font-size:11px;color:var(--muted);font-weight:400">kind-k · 蓝色</span></h4>
+                    <p>图遍历、最短路、最小生成树</p>
+                  </div>
+                  <div class="tg-card-actions">
+                    <button title="编辑"><svg><use href="#i-edit"/></svg></button>
+                    
+      <button title="删除" class="danger"
+      data-confirm-title="删除该标签？"
+      data-confirm-body="标签将从题库移除
+引用了该标签的题目会失去这个分类，但题目本身保留
+历史搜索结果不受影响"
+      data-confirm-danger data-confirm-text="删除标签" data-confirm-toast="标签已删除"><svg><use href="#i-trash"/></svg></button>
+                  </div>
+                </div>
+                <div class="tg-bar-row"><b>11</b> 道题使用<span class="tg-bar"><span class="filled" style="width:16%"></span></span><b>16%</b></div>
+                <div class="tg-card-foot">
+                  <div class="author"><div class="av t4">张</div>张明远</div>
+                  <span>2 个月前创建</span>
+                </div>
+              </div>
+
+              <div class="tg-card">
+                <div class="tg-card-top">
+                  <div class="tg-card-info">
+                    <h4><span class="tag-ch kind-t">numpy</span> <span style="font-size:11px;color:var(--muted);font-weight:400">kind-t · 粉色</span></h4>
+                    <p>数值计算库 · 数组运算、广播机制</p>
+                  </div>
+                  <div class="tg-card-actions">
+                    <button title="编辑"><svg><use href="#i-edit"/></svg></button>
+                    
+      <button title="删除" class="danger"
+      data-confirm-title="删除该标签？"
+      data-confirm-body="标签将从题库移除
+引用了该标签的题目会失去这个分类，但题目本身保留
+历史搜索结果不受影响"
+      data-confirm-danger data-confirm-text="删除标签" data-confirm-toast="标签已删除"><svg><use href="#i-trash"/></svg></button>
+                  </div>
+                </div>
+                <div class="tg-bar-row"><b>9</b> 道题使用<span class="tg-bar"><span class="filled" style="width:13%"></span></span><b>13%</b></div>
+                <div class="tg-card-foot">
+                  <div class="author"><div class="av t3">李</div>李雪</div>
+                  <span>5 个月前创建</span>
+                </div>
+              </div>
+
+              <div class="tg-card">
+                <div class="tg-card-top">
+                  <div class="tg-card-info">
+                    <h4><span class="tag-ch kind-t">matplotlib</span> <span style="font-size:11px;color:var(--muted);font-weight:400">kind-t · 粉色</span></h4>
+                    <p>数据可视化 · 输出图像会被校验</p>
+                  </div>
+                  <div class="tg-card-actions">
+                    <button title="编辑"><svg><use href="#i-edit"/></svg></button>
+                    
+      <button title="删除" class="danger"
+      data-confirm-title="删除该标签？"
+      data-confirm-body="标签将从题库移除
+引用了该标签的题目会失去这个分类，但题目本身保留
+历史搜索结果不受影响"
+      data-confirm-danger data-confirm-text="删除标签" data-confirm-toast="标签已删除"><svg><use href="#i-trash"/></svg></button>
+                  </div>
+                </div>
+                <div class="tg-bar-row"><b>6</b> 道题使用<span class="tg-bar"><span class="filled" style="width:9%"></span></span><b>9%</b></div>
+                <div class="tg-card-foot">
+                  <div class="author"><div class="av t3">李</div>李雪</div>
+                  <span>4 个月前创建</span>
+                </div>
+              </div>
+
+              <div class="tg-card">
+                <div class="tg-card-top">
+                  <div class="tg-card-info">
+                    <h4><span class="tag-ch kind-c">排序</span> <span style="font-size:11px;color:var(--muted);font-weight:400">kind-c · 黄色</span></h4>
+                    <p>经典排序算法实现与稳定性分析</p>
+                  </div>
+                  <div class="tg-card-actions">
+                    <button title="编辑"><svg><use href="#i-edit"/></svg></button>
+                    
+      <button title="删除" class="danger"
+      data-confirm-title="删除该标签？"
+      data-confirm-body="标签将从题库移除
+引用了该标签的题目会失去这个分类，但题目本身保留
+历史搜索结果不受影响"
+      data-confirm-danger data-confirm-text="删除标签" data-confirm-toast="标签已删除"><svg><use href="#i-trash"/></svg></button>
+                  </div>
+                </div>
+                <div class="tg-bar-row"><b>6</b> 道题使用<span class="tg-bar"><span class="filled" style="width:9%"></span></span><b>9%</b></div>
+                <div class="tg-card-foot">
+                  <div class="author"><div class="av t1">王</div>王建国</div>
+                  <span>6 个月前创建</span>
+                </div>
+              </div>
+
+              <!-- 未使用：标记清理建议 -->
+              <div class="tg-card" style="background:color-mix(in srgb,var(--danger-subtle) 30%,var(--card))">
+                <div class="tg-card-top">
+                  <div class="tg-card-info">
+                    <h4><span class="tag-ch kind-c">旧版语法</span> <span class="danger-mark" style="margin-left:auto"><svg style="font-size:12px"><use href="#i-warn"/></svg>未使用</span></h4>
+                    <p>已无题目引用 · 建议清理以保持标签库整洁</p>
+                  </div>
+                  <div class="tg-card-actions">
+                    <button title="编辑"><svg><use href="#i-edit"/></svg></button>
+                    
+      <button title="删除" class="danger"
+      data-confirm-title="删除该标签？"
+      data-confirm-body="标签将从题库移除
+引用了该标签的题目会失去这个分类，但题目本身保留
+历史搜索结果不受影响"
+      data-confirm-danger data-confirm-text="删除标签" data-confirm-toast="标签已删除"><svg><use href="#i-trash"/></svg></button>
+                  </div>
+                </div>
+                <div class="tg-bar-row"><b>0</b> 道题使用<span class="tg-bar"><span class="unused" style="width:100%"></span></span><b style="color:var(--danger)">0%</b></div>
+                <div class="tg-card-foot">
+                  <div class="author"><div class="av t1">王</div>王建国</div>
+                  <span>11 个月前创建</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- 页脚 -->
+          <div class="foot anim" style="animation-delay:.16s">
+            <span>共 <b style="color:var(--fg)">24</b> 个标签 · <b style="color:var(--success)">22</b> 使用中 · <b style="color:var(--danger)">2</b> 未使用 · 按使用次数倒序</span>
+            <div style="display:flex;gap:8px">
+              
+    <button class="btn-ghost"
+    data-confirm-title="清理所有未使用标签？"
+    data-confirm-body="共将清理 4 个未被任何题目引用的标签
+该操作不可撤销，建议在备份题库后操作"
+    data-confirm-danger data-confirm-text="清理标签" data-confirm-toast="已清理 4 个标签"><svg><use href="#i-trash"/></svg>清理未使用标签</button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+// tab 切换
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click', function(){
+    document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on')});
+    t.classList.add('on');
+    document.getElementById('view-problems').style.display = (t.textContent.indexOf('公共题目')>=0) ? '' : 'none';
+    document.getElementById('view-tags').style.display = (t.textContent.indexOf('标签管理')>=0) ? '' : 'none';
+  });
+});
+
+function addTag(){
+  Modal.form({
+    title:'添加新标签',
+    fields:[
+      {name:'name',label:'标签名称',placeholder:'例如：二分查找',required:true,maxlength:10},
+      {name:'cat',type:'select',label:'所属分类',required:true,value:'algo',options:[
+        {value:'data',label:'数据'},
+        {value:'algo',label:'算法'},
+        {value:'ai',label:'人工智能'},
+        {value:'net',label:'计算机网络'},
+        {value:'inter',label:'多学科交叉'}
+      ]},
+      {name:'desc',type:'textarea',label:'描述（选填）',placeholder:'一句话说明这个标签的用途',maxlength:80}
+    ],
+    submitText:'添加',
+    onSubmit:function(v){ toast('已添加标签「'+v.name+'」'); }
+  });
+}
+
+/* 多选 + 批量调整分类 */
+function updateSel(){
+  var boxes = document.querySelectorAll('.row-cb');
+  var cnt = 0;
+  boxes.forEach(function(b){
+    var row = b.closest('.pt-row');
+    if(b.checked){ row.classList.add('sel'); cnt++; }
+    else row.classList.remove('sel');
+  });
+  document.getElementById('sel-cnt').textContent = cnt;
+  document.getElementById('batch-bar').classList.toggle('show', cnt > 0);
+  // 全选框同步
+  var all = document.getElementById('sel-all');
+  if(all) all.checked = (cnt === boxes.length);
+  all.indeterminate = (cnt > 0 && cnt < boxes.length);
+}
+function selectAll(checked){
+  document.querySelectorAll('.row-cb').forEach(function(b){ b.checked = checked; });
+  updateSel();
+}
+
+var CAT_INFO = {
+  data:  {name:'数据',     color:'数据色', cnt:98,  desc:'数据加载、清洗、统计、可视化类题目 ·  强依赖 pandas / matplotlib 库 · 重点考核数据处理完整链路',                          examples:['读取 CSV 并统计列均值','列表去重并保持顺序','缺失值处理'],                                                                    tags:['文件','pandas','matplotlib','numpy']},
+  algo:  {name:'算法',     color:'算法色', cnt:142, desc:'经典算法与数据结构 · 含排序、搜索、动态规划、图论、字符串 · 通过率反映学生算法掌握度',                                                examples:['两数之和','二叉树层序遍历','最长公共子序列'],                                                                                  tags:['字典','集合','队列','动态规划','BFS','DFS']},
+  ai:    {name:'人工智能', color:'AI 色',  cnt:62,  desc:'机器学习与深度学习应用 · 强依赖 sklearn · 考核分类、回归、聚类、降维基础算法的正确使用',                                                       examples:['KNN 鸢尾花分类','线性回归预测房价','决策树分类'],                                                                              tags:['sklearn','KNN','分类','回归','聚类']},
+  net:   {name:'计算机网络', color:'网络色', cnt:48,  desc:'网络协议、HTTP、URL 解析、socket 编程 · 偏实际工程问题，常结合正则表达式',                                                                  examples:['解析 URL 协议与域名','HTTP 状态码分类','TCP 三次握手模拟'],                                                                     tags:['字符串','正则','socket','HTTP']},
+  inter: {name:'多学科交叉', color:'交叉色', cnt:36,  desc:'数学建模、物理仿真、综合分析类 · 跨学科应用 · 难度通常较高，鼓励探索式解法',                                                                  examples:['蒙特卡洛估算圆周率','简单物理仿真','数据建模'],                                                                                tags:['math','random','模拟','数学']}
+};
+
+function showCatInfo(key, ev){
+  if(ev) ev.stopPropagation();
+  if(window.Modal && Modal.ensureCSS) Modal.ensureCSS();
+  var c = CAT_INFO[key];
+  if(!c) return;
+  var tagList = c.tags.map(function(t){ return '<span class="tag-ch" style="background:var(--surface);color:var(--muted);font-size:11.5px">'+t+'</span>'; }).join(' ');
+  var exList = c.examples.map(function(t){ return '<li style="padding:6px 0;border-bottom:1px solid var(--border);font-size:13px">'+t+'</li>'; }).join('');
+  var html =
+    '<div class="dlg" style="max-width:520px">' +
+      '<div class="dlg-hd">' +
+        '<div class="dlg-ic" style="background:var(--cat-'+key+'-bg);color:var(--cat-'+key+')">' +
+          '<span style="width:14px;height:14px;border-radius:50%;background:currentColor"></span>' +
+        '</div>' +
+        '<h3 style="display:flex;align-items:center;gap:8px">'+c.name+' <span style="font-size:12px;font-weight:400;color:var(--muted);font-variant-numeric:tabular-nums">'+c.cnt+' 道题</span></h3>' +
+      '</div>' +
+      '<div class="dlg-bd">' +
+        '<p style="color:var(--fg);font-size:13.5px;line-height:1.7">'+c.desc+'</p>' +
+        '<p style="margin-top:14px;font-size:11.5px;font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:uppercase">典型题目</p>' +
+        '<ul style="list-style:none;padding:0;margin:6px 0 14px">' + exList + '</ul>' +
+        '<p style="font-size:11.5px;font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:uppercase">常用标签</p>' +
+        '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:5px">' + tagList + '</div>' +
+      '</div>' +
+      '<div class="dlg-ft">' +
+        '<button class="btn-ghost" data-cancel>关闭</button>' +
+        '<button class="btn" data-confirm onclick="filterCat(\''+key+'\', this)">只看这一类</button>' +
+      '</div>' +
+    '</div>';
+  // 借用 Modal.form 的 mask 容器，但关闭时不调用默认的 form 逻辑
+  var wrap = document.createElement('div');
+  wrap.innerHTML = '<div class="mask">'+html+'</div>';
+  var mask = wrap.firstChild;
+  document.body.appendChild(mask);
+  requestAnimationFrame(function(){
+    mask.classList.add('open');
+    var onKey = function(e){
+      if(e.key === 'Escape'){ mask.classList.remove('open'); setTimeout(function(){mask.remove();}, 200); document.removeEventListener('keydown', onKey); }
+    };
+    document.addEventListener('keydown', onKey);
+    mask.addEventListener('click', function(e){
+      if(e.target === mask || e.target.closest('[data-cancel]')){
+        mask.classList.remove('open');
+        setTimeout(function(){mask.remove();}, 200);
+        document.removeEventListener('keydown', onKey);
+      }
+    });
+  });
+}
+function filterCat(key, btn){
+  // 关闭弹窗 + 模拟点击对应分类 tab
+  var mask = btn.closest('.mask');
+  mask.classList.remove('open');
+  setTimeout(function(){mask.remove();}, 200);
+  var tabs = document.querySelectorAll('.cat-tabs .cat-tab');
+  tabs.forEach(function(t){ t.classList.remove('on'); });
+  // 找到包含对应 class 的 tab 并激活
+  var target = document.querySelector('.cat-tab.c-' + key);
+  if(target) target.classList.add('on');
+  toast('已筛选：'+CAT_INFO[key].name);
+}
+
+function batchCategory(force){
+  var boxes = document.querySelectorAll('.row-cb:checked');
+  var cnt = boxes.length;
+  if(cnt === 0 && !force){
+    Modal.confirm({
+      title:'未选中任何题目',
+      body:['请先在表格里勾选要调整分类的题目','也可以直接打开本弹窗查看分类说明'],
+      confirmText:'知道了'
+    });
+    return;
+  }
+  // 取出选中题目的当前分类，做交集提示
+  var currentCats = set();
+  boxes.forEach(function(b){
+    var row = b.closest('.pt-row');
+    var badge = row.querySelector('.cat-badge');
+    if(badge){
+      var cls = Array.from(badge.classList).find(function(c){ return c.indexOf('c-') === 0; });
+      if(cls) currentCats.add(cls.replace('c-',''));
+    }
+  });
+  var curInfo = Array.from(currentCats).map(function(c){ return CAT_INFO[c] ? CAT_INFO[c].name : c; }).join('、');
+
+  Modal.form({
+    title:'批量调整分类 · 已选 '+cnt+' 道题',
+    fields:[
+      {name:'target',type:'select',label:'目标分类',required:true,value:'algo',options:[
+        {value:'data',label:'数据 · 98 道'},
+        {value:'algo',label:'算法 · 142 道'},
+        {value:'ai',label:'人工智能 · 62 道'},
+        {value:'net',label:'计算机网络 · 48 道'},
+        {value:'inter',label:'多学科交叉 · 36 道'}
+      ],hint: cnt>0 ? ('当前分类：'+ (curInfo||'混合')) : '请先勾选题目'}
+    ],
+    submitText:'调整 '+(cnt||'全部')+' 道题',
+    danger:true,
+    foot: cnt>0
+      ? '调整后，原分类的引用统计会同步更新 · 被引用到作业中的题目仍保留原作业引用'
+      : '批量操作将作用于当前筛选条件下的全部 8 道题',
+    onSubmit:function(v){
+      var fromCat = curInfo || '原分类';
+      var toCat = CAT_INFO[v.target].name;
+      // mockup 演示：toast + 把选中行的高亮分类切换
+      var toBadge = '<span class="cat-badge c-'+v.target+'"><span class="dot"></span>'+toCat+'</span>';
+      boxes.forEach(function(b){
+        var row = b.closest('.pt-row');
+        var cell = row.children[2]; // 分类列（checkbox + 标题 + 分类 + ...）
+        if(cell) cell.innerHTML = toBadge;
+        b.checked = false;
+        row.classList.remove('sel');
+      });
+      updateSel();
+      toast('已将 '+cnt+' 道题从「'+fromCat+'」改为「'+toCat+'」');
+    }
+  });
+}
+</script>
+</body>
+</html>

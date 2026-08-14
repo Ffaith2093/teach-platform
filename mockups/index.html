@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PyLearn · 中学编程教学平台</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+  --shadow-lg:0 24px 48px -12px rgba(15,23,42,.18);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171;  --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+  --shadow-lg:0 24px 48px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ============== 公开页头 ============== */
+.pub-nav{position:sticky;top:0;z-index:30;height:64px;display:flex;align-items:center;
+  padding:0 32px;border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--bg) 85%,transparent);
+  backdrop-filter:saturate(180%) blur(12px)}
+html.dark .pub-nav{background:color-mix(in srgb,var(--bg) 80%,transparent)}
+.pub-logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;letter-spacing:-.01em}
+.pub-logo .mark{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--primary),#38BDF8);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700}
+.pub-logo .name{display:flex;align-items:baseline;gap:6px}
+.pub-logo .name small{font-size:11px;color:var(--subtle);font-weight:500;letter-spacing:.04em}
+.pub-nav .right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.nav-link{padding:7px 14px;border-radius:8px;font-size:13.5px;color:var(--muted);font-weight:500;transition:.18s}
+.nav-link:hover{color:var(--fg);background:var(--surface)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:8px;
+  background:var(--primary);color:var(--primary-fg);font-size:13.5px;font-weight:500;
+  box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-lg{padding:12px 26px;font-size:15px;border-radius:10px}
+.btn-lg svg{font-size:18px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+  border:1px solid var(--border);font-size:13.5px;font-weight:500;color:var(--muted);transition:.18s;background:var(--card)}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:background .18s,color .18s}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+
+/* ============== Hero ============== */
+.hero{position:relative;overflow:hidden;padding:80px 32px 64px;background:
+  radial-gradient(ellipse 800px 400px at 50% 0%,color-mix(in srgb,var(--primary) 12%,transparent),transparent 70%),
+  var(--bg)}
+.hero-inner{max-width:1140px;margin:0 auto;display:grid;grid-template-columns:1.05fr 1fr;gap:64px;align-items:center}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;
+  background:var(--primary-subtle);color:var(--primary);font-size:12px;font-weight:600;margin-bottom:18px}
+.hero-eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--primary);box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 20%,transparent)}
+h1{font-size:48px;font-weight:700;letter-spacing:-.03em;line-height:1.1}
+h1 .hl{color:var(--primary)}
+.hero-sub{margin-top:18px;font-size:16px;color:var(--muted);line-height:1.7;max-width:520px}
+.hero-cta{margin-top:30px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.hero-meta{margin-top:18px;display:flex;align-items:center;gap:18px;font-size:12.5px;color:var(--subtle)}
+.hero-meta b{color:var(--fg);font-weight:600}
+.hero-meta .sep{width:4px;height:4px;border-radius:50%;background:var(--border)}
+
+/* 代码预览卡片 */
+.hero-visual{position:relative}
+.code-card{background:var(--card);border:1px solid var(--border);border-radius:14px;
+  box-shadow:var(--shadow-lg);overflow:hidden;transform:rotate(1.5deg);transition:transform .4s}
+.code-card:hover{transform:rotate(0)}
+.code-bar{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface)}
+.code-bar .dots{display:flex;gap:6px}
+.code-bar .dots span{width:10px;height:10px;border-radius:50%}
+.code-bar .dots span:nth-child(1){background:#FF5F57}
+.code-bar .dots span:nth-child(2){background:#FEBC2E}
+.code-bar .dots span:nth-child(3){background:#28C840}
+.code-bar .name{font-size:12px;color:var(--muted);margin-left:6px}
+.code-body{padding:18px 20px;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:13px;line-height:1.7;color:var(--fg)}
+.code-body .kw{color:#AF52A8;font-weight:600}
+.code-body .fn{color:#4078BE}
+.code-body .str{color:#0A803C}
+.code-body .nm{color:#098658}
+.code-body .cm{color:var(--subtle);font-style:italic}
+.code-body .vr{color:var(--fg)}
+html.dark .code-body .kw{color:#C586C0}
+html.dark .code-body .fn{color:#DCDCAA}
+html.dark .code-body .str{color:#CE9178}
+html.dark .code-body .nm{color:#B5CEA8}
+.verdict{position:absolute;left:-22px;bottom:34px;padding:14px 18px;background:var(--success-subtle);
+  border:1px solid var(--success);border-radius:12px;box-shadow:var(--shadow-md);
+  display:flex;align-items:center;gap:10px;transform:rotate(-3deg)}
+html.dark .verdict{background:var(--success-subtle)}
+.verdict .ic{width:32px;height:32px;border-radius:50%;background:var(--success);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:18px}
+.verdict .t b{font-size:14px;color:var(--success);font-weight:700;display:block}
+.verdict .t span{font-size:11.5px;color:var(--muted)}
+
+/* ============== 数据条 ============== */
+.stat-bar{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--surface);padding:28px 32px}
+.stat-inner{max-width:1140px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:32px}
+.stat-item .n{font-size:28px;font-weight:700;color:var(--primary);letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.stat-item .l{margin-top:6px;font-size:12.5px;color:var(--muted)}
+
+/* ============== 区块 ============== */
+.section{padding:80px 32px;background:var(--bg)}
+.section.alt{background:var(--surface)}
+.section-inner{max-width:1140px;margin:0 auto}
+.sec-head{text-align:center;margin-bottom:48px}
+.sec-eyebrow{display:inline-block;padding:4px 12px;border-radius:999px;
+  background:var(--primary-subtle);color:var(--primary);font-size:12px;font-weight:600;margin-bottom:14px}
+.sec-head h2{font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.sec-head p{margin-top:12px;font-size:15px;color:var(--muted);max-width:560px;margin-inline:auto}
+
+/* ============== 功能卡 ============== */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.feat-card{border:1px solid var(--border);border-radius:14px;background:var(--card);padding:28px;
+  transition:.25s}
+.feat-card:hover{border-color:color-mix(in srgb,var(--primary) 40%,transparent);box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.feat-ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.feat-ic.p{background:var(--primary-subtle);color:var(--primary)}
+.feat-ic.a{background:var(--accent-subtle);color:var(--accent)}
+.feat-ic.s{background:var(--success-subtle);color:var(--success)}
+.feat-ic.w{background:var(--warning-subtle);color:var(--warning)}
+.feat-ic.v{background:var(--purple-subtle);color:var(--purple)}
+.feat-card h3{margin-top:18px;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.feat-card p{margin-top:8px;font-size:13.5px;color:var(--muted);line-height:1.65}
+
+/* ============== 角色 ============== */
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.role-card{position:relative;padding:32px;border:1px solid var(--border);border-radius:16px;background:var(--card);overflow:hidden}
+.role-card .badge{position:absolute;top:20px;right:20px;padding:4px 10px;border-radius:999px;
+  font-size:11px;font-weight:600}
+.role-card.t .badge{background:var(--primary-subtle);color:var(--primary)}
+.role-card.s .badge{background:var(--accent-subtle);color:var(--accent)}
+.role-card .ic-64{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px}
+.role-card.t .ic-64{background:var(--primary-subtle);color:var(--primary)}
+.role-card.s .ic-64{background:var(--accent-subtle);color:var(--accent)}
+.role-card h3{margin-top:18px;font-size:20px;font-weight:600;letter-spacing:-.01em}
+.role-card .desc{margin-top:8px;font-size:14px;color:var(--muted);line-height:1.65}
+.role-card ul{margin-top:18px;display:flex;flex-direction:column;gap:9px}
+.role-card li{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--fg)}
+.role-card li svg{color:var(--success);font-size:16px;flex-shrink:0}
+
+/* ============== 流程 ============== */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:32px}
+.flow-step{position:relative;padding:22px 18px;border:1px solid var(--border);border-radius:12px;background:var(--card);text-align:center}
+.flow-step .num{position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+  width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.flow-step .ic{font-size:24px;color:var(--primary);margin-bottom:10px}
+.flow-step .ic svg{width:28px;height:28px;stroke-width:1.8}
+.flow-step h4{font-size:14px;font-weight:600;margin-top:6px}
+.flow-step p{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.5}
+.flow-arrow{display:flex;align-items:center;justify-content:center;color:var(--subtle);font-size:18px}
+
+/* ============== CTA ============== */
+.cta{padding:80px 32px;background:linear-gradient(135deg,var(--primary),#38BDF8);
+  color:#fff;text-align:center;position:relative;overflow:hidden}
+.cta::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(circle at 20% 30%,rgba(255,255,255,.18),transparent 50%),
+             radial-gradient(circle at 80% 70%,rgba(255,255,255,.12),transparent 50%)}
+.cta-inner{max-width:680px;margin:0 auto;position:relative;z-index:1}
+.cta h2{font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.cta p{margin-top:14px;font-size:15px;opacity:.92;line-height:1.7}
+.cta .actions{margin-top:28px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.cta .btn{background:#fff;color:var(--primary)}
+.cta .btn:hover{background:#F1F5F9}
+.cta .btn-ghost{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.3);color:#fff;backdrop-filter:blur(8px)}
+.cta .btn-ghost:hover{background:rgba(255,255,255,.28)}
+
+/* ============== 页脚 ============== */
+.pub-foot{padding:36px 32px 28px;background:var(--surface);border-top:1px solid var(--border)}
+.foot-inner{max-width:1140px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap}
+.foot-l{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.foot-l small{color:var(--subtle)}
+.foot-r{display:flex;align-items:center;gap:24px;font-size:13px;color:var(--muted)}
+.foot-r a{transition:color .18s}
+.foot-r a:hover{color:var(--primary)}
+
+/* ============== 响应 ============== */
+@media(max-width:980px){
+  .hero-inner{grid-template-columns:1fr;gap:48px}
+  .hero{padding:60px 24px 48px}
+  h1{font-size:36px}
+  .feat-grid,.role-grid{grid-template-columns:1fr}
+  .stat-inner{grid-template-columns:repeat(2,1fr);gap:24px}
+  .flow{grid-template-columns:repeat(2,1fr)}
+  .section,.cta,.stat-bar,.pub-foot{padding-left:24px;padding-right:24px}
+  .hero-visual .verdict{left:0;bottom:-24px}
+  .code-card{transform:none}
+}
+@media(max-width:560px){
+  h1{font-size:30px}
+  .sec-head h2{font-size:24px}
+  .cta h2{font-size:24px}
+  .pub-nav{padding:0 18px}
+  .foot-inner{flex-direction:column;align-items:flex-start}
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .4s ease-out both}
+.d1{animation-delay:.08s}
+.d2{animation-delay:.16s}
+.d3{animation-delay:.24s}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-cap" viewBox="0 0 24 24"><path d="M2 9 12 4l10 5-10 5z"/><path d="M6 11v5c0 1 3 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6M16 6l6 6-6 6"/></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6v5l5 9a2 2 0 0 1-2 3H6a2 2 0 0 1-2-3l5-9z"/><path d="M9 3h6"/><path d="M6 14h12"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M3 9 12 3l9 6"/><path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"/><path d="M9 22V12h6v10"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></symbol>
+<symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2 2 0 0 1 0-5H20"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+<symbol id="i-bank" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11M9 8v11M15 8v11M19 8v11"/><path d="M3 22h18"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="m20.6 13.4-8.2 8.2a2 2 0 0 1-2.8 0l-7-7A2 2 0 0 1 2 13.2V4a2 2 0 0 1 2-2h9.2a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+</svg>
+
+<!-- ============== 顶部导航 ============== -->
+<header class="pub-nav">
+  <a class="pub-logo" href="index.html">
+    <div class="mark"><svg><use href="#i-cap"/></svg></div>
+    <span class="name">PyLearn <small>中学编程教学平台</small></span>
+  </a>
+  <div class="right">
+    <a class="nav-link" href="#features">功能</a>
+    <a class="nav-link" href="#roles">角色</a>
+    <a class="nav-link" href="#flow">流程</a>
+    <button class="icon-btn" id="theme-btn"><svg id="use-theme"><use href="#i-sun"/></svg></button>
+    <a class="btn" href="login.html"><svg><use href="#i-lock"/></svg>登录</a>
+  </div>
+</header>
+
+<!-- ============== Hero ============== -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="anim">
+      <div class="hero-eyebrow"><span class="dot"></span>面向中学信息技术课程的教研级平台</div>
+      <h1>让 <span class="hl">Python 教学</span><br>从「判作业」解放出来</h1>
+      <p class="hero-sub">
+        浏览器内 Monaco 编辑器 + 沙箱自动评测，客观题与编程题统一收口；
+        班级、课程、试卷、成绩单全在一个工作台里，老师只做真正需要判断的事。
+      </p>
+      <div class="hero-cta">
+        <a class="btn btn-lg" href="login.html"><svg><use href="#i-arrow"/></svg>登录系统</a>
+        <a class="btn-ghost" href="#features"><svg><use href="#i-play"/></svg>看看怎么用</a>
+      </div>
+      <div class="hero-meta">
+        <span><b>沙箱</b> 自动评测</span>
+        <span class="sep"></span>
+        <span><b>离线</b> 断网缓存</span>
+        <span class="sep"></span>
+        <span><b>3 角色</b> · 学生/教师/管理员</span>
+      </div>
+    </div>
+    <div class="hero-visual anim d1">
+      <div class="code-card">
+        <div class="code-bar">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <span class="name">two_sum.py</span>
+        </div>
+<pre class="code-body"><span class="kw">def</span> <span class="fn">two_sum</span>(nums, target):
+    seen = {}
+    <span class="kw">for</span> i, n <span class="kw">in</span> <span class="fn">enumerate</span>(nums):
+        diff = target - n
+        <span class="kw">if</span> diff <span class="kw">in</span> seen:
+            <span class="kw">return</span> [seen[diff], i]
+        seen[n] = i
+
+<span class="cm"># 提交后由评测机秒级返回结果</span></pre>
+      </div>
+      <div class="verdict">
+        <div class="ic"><svg><use href="#i-check"/></svg></div>
+        <div class="t"><b>5 / 5 用例通过</b><span>用时 8ms · 内存 9.4MB</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== 数据条 ============== -->
+<section class="stat-bar">
+  <div class="stat-inner">
+    <div class="stat-item"><div class="n">22</div><div class="l">内置题目 · 含 8 大算法类别</div></div>
+    <div class="stat-item"><div class="n">&lt; 200ms</div><div class="l">单题评测 · 容器冷启动 + 跑测</div></div>
+    <div class="stat-item"><div class="n">5 类</div><div class="l">题型 · 单选 / 填空 / 代码填空 / 编程 / 附件</div></div>
+    <div class="stat-item"><div class="n">3 角色</div><div class="l">独立工作台 · 越权访问直接拦截</div></div>
+  </div>
+</section>
+
+<!-- ============== 功能 ============== -->
+<section class="section" id="features">
+  <div class="section-inner">
+    <div class="sec-head">
+      <span class="sec-eyebrow">核心能力</span>
+      <h2>把出题、判题、批改、统计<br>全部收进一个工作台</h2>
+      <p>不是为了把所有功能塞进去，而是把「每天都要做」的事做到不打断思考</p>
+    </div>
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-ic p"><svg><use href="#i-flask"/></svg></div>
+        <h3>沙箱自动评测</h3>
+        <p>容器 <code class="mono" style="font-size:12px;background:var(--surface);padding:1px 5px;border-radius:4px">--network=none --read-only</code> 隔离，判 AC / WA / TLE / MLE，学生提交后秒级拿到结果。</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-ic a"><svg><use href="#i-class"/></svg></div>
+        <h3>以班级为单位的派发</h3>
+        <p>作业、试卷、资源一键派发到整个班级，无需让学生手动输入邀请码；转班时引用自动迁移。</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-ic s"><svg><use href="#i-check"/></svg></div>
+        <h3>客观题秒判 + 主观题精批</h3>
+        <p>单选 / 填空 / 代码填空自动判分，编程题展示自动评测 + 老师可覆盖；批改页支持键盘上下切换学生。</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-ic w"><svg><use href="#i-bank"/></svg></div>
+        <h3>组卷 + 抽题规则</h3>
+        <p>支持固定组卷和按标签 / 难度抽题规则两种模式，预览生成结果再发布，组卷逻辑可复用到不同班级。</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-ic v"><svg><use href="#i-chart"/></svg></div>
+        <h3>考试分析自动出</h3>
+        <p>分数分布直方图、题目通过率、区分度、高频错误一次出齐；班级成绩趋势可按周 / 月 / 学期查看。</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-ic p"><svg><use href="#i-shield"/></svg></div>
+        <h3>审计与合规</h3>
+        <p>所有账号由管理员创建，学生按班级批量导入；账号状态机与权限校验在每次请求入口处强制走通。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== 流程 ============== -->
+<section class="section alt" id="flow">
+  <div class="section-inner">
+    <div class="sec-head">
+      <span class="sec-eyebrow">每日流程</span>
+      <h2>老师一天只用做四件事</h2>
+      <p>其余的（判分、归集、通知、归档）都交给系统</p>
+    </div>
+    <div class="flow">
+      <div class="flow-step anim">
+        <div class="num">1</div>
+        <div class="ic"><svg><use href="#i-file"/></svg></div>
+        <h4>出题</h4>
+        <p>Markdown 题干 + 测试用例批量粘贴</p>
+      </div>
+      <div class="flow-step anim d1">
+        <div class="num">2</div>
+        <div class="ic"><svg><use href="#i-zap"/></svg></div>
+        <h4>发布</h4>
+        <p>勾选班级 + 设置截止时间即派发</p>
+      </div>
+      <div class="flow-step anim d2">
+        <div class="num">3</div>
+        <div class="ic"><svg><use href="#i-users"/></svg></div>
+        <h4>学生作答</h4>
+        <p>浏览器内编辑器 + 离线自动缓存</p>
+      </div>
+      <div class="flow-step anim d3">
+        <div class="num">4</div>
+        <div class="ic"><svg><use href="#i-chart"/></svg></div>
+        <h4>查看成绩</h4>
+        <p>自动汇总 + 主观题人工复核</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== 角色 ============== -->
+<section class="section" id="roles">
+  <div class="section-inner">
+    <div class="sec-head">
+      <span class="sec-eyebrow">三端独立</span>
+      <h2>学生 / 教师 / 管理员<br>各看各的工作台</h2>
+      <p>权限在路由入口处一次性校验，不在每个按钮上糊 if</p>
+    </div>
+    <div class="role-grid">
+      <div class="role-card t">
+        <span class="badge">教师端 · /t/*</span>
+        <div class="ic-64"><svg><use href="#i-cap"/></svg></div>
+        <h3>教师</h3>
+        <p class="desc">管班级、建课程、出题、批作业、看成绩分析</p>
+        <ul>
+          <li><svg><use href="#i-check"/></svg>我的编程题库 + 验证用例后再发布</li>
+          <li><svg><use href="#i-check"/></svg>班级花名册 + 单班成绩趋势</li>
+          <li><svg><use href="#i-check"/></svg>考试监控 + 试卷分析</li>
+        </ul>
+      </div>
+      <div class="role-card s">
+        <span class="badge">学生端 · /s/*</span>
+        <div class="ic-64"><svg><use href="#i-book"/></svg></div>
+        <h3>学生</h3>
+        <p class="desc">进班级、做作业、练编程、看自己的成绩单</p>
+        <ul>
+          <li><svg><use href="#i-check"/></svg>三栏布局的代码练习页 + 实时评测</li>
+          <li><svg><use href="#i-check"/></svg>考试答题页 + 断网自动暂存本地</li>
+          <li><svg><use href="#i-check"/></svg>我的成绩单 + 班级平均分对比</li>
+        </ul>
+      </div>
+    </div>
+    <div style="margin-top:24px;text-align:center">
+      <p style="font-size:13px;color:var(--subtle)">管理员账号用于建立年级 / 班级 / 教师，<a href="login.html" style="color:var(--primary)">登录后自动跳转</a>对应工作台</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============== CTA ============== -->
+<section class="cta">
+  <div class="cta-inner">
+    <h2>把每天的重复劳动<br>交给沙箱去做</h2>
+    <p>登录即用 · 账号由学校管理员统一创建 · 首次登录需修改初始密码</p>
+    <div class="actions">
+      <a class="btn btn-lg" href="login.html"><svg><use href="#i-lock"/></svg>登录系统</a>
+      <a class="btn-ghost btn-lg" href="#features"><svg><use href="#i-arrow"/></svg>了解功能</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============== 页脚 ============== -->
+<footer class="pub-foot">
+  <div class="foot-inner">
+    <div class="foot-l">
+      <div class="pub-logo">
+        <div class="mark" style="width:28px;height:28px;font-size:16px"><svg><use href="#i-cap"/></svg></div>
+        <span class="name">PyLearn</span>
+      </div>
+      <small>· 中学编程教学平台</small>
+    </div>
+    <div class="foot-r">
+      <a href="#features">功能</a>
+      <a href="#roles">角色</a>
+      <a href="#flow">流程</a>
+      <a href="login.html">登录</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// 主题切换（公开页自带的极简版，不依赖 admin-shared.js）
+(function(){
+  var html = document.documentElement;
+  if (localStorage.getItem('theme') === 'dark') {
+    html.classList.add('dark');
+    document.getElementById('use-theme').setAttribute('href', '#i-moon');
+  }
+  document.getElementById('theme-btn').addEventListener('click', function(){
+    var d = html.classList.toggle('dark');
+    document.getElementById('use-theme').setAttribute('href', d ? '#i-moon' : '#i-sun');
+    localStorage.setItem('theme', d ? 'dark' : 'light');
+  });
+})();
+
+// 平滑滚动
+document.querySelectorAll('a[href^="#"]').forEach(function(a){
+  a.addEventListener('click', function(e){
+    var id = a.getAttribute('href');
+    if (id === '#') return;
+    var el = document.querySelector(id);
+    if (!el) return;
+    e.preventDefault();
+    el.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+});
+</script>
+
+</body>
+</html>

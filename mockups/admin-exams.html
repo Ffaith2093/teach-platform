@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>公共试卷库 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0; --border-strong:#CBD5E1;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+  /* 学科分类色 */
+  --cat-py:#0EA5E9;        --cat-py-bg:#E0F2FE;
+  --cat-algo:#10B981;      --cat-algo-bg:#D1FAE5;
+  --cat-ds:#8B5CF6;        --cat-ds-bg:#EDE9FE;
+  --cat-ai:#EC4899;        --cat-ai-bg:#FCE7F3;
+  --cat-web:#F97316;       --cat-web-bg:#FFEDD5;
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171; --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548; --border-strong:#3D4A60;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --cat-py:#38BDF8;        --cat-py-bg:#0C334A;
+  --cat-algo:#34D399;      --cat-algo-bg:#063B2A;
+  --cat-ds:#A78BFA;        --cat-ds-bg:#2A1B4D;
+  --cat-ai:#F472B6;        --cat-ai-bg:#4A1232;
+  --cat-web:#FB923C;       --cat-web-bg:#422106;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--surface);color:var(--fg);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--purple);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto;min-height:0}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;
+         background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--purple),#EC4899);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted);white-space:nowrap}
+.crumb b{color:var(--fg);font-weight:500}
+.search{position:relative;flex:1;max-width:380px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--subtle)}
+.search input{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--border);border-radius:8px;
+              background:var(--surface);color:var(--fg);font-size:14px;outline:none;transition:.18s}
+.search input::placeholder{color:var(--subtle)}
+.search input:focus{border-color:var(--primary);background:var(--card)}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;
+          display:flex;transition:background .18s,color .18s;position:relative}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+.icon-btn .dot{position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--danger);border:2px solid var(--bg)}
+
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;
+       font-size:11px;font-weight:500;white-space:nowrap}
+.badge i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.b-w{background:var(--warning-subtle);color:var(--warning)}
+.b-d{background:var(--danger-subtle);color:var(--danger)}
+.b-p{background:var(--primary-subtle);color:var(--primary)}
+.b-s{background:var(--success-subtle);color:var(--success)}
+.b-a{background:var(--accent-subtle);color:var(--accent)}
+.b-n{background:var(--purple-subtle);color:var(--purple)}
+.b-m{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+
+.content{padding:24px 32px 40px}
+.wrap{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+
+/* 页头 */
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+           padding-bottom:18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.page-head h1{font-size:22px;font-weight:600;letter-spacing:-.02em}
+.page-head .sub{margin-top:4px;font-size:13px;color:var(--muted)}
+.page-head .sub b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* 4 stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;
+           display:flex;align-items:center;gap:12px;transition:border-color .18s,transform .18s;cursor:default}
+.stat-card:hover{border-color:var(--border-strong)}
+.stat-card .ic{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.stat-card .ic.p{background:var(--primary-subtle);color:var(--primary)}
+.stat-card .ic.s{background:var(--success-subtle);color:var(--success)}
+.stat-card .ic.w{background:var(--warning-subtle);color:var(--warning)}
+.stat-card .ic.n{background:var(--purple-subtle);color:var(--purple)}
+.stat-card .body{flex:1;min-width:0}
+.stat-card .lbl{font-size:11.5px;color:var(--muted)}
+.stat-card .num{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.1;margin-top:2px}
+.stat-card .num small{font-size:13px;font-weight:500;color:var(--muted);margin-left:3px}
+.stat-card .extra{font-size:11px;color:var(--subtle);margin-top:2px}
+
+/* 过滤条 */
+.filter{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);
+        border-radius:12px;padding:10px 14px;flex-wrap:wrap}
+.filter-label{font-size:11.5px;color:var(--muted);font-weight:500}
+.filter select,.filter input{padding:7px 10px;border:1px solid var(--border);border-radius:7px;
+                              background:var(--surface);color:var(--fg);font-size:13px;outline:none;cursor:pointer}
+.filter input{cursor:text}
+.filter select:focus,.filter input:focus{border-color:var(--primary);background:var(--card)}
+.filter .sep{width:1px;height:18px;background:var(--border);margin:0 2px}
+.filter .spacer{flex:1}
+.filter .count{font-size:12px;color:var(--muted)}
+.filter .count b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* 表格 */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.t-head{display:grid;grid-template-columns:140px 2.6fr 1.2fr 110px 1.6fr 80px 90px;gap:14px;
+        padding:12px 18px;background:var(--surface);font-size:11px;font-weight:600;color:var(--muted);
+        letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);align-items:center}
+.t-head > div{text-align:center}
+html.dark .t-head{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.t-row{display:grid;grid-template-columns:140px 2.6fr 1.2fr 110px 1.6fr 80px 90px;gap:14px;
+       padding:14px 18px;border-bottom:1px solid var(--border);align-items:center;transition:background .18s;cursor:pointer}
+.t-row:last-child{border-bottom:none}
+.t-row:hover{background:var(--surface)}
+.t-row > div{text-align:center;display:flex;justify-content:center;min-width:0}
+
+.t-eid{display:flex;align-items:center;gap:8px}
+.t-eid .id{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12px;font-weight:600;
+           background:var(--primary-subtle);color:var(--primary);padding:3px 8px;border-radius:5px;
+           letter-spacing:.02em}
+.t-eid .copy{cursor:pointer;color:var(--subtle);transition:color .18s}
+.t-eid .copy:hover{color:var(--primary)}
+
+.t-info{display:flex;flex-direction:column;align-items:center;gap:3px;width:100%}
+.t-info .ti{font-size:13.5px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap}
+.t-info .ti .pill-mini{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;letter-spacing:.04em}
+.t-info .ti .pill-mini.draft{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+.t-info .ti .pill-mini.pub{background:var(--success-subtle);color:var(--success)}
+.t-info .ti .pill-mini.priv{background:var(--warning-subtle);color:var(--warning)}
+.t-info .desc{font-size:11.5px;color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:1;
+              -webkit-box-orient:vertical;overflow:hidden;max-width:340px;text-align:center}
+
+.t-author{display:flex;align-items:center;justify-content:center;min-width:0}
+.t-author .aname{font-size:12.5px;color:var(--fg);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.cat-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:6px;font-size:11.5px;
+            font-weight:500;background:var(--surface);border:1px solid var(--border)}
+.cat-badge .dot{width:6px;height:6px;border-radius:50%}
+.cat-badge.c-py{color:var(--cat-py);background:var(--cat-py-bg);border-color:transparent}
+.cat-badge.c-py .dot{background:var(--cat-py)}
+.cat-badge.c-algo{color:var(--cat-algo);background:var(--cat-algo-bg);border-color:transparent}
+.cat-badge.c-algo .dot{background:var(--cat-algo)}
+.cat-badge.c-ds{color:var(--cat-ds);background:var(--cat-ds-bg);border-color:transparent}
+.cat-badge.c-ds .dot{background:var(--cat-ds)}
+.cat-badge.c-ai{color:var(--cat-ai);background:var(--cat-ai-bg);border-color:transparent}
+.cat-badge.c-ai .dot{background:var(--cat-ai)}
+.cat-badge.c-web{color:var(--cat-web);background:var(--cat-web-bg);border-color:transparent}
+.cat-badge.c-web .dot{background:var(--cat-web)}
+
+.t-comp{display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap}
+.t-comp .qt{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:5px;font-size:10.5px;
+             font-weight:600;background:var(--surface);color:var(--muted);border:1px solid var(--border);font-variant-numeric:tabular-nums}
+.t-comp .qt.code{background:var(--success-subtle);color:var(--success);border-color:transparent}
+.t-comp .qt.blank{background:var(--warning-subtle);color:var(--warning);border-color:transparent}
+.t-comp .qt.choice{background:var(--primary-subtle);color:var(--primary);border-color:transparent}
+.t-comp .qt.fill{background:var(--purple-subtle);color:var(--purple);border-color:transparent}
+.t-comp .score{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.diff{display:inline-flex;align-items:center;gap:1px;font-size:13px;color:var(--warning);font-variant-numeric:tabular-nums}
+.diff .star{font-size:13px;color:var(--warning)}
+.diff .off{color:var(--border-strong)}
+html.dark .diff .off{color:var(--border)}
+
+.t-ops{display:flex;align-items:center;gap:2px;justify-content:center}
+.t-ops a,.t-ops button{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;
+                        justify-content:center;color:var(--muted);transition:.18s;font-size:13px}
+.t-ops a:hover,.t-ops button:hover{background:var(--surface);color:var(--primary)}
+.t-ops .danger:hover{background:var(--danger-subtle);color:var(--danger)}
+
+/* 空状态 */
+.empty{padding:60px 24px;text-align:center;color:var(--muted)}
+.empty .ic{width:52px;height:52px;border-radius:14px;background:var(--surface);color:var(--subtle);
+           display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 12px}
+.empty .t{font-size:14px;font-weight:500;color:var(--fg);margin-bottom:4px}
+.empty .d{font-size:12.5px;margin-bottom:14px;line-height:1.6}
+
+@media(max-width:1200px){ .side{display:none} }
+@media(max-width:1100px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .t-head,.t-row{grid-template-columns:140px 2fr 110px 80px 70px}
+  .t-head .h-author,.t-head .h-comp,.t-row .t-author,.t-row .t-comp{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 侧栏 -->
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-shield"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">管理员</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">总览</p>
+      <a class="nav-item" href="admin-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <p class="nav-label">组织</p>
+      <a class="nav-item" href="admin-students.html"><svg><use href="#i-users"/></svg>学生</a>
+      <a class="nav-item" href="admin-teachers.html"><svg><use href="#i-grad"/></svg>教师</a>
+      <p class="nav-label">内容</p>
+      <a class="nav-item active" href="admin-exams.html"><svg><use href="#i-exam"/></svg>考试<span class="nav-count">47</span></a>
+      <a class="nav-item" href="admin-courses.html"><svg><use href="#i-book"/></svg>课程</a>
+      <a class="nav-item" href="admin-banks.html"><svg><use href="#i-tag"/></svg>题库</a>
+      <p class="nav-label">系统</p>
+      <a class="nav-item" href="admin-judge-queue.html"><svg><use href="#i-judge"/></svg>评测队列<span class="nav-count">2</span></a>
+      <a class="nav-item" href="admin-settings.html"><svg><use href="#i-set"/></svg>系统设置</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈主任</div>
+        <div class="s">系统管理员</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb"><b>内容</b> / 公共试卷库</span>
+      <div class="search">
+        <svg><use href="#i-search"/></svg>
+        <input placeholder="搜索试卷编号、标题、创建者、标签…">
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" onclick="tt()"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg><span class="dot"></span></button>
+        <a class="btn" href="admin-exam-edit.html?new=1" style="text-decoration:none">
+          <svg><use href="#i-plus"/></svg>新建试卷
+        </a>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <!-- 页头 -->
+        <div class="page-head anim">
+          <div>
+            <h1>公共试卷库</h1>
+            <p class="sub">每个试卷拥有唯一编号 <b>A00XX</b> · 引用前先创建试卷，再在课程编辑中按编号引用 · 共 <b>47</b> 份 · 累计引用 <b>186</b> 次 · 本月新增 <b>6</b></p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-ghost"><svg><use href="#i-down"/></svg>导出 CSV</button>
+            <button class="btn-ghost"><svg><use href="#i-tag"/></svg>管理标签</button>
+          </div>
+        </div>
+
+        <!-- 4 stats -->
+        <div class="stats anim" style="animation-delay:.04s">
+          <div class="stat-card">
+            <div class="ic p"><svg><use href="#i-exam"/></svg></div>
+            <div class="body">
+              <div class="lbl">试卷总数</div>
+              <div class="num">47<small>份</small></div>
+              <div class="extra">覆盖 5 个分类</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="ic s"><svg><use href="#i-edit"/></svg></div>
+            <div class="body">
+              <div class="lbl">我创建</div>
+              <div class="num">12<small>份</small></div>
+              <div class="extra">管理员视角 · 含本人添加</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="ic w"><svg><use href="#i-share"/></svg></div>
+            <div class="body">
+              <div class="lbl">公共可引用</div>
+              <div class="num">31<small>份</small></div>
+              <div class="extra">全校教师可复制</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="ic n"><svg><use href="#i-trend"/></svg></div>
+            <div class="body">
+              <div class="lbl">引用次数 TOP</div>
+              <div class="num">38<small>次</small></div>
+              <div class="extra">A0009 · Python 基础小测</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 过滤 -->
+        <div class="filter anim" style="animation-delay:.08s">
+          <span class="filter-label">学科</span>
+          <select>
+            <option>全部学科</option>
+            <option>Python 基础</option>
+            <option>算法</option>
+            <option>数据结构</option>
+            <option>人工智能</option>
+            <option>Web 开发</option>
+          </select>
+          <span class="sep"></span>
+          <span class="filter-label">难度</span>
+          <select>
+            <option>全部难度</option>
+            <option>★ 入门</option>
+            <option>★★ 基础</option>
+            <option>★★★ 中等</option>
+            <option>★★★★ 进阶</option>
+            <option>★★★★★ 挑战</option>
+          </select>
+          <span class="sep"></span>
+          <span class="filter-label">可见性</span>
+          <select>
+            <option>全部</option>
+            <option>公共可引用</option>
+            <option>同教研组</option>
+            <option>仅所有者</option>
+          </select>
+          <span class="sep"></span>
+          <span class="filter-label">创建者</span>
+          <select>
+            <option>全部教师</option>
+            <option>仅我创建</option>
+            <option>王建国</option>
+            <option>李雪</option>
+            <option>张明远</option>
+          </select>
+          <span class="spacer"></span>
+          <span class="filter-label">排序</span>
+          <select>
+            <option>引用次数 ↓</option>
+            <option>最近更新</option>
+            <option>创建时间</option>
+            <option>编号顺序</option>
+          </select>
+          <span class="count">共 <b>47</b> 条</span>
+        </div>
+
+        <!-- 表格 -->
+        <div class="table-wrap anim" style="animation-delay:.12s">
+          <div class="t-head">
+            <div>试卷编号</div>
+            <div>标题</div>
+            <div class="h-author">创建者</div>
+            <div>学科</div>
+            <div class="h-comp">题型构成</div>
+            <div>难度</div>
+            <div>操作</div>
+          </div>
+
+          <!-- A0001 — 引用 TOP -->
+          <div class="t-row" onclick="window.location.href='admin-exam-edit.html?aid=A0001'">
+            <div class="t-eid">
+              <span class="id">A0001</span>
+              <span class="copy" title="复制编号"><svg><use href="#i-copy"/></svg></span>
+            </div>
+            <div class="t-info">
+              <div class="ti">
+                Python 基础小测
+                <span class="pill-mini pub">公共</span>
+              </div>
+              <div class="desc">语法 / 数据类型 / 控制流入门小测 · 时长 45 分钟</div>
+            </div>
+            <div class="t-author"><span class="aname">王建国</span></div>
+            <div><span class="cat-badge c-py"><span class="dot"></span>Python</span></div>
+            <div class="t-comp">
+              <span class="qt code">代码 4</span>
+              <span class="qt blank">填空 2</span>
+              <span class="qt choice">选择 4</span>
+            </div>
+            <div class="diff">★★<span class="off">★★★</span></div>
+            <div class="t-ops">
+              <a href="admin-exam-edit.html?aid=A0001" title="编辑" onclick="event.stopPropagation()"><svg><use href="#i-edit"/></svg></a>
+              <button title="预览"><svg><use href="#i-eye"/></svg></button>
+              <button title="复制为草稿" onclick="event.stopPropagation();copyExam('A0001')"><svg><use href="#i-copy"/></svg></button>
+              <button class="danger" title="删除" onclick="event.stopPropagation()"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <!-- A0002 -->
+          <div class="t-row" onclick="window.location.href='admin-exam-edit.html?aid=A0002'">
+            <div class="t-eid">
+              <span class="id">A0002</span>
+              <span class="copy" title="复制编号"><svg><use href="#i-copy"/></svg></span>
+            </div>
+            <div class="t-info">
+              <div class="ti">
+                期中考试 · Python 数据处理
+                <span class="pill-mini pub">公共</span>
+              </div>
+              <div class="desc">覆盖函数 / 文件 / CSV 综合 · 时长 120 分钟</div>
+            </div>
+            <div class="t-author"><span class="aname">李雪</span></div>
+            <div><span class="cat-badge c-py"><span class="dot"></span>Python</span></div>
+            <div class="t-comp">
+              <span class="qt code">代码 3</span>
+              <span class="qt blank">填空 1</span>
+              <span class="qt choice">选择 1</span>
+            </div>
+            <div class="diff">★★★<span class="off">★★</span></div>
+            <div class="t-ops">
+              <a href="admin-exam-edit.html?aid=A0002" title="编辑" onclick="event.stopPropagation()"><svg><use href="#i-edit"/></svg></a>
+              <button title="预览"><svg><use href="#i-eye"/></svg></button>
+              <button title="复制为草稿" onclick="event.stopPropagation();copyExam('A0002')"><svg><use href="#i-copy"/></svg></button>
+              <button class="danger" title="删除" onclick="event.stopPropagation()"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <!-- A0003 — 我创建的 -->
+          <div class="t-row" onclick="window.location.href='admin-exam-edit.html?aid=A0003'">
+            <div class="t-eid">
+              <span class="id">A0003</span>
+              <span class="copy" title="复制编号"><svg><use href="#i-copy"/></svg></span>
+            </div>
+            <div class="t-info">
+              <div class="ti">
+                递归与分治专项
+                <span class="pill-mini pub">公共</span>
+              </div>
+              <div class="desc">递归基础 / 斐波那契 / 归并排序 · 时长 90 分钟</div>
+            </div>
+            <div class="t-author"><span class="aname">陈主任</span></div>
+            <div><span class="cat-badge c-algo"><span class="dot"></span>算法</span></div>
+            <div class="t-comp">
+              <span class="qt code">代码 5</span>
+              <span class="qt choice">选择 3</span>
+            </div>
+            <div class="diff">★★★★<span class="off">★</span></div>
+            <div class="t-ops">
+              <a href="admin-exam-edit.html?aid=A0003" title="编辑" onclick="event.stopPropagation()"><svg><use href="#i-edit"/></svg></a>
+              <button title="预览"><svg><use href="#i-eye"/></svg></button>
+              <button title="复制为草稿" onclick="event.stopPropagation();copyExam('A0003')"><svg><use href="#i-copy"/></svg></button>
+              <button class="danger" title="删除" onclick="event.stopPropagation()"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <!-- A0004 — 草稿 -->
+          <div class="t-row" onclick="window.location.href='admin-exam-edit.html?aid=A0004'">
+            <div class="t-eid">
+              <span class="id">A0004</span>
+              <span class="copy" title="复制编号"><svg><use href="#i-copy"/></svg></span>
+            </div>
+            <div class="t-info">
+              <div class="ti">
+                期末考试 · Web 开发
+                <span class="pill-mini draft">草稿</span>
+              </div>
+              <div class="desc">Flask 路由 / 模板 / 数据库 · 时长 120 分钟（未发布）</div>
+            </div>
+            <div class="t-author"><span class="aname">陈主任</span></div>
+            <div><span class="cat-badge c-web"><span class="dot"></span>Web</span></div>
+            <div class="t-comp">
+              <span class="qt code">代码 4</span>
+              <span class="qt blank">填空 2</span>
+            </div>
+            <div class="diff">★★★<span class="off">★★</span></div>
+            <div class="t-ops">
+              <a href="admin-exam-edit.html?aid=A0004" title="继续编辑" onclick="event.stopPropagation()"><svg><use href="#i-edit"/></svg></a>
+              <button title="预览"><svg><use href="#i-eye"/></svg></button>
+              <button title="复制" onclick="event.stopPropagation();copyExam('A0004')"><svg><use href="#i-copy"/></svg></button>
+              <button class="danger" title="删除" onclick="event.stopPropagation()"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <!-- A0005 -->
+          <div class="t-row" onclick="window.location.href='admin-exam-edit.html?aid=A0005'">
+            <div class="t-eid">
+              <span class="id">A0005</span>
+              <span class="copy" title="复制编号"><svg><use href="#i-copy"/></svg></span>
+            </div>
+            <div class="t-info">
+              <div class="ti">
+                数据结构 · 链表专项
+                <span class="pill-mini pub">公共</span>
+              </div>
+              <div class="desc">单链表反转 / 合并 / 检测环 · 时长 60 分钟</div>
+            </div>
+            <div class="t-author"><span class="aname">张明远</span></div>
+            <div><span class="cat-badge c-ds"><span class="dot"></span>数据结构</span></div>
+            <div class="t-comp">
+              <span class="qt code">代码 6</span>
+              <span class="qt choice">选择 2</span>
+            </div>
+            <div class="diff">★★★★<span class="off">★</span></div>
+            <div class="t-ops">
+              <a href="admin-exam-edit.html?aid=A0005" title="编辑" onclick="event.stopPropagation()"><svg><use href="#i-edit"/></svg></a>
+              <button title="预览"><svg><use href="#i-eye"/></svg></button>
+              <button title="复制" onclick="event.stopPropagation();copyExam('A0005')"><svg><use href="#i-copy"/></svg></button>
+              <button class="danger" title="删除" onclick="event.stopPropagation()"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <!-- A0006 — 同教研组 -->
+          <div class="t-row" onclick="window.location.href='admin-exam-edit.html?aid=A0006'">
+            <div class="t-eid">
+              <span class="id">A0006</span>
+              <span class="copy" title="复制编号"><svg><use href="#i-copy"/></svg></span>
+            </div>
+            <div class="t-info">
+              <div class="ti">
+                机器学习入门小测
+                <span class="pill-mini pub">公共</span>
+              </div>
+              <div class="desc">线性回归 / 决策树 / 模型评估 · 时长 75 分钟</div>
+            </div>
+            <div class="t-author"><span class="aname">林志远</span></div>
+            <div><span class="cat-badge c-ai"><span class="dot"></span>人工智能</span></div>
+            <div class="t-comp">
+              <span class="qt code">代码 3</span>
+              <span class="qt blank">填空 2</span>
+              <span class="qt choice">选择 5</span>
+            </div>
+            <div class="diff">★★★<span class="off">★★</span></div>
+            <div class="t-ops">
+              <a href="admin-exam-edit.html?aid=A0006" title="编辑" onclick="event.stopPropagation()"><svg><use href="#i-edit"/></svg></a>
+              <button title="预览"><svg><use href="#i-eye"/></svg></button>
+              <button title="复制" onclick="event.stopPropagation();copyExam('A0006')"><svg><use href="#i-copy"/></svg></button>
+              <button class="danger" title="删除" onclick="event.stopPropagation()"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <!-- A0007 -->
+          <div class="t-row" onclick="window.location.href='admin-exam-edit.html?aid=A0007'">
+            <div class="t-eid">
+              <span class="id">A0007</span>
+              <span class="copy" title="复制编号"><svg><use href="#i-copy"/></svg></span>
+            </div>
+            <div class="t-info">
+              <div class="ti">
+                函数式编程基础
+                <span class="pill-mini pub">公共</span>
+              </div>
+              <div class="desc">lambda / map / reduce / 闭包 · 时长 60 分钟</div>
+            </div>
+            <div class="t-author"><span class="aname">李雪</span></div>
+            <div><span class="cat-badge c-py"><span class="dot"></span>Python</span></div>
+            <div class="t-comp">
+              <span class="qt code">代码 4</span>
+              <span class="qt fill">代码填空 2</span>
+            </div>
+            <div class="diff">★★★<span class="off">★★</span></div>
+            <div class="t-ops">
+              <a href="admin-exam-edit.html?aid=A0007" title="编辑" onclick="event.stopPropagation()"><svg><use href="#i-edit"/></svg></a>
+              <button title="预览"><svg><use href="#i-eye"/></svg></button>
+              <button title="复制" onclick="event.stopPropagation();copyExam('A0007')"><svg><use href="#i-copy"/></svg></button>
+              <button class="danger" title="删除" onclick="event.stopPropagation()"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <!-- A0008 — 仅所有者 -->
+          <div class="t-row" onclick="window.location.href='admin-exam-edit.html?aid=A0008'">
+            <div class="t-eid">
+              <span class="id">A0008</span>
+              <span class="copy" title="复制编号"><svg><use href="#i-copy"/></svg></span>
+            </div>
+            <div class="t-info">
+              <div class="ti">
+                内部摸底测试（不可见）
+                <span class="pill-mini priv">仅所有者</span>
+              </div>
+              <div class="desc">分班前的能力摸底 · 仅本人可见</div>
+            </div>
+            <div class="t-author"><span class="aname">王建国</span></div>
+            <div><span class="cat-badge c-py"><span class="dot"></span>Python</span></div>
+            <div class="t-comp">
+              <span class="qt choice">选择 10</span>
+            </div>
+            <div class="diff">★<span class="off">★★★★</span></div>
+            <div class="t-ops">
+              <a href="admin-exam-edit.html?aid=A0008" title="编辑" onclick="event.stopPropagation()"><svg><use href="#i-edit"/></svg></a>
+              <button title="预览"><svg><use href="#i-eye"/></svg></button>
+              <button title="复制" onclick="event.stopPropagation();copyExam('A0008')"><svg><use href="#i-copy"/></svg></button>
+              <button class="danger" title="删除" onclick="event.stopPropagation()"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <!-- 折叠提示（展示 8 行 / 共 47 行） -->
+          <div style="padding:14px 18px;text-align:center;color:var(--muted);font-size:12.5px;background:var(--surface);
+                      border-top:1px solid var(--border)">
+            显示 <b style="color:var(--fg)">8</b> / 47 条 ·
+            <a href="?show=all" style="color:var(--primary);font-weight:500">查看更多 →</a>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- 图标 -->
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+  <symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+  <symbol id="i-grad" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2 3 6 3s6-2 6-3v-5"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+  <symbol id="i-exam" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="3" rx="1"/><path d="M9 11h6M9 14h6M9 17h3"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="m20.6 13.4-8.2 8.2a2 2 0 0 1-2.8 0l-7-7A2 2 0 0 1 2 13.2V4a2 2 0 0 1 2-2h9.2a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+  <symbol id="i-judge" viewBox="0 0 24 24"><path d="m12 2 3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></symbol>
+  <symbol id="i-set" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></symbol>
+  <symbol id="i-trend" viewBox="0 0 24 24"><path d="m3 17 6-6 4 4 8-8"/><path d="M14 7h7v7"/></symbol>
+</svg>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+/* 主题 */
+function tt(){
+  var d=document.documentElement.classList.toggle('dark');
+  document.getElementById('use-theme').setAttribute('href', d?'#i-moon':'#i-sun');
+  localStorage.setItem('theme', d?'dark':'light');
+}
+if(localStorage.getItem('theme')==='dark'){
+  document.documentElement.classList.add('dark');
+  document.getElementById('use-theme').setAttribute('href','#i-moon');
+}
+
+/* 复制试卷编号 */
+function copyExam(aid){
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(aid).then(function(){
+      window.toast && toast('已复制试卷编号 ' + aid,'success');
+    });
+  } else {
+    window.toast && toast('试卷编号 ' + aid + ' 已选中','info');
+  }
+}
+document.querySelectorAll('.t-eid .copy').forEach(function(c){
+  c.addEventListener('click', function(e){
+    e.stopPropagation();
+    var aid = this.parentNode.querySelector('.id').textContent;
+    copyExam(aid);
+  });
+});
+</script>
+</body>
+</html>

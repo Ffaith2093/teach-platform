@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>评测队列 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171;  --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--purple);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--purple),#EC4899);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted)}
+.crumb b{color:var(--fg);font-weight:500}
+.search{position:relative;flex:1;max-width:340px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--subtle)}
+.search input{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--border);border-radius:8px;
+              background:var(--surface);color:var(--fg);font-size:14px;outline:none;transition:.18s}
+.search input:focus{border-color:var(--primary);background:var(--card)}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:background .18s,color .18s}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:1140px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+           padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:3px 9px;
+      border-radius:999px;background:var(--success-subtle);color:var(--success);letter-spacing:0}
+.live i{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.page-sub{margin-top:4px;font-size:14px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost svg{font-size:14px}
+.btn-warn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+          background:var(--warning);color:#fff;font-size:14px;font-weight:500;transition:background .18s}
+.btn-warn:hover{background:#D97706}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.card{border:1px solid var(--border);border-radius:12px;background:var(--card);padding:20px}
+.stat-top{display:flex;align-items:flex-start;justify-content:space-between}
+.stat-label{font-size:13px;color:var(--muted)}
+.ic{padding:7px;border-radius:8px;display:flex;font-size:16px}
+.ic-p{background:var(--primary-subtle);color:var(--primary)}
+.ic-s{background:var(--success-subtle);color:var(--success)}
+.ic-w{background:var(--warning-subtle);color:var(--warning)}
+.ic-d{background:var(--danger-subtle);color:var(--danger)}
+.stat-num{margin-top:10px;font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat-num small{font-size:15px;font-weight:600;color:var(--muted)}
+.stat-foot{margin-top:4px;font-size:12px;color:var(--subtle)}
+
+/* Worker 槽位 */
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap}
+h2{font-size:17px;font-weight:600}
+.sec-head .note{font-size:12px;color:var(--subtle)}
+.workers{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.wk{border:1px solid var(--border);border-radius:10px;background:var(--card);padding:14px}
+.wk.busy{border-color:color-mix(in srgb,var(--primary) 35%,transparent)}
+.wk.idle{opacity:.72}
+.wk-top{display:flex;align-items:center;gap:8px}
+.wk-id{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;color:var(--muted)}
+.wk-state{margin-left:auto;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:999px}
+.wk.busy .wk-state{background:var(--primary-subtle);color:var(--primary)}
+.wk.idle .wk-state{background:var(--surface);color:var(--muted)}
+html.dark .wk.idle .wk-state{background:var(--border)}
+.wk-body{margin-top:10px}
+.wk-body p{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wk-body span{font-size:11.5px;color:var(--muted)}
+.wk-prog{margin-top:10px;height:4px;border-radius:999px;background:var(--surface);overflow:hidden}
+html.dark .wk-prog{background:var(--border)}
+.wk-prog span{display:block;height:100%;border-radius:999px;background:var(--primary)}
+.wk-idle-txt{margin-top:10px;font-size:12.5px;color:var(--subtle)}
+
+/* 队列表 */
+.table{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.t-head{display:grid;grid-template-columns:100px 1.3fr 1.6fr 110px 90px 100px 90px;gap:14px;padding:12px 20px;
+        background:var(--surface);font-size:11px;font-weight:600;color:var(--muted);
+        letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);align-items:center}
+html.dark .t-head{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.t-row{display:grid;grid-template-columns:100px 1.3fr 1.6fr 110px 90px 100px 90px;gap:14px;padding:13px 20px;
+       align-items:center;border-bottom:1px solid var(--border);transition:background .18s}
+.t-row:last-child{border-bottom:none}
+.t-row:hover{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.sid{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12px;color:var(--muted)}
+.who{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who span{display:block;font-size:11px;color:var(--muted);font-weight:400}
+.prob{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prob span{display:block;font-size:11px;color:var(--muted);font-family:"SF Mono",Menlo,Consolas,monospace}
+.st{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:500}
+.st i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.st.run{background:var(--primary-subtle);color:var(--primary)}
+.st.wait{background:var(--warning-subtle);color:var(--warning)}
+.st.ok{background:var(--success-subtle);color:var(--success)}
+.st.err{background:var(--danger-subtle);color:var(--danger)}
+.dur{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.at{font-size:12px;color:var(--subtle);font-variant-numeric:tabular-nums}
+.t-ops{display:flex;gap:4px;justify-content:flex-end}
+.t-ops button{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+              color:var(--subtle);transition:.18s}
+.t-ops button:hover{background:var(--surface);color:var(--fg)}
+.t-ops button.retry:hover{background:var(--primary-subtle);color:var(--primary)}
+.t-ops button.danger:hover{background:var(--danger-subtle);color:var(--danger)}
+
+/* 失败任务 */
+.fail-card{border:1px solid color-mix(in srgb,var(--danger) 30%,transparent);border-radius:12px;
+           background:color-mix(in srgb,var(--danger-subtle) 35%,var(--card));overflow:hidden}
+.fail-head{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid color-mix(in srgb,var(--danger) 20%,transparent)}
+.fail-head .fh-ic{width:36px;height:36px;border-radius:9px;background:var(--danger);color:#fff;
+                  display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.fail-head h3{font-size:15px;font-weight:600;color:var(--danger)}
+.fail-head p{font-size:12.5px;color:var(--muted);margin-top:2px}
+.fail-head .acts{margin-left:auto;display:flex;gap:8px}
+.fail-row{display:flex;align-items:flex-start;gap:14px;padding:14px 20px;
+          border-bottom:1px solid color-mix(in srgb,var(--danger) 15%,transparent)}
+.fail-row:last-child{border-bottom:none}
+.fail-row .fr-id{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;color:var(--muted);
+                 flex-shrink:0;padding-top:2px;width:78px}
+.fail-row .fr-body{flex:1;min-width:0}
+.fail-row .fr-body p{font-size:13px;font-weight:500}
+.fail-row .fr-body code{display:block;margin-top:5px;font-family:"SF Mono",Menlo,Consolas,monospace;
+                        font-size:11.5px;color:var(--danger);background:color-mix(in srgb,var(--danger-subtle) 60%,transparent);
+                        padding:6px 9px;border-radius:6px;line-height:1.6;word-break:break-all}
+.fail-row .fr-meta{font-size:11.5px;color:var(--muted);margin-top:5px}
+.fail-row .fr-act{flex-shrink:0}
+
+/* 沙箱参数（只读） */
+.sandbox{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.sb-head{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid var(--border);
+         background:var(--surface);font-size:12px;font-weight:600;color:var(--muted);
+         letter-spacing:.06em;text-transform:uppercase}
+html.dark .sb-head{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.sb-head .lock{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:11px;
+               padding:2px 9px;border-radius:999px;background:var(--danger-subtle);color:var(--danger);
+               text-transform:none;letter-spacing:0}
+.sb-body{padding:16px 20px;display:flex;flex-wrap:wrap;gap:8px}
+.sb-flag{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;padding:5px 10px;border-radius:6px;
+         background:var(--surface);color:var(--fg);border:1px solid var(--border)}
+html.dark .sb-flag{background:var(--border);border-color:transparent}
+.sb-note{padding:0 20px 16px;font-size:12px;color:var(--muted);line-height:1.6}
+
+.foot{padding:18px 22px;border-top:1px solid var(--border);background:var(--surface);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+html.dark .foot{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.foot .warn-tag{display:inline-flex;align-items:center;gap:5px;font-weight:500}
+.foot .warn-tag svg{stroke:var(--warning);width:14px;height:14px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+
+/* 详情弹窗 */
+.jd-mask{position:fixed;inset:0;background:var(--overlay);backdrop-filter:blur(2px);
+        display:none;align-items:center;justify-content:center;z-index:80;padding:24px}
+.jd-mask.open{display:flex}
+.jd{width:100%;max-width:580px;border:1px solid var(--border);border-radius:14px;background:var(--card);
+    box-shadow:0 24px 48px -12px rgba(15,23,42,.3);overflow:hidden;animation:fadeUp .22s ease-out both}
+html.dark .jd{box-shadow:0 24px 48px -12px rgba(0,0,0,.7)}
+.jd-hd{display:flex;align-items:flex-start;gap:12px;padding:18px 22px 16px;border-bottom:1px solid var(--border)}
+.jd-hd .ic{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.jd-hd .ic.ok{background:var(--success-subtle);color:var(--success)}
+.jd-hd h3{font-size:15.5px;font-weight:600;line-height:1.35;padding-top:5px}
+.jd-hd p{font-size:12.5px;color:var(--muted);margin-top:3px}
+.jd-hd .close{margin-left:auto;padding:6px;border-radius:7px;color:var(--subtle);display:flex;font-size:17px}
+.jd-hd .close:hover{background:var(--surface);color:var(--fg)}
+.jd-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:1px solid var(--border)}
+.jd-stats .s{padding:14px 18px;border-right:1px solid var(--border)}
+.jd-stats .s:last-child{border-right:none}
+.jd-stats .s span{display:block;font-size:11.5px;color:var(--muted);margin-bottom:4px}
+.jd-stats .s b{display:block;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.jd-stats .s .pill{margin-top:2px}
+.jd-body{padding:18px 22px;display:flex;flex-direction:column;gap:18px;max-height:62vh;overflow-y:auto}
+.jd-h{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.jd-h em{font-style:normal;font-size:11px;color:var(--subtle);text-transform:none;letter-spacing:0;font-weight:400}
+.jd-tests{width:100%;border:1px solid var(--border);border-radius:8px;overflow:hidden;font-size:12.5px}
+.jd-tests th,.jd-tests td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.jd-tests th{background:var(--surface);font-weight:600;color:var(--muted);font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+html.dark .jd-tests th{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.jd-tests tr:last-child td{border-bottom:none}
+.jd-tests td.mono{font-family:"SF Mono",Menlo,Consolas,monospace;color:var(--muted);font-variant-numeric:tabular-nums}
+.jd-code{border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.jd-code .bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);font-size:11.5px;color:var(--muted);border-bottom:1px solid var(--border)}
+html.dark .jd-code .bar{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.jd-code .bar b{font-family:"SF Mono",Menlo,Consolas,monospace;color:var(--fg);font-weight:500}
+.jd-code .bar .tag{margin-left:auto;font-size:10.5px;padding:2px 7px;border-radius:999px;background:var(--primary-subtle);color:var(--primary);font-weight:600}
+.jd-code pre{margin:0;padding:12px 14px;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;line-height:1.65;color:var(--fg);overflow-x:auto;background:var(--card)}
+.jd-code .ln{color:var(--subtle);user-select:none;display:inline-block;width:24px;text-align:right;margin-right:14px}
+.jd-foot{padding:14px 22px;border-top:1px solid var(--border);background:var(--surface);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+html.dark .jd-foot{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.jd-foot .meta{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:5px}
+.jd-foot .meta svg{color:var(--subtle)}
+
+@media(max-width:1100px){
+  .side{display:none}
+  .stats{grid-template-columns:1fr 1fr}
+  .workers{grid-template-columns:1fr 1fr}
+  .t-head,.t-row{grid-template-columns:90px 1.2fr 110px 90px;gap:12px}
+  .t-head .h3,.t-head .h6,
+  .t-row > *:nth-child(3),.t-row > *:nth-child(6){display:none}
+  .content{padding:24px 20px}
+  .topbar{padding:0 20px}
+}
+@media(max-width:640px){ .stats,.workers{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+<symbol id="i-grad" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="m20.6 13.4-8.2 8.2a2 2 0 0 1-2.8 0l-7-7A2 2 0 0 1 2 13.2V4a2 2 0 0 1 2-2h9.2a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+<symbol id="i-exam" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="3" rx="1"/><path d="M9 11h6M9 14h6M9 17h3"/></symbol>
+<symbol id="i-judge" viewBox="0 0 24 24"><path d="m12 2 3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></symbol>
+<symbol id="i-set" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="i-reload" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8"/><path d="M3 3v5h5"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="m21.7 18-9-15.3a1 1 0 0 0-1.7 0L1.3 18a1 1 0 0 0 .9 1.5h18.6a1 1 0 0 0 .9-1.5z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></symbol>
+<symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-shield"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">管理员</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">总览</p>
+      <a class="nav-item" href="admin-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <p class="nav-label">组织</p>
+      <a class="nav-item" href="admin-students.html"><svg><use href="#i-users"/></svg>学生</a>
+      <a class="nav-item" href="admin-teachers.html"><svg><use href="#i-grad"/></svg>教师</a>
+      <p class="nav-label">内容</p>
+      <a class="nav-item" href="admin-exams.html"><svg><use href="#i-exam"/></svg>考试<span class="nav-count">47</span></a>
+<a class="nav-item" href="admin-courses.html"><svg><use href="#i-book"/></svg>课程</a>
+      <a class="nav-item" href="admin-banks.html"><svg><use href="#i-tag"/></svg>题库</a>
+      <p class="nav-label">系统</p>
+      <a class="nav-item active"><svg><use href="#i-judge"/></svg>评测队列<span class="nav-count">2</span></a>
+      <a class="nav-item" href="admin-settings.html"><svg><use href="#i-set"/></svg>系统设置</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈主任</div>
+        <div class="s">系统管理员</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb"><b>系统</b> / 评测队列</span>
+      <div class="search">
+        <svg><use href="#i-search"/></svg>
+        <input placeholder="按提交 ID、学号、题号搜索…">
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <div class="page-head anim">
+          <div>
+            <h1>评测队列 <span class="live"><i></i>实时</span></h1>
+            <p class="page-sub">沙箱评测的运行状态与失败排查 · 每 2 秒自动刷新</p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-ghost" onclick="refreshNow()"><svg><use href="#i-reload"/></svg>立即刷新</button>
+            <button class="btn-warn" onclick="pauseIntake()"><svg><use href="#i-pause"/></svg>暂停接单</button>
+          </div>
+        </div>
+
+        <div class="stats anim" style="animation-delay:.06s">
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">运行中</span>
+              <div class="ic ic-p"><svg><use href="#i-cpu"/></svg></div></div>
+            <p class="stat-num">6 <small>/ 6</small></p>
+            <p class="stat-foot">worker 并发已满载</p>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">等待中</span>
+              <div class="ic ic-w"><svg><use href="#i-clock"/></svg></div></div>
+            <p class="stat-num">14</p>
+            <p class="stat-foot">预计 12 秒清空</p>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">最近 1 小时通过</span>
+              <div class="ic ic-s"><svg><use href="#i-check"/></svg></div></div>
+            <p class="stat-num">238</p>
+            <p class="stat-foot">平均耗时 1.4 s</p>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">失败</span>
+              <div class="ic ic-d"><svg><use href="#i-warn"/></svg></div></div>
+            <p class="stat-num">2</p>
+            <p class="stat-foot">均为 SYSTEM_ERROR</p>
+          </div>
+        </div>
+
+        <!-- 失败任务：需要处理，放在最前 -->
+        <section class="anim" style="animation-delay:.10s">
+          <div class="fail-card">
+            <div class="fail-head">
+              <div class="fh-ic"><svg><use href="#i-warn"/></svg></div>
+              <div>
+                <h3>2 个任务因系统错误失败</h3>
+                <p>非学生代码问题 · 重试前建议先确认 Docker 守护进程与镜像状态</p>
+              </div>
+              <div class="acts">
+                <button class="btn-ghost" onclick="retryAll()"><svg><use href="#i-reload"/></svg>全部重试</button>
+              </div>
+            </div>
+            <div class="fail-row">
+              <div class="fr-id">#S48213</div>
+              <div class="fr-body">
+                <p>容器启动超时</p>
+                <code>SYSTEM_ERROR: container create timeout after 10s (image: pylearn-py310:latest)</code>
+                <p class="fr-meta">高一(1)班 · 张子轩 20244001 · 题目 P0118 二叉树层序遍历 · 4 分钟前</p>
+              </div>
+              <div class="fr-act"><button class="btn-ghost" onclick="retryFail('S48213','张子轩','二叉树层序遍历 P0118','容器启动超时')"><svg><use href="#i-reload"/></svg>重试</button></div>
+            </div>
+            <div class="fail-row">
+              <div class="fr-id">#S48207</div>
+              <div class="fr-body">
+                <p>内存限制配置被拒绝</p>
+                <code>SYSTEM_ERROR: cannot set --pids-limit=64: cgroup v2 controller not mounted</code>
+                <p class="fr-meta">高二(3)班 · 李梓涵 20234012 · 题目 P0203 KNN 鸢尾花分类 · 11 分钟前</p>
+              </div>
+              <div class="fr-act"><button class="btn-ghost" onclick="retryFail('S48207','李梓涵','KNN 鸢尾花分类 P0203','内存限制配置被拒绝')"><svg><use href="#i-reload"/></svg>重试</button></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Worker 槽位 -->
+        <section class="anim" style="animation-delay:.14s">
+          <div class="sec-head">
+            <h2>Worker 槽位</h2>
+            <span class="note">并发上限 6 · 单任务超时 10 s · 内存上限 256 MB</span>
+          </div>
+          <div class="workers">
+            <div class="wk busy">
+              <div class="wk-top"><span class="wk-id">worker-1</span><span class="wk-state">运行中</span></div>
+              <div class="wk-body"><p>P0001 两数之和</p><span>20244003 · 王皓宇</span></div>
+              <div class="wk-prog"><span style="width:72%"></span></div>
+            </div>
+            <div class="wk busy">
+              <div class="wk-top"><span class="wk-id">worker-2</span><span class="wk-state">运行中</span></div>
+              <div class="wk-body"><p>P0042 读取 CSV 并统计列均值</p><span>20234008 · 陈思琪</span></div>
+              <div class="wk-prog"><span style="width:38%"></span></div>
+            </div>
+            <div class="wk busy">
+              <div class="wk-top"><span class="wk-id">worker-3</span><span class="wk-state">运行中</span></div>
+              <div class="wk-body"><p>P0166 最长公共子序列</p><span>20224019 · 赵子轩</span></div>
+              <div class="wk-prog"><span style="width:91%"></span></div>
+            </div>
+            <div class="wk busy">
+              <div class="wk-top"><span class="wk-id">worker-4</span><span class="wk-state">运行中</span></div>
+              <div class="wk-body"><p>P0028 列表去重并保持顺序</p><span>20244015 · 孙雨桐</span></div>
+              <div class="wk-prog"><span style="width:24%"></span></div>
+            </div>
+            <div class="wk busy">
+              <div class="wk-top"><span class="wk-id">worker-5</span><span class="wk-state">运行中</span></div>
+              <div class="wk-body"><p>P0312 解析 URL 协议与域名</p><span>20234026 · 吴梦琪</span></div>
+              <div class="wk-prog"><span style="width:56%"></span></div>
+            </div>
+            <div class="wk busy">
+              <div class="wk-top"><span class="wk-id">worker-6</span><span class="wk-state">运行中</span></div>
+              <div class="wk-body"><p>P0527 蒙特卡洛估算圆周率</p><span>20224031 · 周辰逸</span></div>
+              <div class="wk-prog"><span style="width:13%"></span></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 队列明细 -->
+        <section class="anim" style="animation-delay:.18s">
+          <div class="sec-head">
+            <h2>队列明细</h2>
+            <span class="note">按入队时间升序 · 显示前 8 条</span>
+          </div>
+          <div class="table">
+            <div class="t-head">
+              <div>提交 ID</div>
+              <div>学生</div>
+              <div class="h3">题目</div>
+              <div>状态</div>
+              <div>耗时</div>
+              <div class="h6">入队时间</div>
+              <div style="text-align:right">操作</div>
+            </div>
+
+            <div class="t-row">
+              <div class="sid">#S48231</div>
+              <div class="who">王皓宇<span>高一(1)班 · 20244003</span></div>
+              <div class="prob">两数之和<span>P0001</span></div>
+              <div><span class="st run"><i></i>运行中</span></div>
+              <div class="dur">1.2 s</div>
+              <div class="at">14:32:08</div>
+              <div class="t-ops"><button title="终止" class="danger" onclick="stopJob('S48231','王皓宇 高一(1)班','两数之和 P0001')"><svg><use href="#i-x"/></svg></button></div>
+            </div>
+
+            <div class="t-row">
+              <div class="sid">#S48232</div>
+              <div class="who">陈思琪<span>高二(3)班 · 20234008</span></div>
+              <div class="prob">读取 CSV 并统计列均值<span>P0042</span></div>
+              <div><span class="st run"><i></i>运行中</span></div>
+              <div class="dur">0.6 s</div>
+              <div class="at">14:32:09</div>
+              <div class="t-ops"><button title="终止" class="danger" onclick="stopJob('S48232','陈思琪 高二(3)班','读取 CSV 并统计列均值 P0042')"><svg><use href="#i-x"/></svg></button></div>
+            </div>
+
+            <div class="t-row">
+              <div class="sid">#S48233</div>
+              <div class="who">林晓慧<span>高一(2)班 · 20244022</span></div>
+              <div class="prob">二叉树层序遍历<span>P0118</span></div>
+              <div><span class="st wait"><i></i>等待中</span></div>
+              <div class="dur">—</div>
+              <div class="at">14:32:11</div>
+              <div class="t-ops">
+                <button title="提前" class="retry" onclick="promoteJob('S48233','林晓慧 高一(2)班','二叉树层序遍历 P0118')"><svg><use href="#i-clock"/></svg></button>
+                <button title="移出队列" class="danger" onclick="removeJob('S48233','林晓慧 高一(2)班','二叉树层序遍历 P0118')"><svg><use href="#i-trash"/></svg></button>
+              </div>
+            </div>
+
+            <div class="t-row">
+              <div class="sid">#S48234</div>
+              <div class="who">黄子涵<span>高二(1)班 · 20234044</span></div>
+              <div class="prob">KNN 鸢尾花分类<span>P0203</span></div>
+              <div><span class="st wait"><i></i>等待中</span></div>
+              <div class="dur">—</div>
+              <div class="at">14:32:12</div>
+              <div class="t-ops">
+                <button title="提前" class="retry" onclick="promoteJob('S48234','黄子涵 高二(1)班','KNN 鸢尾花分类 P0203')"><svg><use href="#i-clock"/></svg></button>
+                <button title="移出队列" class="danger" onclick="removeJob('S48234','黄子涵 高二(1)班','KNN 鸢尾花分类 P0203')"><svg><use href="#i-trash"/></svg></button>
+              </div>
+            </div>
+
+            <div class="t-row">
+              <div class="sid">#S48213</div>
+              <div class="who">张子轩<span>高一(1)班 · 20244001</span></div>
+              <div class="prob">二叉树层序遍历<span>P0118</span></div>
+              <div><span class="st err"><i></i>系统错误</span></div>
+              <div class="dur">10.0 s</div>
+              <div class="at">14:28:02</div>
+              <div class="t-ops"><button title="重试" class="retry" onclick="retryJob('S48213','张子轩 高一(1)班','二叉树层序遍历 P0118','容器启动超时')"><svg><use href="#i-reload"/></svg></button></div>
+            </div>
+
+            <div class="t-row">
+              <div class="sid">#S48207</div>
+              <div class="who">李梓涵<span>高二(3)班 · 20234012</span></div>
+              <div class="prob">KNN 鸢尾花分类<span>P0203</span></div>
+              <div><span class="st err"><i></i>系统错误</span></div>
+              <div class="dur">0.3 s</div>
+              <div class="at">14:21:47</div>
+              <div class="t-ops"><button title="重试" class="retry" onclick="retryJob('S48207','李梓涵 高二(3)班','KNN 鸢尾花分类 P0203','内存限制配置被拒绝')"><svg><use href="#i-reload"/></svg></button></div>
+            </div>
+
+            <div class="t-row">
+              <div class="sid">#S48198</div>
+              <div class="who">孙雨桐<span>高一(1)班 · 20244015</span></div>
+              <div class="prob">列表去重并保持顺序<span>P0028</span></div>
+              <div><span class="st ok"><i></i>已通过</span></div>
+              <div class="dur">0.4 s</div>
+              <div class="at">14:19:33</div>
+              <div class="t-ops"><button title="查看详情" onclick="viewDetail('S48198','孙雨桐 高一(1)班 20244015','列表去重并保持顺序 P0028','ok','0.4 s','14:19:33','12.3 MB','0.06 s')"><svg><use href="#i-info"/></svg></button></div>
+            </div>
+
+            <div class="t-row">
+              <div class="sid">#S48195</div>
+              <div class="who">吴梦琪<span>高二(3)班 · 20234026</span></div>
+              <div class="prob">解析 URL 协议与域名<span>P0312</span></div>
+              <div><span class="st ok"><i></i>已通过</span></div>
+              <div class="dur">0.1 s</div>
+              <div class="at">14:18:50</div>
+              <div class="t-ops"><button title="查看详情" onclick="viewDetail('S48195','吴梦琪 高二(3)班 20234026','解析 URL 协议与域名 P0312','ok','0.1 s','14:18:50','9.7 MB','0.02 s')"><svg><use href="#i-info"/></svg></button></div>
+            </div>
+
+            <div class="foot">
+              <span class="warn-tag">
+                <svg><use href="#i-info"/></svg>
+                「暂停接单」只停止取新任务，已在跑的容器会跑完 · 终止运行中任务会记为系统错误并允许学生重交
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 沙箱参数（只读） -->
+        <section class="anim" style="animation-delay:.22s">
+          <div class="sandbox">
+            <div class="sb-head">
+              沙箱运行参数
+              <span class="lock"><svg style="font-size:11px"><use href="#i-lock"/></svg>不可在界面修改</span>
+            </div>
+            <div class="sb-body">
+              <span class="sb-flag">--network=none</span>
+              <span class="sb-flag">--read-only</span>
+              <span class="sb-flag">--cap-drop=ALL</span>
+              <span class="sb-flag">--pids-limit=64</span>
+              <span class="sb-flag">--security-opt=no-new-privileges</span>
+              <span class="sb-flag">--memory=256m</span>
+              <span class="sb-flag">--cpus=1</span>
+            </div>
+            <p class="sb-note">
+              这些参数是评测隔离的安全底线，仅可通过部署配置变更，界面不提供开关，避免为排查问题临时放开后忘记恢复。
+            </p>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- 提交详情弹窗 -->
+<div class="jd-mask" id="jd-mask" onclick="if(event.target===this)closeDetail()">
+  <div class="jd">
+    <div class="jd-hd">
+      <div class="ic ok"><svg><use href="#i-check"/></svg></div>
+      <div>
+        <h3 id="jd-title">提交详情</h3>
+        <p id="jd-sub">S48198 · 孙雨桐 高一(1)班 20244015 · 列表去重并保持顺序 P0028</p>
+      </div>
+      <button class="close" onclick="closeDetail()"><svg><use href="#i-x"/></svg></button>
+    </div>
+    <div class="jd-stats">
+      <div class="s"><span>状态</span><b><span class="pill ok"><svg style="font-size:11px"><use href="#i-check"/></svg>已通过</span></b></div>
+      <div class="s"><span>总耗时</span><b id="jd-dur" class="mono">0.4 s</b></div>
+      <div class="s"><span>内存峰值</span><b id="jd-mem" class="mono">12.3 MB</b></div>
+      <div class="s"><span>CPU 时间</span><b id="jd-cpu" class="mono">0.06 s</b></div>
+    </div>
+    <div class="jd-body">
+      <div>
+        <div class="jd-h">测试用例 <em>5 / 5 通过</em></div>
+        <table class="jd-tests">
+          <thead><tr><th>#</th><th>状态</th><th>耗时</th><th>内存</th><th>分值</th></tr></thead>
+          <tbody id="jd-test-rows">
+            <tr><td class="mono">1</td><td><span class="pill ok">AC</span></td><td class="mono">0.08 s</td><td class="mono">9.1 MB</td><td class="mono">20</td></tr>
+            <tr><td class="mono">2</td><td><span class="pill ok">AC</span></td><td class="mono">0.11 s</td><td class="mono">11.4 MB</td><td class="mono">20</td></tr>
+            <tr><td class="mono">3</td><td><span class="pill ok">AC</span></td><td class="mono">0.07 s</td><td class="mono">8.7 MB</td><td class="mono">20</td></tr>
+            <tr><td class="mono">4</td><td><span class="pill ok">AC</span></td><td class="mono">0.09 s</td><td class="mono">12.3 MB</td><td class="mono">20</td></tr>
+            <tr><td class="mono">5</td><td><span class="pill ok">AC</span></td><td class="mono">0.05 s</td><td class="mono">9.6 MB</td><td class="mono">20</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div class="jd-h">代码 <em>Python 3.10 · 124 字符</em></div>
+        <div class="jd-code">
+          <div class="bar"><b>solution.py</b><span>2024-09-02 14:19:31</span><span class="tag">UTF-8</span></div>
+          <pre id="jd-code"><span class="ln">1</span><span class="ln">2</span><span class="ln">3</span><span class="ln">4</span><span class="ln">5</span><span class="ln">6</span><span class="ln">7</span><span class="ln">8</span></pre>
+        </div>
+      </div>
+    </div>
+    <div class="jd-foot">
+      <span class="meta"><svg><use href="#i-clock"/></svg>提交于 <span id="jd-at">14:19:33</span> · 入队 → 出队用时 0.4 s</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn-ghost" onclick="closeDetail()">关闭</button>
+        <button class="btn-ghost" onclick="toast('已复制提交 ID')">复制 ID</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+/* 队列操作 */
+function stopJob(id, who, prob){
+  Modal.confirm({
+    title:'终止运行中任务？',
+    body:['提交 '+id+' · '+who,'题目 '+prob,'终止后会记为 SYSTEM_ERROR，学生可重新提交。已运行的容器会被 SIGKILL，立即释放 worker 槽位。'],
+    confirmText:'终止任务', danger:true,
+    onConfirm:function(){ toast('已终止 '+id+' · 槽位已释放'); }
+  });
+}
+function promoteJob(id, who, prob){
+  Modal.confirm({
+    title:'提前执行该任务？',
+    body:['提交 '+id+' · '+who,'题目 '+prob,'将跳过剩余等待任务，按最高优先级调度到下一个空闲 worker。'],
+    confirmText:'提前执行',
+    onConfirm:function(){ toast('已提前 '+id+' · 正在调度'); }
+  });
+}
+function removeJob(id, who, prob){
+  Modal.confirm({
+    title:'将该任务移出队列？',
+    body:['提交 '+id+' · '+who,'题目 '+prob,'移出后该提交记为已取消，学生成绩按作业规则判定（一般计 0 分）。'],
+    confirmText:'移出队列', danger:true,
+    onConfirm:function(){ toast('已移出队列 '+id); }
+  });
+}
+function retryJob(id, who, prob, err){
+  Modal.confirm({
+    title:'重新提交该任务？',
+    body:['提交 '+id+' · '+who,'题目 '+prob,'失败原因：'+err,'任务会进入队列末尾等待，与新提交同等优先级。'],
+    confirmText:'重新提交',
+    onConfirm:function(){ toast('已重新入队 '+id); }
+  });
+}
+function retryFail(id, who, prob, err){
+  Modal.confirm({
+    title:'重试失败任务？',
+    body:['提交 '+id+' · '+who,'题目 '+prob,'失败原因：'+err,'重试前建议先排查 Docker 守护进程与镜像状态。'],
+    confirmText:'重新提交',
+    onConfirm:function(){ toast('已重新入队 '+id); }
+  });
+}
+function retryAll(){
+  Modal.confirm({
+    title:'全部重试这 2 个失败任务？',
+    body:['将清空当前 SYSTEM_ERROR 列表，全部重新入队等待。','两个失败原因不同，建议先排查再批量重试。'],
+    confirmText:'全部重试',
+    onConfirm:function(){ toast('已重新入队 2 个任务'); }
+  });
+}
+function pauseIntake(){
+  Modal.confirm({
+    title:'暂停接单？',
+    body:['worker 槽位会继续跑完当前任务，只是不再取新任务进入运行态。','恢复接单后正常调度。'],
+    confirmText:'暂停接单',
+    onConfirm:function(){ toast('已暂停接单 · 当前任务跑完后槽位进入 idle'); }
+  });
+}
+function refreshNow(){
+  toast('已刷新 · ' + new Date().toLocaleTimeString('zh-CN',{hour12:false}));
+}
+
+/* 详情弹窗 */
+var SAMPLE_CODE = [
+  'def solve(nums):',
+  '    seen = set()',
+  '    out = []',
+  '    for x in nums:',
+  '        if x not in seen:',
+  '            seen.add(x)',
+  '            out.append(x)',
+  '    return out'
+].join('\n');
+
+function viewDetail(id, who, prob, status, dur, at, mem, cpu){
+  document.getElementById('jd-title').textContent = '提交详情 · ' + id;
+  document.getElementById('jd-sub').textContent = who + ' · ' + prob;
+  document.getElementById('jd-dur').textContent = dur;
+  document.getElementById('jd-mem').textContent = mem;
+  document.getElementById('jd-cpu').textContent = cpu;
+  document.getElementById('jd-at').textContent = at;
+  var codeEl = document.getElementById('jd-code');
+  var lines = SAMPLE_CODE.split('\n');
+  codeEl.innerHTML = lines.map(function(l, i){
+    return '<span class="ln">'+(i+1)+'</span>' + l.replace(/ /g, '\u00a0');
+  }).join('\n');
+  document.getElementById('jd-mask').classList.add('open');
+}
+function closeDetail(){
+  document.getElementById('jd-mask').classList.remove('open');
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape' && document.getElementById('jd-mask').classList.contains('open')) closeDetail();
+});
+</script>
+</body>
+</html>

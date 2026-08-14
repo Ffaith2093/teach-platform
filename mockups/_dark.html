@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>dark</title></head>
+<body><script>
+var u = new URL(location.href).searchParams.get('u') || 'student-dashboard.html';
+try { localStorage.setItem('theme', 'dark'); } catch(e){}
+location.replace(u);
+</script></body></html>

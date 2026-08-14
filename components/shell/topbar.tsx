@@ -1,0 +1,46 @@
+"use client";
+
+import * as React from "react";
+import { Bell, Search } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Input } from "@/components/ui/input";
+
+interface TopbarProps {
+  crumbs: { label: string; href?: string }[];
+}
+
+export function Topbar({ crumbs }: TopbarProps) {
+  return (
+    <header className="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-border bg-background/95 px-8 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <nav aria-label="breadcrumb" className="flex items-center gap-1 text-sm text-muted-foreground">
+        {crumbs.map((c, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && <span className="text-subtle-foreground">/</span>}
+            {c.href ? (
+              <a href={c.href} className="transition-colors hover:text-foreground">
+                {c.label}
+              </a>
+            ) : (
+              <span className="font-medium text-foreground">{c.label}</span>
+            )}
+          </React.Fragment>
+        ))}
+      </nav>
+      <div className="relative ml-auto hidden w-full max-w-sm md:block">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle-foreground" />
+        <Input placeholder="搜索…" className="pl-9" />
+      </div>
+      <div className="ml-auto flex items-center gap-1.5 md:ml-0">
+        <ThemeToggle />
+        <button
+          type="button"
+          aria-label="通知"
+          className="relative rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <Bell className="h-[18px] w-[18px]" />
+          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-2 border-background bg-danger" />
+        </button>
+      </div>
+    </header>
+  );
+}

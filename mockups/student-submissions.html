@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>提交记录 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --pink:#EC4899; --pink-subtle:#FCE7F3;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0; --border-strong:#CBD5E1;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171; --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --pink:#F472B6; --pink-subtle:#4A1232;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548; --border-strong:#3D4A60;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--surface);color:var(--fg);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--primary),#38BDF8);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--accent-subtle);color:var(--accent);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto;min-height:0}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);margin-bottom:2px;transition:background .18s,color .18s}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;
+         background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,#0EA5E9,#38BDF8);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:14px;
+        padding:0 24px;border-bottom:1px solid var(--border);background:var(--bg)}
+.searchbox{flex:1;max-width:480px;position:relative}
+.searchbox input{width:100%;height:36px;padding:0 14px 0 38px;border-radius:8px;border:1px solid var(--border);
+                 background:var(--surface);font-size:13.5px;color:var(--fg);outline:none;transition:.18s}
+.searchbox input:focus{border-color:var(--primary);background:var(--card)}
+.searchbox svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--subtle)}
+.top-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;
+          display:flex;transition:background .18s,color .18s;position:relative}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+.icon-btn .dot{position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--danger);border:2px solid var(--bg)}
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;
+       font-size:11px;font-weight:500;white-space:nowrap}
+.badge i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.b-w{background:var(--warning-subtle);color:var(--warning)}
+.b-d{background:var(--danger-subtle);color:var(--danger)}
+.b-p{background:var(--primary-subtle);color:var(--primary)}
+.b-s{background:var(--success-subtle);color:var(--success)}
+.b-a{background:var(--accent-subtle);color:var(--accent)}
+.b-n{background:var(--purple-subtle);color:var(--purple)}
+.b-m{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:13px;font-weight:500;transition:background .18s}
+.btn:hover{background:var(--primary-hover)}
+.btn.ghost{background:var(--card);color:var(--muted);border:1px solid var(--border)}
+.btn.sm{padding:5px 12px;font-size:12px}
+
+.content{padding:28px 32px 48px;max-width:1320px;width:100%;margin:0 auto}
+
+.page-h{display:flex;align-items:flex-end;gap:24px;margin-bottom:20px;flex-wrap:wrap}
+.page-h .ph-left{flex:1;min-width:240px}
+.page-h h1{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.page-h .sub{margin-top:6px;color:var(--muted);font-size:13.5px}
+.page-h .sub b{color:var(--fg)}
+.page-h .ph-right{display:flex;gap:8px;flex-wrap:wrap}
+
+/* 统计卡 */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.stat{padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--card);
+      display:flex;align-items:center;gap:12px}
+.stat-ic{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.stat-ic.p{background:var(--primary-subtle);color:var(--primary)}
+.stat-ic.s{background:var(--success-subtle);color:var(--success)}
+.stat-ic.w{background:var(--warning-subtle);color:var(--warning)}
+.stat-ic.n{background:var(--purple-subtle);color:var(--purple)}
+.stat-ic.a{background:var(--accent-subtle);color:var(--accent)}
+.stat .n{font-size:20px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.stat .lb{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* 工具条（搜索） */
+.toolbar{display:flex;align-items:center;gap:12px;padding:11px 16px;border:1px solid var(--border);
+         border-radius:12px;background:var(--card);margin-bottom:14px;flex-wrap:wrap}
+.toolbar .searchbox{position:relative;flex:1;max-width:420px;display:block}
+.toolbar .searchbox input{width:100%;height:34px;padding:0 14px 0 38px;border-radius:8px;
+                          border:1px solid var(--border);background:var(--surface);font-size:13px;
+                          color:var(--fg);outline:none;transition:.18s}
+.toolbar .searchbox input:focus{border-color:var(--primary);background:var(--card)}
+.toolbar .searchbox svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);
+                         font-size:14px;color:var(--subtle)}
+.toolbar .searchbox .clr{position:absolute;right:10px;top:50%;transform:translateY(-50%);
+                         font-size:13px;color:var(--subtle);padding:2px;display:none;border-radius:4px}
+.toolbar .searchbox .clr:hover{color:var(--fg);background:var(--surface)}
+.toolbar .searchbox.has-val .clr{display:flex}
+.toolbar-meta{font-size:12.5px;color:var(--muted);white-space:nowrap;margin-left:auto}
+.toolbar-meta b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* 抽屉 */
+.drawer-mask{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:50;display:none;backdrop-filter:blur(2px)}
+.drawer-mask.on{display:block;animation:fadeIn .18s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:780px;max-width:100vw;background:var(--bg);z-index:51;
+        box-shadow:-12px 0 32px -8px rgba(15,23,42,.18);display:none;flex-direction:column}
+.drawer.on{display:flex;animation:slideIn .22s ease}
+@keyframes slideIn{from{transform:translateX(40px);opacity:.6}to{transform:translateX(0);opacity:1}}
+.drawer-h{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;
+          border-bottom:1px solid var(--border);background:var(--card);flex-shrink:0}
+.drawer-h h2{font-size:15px;font-weight:600;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.drawer-h .x{padding:6px;border-radius:7px;color:var(--muted);display:flex;transition:.18s}
+.drawer-h .x:hover{background:var(--surface);color:var(--fg)}
+.drawer-b{flex:1;overflow-y:auto;padding:22px 24px 28px}
+.drawer-f{padding:12px 22px;border-top:1px solid var(--border);background:var(--card);
+          display:flex;justify-content:space-between;align-items:center;gap:8px;flex-shrink:0}
+.drawer-f .lbl{font-size:12px;color:var(--muted)}
+.btn.ghost:hover{background:var(--surface);border-color:var(--primary);color:var(--primary)}
+
+/* 详情：题目标头 */
+.prob-meta{display:flex;align-items:center;gap:14px;padding-bottom:18px;border-bottom:1px solid var(--border);margin-bottom:18px}
+.prob-meta .ic{width:46px;height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.prob-meta .ic.code{background:var(--primary-subtle);color:var(--primary)}
+.prob-meta .ic.book{background:var(--purple-subtle);color:var(--purple)}
+.prob-meta .t{font-size:16px;font-weight:600}
+.prob-meta .s{font-size:11.5px;color:var(--muted);margin-top:4px;font-family:"SF Mono",Menlo,Consolas,monospace;letter-spacing:.02em}
+.prob-meta .src{margin-left:auto;text-align:right;font-size:11.5px;color:var(--muted);line-height:1.5;max-width:240px}
+.prob-meta .src b{color:var(--fg);font-weight:500;font-size:12.5px;display:block;margin-top:2px}
+
+/* 详情：汇总 */
+.summary-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+.sb{padding:11px 13px;border:1px solid var(--border);border-radius:10px;background:var(--card)}
+.sb .lb{font-size:11px;color:var(--muted)}
+.sb .n{font-size:18px;font-weight:600;margin-top:5px;font-variant-numeric:tabular-nums;line-height:1.2}
+.sb .n.ok{color:var(--success)}
+.sb .n.no{color:var(--danger)}
+.sb .n.pf{color:var(--warning)}
+.sb .n.run{color:var(--primary)}
+.sb .n small{font-size:11px;color:var(--muted);font-weight:400;margin-left:1px}
+
+/* 详情：提交列表 */
+.att-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.att-h h3{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.att-h .cnt{font-size:12px;color:var(--muted)}
+
+.att{border:1px solid var(--border);border-radius:12px;margin-bottom:10px;background:var(--card);overflow:hidden;transition:border-color .18s}
+.att:hover{border-color:var(--border-strong)}
+.att-hd{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;transition:background .15s}
+.att-hd:hover{background:var(--surface)}
+.att-hd .n{width:28px;height:28px;border-radius:7px;background:var(--surface);color:var(--muted);
+          display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;
+          font-family:"SF Mono",Menlo,Consolas,monospace;flex-shrink:0;border:1px solid var(--border)}
+.att-hd .n.l{background:var(--primary-subtle);color:var(--primary);border-color:var(--primary-muted)}
+.att-hd .ts{font-size:12.5px;font-variant-numeric:tabular-nums;line-height:1.3}
+.att-hd .ts b{color:var(--fg);font-weight:500}
+.att-hd .ts .rel{display:block;font-size:11px;color:var(--subtle);margin-top:1px;font-weight:400}
+.att-hd .sc{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:14px;font-weight:600;
+           font-variant-numeric:tabular-nums;margin-left:2px}
+.att-hd .sc small{font-size:11px;color:var(--muted);font-weight:400;margin-left:1px}
+.att-hd .sc.ok{color:var(--success)}
+.att-hd .sc.no{color:var(--danger)}
+.att-hd .sc.pf{color:var(--warning)}
+.att-hd .ch{color:var(--subtle);font-size:14px;transition:transform .2s;flex-shrink:0}
+.att-hd.open .ch{transform:rotate(90deg);color:var(--muted)}
+.att-bd{display:none;padding:14px;border-top:1px dashed var(--border);background:var(--bg)}
+.att-hd.open + .att-bd{display:block}
+
+.code-blk-wrap{position:relative;margin-top:4px}
+.code-blk{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;
+          font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace;font-size:12px;line-height:1.65;
+          color:var(--fg);overflow-x:auto;max-height:300px;overflow-y:auto;white-space:pre;
+          tab-size:4;margin:0}
+.copy-btn{position:absolute;top:10px;right:10px;padding:4px 10px;font-size:11px;
+          background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--muted);transition:.18s}
+.copy-btn:hover{border-color:var(--primary);color:var(--primary)}
+
+.err-msg{background:var(--danger-subtle);color:var(--danger);padding:10px 14px;border-radius:8px;
+         font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12px;margin-bottom:12px;
+         border:1px solid var(--danger-subtle)}
+
+.tests-sts{display:flex;flex-wrap:wrap;gap:5px;margin-top:14px}
+.test-ch{padding:3px 9px;border-radius:5px;font-size:11px;font-family:"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+.test-ch.p{background:var(--success-subtle);color:var(--success)}
+.test-ch.f{background:var(--danger-subtle);color:var(--danger)}
+
+.att-actions{display:flex;align-items:center;gap:8px;margin-top:14px;justify-content:space-between}
+.att-actions .lang{font-size:10.5px;padding:2px 7px;border-radius:4px;background:var(--primary-subtle);
+                   color:var(--primary);font-weight:600;letter-spacing:.05em;font-family:"SF Mono",Menlo,Consolas,monospace}
+
+/* 空状态 */
+.empty-state{padding:64px 24px;text-align:center;color:var(--muted);display:none;
+              width:100%;box-sizing:border-box;position:relative}
+.empty-state .ic{width:48px;height:48px;border-radius:50%;background:var(--surface);color:var(--subtle);
+                 display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:20px;
+                 border:1px solid var(--border)}
+.empty-state .main{color:var(--fg);font-size:14px;font-weight:500;margin-bottom:6px;
+                      display:inline-block;max-width:100%}
+.empty-state .main .kw{color:var(--primary);font-weight:600}
+.empty-state .sub{font-size:12px;color:var(--muted);display:inline-block}
+.empty-state .sub b{color:var(--primary);font-weight:600}
+
+html.dark .drawer-mask{background:rgba(0,0,0,.6)}
+
+/* 表格 */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:0;overflow:hidden}
+.table{width:100%;border-collapse:collapse;font-size:13px}
+.table .t-head{background:var(--surface);font-size:11.5px;color:var(--muted);font-weight:500}
+.table .t-head th{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);font-weight:500;white-space:nowrap}
+.table .t-row{cursor:pointer;transition:background .15s}
+.table .t-row:hover{background:var(--surface)}
+.table .t-row td{padding:14px;border-bottom:1px solid var(--border);vertical-align:middle}
+.table .t-row:last-child td{border-bottom:none}
+.cell-id{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;color:var(--subtle);
+         font-variant-numeric:tabular-nums}
+.cell-prob{display:flex;align-items:center;gap:10px}
+.cell-prob .ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+               font-size:13px;flex-shrink:0}
+.cell-prob .ic.code{background:var(--primary-subtle);color:var(--primary)}
+.cell-prob .ic.book{background:var(--purple-subtle);color:var(--purple)}
+.cell-prob .t{font-weight:500}
+.cell-prob .s{font-size:11px;color:var(--subtle);margin-top:2px;font-family:"SF Mono",Menlo,Consolas,monospace}
+.cell-time{font-variant-numeric:tabular-nums;font-size:12.5px}
+.cell-time b{color:var(--fg);font-weight:500}
+.cell-time .rel{display:block;font-size:11px;color:var(--subtle);margin-top:2px}
+.cell-status{padding:3px 9px;border-radius:6px;font-size:11.5px;font-weight:500;display:inline-flex;
+             align-items:center;gap:5px}
+.cell-status::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+.cell-status.ok{background:var(--success-subtle);color:var(--success)}
+.cell-status.no{background:var(--danger-subtle);color:var(--danger)}
+.cell-status.run{background:var(--primary-subtle);color:var(--primary)}
+.cell-status.pf{background:var(--warning-subtle);color:var(--warning)}
+.cell-status.ce{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+
+.cell-score{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:13px;font-weight:600;
+            font-variant-numeric:tabular-nums}
+.cell-score.lg{font-size:15px}
+.cell-score.ok{color:var(--success)}
+.cell-score.no{color:var(--danger)}
+.cell-score.pf{color:var(--warning)}
+.cell-score small{font-size:11px;color:var(--muted);font-weight:400;margin-left:1px}
+
+.cell-tests{display:flex;flex-direction:column;gap:3px;font-size:11.5px;font-variant-numeric:tabular-nums}
+.cell-tests .p{color:var(--success)}
+.cell-tests .f{color:var(--danger)}
+
+.lang{font-size:10.5px;padding:2px 6px;border-radius:4px;background:var(--primary-subtle);
+      color:var(--primary);font-weight:600;letter-spacing:.05em;font-family:"SF Mono",Menlo,Consolas,monospace}
+
+.pager{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;
+        border-top:1px solid var(--border);background:var(--surface);font-size:12.5px;color:var(--muted)}
+.pager .pg{display:flex;align-items:center;gap:4px}
+.pager .pg b{color:var(--fg);font-weight:600}
+.pager .btns{display:flex;gap:4px}
+.pager .btns button{min-width:30px;height:30px;padding:0 9px;border-radius:6px;font-size:12px;
+                    color:var(--muted);background:var(--card);border:1px solid var(--border);
+                    display:inline-flex;align-items:center;justify-content:center;gap:3px}
+.pager .btns button.on{background:var(--primary);color:#fff;border-color:var(--primary);font-weight:500}
+.pager .btns button:hover:not(.on){border-color:var(--primary-muted);color:var(--primary)}
+
+@media (max-width:1200px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .table .t-head th:nth-child(2),.table .t-row td:nth-child(2){display:none}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="i-dash" viewBox="0 0 24 24"><path d="M3 12L12 3l9 9"/><path d="M5 10v10a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V10"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+<symbol id="i-grade" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13l2 2 4-4"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
+<symbol id="i-hist" viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 106 5.3L3 8"/><path d="M12 7v5l4 2"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-5"/></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 002.5 2.5z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+<symbol id="i-chev-l" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></symbol>
+<symbol id="i-chev-r" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-dl" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></symbol>
+</defs>
+</svg>
+
+<div class="app">
+
+<aside class="side">
+  <div class="logo">
+    <div class="logo-mark">Py</div>
+    <span class="logo-text">PyLearn</span>
+    <span class="role">学生端</span>
+  </div>
+  <nav class="nav">
+    <a class="nav-item" href="student-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+    <a class="nav-item" href="student-my-class.html"><svg><use href="#i-class"/></svg>我的班级</a>
+    <a class="nav-item" href="student-courses.html"><svg><use href="#i-book"/></svg>我的课程</a>
+    <a class="nav-item" href="student-assignments.html"><svg><use href="#i-file"/></svg>作业<span class="nav-count">2</span></a>
+    <a class="nav-item" href="student-problems.html"><svg><use href="#i-code"/></svg>题库练习</a>
+    <a class="nav-item active" href="student-submissions.html"><svg><use href="#i-hist"/></svg>提交记录</a>
+    <a class="nav-item" href="student-exams.html"><svg><use href="#i-clip"/></svg>考试</a>
+      <a class="nav-item" href="student-grades.html"><svg><use href="#i-grade"/></svg>成绩单</a>
+
+  </nav>
+  <div class="userbox">
+    <div class="avatar">陈</div>
+    <div>
+      <div class="n">陈思雨</div>
+      <div class="s">高一(3)班</div>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+
+  <header class="topbar">
+    <div class="searchbox">
+      <svg><use href="#i-search"/></svg>
+      <input placeholder="搜索提交..." />
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" title="通知"><svg><use href="#i-bell"/></svg><span class="dot"></span></button>
+      <button class="icon-btn" title="主题" onclick="tt()"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <div class="page-h">
+      <div class="ph-left">
+        <h1>提交记录</h1>
+        <div class="sub">本学期共 <b>184</b> 次提交 · 来自 <b>3</b> 门课程 · 最近 7 天 <b>28</b> 次</div>
+      </div>
+      <div class="ph-right">
+        <button class="btn ghost"><svg><use href="#i-dl"/></svg>导出 CSV</button>
+        <button class="btn"><svg><use href="#i-code"/></svg>去题库练习</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-ic p"><svg><use href="#i-list"/></svg></div>
+        <div><div class="n">184</div><div class="lb">总提交数</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-ic s"><svg><use href="#i-check"/></svg></div>
+        <div><div class="n">142<small style="font-size:12px;color:var(--muted);margin-left:3px">/ 184</small></div><div class="lb">通过提交 · 77%</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-ic w"><svg><use href="#i-clock"/></svg></div>
+        <div><div class="n">28</div><div class="lb">最近 7 天提交</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-ic n"><svg><use href="#i-code"/></svg></div>
+        <div><div class="n">3.2</div><div class="lb">每题平均提交次数</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-ic a"><svg><use href="#i-chart"/></svg></div>
+        <div><div class="n">94.2</div><div class="lb">平均分</div></div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="searchbox" id="searchWrap">
+        <svg><use href="#i-search"/></svg>
+        <input id="titleSearch" placeholder="按题目标题搜索..." />
+        <button class="clr" id="clrSearch" title="清空" onclick="clearSearch()"><svg><use href="#i-x"/></svg></button>
+      </div>
+      <div class="toolbar-meta">匹配 <b id="matchCount">13</b> 条 / 共 <b>184</b> 条</div>
+    </div>
+
+    <div class="card">
+      <table class="table">
+        <thead class="t-head">
+          <tr>
+            <th>题目</th>
+            <th style="width:280px">课程 / 来源</th>
+            <th style="width:160px">提交时间</th>
+            <th style="width:110px">状态</th>
+            <th style="width:100px;text-align:right">得分</th>
+            <th style="width:50px"></th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <tr class="t-row" data-pid="P-3014">
+            <td>
+              <div class="cell-prob">
+                <div class="ic code"><svg><use href="#i-code"/></svg></div>
+                <div><div class="t">统计每个数出现次数</div><div class="s">P-3014</div></div>
+              </div>
+            </td>
+            <td>Python 程序设计基础 · 期中模拟 E0001</td>
+            <td class="cell-time"><b>8/12 14:38</b><span class="rel">10 分钟前</span></td>
+            <td><span class="cell-status pf">部分通过</span></td>
+            <td class="cell-score pf lg" style="text-align:right">18.0<small>/20</small></td>
+            <td><svg style="color:var(--subtle);font-size:14px"><use href="#i-chev"/></svg></td>
+          </tr>
+
+          <tr class="t-row" data-pid="P-2087">
+            <td>
+              <div class="cell-prob">
+                <div class="ic code"><svg><use href="#i-code"/></svg></div>
+                <div><div class="t">判断回文数</div><div class="s">P-2087</div></div>
+              </div>
+            </td>
+            <td>Python 程序设计基础 · 第 4 章测验 E0002</td>
+            <td class="cell-time"><b>8/12 14:24</b><span class="rel">25 分钟前</span></td>
+            <td><span class="cell-status ok">通过</span></td>
+            <td class="cell-score ok lg" style="text-align:right">15.0<small>/15</small></td>
+            <td><svg style="color:var(--subtle);font-size:14px"><use href="#i-chev"/></svg></td>
+          </tr>
+
+          <tr class="t-row" data-pid="P-1002">
+            <td>
+              <div class="cell-prob">
+                <div class="ic code"><svg><use href="#i-code"/></svg></div>
+                <div><div class="t">两数之和</div><div class="s">P-1002</div></div>
+              </div>
+            </td>
+            <td>题库练习</td>
+            <td class="cell-time"><b>8/12 14:12</b><span class="rel">37 分钟前</span></td>
+            <td><span class="cell-status run">评测中</span></td>
+            <td class="cell-score" style="color:var(--primary);text-align:right">—</td>
+            <td><svg style="color:var(--subtle);font-size:14px"><use href="#i-chev"/></svg></td>
+          </tr>
+
+          <tr class="t-row" data-pid="P-3014">
+            <td>
+              <div class="cell-prob">
+                <div class="ic code"><svg><use href="#i-code"/></svg></div>
+                <div><div class="t">统计每个数出现次数</div><div class="s">P-3014</div></div>
+              </div>
+            </td>
+            <td>Python 程序设计基础 · 期中模拟 E0001</td>
+            <td class="cell-time"><b>8/12 14:08</b><span class="rel">41 分钟前</span></td>
+            <td><span class="cell-status ce">编译错误</span></td>
+            <td class="cell-score no" style="text-align:right">0<small>/20</small></td>
+            <td><svg style="color:var(--subtle);font-size:14px"><use href="#i-chev"/></svg></td>
+          </tr>
+
+          <tr class="t-row" data-pid="P-1002">
+            <td>
+              <div class="cell-prob">
+                <div class="ic code"><svg><use href="#i-code"/></svg></div>
+                <div><div class="t">两数之和</div><div class="s">P-1002</div></div>
+              </div>
+            </td>
+            <td>题库练习</td>
+            <td class="cell-time"><b>8/12 13:46</b><span class="rel">1 小时前</span></td>
+            <td><span class="cell-status ok">通过</span></td>
+            <td class="cell-score ok lg" style="text-align:right">100<small>/100</small></td>
+            <td><svg style="color:var(--subtle);font-size:14px"><use href="#i-chev"/></svg></td>
+          </tr>
+
+          <tr class="t-row" data-pid="A0023">
+            <td>
+              <div class="cell-prob">
+                <div class="ic book"><svg><use href="#i-clip"/></svg></div>
+                <div><div class="t">递归函数综合练习 · Q3 阶乘和</div><div class="s">A0023</div></div>
+              </div>
+            </td>
+            <td>Python 程序设计基础 · 第 5 章作业</td>
+            <td class="cell-time"><b>8/11 22:14</b><span class="rel">昨天 22:14</span></td>
+            <td><span class="cell-status ok">通过</span></td>
+            <td class="cell-score ok lg" style="text-align:right">20.0<small>/20</small></td>
+            <td><svg style="color:var(--subtle);font-size:14px"><use href="#i-chev"/></svg></td>
+          </tr>
+
+          <tr class="t-row" data-pid="A0023">
+            <td>
+              <div class="cell-prob">
+                <div class="ic book"><svg><use href="#i-clip"/></svg></div>
+                <div><div class="t">递归函数综合练习 · Q2 字符串反转</div><div class="s">A0023</div></div>
+              </div>
+            </td>
+            <td>Python 程序设计基础 · 第 5 章作业</td>
+            <td class="cell-time"><b>8/11 21:48</b><span class="rel">昨天 21:48</span></td>
+            <td><span class="cell-status ok">通过</span></td>
+            <td class="cell-score ok lg" style="text-align:right">20.0<small>/20</small></td>
+            <td><svg style="color:var(--subtle);font-size:14px"><use href="#i-chev"/></svg></td>
+          </tr>
+
+          <tr class="t-row" data-pid="A0023">
+            <td>
+              <div class="cell-prob">
+                <div class="ic book"><svg><use href="#i-clip"/></svg></div>
+                <div><div class="t">递归函数综合练习 · Q1 斐波那契</div><div class="s">A0023</div></div>
+              </div>
+            </td>
+            <td>Python 程序设计基础 · 第 5 章作业</td>
+            <td class="cell-time"><b>8/11 21:32</b><span class="rel">昨天 21:32</span></td>
+            <td><span class="cell-status no">答案错误</span></td>
+            <td class="cell-score no lg" style="text-align:right">13.0<small>/20</small></td>
+            <td><svg style="color:var(--subtle);font-size:14px"><use href="#i-chev"/></svg></td>
+          </tr>
+
+          <tr class="t-row" data-pid="P-2088">
+            <td>
+              <div class="cell-prob">
+                <div class="ic code"><svg><use href="#i-code"/></svg></div>
+                <div><div class="t">最长回文子串</div><div class="s">P-2088</div></div>
+              </div>
+            </td>
+            <td>数据结构与算法 · 题库</td>
+            <td class="cell-time"><b>8/11 16:21</b><span class="rel">昨天 16:21</span></td>
+            <td><span class="cell-status ok">通过</span></td>
+            <td class="cell-score ok lg" style="text-align:right">100<small>/100</small></td>
+            <td><svg style="color:var(--subtle);font-size:14px"><use href="#i-chev"/></svg></td>
+          </tr>
+
+          <tr class="t-row" data-pid="P-1075">
+            <td>
+              <div class="cell-prob">
+                <div class="ic code"><svg><use href="#i-code"/></svg></div>
+                <div><div class="t">二分查找</div><div class="s">P-1075</div></div>
+              </div>
+            </td>
+            <td>题库练习</td>
+            <td class="cell-time"><b>8/10 19:44</b><span class="rel">2 天前</span></td>
+            <td><span class="cell-status ok">通过</span></td>
+            <td class="cell-score ok lg" style="text-align:right">100<small>/100</small></td>
+            <td><svg style="color:var(--subtle);font-size:14px"><use href="#i-chev"/></svg></td>
+          </tr>
+
+          <tr class="t-row" data-pid="P-1101">
+            <td>
+              <div class="cell-prob">
+                <div class="ic code"><svg><use href="#i-code"/></svg></div>
+                <div><div class="t">冒泡排序</div><div class="s">P-1101</div></div>
+              </div>
+            </td>
+            <td>题库练习</td>
+            <td class="cell-time"><b>8/10 18:32</b><span class="rel">2 天前</span></td>
+            <td><span class="cell-status no">运行超时</span></td>
+            <td class="cell-score no" style="text-align:right">0<small>/100</small></td>
+            <td><svg style="color:var(--subtle);font-size:14px"><use href="#i-chev"/></svg></td>
+          </tr>
+
+          <tr class="t-row" data-pid="A0024">
+            <td>
+              <div class="cell-prob">
+                <div class="ic book"><svg><use href="#i-clip"/></svg></div>
+                <div><div class="t">列表与字符串 · Q4 字符串压缩</div><div class="s">A0024</div></div>
+              </div>
+            </td>
+            <td>Python 程序设计基础 · 第 4 章作业</td>
+            <td class="cell-time"><b>8/10 16:08</b><span class="rel">2 天前</span></td>
+            <td><span class="cell-status ok">通过</span></td>
+            <td class="cell-score ok lg" style="text-align:right">25.0<small>/25</small></td>
+            <td><svg style="color:var(--subtle);font-size:14px"><use href="#i-chev"/></svg></td>
+          </tr>
+
+          <tr class="t-row" data-pid="E0006">
+            <td>
+              <div class="cell-prob">
+                <div class="ic book"><svg><use href="#i-clip"/></svg></div>
+                <div><div class="t">Python 综合测试 · 入学摸底</div><div class="s">E0006</div></div>
+              </div>
+            </td>
+            <td>摸底考试</td>
+            <td class="cell-time"><b>7/10 15:08</b><span class="rel">2 周前</span></td>
+            <td><span class="cell-status ok">已批改</span></td>
+            <td class="cell-score ok lg" style="text-align:right">88<small>/100</small></td>
+            <td><svg style="color:var(--subtle);font-size:14px"><use href="#i-chev"/></svg></td>
+          </tr>
+
+        </tbody>
+      </table>
+
+      <div class="empty-state" id="emptyState">
+        <div class="ic"><svg><use href="#i-search"/></svg></div>
+        <div class="main">没有匹配 <span class="kw" id="emptyKw"></span> 的提交</div>
+        <div class="sub">试试更短的关键词，例如 <b>两数</b>、<b>回文</b>、<b>排序</b></div>
+      </div>
+
+      <div class="pager">
+        <div>共 <b>184</b> 条 · 当前 1-13</div>
+        <div class="btns">
+          <button><svg><use href="#i-chev-l"/></svg></button>
+          <button class="on">1</button>
+          <button>2</button>
+          <button>3</button>
+          <button>4</button>
+          <button>...</button>
+          <button>15</button>
+          <button><svg><use href="#i-chev-r"/></svg></button>
+        </div>
+        <div class="pg">每页 <b>15</b> 条</div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+</div>
+
+<div class="drawer-mask" id="drawerMask" onclick="closeDetail()"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true">
+  <header class="drawer-h">
+    <h2 id="drTitle">提交详情</h2>
+    <button class="x" onclick="closeDetail()" title="关闭（Esc）"><svg><use href="#i-x"/></svg></button>
+  </header>
+  <div class="drawer-b" id="drawerBody"></div>
+  <footer class="drawer-f">
+    <span class="lbl">点击行可重新打开</span>
+    <div style="display:flex;gap:8px">
+      <button class="btn ghost" onclick="closeDetail()">关闭</button>
+      <button class="btn" onclick="alert('模拟：跳转到题目作答页')"><svg><use href="#i-code"/></svg>再次提交</button>
+    </div>
+  </footer>
+</aside>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+function tt(){
+  var d=document.documentElement.classList.toggle('dark');
+  document.getElementById('use-theme').setAttribute('href', d?'#i-moon':'#i-sun');
+  localStorage.setItem('theme', d?'dark':'light');
+}
+if(localStorage.getItem('theme')==='dark'){
+  document.documentElement.classList.add('dark');
+  document.getElementById('use-theme').setAttribute('href','#i-moon');
+}
+
+/* —— 提交详情数据 —— */
+const PROB_SRC = {
+  'P-3014':'Python 程序设计基础 · 期中模拟 E0001',
+  'P-2087':'Python 程序设计基础 · 第 4 章测验 E0002',
+  'P-1002':'题库练习',
+  'P-2088':'数据结构与算法 · 题库',
+  'P-1075':'题库练习',
+  'P-1101':'题库练习',
+  'A0023':'Python 程序设计基础 · 第 5 章作业',
+  'A0024':'Python 程序设计基础 · 第 4 章作业',
+  'E0006':'摸底考试'
+};
+const PROB_TYPE = {
+  'P-3014':'code','P-2087':'code','P-1002':'code','P-2088':'code',
+  'P-1075':'code','P-1101':'code',
+  'A0023':'book','A0024':'book','E0006':'book'
+};
+
+const SUBMISSIONS = {
+  'P-3014':[
+    {n:2,time:'8/12 14:38',rel:'10 分钟前',st:'pf',stt:'部分通过',score:'18.0',total:'20',lang:'Python 3',
+     code:`def count_nums(nums):\n    count = {}\n    for n in nums:\n        if n in count:\n            count[n] += 1\n        else:\n            count[n] = 1\n    return count\n\nnums = list(map(int, input().split()))\nprint(count_nums(nums))`,
+     tests:[{n:1,p:true},{n:2,p:true},{n:3,p:true},{n:4,p:true},{n:5,p:false,w:'答案错误'},{n:6,p:false,w:'超时'}]},
+    {n:1,time:'8/12 14:08',rel:'41 分钟前',st:'ce',stt:'编译错误',score:'0',total:'20',lang:'Python 3',
+     ce:'SyntaxError: invalid syntax (line 1) — 函数定义缺冒号',
+     code:`def count_nums(nums)\n    pass  # ← 缺冒号`,
+     tests:[]},
+  ],
+  'P-2087':[
+    {n:1,time:'8/12 14:24',rel:'25 分钟前',st:'ok',stt:'通过',score:'15.0',total:'15',lang:'Python 3',
+     code:`n = input().strip()\nprint("YES" if n == n[::-1] else "NO")`,
+     tests:[{n:1,p:true},{n:2,p:true},{n:3,p:true},{n:4,p:true},{n:5,p:true}]},
+  ],
+  'P-1002':[
+    {n:3,time:'8/12 14:12',rel:'37 分钟前',st:'run',stt:'评测中',score:'—',total:'100',lang:'Python 3',
+     code:`def two_sum(nums, target):\n    m = {}\n    for i, n in enumerate(nums):\n        c = target - n\n        if c in m:\n            return [m[c], i]\n        m[n] = i\n    return []\n\nprint(two_sum(list(map(int, input().split())), int(input())))`,
+     tests:[]},
+    {n:2,time:'8/12 13:46',rel:'1 小时前',st:'ok',stt:'通过',score:'100',total:'100',lang:'Python 3',
+     code:`def two_sum(nums, target):\n    m = {}\n    for i, n in enumerate(nums):\n        c = target - n\n        if c in m:\n            return [m[c], i]\n        m[n] = i\n    return []`,
+     tests:[{n:1,p:true},{n:2,p:true},{n:3,p:true},{n:4,p:true},{n:5,p:true}]},
+    {n:1,time:'8/12 11:20',rel:'3 小时前',st:'no',stt:'答案错误',score:'60',total:'100',lang:'Python 3',
+     code:`def two_sum(nums, target):\n    for i in range(len(nums)):\n        for j in range(i+1, len(nums)):\n            if nums[i] + nums[j] == target:\n                return [i, j]\n    return []\n# O(n²) 超时，仅通过小规模用例`,
+     tests:[{n:1,p:true},{n:2,p:true},{n:3,p:true},{n:4,p:false,w:'超时'},{n:5,p:true}]},
+  ],
+  'A0023':[
+    {n:3,time:'8/11 22:14',rel:'昨天 22:14',st:'ok',stt:'通过',score:'20.0',total:'20',lang:'Python 3',
+     code:`def q3():\n    n = int(input())\n    total = 0\n    for i in range(1, n+1):\n        fact = 1\n        for k in range(2, i+1):\n            fact *= k\n        total += fact\n    print(total)\n\nq3()`,
+     tests:[{n:1,p:true},{n:2,p:true},{n:3,p:true},{n:4,p:true}]},
+    {n:2,time:'8/11 21:48',rel:'昨天 21:48',st:'ok',stt:'通过',score:'20.0',total:'20',lang:'Python 3',
+     code:`def q2():\n    s = input()\n    print(s[::-1])\n\nq2()`,
+     tests:[{n:1,p:true},{n:2,p:true},{n:3,p:true}]},
+    {n:1,time:'8/11 21:32',rel:'昨天 21:32',st:'no',stt:'答案错误',score:'13.0',total:'20',lang:'Python 3',
+     code:`def fib(n):\n    if n < 2: return n\n    return fib(n-1) + fib(n-2)\n# 没加记忆化，大数超时\n\nn = int(input())\nprint(fib(n))`,
+     tests:[{n:1,p:true},{n:2,p:true},{n:3,p:false,w:'超时'},{n:4,p:false,w:'超时'}]},
+  ],
+  'P-2088':[
+    {n:1,time:'8/11 16:21',rel:'昨天 16:21',st:'ok',stt:'通过',score:'100',total:'100',lang:'Python 3',
+     code:`def lp(s):\n    if len(s) < 2: return s\n    def exp(l, r):\n        while l>=0 and r<len(s) and s[l]==s[r]:\n            l -= 1; r += 1\n        return s[l+1:r]\n    res = ''\n    for i in range(len(s)):\n        for t in (exp(i, i), exp(i, i+1)):\n            if len(t) > len(res): res = t\n    return res\n\nprint(lp(input()))`,
+     tests:[{n:1,p:true},{n:2,p:true},{n:3,p:true},{n:4,p:true},{n:5,p:true}]},
+  ],
+  'P-1075':[
+    {n:1,time:'8/10 19:44',rel:'2 天前',st:'ok',stt:'通过',score:'100',total:'100',lang:'Python 3',
+     code:`def bsearch(a, t):\n    lo, hi = 0, len(a)-1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if a[mid] == t: return mid\n        elif a[mid] < t: lo = mid + 1\n        else: hi = mid - 1\n    return -1\n\na = list(map(int, input().split()))\nprint(bsearch(a, int(input())))`,
+     tests:[{n:1,p:true},{n:2,p:true},{n:3,p:true},{n:4,p:true},{n:5,p:true}]},
+  ],
+  'P-1101':[
+    {n:1,time:'8/10 18:32',rel:'2 天前',st:'no',stt:'运行超时',score:'0',total:'100',lang:'Python 3',
+     code:`def bubble(a):\n    n = len(a)\n    for i in range(n):\n        for j in range(0, n-i-1):\n            if a[j] > a[j+1]:\n                a[j], a[j+1] = a[j+1], a[j]\n    return a\n\na = list(map(int, input().split()))\nprint(*bubble(a))`,
+     tests:[{n:1,p:false,w:'超时'},{n:2,p:false,w:'超时'},{n:3,p:false,w:'超时'}]},
+  ],
+  'A0024':[
+    {n:1,time:'8/10 16:08',rel:'2 天前',st:'ok',stt:'通过',score:'25.0',total:'25',lang:'Python 3',
+     code:`def compress(s):\n    if not s: return ''\n    r, cnt, prev = [], 1, s[0]\n    for c in s[1:]:\n        if c == prev:\n            cnt += 1\n        else:\n            r.append(prev + str(cnt))\n            prev, cnt = c, 1\n    r.append(prev + str(cnt))\n    return ''.join(r)\n\nprint(compress(input()))`,
+     tests:[{n:1,p:true},{n:2,p:true},{n:3,p:true},{n:4,p:true}]},
+  ],
+  'E0006':[
+    {n:1,time:'7/10 15:08',rel:'2 周前',st:'ok',stt:'已批改',score:'88',total:'100',lang:'Python 3',
+     code:`# 入学摸底考试 — 编程题作答记录\n\ndef solve():\n    import sys\n    data = sys.stdin.read().split()\n    n = int(data[0])\n    nums = list(map(int, data[1:1+n]))\n    return sum(nums)\n\nprint(solve())`,
+     tests:[{n:1,p:true},{n:2,p:true},{n:3,p:true},{n:4,p:false,w:'边界未处理'}]},
+  ]
+};
+
+/* —— 详情渲染 —— */
+function esc(s){return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+function openDetail(pid){
+  const data = SUBMISSIONS[pid];
+  if(!data) return;
+  const tr = document.querySelector('tr[data-pid="'+pid+'"]');
+  const title = tr ? tr.querySelector('.t').textContent : pid;
+  const src = PROB_SRC[pid] || '—';
+  const type = PROB_TYPE[pid] || 'code';
+
+  const scores = data
+    .map(a => (a.score === '—' || isNaN(parseFloat(a.score))) ? null : parseFloat(a.score))
+    .filter(s => s !== null);
+  const best = scores.length ? Math.max.apply(null, scores) : null;
+  const total = data[0].total;
+  const passCount = data.filter(a => a.st === 'ok').length;
+  const first = data[0];
+
+  let html = `
+    <div class="prob-meta">
+      <div class="ic ${type}"><svg><use href="#i-${type==='code'?'code':'clip'}"/></svg></div>
+      <div>
+        <div class="t">${esc(title)}</div>
+        <div class="s">${pid}</div>
+      </div>
+      <div class="src">来源<b>${esc(src)}</b></div>
+    </div>
+    <div class="summary-bar">
+      <div class="sb"><div class="lb">提交次数</div><div class="n">${data.length}</div></div>
+      <div class="sb"><div class="lb">最高分</div><div class="n ok">${best !== null ? best : '—'}<small>/${total}</small></div></div>
+      <div class="sb"><div class="lb">最近状态</div><div class="n ${first.st}">${esc(first.stt)}</div></div>
+      <div class="sb"><div class="lb">通过次数</div><div class="n">${passCount}</div></div>
+    </div>
+    <div class="att-h">
+      <h3>提交历史</h3>
+      <div class="cnt">共 ${data.length} 次 · 最新在上 · 点开查看代码</div>
+    </div>
+  `;
+
+  data.forEach((a, i) => {
+    const isLatest = i === 0;
+    const testsHtml = a.tests && a.tests.length
+      ? a.tests.map(t =>
+          `<span class="test-ch ${t.p?'p':'f'}">${t.p?'✓':'✗'} #${t.n}${t.w?' · '+esc(t.w):''}</span>`
+        ).join('')
+      : '';
+    html += `
+      <div class="att">
+        <div class="att-hd ${isLatest?'open':''}" onclick="this.classList.toggle('open')">
+          <div class="n ${isLatest?'l':''}">#${a.n}</div>
+          <div class="ts"><b>${esc(a.time)}</b><span class="rel">${esc(a.rel)}</span></div>
+          <span class="cell-status ${a.st}">${esc(a.stt)}</span>
+          <span class="sc ${a.st}">${esc(a.score)}<small>/${a.total}</small></span>
+          <svg class="ch"><use href="#i-chev-r"/></svg>
+        </div>
+        <div class="att-bd">
+          ${a.ce ? `<div class="err-msg">${esc(a.ce)}</div>` : ''}
+          <div class="code-blk-wrap">
+            <button class="copy-btn" onclick="copyCode(this)">复制</button>
+            <pre class="code-blk">${esc(a.code)}</pre>
+          </div>
+          ${testsHtml ? `<div class="tests-sts">${testsHtml}</div>` : ''}
+          <div class="att-actions">
+            <span class="lang">${esc(a.lang)}</span>
+            <button class="btn sm ghost" onclick="alert('模拟：查看该次提交的完整测试输入输出')">查看完整测试详情</button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  document.getElementById('drTitle').textContent = title;
+  document.getElementById('drawerBody').innerHTML = html;
+  document.getElementById('drawerMask').classList.add('on');
+  document.getElementById('drawer').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDetail(){
+  document.getElementById('drawerMask').classList.remove('on');
+  document.getElementById('drawer').classList.remove('on');
+  document.body.style.overflow = '';
+}
+
+function copyCode(btn){
+  const code = btn.parentElement.querySelector('pre').textContent;
+  const done = () => {
+    const orig = btn.textContent;
+    btn.textContent = '已复制';
+    setTimeout(() => btn.textContent = orig, 1200);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(code).then(done).catch(done);
+  } else { done(); }
+}
+
+/* —— 搜索过滤 —— */
+function clearSearch(){
+  const i = document.getElementById('titleSearch');
+  i.value = '';
+  i.dispatchEvent(new Event('input'));
+  i.focus();
+}
+
+function applyFilter(){
+  const kw = document.getElementById('titleSearch').value.trim().toLowerCase();
+  const rows = document.querySelectorAll('tr.t-row[data-pid]');
+  let visible = 0;
+  rows.forEach(r => {
+    const title = r.querySelector('.t').textContent.toLowerCase();
+    const show = !kw || title.includes(kw);
+    r.style.display = show ? '' : 'none';
+    if(show) visible++;
+  });
+  document.getElementById('emptyState').style.display = visible === 0 ? 'block' : 'none';
+  document.getElementById('emptyKw').textContent = kw;
+  document.getElementById('matchCount').textContent = visible;
+  document.getElementById('searchWrap').classList.toggle('has-val', kw.length > 0);
+}
+
+document.getElementById('titleSearch').addEventListener('input', applyFilter);
+
+/* —— 行点击 → 打开详情 —— */
+document.querySelectorAll('tr.t-row[data-pid]').forEach(tr => {
+  tr.addEventListener('click', () => openDetail(tr.dataset.pid));
+});
+
+/* —— Esc 关闭抽屉 —— */
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') closeDetail();
+});
+
+/* —— 深度链接：?pid=X 自动打开 —— */
+const _m = location.search.match(/pid=([\w-]+)/);
+if(_m && SUBMISSIONS[_m[1]]) openDetail(_m[1]);
+
+/* —— 调试用：#search=keyword 自动填入 —— */
+const _s = location.hash.match(/search=([^&]+)/);
+if(_s){ document.getElementById('titleSearch').value = decodeURIComponent(_s[1]); applyFilter(); }
+</script>
+
+</body>
+</html>

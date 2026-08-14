@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>教师管理 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171;  --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--purple);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--purple),#EC4899);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted)}
+.crumb b{color:var(--fg);font-weight:500}
+.search{position:relative;flex:1;max-width:380px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--subtle)}
+.search input{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--border);border-radius:8px;
+              background:var(--surface);color:var(--fg);font-size:14px;outline:none;transition:.18s}
+.search input::placeholder{color:var(--subtle)}
+.search input:focus{border-color:var(--primary);background:var(--card)}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:background .18s,color .18s}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:1140px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+           padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.page-sub{margin-top:4px;font-size:14px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-purple{background:var(--purple);color:#fff}
+.btn-purple:hover{background:#7C3AED}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-sm{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;
+        font-size:12px;font-weight:500;transition:.18s}
+.btn-sm.p{background:var(--primary-subtle);color:var(--primary)}
+.btn-sm.p:hover{background:var(--primary);color:var(--primary-fg)}
+html.dark .btn-sm.p:hover{color:var(--primary-fg)}
+.btn-sm.g{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+html.dark .btn-sm.g{background:var(--border)}
+.btn-sm.g:hover{background:var(--surface);color:var(--fg)}
+.btn-sm.d{background:var(--danger-subtle);color:var(--danger)}
+.btn-sm.d:hover{background:var(--danger);color:#fff}
+
+/* ====== 顶部统计 ====== */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{padding:14px 16px;border:1px solid var(--border);border-radius:10px;background:var(--card);
+      display:flex;align-items:center;gap:12px;transition:.18s}
+.stat:hover{border-color:var(--border-strong)}
+.stat-ic{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+         font-size:20px;flex-shrink:0}
+.stat-ic.p{background:var(--primary-subtle);color:var(--primary)}
+.stat-ic.s{background:var(--success-subtle);color:var(--success)}
+.stat-ic.w{background:var(--warning-subtle);color:var(--warning)}
+.stat-ic.a{background:var(--accent-subtle);color:var(--accent)}
+.stat-info{flex:1;min-width:0}
+.stat-info .nm{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2}
+.stat-info .lb{font-size:11px;color:var(--muted);margin-top:3px}
+
+/* ====== 筛选 ====== */
+.filterbar{display:flex;align-items:center;gap:8px;padding:12px 14px;border:1px solid var(--border);
+            border-radius:10px;background:var(--card);flex-wrap:wrap}
+.chips{display:flex;gap:6px;padding:4px;background:var(--surface);border-radius:8px;border:1px solid var(--border)}
+html.dark .chips{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.chip{padding:6px 12px;border-radius:6px;font-size:13px;color:var(--muted);font-weight:500;transition:.18s;cursor:pointer;
+      display:flex;align-items:center;gap:6px}
+.chip:hover{color:var(--fg)}
+.chip.on{background:var(--card);color:var(--fg);box-shadow:var(--shadow)}
+.chip.on .num-pill{background:var(--primary);color:var(--primary-fg)}
+.num-pill{font-size:10px;padding:1px 6px;border-radius:999px;font-weight:600;
+          background:var(--border);color:var(--muted);font-variant-numeric:tabular-nums}
+html.dark .num-pill{background:var(--bg);color:var(--subtle)}
+
+.filter-spacer{flex:1}
+.sselect{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);
+         color:var(--fg);font-size:13px;outline:none;font-family:inherit;cursor:pointer}
+.sselect:hover{border-color:var(--border-strong)}
+
+/* ====== 教师表 ====== */
+.table{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.t-head{display:grid;grid-template-columns:2fr 1.2fr 1.4fr 1fr 1fr 110px;gap:16px;padding:14px 20px;
+        background:var(--surface);font-size:11px;font-weight:600;color:var(--muted);
+        letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);align-items:center}
+html.dark .t-head{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.t-row{display:grid;grid-template-columns:2fr 1.2fr 1.4fr 1fr 1fr 110px;gap:16px;padding:16px 20px;
+       align-items:center;border-bottom:1px solid var(--border);transition:background .18s}
+.t-row:last-child{border-bottom:none}
+.t-row:hover{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.t-row.disabled{opacity:.7}
+
+.t-tch{display:flex;align-items:center;gap:12px;min-width:0}
+.t-tch .av{width:40px;height:40px;border-radius:50%;color:#fff;font-size:14px;font-weight:600;
+           display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.t-tch .av.t1{background:linear-gradient(135deg,#F97316,#EF4444)}
+.t-tch .av.t2{background:linear-gradient(135deg,#0EA5E9,#14B8A6)}
+.t-tch .av.t3{background:linear-gradient(135deg,#8B5CF6,#EC4899)}
+.t-tch .av.t4{background:linear-gradient(135deg,#10B981,#06B6D4)}
+.t-tch .av.t5{background:linear-gradient(135deg,#F59E0B,#FACC15)}
+.t-tch .av.t6{background:linear-gradient(135deg,#EC4899,#F43F5E)}
+.t-tch-info{flex:1;min-width:0}
+.t-tch-info h3{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
+.pill.ok{background:var(--success-subtle);color:var(--success)}
+.pill.warn{background:var(--warning-subtle);color:var(--warning)}
+.pill.dis{background:var(--surface);color:var(--subtle);border:1px solid var(--border)}
+html.dark .pill.dis{background:var(--border)}
+
+.t-id{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;color:var(--fg);font-weight:500}
+.t-id .sub{font-size:11px;color:var(--subtle);margin-top:2px;display:block;font-family:inherit}
+
+.t-email{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.t-email .em{color:var(--fg);font-weight:500;display:block}
+
+.t-classes{font-size:13px}
+.t-classes .num{font-size:18px;font-weight:600;color:var(--fg);line-height:1.2;font-variant-numeric:tabular-nums}
+.t-classes .lb{font-size:11px;color:var(--muted);margin-top:2px}
+.t-classes.empty{color:var(--danger)}
+.t-classes.empty .num{color:var(--danger)}
+.t-classes .warn-tag{display:inline-flex;align-items:center;gap:4px;margin-top:4px;color:var(--warning);font-size:11px}
+.t-classes .warn-tag svg{width:11px;height:11px}
+
+.t-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.t-status .dot{width:6px;height:6px;border-radius:50%;background:var(--subtle)}
+.t-status.ok .dot{background:var(--success);box-shadow:0 0 0 3px color-mix(in srgb,var(--success) 25%,transparent)}
+.t-status.dis .dot{background:var(--subtle)}
+
+.t-ops{display:flex;gap:6px;justify-content:flex-end}
+.t-ops button{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+              color:var(--subtle);transition:.18s}
+.t-ops button:hover{background:var(--surface);color:var(--fg)}
+.t-ops button.danger:hover{background:var(--danger-subtle);color:var(--danger)}
+
+/* 页脚 */
+.foot{padding:20px 28px;border-top:1px solid var(--border);background:var(--surface);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted)}
+html.dark .foot{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+
+.txt-s{color:var(--success)}.txt-w{color:var(--warning)}.txt-d{color:var(--danger)}
+.txt-a{color:var(--accent)}.txt-m{color:var(--muted)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+
+@media(max-width:1100px){
+  .side{display:none}
+  .t-head,.t-row{grid-template-columns:2fr 1fr 1fr 100px;gap:12px}
+  .t-head .h2,.t-head .h4,.t-row .t-email,.t-row .t-classes{display:none}
+  .stat-row{grid-template-columns:1fr 1fr}
+  .content{padding:24px 20px}
+  .topbar{padding:0 20px}
+}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M3 9 12 3l9 6"/><path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"/><path d="M9 22V12h6v10"/></symbol>
+<symbol id="i-grad" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M21.7 7.3a2.5 2.5 0 0 0-3.5 0L8 17.5 6 22l4.5-2L20 10.5a2.5 2.5 0 0 0 0-3.5z"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-export" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+<symbol id="i-reload" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8"/><path d="M3 3v5h5"/></symbol>
+<symbol id="i-set" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></symbol>
+<symbol id="i-judge" viewBox="0 0 24 24"><path d="m12 2 3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="m21.7 18-9-15.3a1 1 0 0 0-1.7 0L1.3 18a1 1 0 0 0 .9 1.5h18.6a1 1 0 0 0 .9-1.5z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="m20.6 13.4-8.2 8.2a2 2 0 0 1-2.8 0l-7-7A2 2 0 0 1 2 13.2V4a2 2 0 0 1 2-2h9.2a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+<symbol id="i-exam" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="3" rx="1"/><path d="M9 11h6M9 14h6M9 17h3"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-shield"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">管理员</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">总览</p>
+      <a class="nav-item" href="admin-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <p class="nav-label">组织</p>
+      <a class="nav-item" href="admin-students.html"><svg><use href="#i-users"/></svg>学生</a>
+      <a class="nav-item active"><svg><use href="#i-grad"/></svg>教师</a>
+      <p class="nav-label">内容</p>
+      <a class="nav-item" href="admin-exams.html"><svg><use href="#i-exam"/></svg>考试<span class="nav-count">47</span></a>
+<a class="nav-item" href="admin-courses.html"><svg><use href="#i-book"/></svg>课程</a>
+      <a class="nav-item" href="admin-banks.html"><svg><use href="#i-tag"/></svg>题库</a>
+      <p class="nav-label">系统</p>
+      <a class="nav-item" href="admin-judge-queue.html"><svg><use href="#i-judge"/></svg>评测队列<span class="nav-count">2</span></a>
+      <a class="nav-item" href="admin-settings.html"><svg><use href="#i-set"/></svg>系统设置</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈主任</div>
+        <div class="s">系统管理员</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb"><b>组织</b> / 教师</span>
+      <div class="search">
+        <svg><use href="#i-search"/></svg>
+        <input placeholder="搜索工号、姓名、邮箱…">
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <div class="page-head anim">
+          <div>
+            <h1>教师管理</h1>
+            <p class="page-sub">教师账号由管理员直接创建并分配授课班级，无审批流程</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-ghost"><svg><use href="#i-export"/></svg>导出名单</button>
+            <a class="btn" href="admin-teachers-new.html"><svg><use href="#i-plus"/></svg>新建教师</a>
+          </div>
+        </div>
+
+        <!-- 统计 -->
+        <div class="stat-row anim" style="animation-delay:.04s">
+          <div class="stat">
+            <div class="stat-ic p"><svg><use href="#i-grad"/></svg></div>
+            <div class="stat-info"><div class="nm num">14</div><div class="lb">在岗教师</div></div>
+          </div>
+          <div class="stat">
+            <div class="stat-ic s"><svg><use href="#i-class"/></svg></div>
+            <div class="stat-info"><div class="nm num">12 / 14</div><div class="lb">已分配班级（1 个班空缺）</div></div>
+          </div>
+          <div class="stat">
+            <div class="stat-ic w"><svg><use href="#i-warn"/></svg></div>
+            <div class="stat-info"><div class="nm num">2</div><div class="lb">超过 30 天未登录</div></div>
+          </div>
+          <div class="stat">
+            <div class="stat-ic a"><svg><use href="#i-key"/></svg></div>
+            <div class="stat-info"><div class="nm num">1</div><div class="lb">尚未修改初始密码</div></div>
+          </div>
+        </div>
+
+        <!-- 筛选 -->
+        <div class="filterbar anim" style="animation-delay:.08s">
+          <div class="chips">
+            <div class="chip on">全部 <span class="num-pill">14</span></div>
+            <div class="chip">已分配班级 <span class="num-pill">12</span></div>
+            <div class="chip">未分配班级 <span class="num-pill">2</span></div>
+            <div class="chip">已停用 <span class="num-pill">2</span></div>
+          </div>
+          <div class="filter-spacer"></div>
+          <select class="sselect">
+            <option>全部科目</option>
+            <option>信息技术</option>
+            <option>通用技术</option>
+            <option>人工智能</option>
+          </select>
+          <select class="sselect">
+            <option>按最近登录</option>
+            <option>按工号升序</option>
+            <option>按班级数降序</option>
+          </select>
+        </div>
+
+        <!-- 教师表 -->
+        <div class="table anim" style="animation-delay:.12s">
+          <div class="t-head">
+            <div class="h1">教师</div>
+            <div class="h2">工号 / 科目</div>
+            <div class="h3">邮箱 / 手机</div>
+            <div class="h4">分配班级</div>
+            <div class="h5">最近登录</div>
+            <div class="h6" style="text-align:right">操作</div>
+          </div>
+
+          <div class="t-row">
+            <div class="t-tch">
+              <div class="av t1">王</div>
+              <div class="t-tch-info">
+                <h3>王建国 <span class="pill ok">在岗</span></h3>
+              </div>
+            </div>
+            <div>
+              <div class="t-id">T0018<span class="sub">信息技术 · 通用技术</span></div>
+            </div>
+            <div class="t-email">
+              <span class="em">wangjg@school.edu</span>
+              138 0013 0001
+            </div>
+            <div class="t-classes">
+              <div class="num">1</div>
+              <div class="lb">高一(1)班 · 48 人</div>
+            </div>
+            <div>
+              <div class="t-status ok"><span class="dot"></span>2 小时前</div>
+            </div>
+            <div class="t-ops">
+              <button><svg><use href="#i-edit"/></svg></button>
+              
+    <button class="danger"
+    data-confirm-title="删除该教师账号？"
+    data-confirm-body="教师账号将停用，无法登录平台
+关联的班级会变为「未分配教师」状态
+已有的作业与成绩不受影响"
+    data-confirm-danger data-confirm-text="删除教师" data-confirm-toast="教师已删除"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row">
+            <div class="t-tch">
+              <div class="av t2">陈</div>
+              <div class="t-tch-info">
+                <h3>陈教授 <span class="pill ok">在岗</span></h3>
+              </div>
+            </div>
+            <div>
+              <div class="t-id">T0024<span class="sub">信息技术</span></div>
+            </div>
+            <div class="t-email">
+              <span class="em">chenjs@school.edu</span>
+              138 0013 0024
+            </div>
+            <div class="t-classes">
+              <div class="num">1</div>
+              <div class="lb">高一(2)班 · 46 人</div>
+            </div>
+            <div>
+              <div class="t-status ok"><span class="dot"></span>1 天前</div>
+            </div>
+            <div class="t-ops">
+              <button><svg><use href="#i-edit"/></svg></button>
+              
+    <button class="danger"
+    data-confirm-title="删除该教师账号？"
+    data-confirm-body="教师账号将停用，无法登录平台
+关联的班级会变为「未分配教师」状态
+已有的作业与成绩不受影响"
+    data-confirm-danger data-confirm-text="删除教师" data-confirm-toast="教师已删除"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row">
+            <div class="t-tch">
+              <div class="av t3">李</div>
+              <div class="t-tch-info">
+                <h3>李雪 <span class="pill ok">在岗</span></h3>
+              </div>
+            </div>
+            <div>
+              <div class="t-id">T0031<span class="sub">通用技术</span></div>
+            </div>
+            <div class="t-email">
+              <span class="em">lixx@school.edu</span>
+              138 0013 0031
+            </div>
+            <div class="t-classes empty">
+              <div class="num">0</div>
+              <div class="lb">未分配任何班级</div>
+              <div class="warn-tag"><svg><use href="#i-warn"/></svg>无法出卷/批改</div>
+            </div>
+            <div>
+              <div class="t-status ok"><span class="dot"></span>3 小时前</div>
+            </div>
+            <div class="t-ops">
+              <button><svg><use href="#i-edit"/></svg></button>
+              
+    <button class="danger"
+    data-confirm-title="删除该教师账号？"
+    data-confirm-body="教师账号将停用，无法登录平台
+关联的班级会变为「未分配教师」状态
+已有的作业与成绩不受影响"
+    data-confirm-danger data-confirm-text="删除教师" data-confirm-toast="教师已删除"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row">
+            <div class="t-tch">
+              <div class="av t4">张</div>
+              <div class="t-tch-info">
+                <h3>张明远 <span class="pill ok">在岗</span></h3>
+              </div>
+            </div>
+            <div>
+              <div class="t-id">T0033<span class="sub">信息技术 · 人工智能</span></div>
+            </div>
+            <div class="t-email">
+              <span class="em">zhangmy@school.edu</span>
+              138 0013 0033
+            </div>
+            <div class="t-classes">
+              <div class="num">1</div>
+              <div class="lb">高一(4)班 · 49 人</div>
+            </div>
+            <div>
+              <div class="t-status ok"><span class="dot"></span>5 小时前</div>
+            </div>
+            <div class="t-ops">
+              <button><svg><use href="#i-edit"/></svg></button>
+              
+    <button class="danger"
+    data-confirm-title="删除该教师账号？"
+    data-confirm-body="教师账号将停用，无法登录平台
+关联的班级会变为「未分配教师」状态
+已有的作业与成绩不受影响"
+    data-confirm-danger data-confirm-text="删除教师" data-confirm-toast="教师已删除"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row">
+            <div class="t-tch">
+              <div class="av t5">林</div>
+              <div class="t-tch-info">
+                <h3>林志远 <span class="pill ok">在岗</span></h3>
+              </div>
+            </div>
+            <div>
+              <div class="t-id">T0019<span class="sub">信息技术</span></div>
+            </div>
+            <div class="t-email">
+              <span class="em">linzy@school.edu</span>
+              138 0013 0019
+            </div>
+            <div class="t-classes">
+              <div class="num">2</div>
+              <div class="lb">高二(1)班 · 高二(3)班</div>
+            </div>
+            <div>
+              <div class="t-status ok"><span class="dot"></span>昨天</div>
+            </div>
+            <div class="t-ops">
+              <button><svg><use href="#i-edit"/></svg></button>
+              
+    <button class="danger"
+    data-confirm-title="删除该教师账号？"
+    data-confirm-body="教师账号将停用，无法登录平台
+关联的班级会变为「未分配教师」状态
+已有的作业与成绩不受影响"
+    data-confirm-danger data-confirm-text="删除教师" data-confirm-toast="教师已删除"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row">
+            <div class="t-tch">
+              <div class="av t6">周</div>
+              <div class="t-tch-info">
+                <h3>周敏 <span class="pill warn">初次登录</span></h3>
+              </div>
+            </div>
+            <div>
+              <div class="t-id">T0041<span class="sub">通用技术</span></div>
+            </div>
+            <div class="t-email">
+              <span class="em">zhoumin@school.edu</span>
+              —
+            </div>
+            <div class="t-classes empty">
+              <div class="num">0</div>
+              <div class="lb">未分配任何班级</div>
+              <div class="warn-tag"><svg><use href="#i-warn"/></svg>还未首次登录</div>
+            </div>
+            <div>
+              <div class="t-status dis"><span class="dot"></span>从未登录</div>
+            </div>
+            <div class="t-ops">
+              <button><svg><use href="#i-edit"/></svg></button>
+              
+    <button class="danger"
+    data-confirm-title="删除该教师账号？"
+    data-confirm-body="教师账号将停用，无法登录平台
+关联的班级会变为「未分配教师」状态
+已有的作业与成绩不受影响"
+    data-confirm-danger data-confirm-text="删除教师" data-confirm-toast="教师已删除"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row disabled">
+            <div class="t-tch">
+              <div class="av t3" style="filter:grayscale(.7)">何</div>
+              <div class="t-tch-info">
+                <h3>何静怡 <span class="pill dis">已停用</span></h3>
+              </div>
+            </div>
+            <div>
+              <div class="t-id">T0015<span class="sub">信息技术</span></div>
+            </div>
+            <div class="t-email">
+              <span class="em">hejy@school.edu</span>
+              138 0013 0015
+            </div>
+            <div class="t-classes">
+              <div class="num" style="color:var(--subtle)">—</div>
+              <div class="lb">已于 2025-12 离职</div>
+            </div>
+            <div>
+              <div class="t-status dis"><span class="dot"></span>62 天前</div>
+            </div>
+            <div class="t-ops">
+              <button><svg><use href="#i-reload"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="foot anim" style="animation-delay:.16s">
+          <span>共 <b style="color:var(--fg)">14</b> 位教师 · 其中 <b style="color:var(--success)">12</b> 位在岗 · 显示前 7 条</span>
+          <button class="btn-ghost"><svg><use href="#i-reload"/></svg>刷新</button>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+</body>
+</html>

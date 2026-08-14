@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>我的编程题 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --primary-muted:#0C4A6E;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171;  --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+
+.app{display:flex;min-height:100vh}
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--primary);
+           display:flex;align-items:center;justify-content:center;color:var(--primary-fg);font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--accent-subtle);color:var(--accent);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-label+.nav-label,.nav-item+.nav-label{padding-top:24px}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--warning),var(--danger));
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted)}
+.crumb b{color:var(--fg);font-weight:500}
+.search{position:relative;flex:1;max-width:380px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--subtle)}
+.search input{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--border);border-radius:8px;
+              background:var(--surface);color:var(--fg);font-size:14px;outline:none;transition:.18s}
+.search input::placeholder{color:var(--subtle)}
+.search input:focus{border-color:var(--primary);background:var(--card)}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;
+          display:flex;transition:background .18s,color .18s;position:relative}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+.dot{position:absolute;top:7px;right:7px;width:8px;height:8px;border-radius:50%;
+     background:var(--danger);border:2px solid var(--bg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+           padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.page-sub{margin-top:4px;font-size:14px;color:var(--muted);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.page-sub .sep{width:4px;height:4px;border-radius:50%;background:var(--border)}
+.txt-p{color:var(--primary)}
+.txt-s{color:var(--success)}
+.txt-w{color:var(--warning)}
+.txt-d{color:var(--danger)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost svg{font-size:14px}
+
+/* 统计卡 */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.card{border:1px solid var(--border);border-radius:12px;background:var(--card);padding:20px;transition:.2s}
+.card.hoverable:hover{border-color:color-mix(in srgb,var(--primary) 40%,transparent);box-shadow:var(--shadow-md)}
+.stat-top{display:flex;align-items:flex-start;justify-content:space-between}
+.stat-label{font-size:13px;color:var(--muted)}
+.ic{padding:7px;border-radius:8px;display:flex;font-size:16px}
+.ic-p{background:var(--primary-subtle);color:var(--primary)}
+.ic-a{background:var(--accent-subtle);color:var(--accent)}
+.ic-s{background:var(--success-subtle);color:var(--success)}
+.ic-w{background:var(--warning-subtle);color:var(--warning)}
+.ic-d{background:var(--danger-subtle);color:var(--danger)}
+.ic-v{background:var(--purple-subtle);color:var(--purple)}
+.stat-num{margin-top:10px;font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat-foot{margin-top:4px;font-size:12px;color:var(--subtle);display:flex;align-items:center;gap:4px}
+
+/* 筛选条 */
+.sub-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 18px;
+             border:1px solid var(--border);border-radius:12px;background:var(--card)}
+.sub-filter .lbl{font-size:12px;color:var(--muted);font-weight:500}
+.sub-filter select{padding:7px 28px 7px 12px;border:1px solid var(--border);border-radius:8px;
+                   background:var(--surface) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") no-repeat right 10px center;
+                   color:var(--fg);font-size:13px;outline:none;cursor:pointer;transition:.18s;
+                   -webkit-appearance:none;appearance:none;min-width:120px}
+.sub-filter select:hover{border-color:var(--primary-muted)}
+.sub-filter select:focus{border-color:var(--primary)}
+.sub-filter .right{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12.5px}
+.sub-filter .reset{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;
+                  font-size:12px;color:var(--muted);transition:.18s}
+.sub-filter .reset:hover{background:var(--surface);color:var(--primary)}
+
+/* ============ 题目表格 ============ */
+.table{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.t-head{display:grid;grid-template-columns:90px 1fr 110px 200px 110px 90px 150px 60px;
+        gap:0;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--border);
+        font-size:11.5px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;text-align:center}
+.t-head>div[data-sort]{cursor:pointer;display:flex;align-items:center;gap:4px;user-select:none;justify-content:center}
+.t-head>div[data-sort]:hover{color:var(--fg)}
+.sort-arrow{font-size:10px;opacity:0;transition:.18s}
+.t-head>div.on .sort-arrow{opacity:1;color:var(--primary)}
+.t-row{display:grid;grid-template-columns:90px 1fr 110px 200px 110px 90px 150px 60px;
+       gap:0;padding:14px 20px;align-items:center;border-bottom:1px solid var(--border);transition:background .18s;cursor:pointer;text-align:center}
+.t-row:last-child{border-bottom:none}
+.t-row:hover{background:var(--surface)}
+.t-row .pid{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12px;color:var(--muted);font-weight:500}
+.t-row .ti{font-size:14px;font-weight:500;color:var(--fg);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:12px}
+.t-row .ti .draft-mark{font-size:10px;color:var(--warning);background:var(--warning-subtle);
+                       padding:1px 6px;border-radius:999px;margin-left:8px;font-weight:600}
+
+/* 难度星 */
+.stars{display:inline-flex;align-items:center;gap:1px;color:var(--warning);font-size:12px}
+.stars .off{color:var(--border)}
+.stars .num{font-size:11px;color:var(--muted);margin-left:4px;font-weight:500}
+
+/* 标签 chips */
+.tags{display:flex;align-items:center;gap:4px;flex-wrap:nowrap;overflow:hidden;justify-content:center}
+.tag-chip{font-size:10.5px;padding:1px 7px;border-radius:4px;background:var(--surface);color:var(--muted);white-space:nowrap}
+.tag-chip.overflow{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+
+/* 来源教师：头像 + 姓名（公共题库逻辑：所有题目同池，按创建者区分） */
+.src-user{display:flex;align-items:center;gap:8px;min-width:0}
+.src-avatar{width:24px;height:24px;border-radius:50%;color:#fff;font-size:10px;font-weight:600;
+            background:linear-gradient(135deg,var(--warning),var(--danger));
+            display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.src-avatar.a-green{background:linear-gradient(135deg,var(--accent),var(--success))}
+.src-avatar.a-purple{background:linear-gradient(135deg,var(--purple),var(--primary))}
+.src-avatar.a-orange{background:linear-gradient(135deg,var(--warning),#FB923C)}
+.src-avatar.a-pink{background:linear-gradient(135deg,var(--pink),#A78BFA)}
+html.dark .src-avatar{box-shadow:0 0 0 1px rgba(255,255,255,.06)}
+.src-meta{display:flex;flex-direction:column;gap:1px;min-width:0}
+.src-name{font-size:13px;color:var(--fg);font-weight:500;line-height:1.2;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
+.src-mark{font-size:9.5px;color:var(--primary);background:var(--primary-subtle);
+          padding:1px 5px;border-radius:999px;font-weight:600;align-self:flex-start;line-height:1.4}
+
+/* 提交次数（替换原「被引用」列） */
+.ref-count{font-size:15px;font-weight:600;color:var(--fg);font-variant-numeric:tabular-nums;text-align:center;display:block;width:100%}
+
+/* 通过率进度条 */
+.pass-rate{display:flex;align-items:center;gap:8px;font-size:12px}
+.pass-rate .bar{flex:1;height:5px;background:var(--surface);border-radius:999px;overflow:hidden;max-width:80px}
+html.dark .pass-rate .bar{background:var(--border)}
+.pass-rate .bar span{display:block;height:100%;background:var(--success);border-radius:999px}
+.pass-rate .bar span.warn{background:var(--warning)}
+.pass-rate .bar span.danger{background:var(--danger)}
+.pass-rate .pct{font-weight:600;font-variant-numeric:tabular-nums;color:var(--fg);min-width:36px;text-align:right}
+
+
+/* 行内菜单 */
+.row-menu{position:relative;justify-self:end}
+.row-menu-btn{padding:6px;border-radius:6px;color:var(--subtle);font-size:14px;display:flex;transition:.18s}
+.row-menu-btn:hover{background:var(--card);color:var(--fg)}
+.row-menu-list{position:absolute;top:calc(100% + 4px);right:0;min-width:170px;background:var(--card);
+               border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px -8px rgba(15,23,42,.18);
+               padding:4px;z-index:30;display:none}
+.row-menu.open .row-menu-list{display:block}
+.row-menu-list button{display:flex;align-items:center;gap:9px;width:100%;padding:7px 10px;border-radius:6px;
+                      font-size:12.5px;color:var(--fg);text-align:left;transition:.18s}
+.row-menu-list button:hover{background:var(--surface)}
+.row-menu-list button svg{font-size:13px;color:var(--muted)}
+.row-menu-list button.danger{color:var(--danger)}
+.row-menu-list button.danger svg{color:var(--danger)}
+.row-menu-list .sep-line{height:1px;background:var(--border);margin:4px 0}
+
+/* 分页 */
+.pager{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:1px solid var(--border);font-size:12.5px;color:var(--muted)}
+.pager .info b{color:var(--fg);font-weight:600}
+.pager .pages{display:flex;gap:4px}
+.pager .pg{padding:5px 11px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:12px;transition:.18s}
+.pager .pg:hover{border-color:var(--primary);color:var(--primary)}
+.pager .pg.on{background:var(--primary);color:var(--primary-fg);border-color:var(--primary)}
+
+/* 空状态 */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
+       padding:80px 24px;border:1px dashed var(--border);border-radius:14px;background:var(--card)}
+html.dark .empty{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.empty-ic{padding:18px;border-radius:50%;background:var(--primary-subtle);color:var(--primary);font-size:24px;display:flex}
+.empty h3{margin-top:18px;font-size:15px;font-weight:600}
+.empty p{margin-top:6px;max-width:320px;text-align:center;font-size:13px;line-height:1.7;color:var(--muted)}
+.empty .btn{margin-top:18px}
+
+/* 视图切换 */
+.view-toggle{display:inline-flex;background:var(--surface);border-radius:8px;padding:2px;gap:2px}
+.view-toggle button{padding:5px 12px;border-radius:6px;font-size:12px;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:4px;transition:.18s}
+.view-toggle button.on{background:var(--card);color:var(--fg);box-shadow:var(--shadow)}
+.view-toggle button svg{font-size:13px}
+
+/* 状态徽章 */
+.status-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;
+             font-size:11px;font-weight:500}
+.status-pill.draft{background:var(--warning-subtle);color:var(--warning)}
+.status-pill.published{background:var(--success-subtle);color:var(--success)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+
+@media(max-width:1280px){
+  .t-head,.t-row{grid-template-columns:80px 1fr 100px 180px 110px 80px 130px 50px}
+}
+@media(max-width:1200px){ .side{display:none} }
+@media(max-width:900px){
+  .stats{grid-template-columns:1fr 1fr}
+  .content{padding:24px 20px}
+  .topbar{padding:0 20px}
+}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-cap" viewBox="0 0 24 24"><path d="M2 9 12 4l10 5-10 5z"/><path d="M6 11v5c0 1 3 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M3 9 12 3l9 6"/><path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"/><path d="M9 22V12h6v10"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2 2 0 0 1 0-5H20"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6M16 6l6 6-6 6"/></symbol>
+<symbol id="i-bank" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11M9 8v11M15 8v11M19 8v11"/><path d="M3 22h18"/></symbol>
+<symbol id="i-grading" viewBox="0 0 24 24"><path d="M9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+<symbol id="i-monitoring" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2l3 7 7 .8-5.3 4.8L18 22l-6-3.5L6 22l1.3-7.4L2 9.8 9 9z"/></symbol>
+<symbol id="i-dots" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6v5l5 9a2 2 0 0 1-2 3H6a2 2 0 0 1-2-3l5-9z"/><path d="M9 3h6"/><path d="M6 14h12"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-cap"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">教师端</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">教学</p>
+      <a class="nav-item" href="teacher-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <a class="nav-item" href="teacher-classes.html"><svg><use href="#i-class"/></svg>我的班级</a>
+      <a class="nav-item" href="teacher-courses.html"><svg><use href="#i-book"/></svg>课程<span class="nav-count">5</span></a>
+      <p class="nav-label">考核</p>
+      <a class="nav-item" href="teacher-assignments.html?type=assignment"><svg><use href="#i-file"/></svg>作业<span class="nav-count">3</span></a>
+      <a class="nav-item active" id="nav-problems" href="teacher-problems.html"><svg><use href="#i-code"/></svg>题库</a>
+      <a class="nav-item" href="teacher-assignments.html?type=exam"><svg><use href="#i-bank"/></svg>试卷</a>
+      <a class="nav-item" href="teacher-assignments-grade.html?aid=A0024"><svg><use href="#i-grading"/></svg>批改<span class="nav-count">24</span></a>
+      <p class="nav-label">分析</p>
+      <a class="nav-item"><svg><use href="#i-monitoring"/></svg>考试监控</a>
+      <a class="nav-item"><svg><use href="#i-chart"/></svg>成绩分析</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">王</div>
+      <div>
+        <div class="n">王建国</div>
+        <div class="s">信息技术 · 高一段</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb"><b>考核</b> / 我的编程题</span>
+      <div class="search">
+        <svg><use href="#i-search"/></svg>
+        <input id="search-input" placeholder="搜索题号、标题、标签…">
+      </div>
+      <div class="top-actions">
+        <a class="btn-ghost" href="teacher-banks.html" style="text-decoration:none"><svg><use href="#i-bank"/></svg>题库视图</a>
+        <button class="icon-btn" onclick="tt()"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg><span class="dot"></span></button>
+        <a class="btn" href="teacher-problems-edit.html?new=1" style="text-decoration:none"><svg><use href="#i-plus"/></svg>新建编程题</a>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <!-- 页头 -->
+        <div class="page-head anim">
+          <div>
+            <h1>我的编程题</h1>
+            <p class="page-sub">
+              <span>本人创建 <b class="num txt-p">14</b> 道</span>
+              <span class="sep"></span>
+              <span>校内公共题库共收录 <b class="num">22</b> 道</span>
+              <span class="sep"></span>
+              <span>共被作业/试卷使用 <b class="num">47</b> 次</span>
+              <span class="sep"></span>
+              <span>被 <b class="num txt-s">23</b> 位教师引用</span>
+            </p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-ghost" onclick="bulkImport()"><svg><use href="#i-download"/></svg>批量导入</button>
+            <button class="btn-ghost"><svg><use href="#i-share"/></svg>共享设置</button>
+          </div>
+        </div>
+
+        <!-- 统计 -->
+        <div class="stats anim" style="animation-delay:.04s">
+          <div class="card hoverable">
+            <div class="stat-top"><span class="stat-label">公共题库收录</span>
+              <div class="ic ic-p"><svg><use href="#i-code"/></svg></div></div>
+            <p class="stat-num">22</p>
+            <p class="stat-foot"><b class="num">14</b> 我创建 · <b class="num">8</b> 其他教师</p>
+          </div>
+          <div class="card hoverable">
+            <div class="stat-top"><span class="stat-label">已发布</span>
+              <div class="ic ic-s"><svg><use href="#i-check"/></svg></div></div>
+            <p class="stat-num">17</p>
+            <p class="stat-foot">整体通过率 <b class="num">82.4%</b></p>
+          </div>
+          <div class="card hoverable">
+            <div class="stat-top"><span class="stat-label">草稿</span>
+              <div class="ic ic-w"><svg><use href="#i-edit"/></svg></div></div>
+            <p class="stat-num">5</p>
+            <p class="stat-foot">仅本人可见</p>
+          </div>
+          <div class="card hoverable">
+            <div class="stat-top"><span class="stat-label">被其他教师引用</span>
+              <div class="ic ic-a"><svg><use href="#i-share"/></svg></div></div>
+            <p class="stat-num">23</p>
+            <p class="stat-foot">被 <b class="num">23</b> 位教师引用</p>
+          </div>
+        </div>
+
+        <!-- 筛选 -->
+        <div class="sub-filter anim" style="animation-delay:.08s">
+          <span class="lbl">难度</span>
+          <select id="f-diff">
+            <option value="">全部难度</option>
+            <option>★ 入门</option>
+            <option>★★ 基础</option>
+            <option>★★★ 中等</option>
+            <option>★★★★ 进阶</option>
+            <option>★★★★★ 挑战</option>
+          </select>
+          <span class="lbl">标签</span>
+          <select id="f-tag">
+            <option value="">全部标签</option>
+            <option>数组</option>
+            <option>字符串</option>
+            <option>链表</option>
+            <option>哈希</option>
+            <option>动态规划</option>
+            <option>排序</option>
+            <option>图</option>
+            <option>栈</option>
+          </select>
+          <span class="lbl">可见性</span>
+          <select id="f-vis">
+            <option value="">全部</option>
+            <option>我创建的</option>
+            <option>引用公共库</option>
+            <option>已共享到公共库</option>
+          </select>
+          <span class="lbl">排序</span>
+          <select id="f-sort">
+            <option value="recent">最近编辑</option>
+            <option value="subs">使用次数</option>
+            <option value="rate">通过率</option>
+            <option value="created">创建时间</option>
+          </select>
+          <div class="right">
+            <div class="view-toggle">
+              <button class="on" data-view="table"><svg><use href="#i-table"/></svg>表格</button>
+              <button data-view="card"><svg><use href="#i-grid"/></svg>卡片</button>
+            </div>
+            <button class="reset" onclick="resetFilter()"><svg style="font-size:12px"><use href="#i-x"/></svg>清空筛选</button>
+          </div>
+        </div>
+
+        <!-- 题目表格 -->
+        <div class="table anim" style="animation-delay:.12s">
+          <div class="t-head">
+            <div>题号</div>
+            <div data-sort="name">标题</div>
+            <div data-sort="diff">难度</div>
+            <div>标签</div>
+            <div data-sort="src">来源教师</div>
+            <div data-sort="subm">提交次数</div>
+            <div data-sort="rate">通过率</div>
+            <div data-sort="no"></div>
+          </div>
+
+          <!-- 行 1 · 自有 · 已发布 · 82.4% -->
+          <div class="t-row" onclick="enterProblem('P0001')">
+            <div class="pid">P0001</div>
+            <div class="ti">两数之和</div>
+            <div><span class="stars">★★<span class="off">★★★</span><span class="num">基础</span></span></div>
+            <div class="tags">
+              <span class="tag-chip">数组</span>
+              <span class="tag-chip">哈希</span>
+              <span class="tag-chip">基础</span>
+            </div>
+            <div class="src-user"><div class="src-avatar">王</div><div class="src-meta"><div class="src-name">王建国</div><span class="src-mark">本人</span></div></div>
+            <div class="ref-count">142</div>
+            <div>
+              <div class="pass-rate"><div class="bar"><span style="width:82%"></span></div><span class="pct txt-s">82.4%</span></div>
+            </div>
+                        <div class="row-menu" onclick="event.stopPropagation();toggleMenu(this)">
+              <button class="row-menu-btn"><svg><use href="#i-dots"/></svg></button>
+              <div class="row-menu-list">
+                <button onclick="enterProblem('P0001')"><svg><use href="#i-edit"/></svg>编辑题目</button>
+                <button onclick="verify('P0001')"><svg><use href="#i-flask"/></svg>验证用例</button>
+                <button onclick="copyProb('P0001')"><svg><use href="#i-copy"/></svg>复制为草稿</button>
+                <button onclick="toggleShare('P0001')"><svg><use href="#i-share"/></svg>取消共享</button>
+                <div class="sep-line"></div>
+                <button class="danger" onclick="delProb('P0001')"><svg><use href="#i-trash"/></svg>删除</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 行 2 · 自有 · 已发布 · 91.2% -->
+          <div class="t-row" onclick="enterProblem('P0002')">
+            <div class="pid">P0002</div>
+            <div class="ti">有效括号</div>
+            <div><span class="stars">★★<span class="off">★★★</span><span class="num">基础</span></span></div>
+            <div class="tags">
+              <span class="tag-chip">字符串</span>
+              <span class="tag-chip">栈</span>
+            </div>
+            <div class="src-user"><div class="src-avatar">王</div><div class="src-meta"><div class="src-name">王建国</div><span class="src-mark">本人</span></div></div>
+            <div class="ref-count">96</div>
+            <div>
+              <div class="pass-rate"><div class="bar"><span style="width:91%"></span></div><span class="pct txt-s">91.2%</span></div>
+            </div>
+                        <div class="row-menu" onclick="event.stopPropagation();toggleMenu(this)">
+              <button class="row-menu-btn"><svg><use href="#i-dots"/></svg></button>
+              <div class="row-menu-list">
+                <button onclick="enterProblem('P0002')"><svg><use href="#i-edit"/></svg>编辑题目</button>
+                <button onclick="verify('P0002')"><svg><use href="#i-flask"/></svg>验证用例</button>
+                <button onclick="copyProb('P0002')"><svg><use href="#i-copy"/></svg>复制为草稿</button>
+                <button onclick="toggleShare('P0002')"><svg><use href="#i-share"/></svg>取消共享</button>
+                <div class="sep-line"></div>
+                <button class="danger" onclick="delProb('P0002')"><svg><use href="#i-trash"/></svg>删除</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 行 3 · 自有 · 已发布 · 67.8% · 草稿标记可放这里 -->
+          <div class="t-row" onclick="enterProblem('P0003')">
+            <div class="pid">P0003</div>
+            <div class="ti">反转链表 <span class="draft-mark">草稿</span></div>
+            <div><span class="stars">★★★<span class="off">★★</span><span class="num">中等</span></span></div>
+            <div class="tags">
+              <span class="tag-chip">链表</span>
+              <span class="tag-chip">指针</span>
+              <span class="tag-chip overflow">+1</span>
+            </div>
+            <div class="src-user"><div class="src-avatar">王</div><div class="src-meta"><div class="src-name">王建国</div><span class="src-mark">本人</span></div></div>
+            <div class="ref-count">218</div>
+            <div>
+              <div class="pass-rate"><div class="bar"><span style="width:68%"></span></div><span class="pct">67.8%</span></div>
+            </div>
+                        <div class="row-menu" onclick="event.stopPropagation();toggleMenu(this)">
+              <button class="row-menu-btn"><svg><use href="#i-dots"/></svg></button>
+              <div class="row-menu-list">
+                <button onclick="enterProblem('P0003')"><svg><use href="#i-edit"/></svg>编辑题目</button>
+                <button onclick="verify('P0003')"><svg><use href="#i-flask"/></svg>验证用例</button>
+                <button onclick="copyProb('P0003')"><svg><use href="#i-copy"/></svg>复制为草稿</button>
+                <button onclick="toggleShare('P0003')"><svg><use href="#i-share"/></svg>分享到公共库</button>
+                <div class="sep-line"></div>
+                <button class="danger" onclick="delProb('P0003')"><svg><use href="#i-trash"/></svg>删除</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 行 4 · 自有 · 已发布 · 89.5% -->
+          <div class="t-row" onclick="enterProblem('P0004')">
+            <div class="pid">P0004</div>
+            <div class="ti">二分查找</div>
+            <div><span class="stars">★★<span class="off">★★★</span><span class="num">基础</span></span></div>
+            <div class="tags">
+              <span class="tag-chip">数组</span>
+              <span class="tag-chip">算法</span>
+            </div>
+            <div class="src-user"><div class="src-avatar">王</div><div class="src-meta"><div class="src-name">王建国</div><span class="src-mark">本人</span></div></div>
+            <div class="ref-count">240</div>
+            <div>
+              <div class="pass-rate"><div class="bar"><span style="width:89%"></span></div><span class="pct txt-s">89.5%</span></div>
+            </div>
+                        <div class="row-menu" onclick="event.stopPropagation();toggleMenu(this)">
+              <button class="row-menu-btn"><svg><use href="#i-dots"/></svg></button>
+              <div class="row-menu-list">
+                <button onclick="enterProblem('P0004')"><svg><use href="#i-edit"/></svg>编辑题目</button>
+                <button onclick="verify('P0004')"><svg><use href="#i-flask"/></svg>验证用例</button>
+                <button onclick="copyProb('P0004')"><svg><use href="#i-copy"/></svg>复制为草稿</button>
+                <button onclick="toggleShare('P0004')"><svg><use href="#i-share"/></svg>分享到公共库</button>
+                <div class="sep-line"></div>
+                <button class="danger" onclick="delProb('P0004')"><svg><use href="#i-trash"/></svg>删除</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 行 5 · 自有 · 已发布 · 54.3% -->
+          <div class="t-row" onclick="enterProblem('P0005')">
+            <div class="pid">P0005</div>
+            <div class="ti">LRU 缓存 <span class="draft-mark">草稿</span></div>
+            <div><span class="stars">★★★★<span class="off">★</span><span class="num">进阶</span></span></div>
+            <div class="tags">
+              <span class="tag-chip">设计</span>
+              <span class="tag-chip">哈希</span>
+              <span class="tag-chip">链表</span>
+            </div>
+            <div class="src-user"><div class="src-avatar">王</div><div class="src-meta"><div class="src-name">王建国</div><span class="src-mark">本人</span></div></div>
+            <div class="ref-count">96</div>
+            <div>
+              <div class="pass-rate"><div class="bar"><span class="warn" style="width:54%"></span></div><span class="pct txt-w">54.3%</span></div>
+            </div>
+                        <div class="row-menu" onclick="event.stopPropagation();toggleMenu(this)">
+              <button class="row-menu-btn"><svg><use href="#i-dots"/></svg></button>
+              <div class="row-menu-list">
+                <button onclick="enterProblem('P0005')"><svg><use href="#i-edit"/></svg>编辑题目</button>
+                <button onclick="verify('P0005')"><svg><use href="#i-flask"/></svg>验证用例</button>
+                <button onclick="copyProb('P0005')"><svg><use href="#i-copy"/></svg>复制为草稿</button>
+                <button onclick="toggleShare('P0005')"><svg><use href="#i-share"/></svg>取消共享</button>
+                <div class="sep-line"></div>
+                <button class="danger" onclick="delProb('P0005')"><svg><use href="#i-trash"/></svg>删除</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 行 6 · 公共库引用 -->
+          <div class="t-row" onclick="enterProblem('P0006')">
+            <div class="pid">P0006</div>
+            <div class="ti">课程表（拓扑排序）</div>
+            <div><span class="stars">★★★★<span class="off">★</span><span class="num">进阶</span></span></div>
+            <div class="tags">
+              <span class="tag-chip">图</span>
+              <span class="tag-chip">BFS</span>
+              <span class="tag-chip">拓扑</span>
+            </div>
+            <div class="src-user"><div class="src-avatar a-green">李</div><div class="src-meta"><div class="src-name">李教授</div></div></div>
+            <div class="ref-count">35</div>
+            <div>
+              <div class="pass-rate"><div class="bar"><span style="width:71%"></span></div><span class="pct">71.0%</span></div>
+            </div>
+            <div class="row-menu" onclick="event.stopPropagation();toggleMenu(this)">
+              <button class="row-menu-btn"><svg><use href="#i-dots"/></svg></button>
+              <div class="row-menu-list">
+                <button onclick="enterProblem('P0006')"><svg><use href="#i-eye"/></svg>查看题目</button>
+                <button onclick="copyProb('P0006')"><svg><use href="#i-copy"/></svg>复制到我名下</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 行 7 · 公共库 -->
+          <div class="t-row" onclick="enterProblem('P0007')">
+            <div class="pid">P0007</div>
+            <div class="ti">爬楼梯</div>
+            <div><span class="stars">★<span class="off">★★★★</span><span class="num">入门</span></span></div>
+            <div class="tags">
+              <span class="tag-chip">动态规划</span>
+              <span class="tag-chip">基础</span>
+            </div>
+            <div class="src-user"><div class="src-avatar a-purple">刘</div><div class="src-meta"><div class="src-name">刘老师</div></div></div>
+            <div class="ref-count">88</div>
+            <div>
+              <div class="pass-rate"><div class="bar"><span style="width:95%"></span></div><span class="pct txt-s">95.6%</span></div>
+            </div>
+            <div class="row-menu" onclick="event.stopPropagation();toggleMenu(this)">
+              <button class="row-menu-btn"><svg><use href="#i-dots"/></svg></button>
+              <div class="row-menu-list">
+                <button onclick="enterProblem('P0007')"><svg><use href="#i-eye"/></svg>查看题目</button>
+                <button onclick="copyProb('P0007')"><svg><use href="#i-copy"/></svg>复制到我名下</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 行 8 · 自有 -->
+          <div class="t-row" onclick="enterProblem('P0014')">
+            <div class="pid">P0014</div>
+            <div class="ti">斐波那契数列</div>
+            <div><span class="stars">★★<span class="off">★★★</span><span class="num">基础</span></span></div>
+            <div class="tags">
+              <span class="tag-chip">动态规划</span>
+              <span class="tag-chip">递归</span>
+            </div>
+            <div class="src-user"><div class="src-avatar">王</div><div class="src-meta"><div class="src-name">王建国</div><span class="src-mark">本人</span></div></div>
+            <div class="ref-count">48</div>
+            <div>
+              <div class="pass-rate"><div class="bar"><span style="width:88%"></span></div><span class="pct txt-s">88.4%</span></div>
+            </div>
+                        <div class="row-menu" onclick="event.stopPropagation();toggleMenu(this)">
+              <button class="row-menu-btn"><svg><use href="#i-dots"/></svg></button>
+              <div class="row-menu-list">
+                <button onclick="enterProblem('P0014')"><svg><use href="#i-edit"/></svg>编辑题目</button>
+                <button onclick="verify('P0014')"><svg><use href="#i-flask"/></svg>验证用例</button>
+                <button onclick="copyProb('P0014')"><svg><use href="#i-copy"/></svg>复制为草稿</button>
+                <button onclick="toggleShare('P0014')"><svg><use href="#i-share"/></svg>分享到公共库</button>
+                <div class="sep-line"></div>
+                <button class="danger" onclick="delProb('P0014')"><svg><use href="#i-trash"/></svg>删除</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 行 9 · 公共库 -->
+          <div class="t-row" onclick="enterProblem('P0008')">
+            <div class="pid">P0008</div>
+            <div class="ti">验证回文串</div>
+            <div><span class="stars">★★<span class="off">★★★</span><span class="num">基础</span></span></div>
+            <div class="tags">
+              <span class="tag-chip">字符串</span>
+              <span class="tag-chip">双指针</span>
+            </div>
+            <div class="src-user"><div class="src-avatar a-orange">陈</div><div class="src-meta"><div class="src-name">陈老师</div></div></div>
+            <div class="ref-count">42</div>
+            <div>
+              <div class="pass-rate"><div class="bar"><span style="width:88%"></span></div><span class="pct txt-s">88.7%</span></div>
+            </div>
+            <div class="row-menu" onclick="event.stopPropagation();toggleMenu(this)">
+              <button class="row-menu-btn"><svg><use href="#i-dots"/></svg></button>
+              <div class="row-menu-list">
+                <button onclick="enterProblem('P0008')"><svg><use href="#i-eye"/></svg>查看题目</button>
+                <button onclick="copyProb('P0008')"><svg><use href="#i-copy"/></svg>复制到我名下</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 行 10 · 自有 -->
+          <div class="t-row" onclick="enterProblem('P0019')">
+            <div class="pid">P0019</div>
+            <div class="ti">合并有序数组</div>
+            <div><span class="stars">★★★<span class="off">★★</span><span class="num">中等</span></span></div>
+            <div class="tags">
+              <span class="tag-chip">数组</span>
+              <span class="tag-chip">双指针</span>
+              <span class="tag-chip">排序</span>
+            </div>
+            <div class="src-user"><div class="src-avatar">王</div><div class="src-meta"><div class="src-name">王建国</div><span class="src-mark">本人</span></div></div>
+            <div class="ref-count">144</div>
+            <div>
+              <div class="pass-rate"><div class="bar"><span style="width:72%"></span></div><span class="pct">72.3%</span></div>
+            </div>
+                        <div class="row-menu" onclick="event.stopPropagation();toggleMenu(this)">
+              <button class="row-menu-btn"><svg><use href="#i-dots"/></svg></button>
+              <div class="row-menu-list">
+                <button onclick="enterProblem('P0019')"><svg><use href="#i-edit"/></svg>编辑题目</button>
+                <button onclick="verify('P0019')"><svg><use href="#i-flask"/></svg>验证用例</button>
+                <button onclick="copyProb('P0019')"><svg><use href="#i-copy"/></svg>复制为草稿</button>
+                <button onclick="toggleShare('P0019')"><svg><use href="#i-share"/></svg>分享到公共库</button>
+                <div class="sep-line"></div>
+                <button class="danger" onclick="delProb('P0019')"><svg><use href="#i-trash"/></svg>删除</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 行 11 · 自有 -->
+          <div class="t-row" onclick="enterProblem('P0024')">
+            <div class="pid">P0024</div>
+            <div class="ti">链表反转</div>
+            <div><span class="stars">★★★<span class="off">★★</span><span class="num">中等</span></span></div>
+            <div class="tags">
+              <span class="tag-chip">链表</span>
+              <span class="tag-chip">指针</span>
+            </div>
+            <div class="src-user"><div class="src-avatar">王</div><div class="src-meta"><div class="src-name">王建国</div><span class="src-mark">本人</span></div></div>
+            <div class="ref-count">132</div>
+            <div>
+              <div class="pass-rate"><div class="bar"><span style="width:67%"></span></div><span class="pct">67.8%</span></div>
+            </div>
+                        <div class="row-menu" onclick="event.stopPropagation();toggleMenu(this)">
+              <button class="row-menu-btn"><svg><use href="#i-dots"/></svg></button>
+              <div class="row-menu-list">
+                <button onclick="enterProblem('P0024')"><svg><use href="#i-edit"/></svg>编辑题目</button>
+                <button onclick="verify('P0024')"><svg><use href="#i-flask"/></svg>验证用例</button>
+                <button onclick="copyProb('P0024')"><svg><use href="#i-copy"/></svg>复制为草稿</button>
+                <button onclick="toggleShare('P0024')"><svg><use href="#i-share"/></svg>分享到公共库</button>
+                <div class="sep-line"></div>
+                <button class="danger" onclick="delProb('P0024')"><svg><use href="#i-trash"/></svg>删除</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 行 12 · 自有 -->
+          <div class="t-row" onclick="enterProblem('P0031')">
+            <div class="pid">P0031</div>
+            <div class="ti">字符串去重</div>
+            <div><span class="stars">★★<span class="off">★★★</span><span class="num">基础</span></span></div>
+            <div class="tags">
+              <span class="tag-chip">字符串</span>
+              <span class="tag-chip">集合</span>
+            </div>
+            <div class="src-user"><div class="src-avatar">王</div><div class="src-meta"><div class="src-name">王建国</div><span class="src-mark">本人</span></div></div>
+            <div class="ref-count">96</div>
+            <div>
+              <div class="pass-rate"><div class="bar"><span style="width:90%"></span></div><span class="pct txt-s">90.1%</span></div>
+            </div>
+                        <div class="row-menu" onclick="event.stopPropagation();toggleMenu(this)">
+              <button class="row-menu-btn"><svg><use href="#i-dots"/></svg></button>
+              <div class="row-menu-list">
+                <button onclick="enterProblem('P0031')"><svg><use href="#i-edit"/></svg>编辑题目</button>
+                <button onclick="verify('P0031')"><svg><use href="#i-flask"/></svg>验证用例</button>
+                <button onclick="copyProb('P0031')"><svg><use href="#i-copy"/></svg>复制为草稿</button>
+                <button onclick="toggleShare('P0031')"><svg><use href="#i-share"/></svg>取消共享</button>
+                <div class="sep-line"></div>
+                <button class="danger" onclick="delProb('P0031')"><svg><use href="#i-trash"/></svg>删除</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 分页 -->
+          <div class="pager">
+            <div class="info">显示 <b>1-12</b> 共 <b>22</b> 条</div>
+            <div class="pages">
+              <button class="pg on">1</button>
+              <button class="pg">2</button>
+              <button class="pg">›</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+boot();
+
+// === 行菜单 ===
+function toggleMenu(el){
+  document.querySelectorAll('.row-menu.open').forEach(function(m){ if(m!==el) m.classList.remove('open'); });
+  el.classList.toggle('open');
+}
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.row-menu')) document.querySelectorAll('.row-menu.open').forEach(function(m){m.classList.remove('open');});
+});
+
+// === 视图切换 ===
+document.querySelectorAll('.view-toggle button').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('.view-toggle button').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');
+    if(b.dataset.view === 'card') toast('卡片视图开发中');
+  });
+});
+
+// === 行操作 ===
+function enterProblem(pid){ window.location.href = 'teacher-problems-edit.html?pid=' + pid; }
+function verify(pid){ window.location.href = 'teacher-problems-test.html?pid=' + pid; }
+function copyProb(pid){
+  Modal.confirm({
+    title: '复制为草稿？',
+    body: '将复制 <b>' + pid + '</b> 的完整内容（包括题干、用例、答案）到你的草稿箱，原题保持不变。',
+    confirmText: '复制为草稿',
+    onConfirm: function(){ toast('已复制为草稿'); }
+  });
+}
+function toggleShare(pid){
+  Modal.confirm({
+    title: '切换共享状态？',
+    body: '切换后，公共库的其它教师将' + (Math.random() > 0.5 ? '看到' : '不再看到') + '此题目。',
+    confirmText: '确认切换',
+    onConfirm: function(){ toast('已更新共享状态'); }
+  });
+}
+function delProb(pid){
+  Modal.confirm({
+    title: '删除题目？',
+    body: '将删除 <b>' + pid + '</b>。如已被作业引用，引用关系将一并解除。此操作不可撤销。',
+    danger: true,
+    confirmText: '永久删除',
+    onConfirm: function(){ toast('已删除 ' + pid); }
+  });
+}
+
+// === 批量导入 ===
+function bulkImport(){
+  Modal.form({
+    title: '批量导入题目',
+    fields: [
+      { name: 'fmt', label: '导入格式', type: 'select', value: 'markdown', options: [
+        { value: 'markdown', label: 'Markdown（每道题以 --- 分隔）' },
+        { value: 'json', label: 'JSON 数组' },
+        { value: 'zip', label: 'ZIP 文件（题面 + 测试用例）' }
+      ]},
+      { name: 'paste', label: '内容', type: 'textarea', required: true, placeholder: '粘贴题目内容…',
+        hint: '每道题用 --- 分隔 · 包含题干、限制、初始代码、参考答案、用例' }
+    ],
+    submitText: '导入并预览',
+    onSubmit: function(v){
+      toast('已导入 ' + Math.floor(Math.random()*5+1) + ' 道题 · 请前往编辑器复核');
+    }
+  });
+}
+
+// === 筛选 ===
+function resetFilter(){
+  ['f-diff','f-tag','f-vis','f-sort'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.selectedIndex = 0;
+  });
+  document.getElementById('search-input').value = '';
+  toast('已清空筛选');
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>登录 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+  --shadow-lg:0 24px 48px -12px rgba(15,23,42,.18);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171;  --danger-subtle:#451414;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+  --shadow-lg:0 24px 48px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--surface);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;
+  min-height:100vh;display:flex;flex-direction:column}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ============== 顶部细导航 ============== */
+.pub-nav{height:56px;display:flex;align-items:center;padding:0 24px}
+.pub-logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;letter-spacing:-.01em}
+.pub-logo .mark{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--primary),#38BDF8);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700}
+.pub-nav .back{margin-left:auto;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;
+  font-size:13px;color:var(--muted);transition:.18s}
+.pub-nav .back:hover{background:var(--border);color:var(--fg)}
+.icon-btn{padding:7px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:.18s}
+.icon-btn:hover{background:var(--border);color:var(--fg)}
+
+/* ============== 主区 ============== */
+.shell{flex:1;display:flex;align-items:center;justify-content:center;padding:32px 20px;
+  background:
+    radial-gradient(ellipse 600px 400px at 50% 0%,color-mix(in srgb,var(--primary) 8%,transparent),transparent 70%),
+    radial-gradient(ellipse 400px 300px at 100% 100%,color-mix(in srgb,var(--accent) 6%,transparent),transparent 70%),
+    var(--surface)}
+.wrap{width:100%;max-width:440px;display:flex;flex-direction:column;gap:18px}
+.brand{text-align:center;margin-bottom:6px}
+.brand .mark{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--primary),#38BDF8);
+  display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:24px;font-weight:700;
+  box-shadow:0 6px 16px -4px color-mix(in srgb,var(--primary) 40%,transparent)}
+.brand h1{margin-top:14px;font-size:22px;font-weight:700;letter-spacing:-.02em}
+.brand p{margin-top:6px;font-size:13.5px;color:var(--muted)}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;
+  box-shadow:var(--shadow-md)}
+
+/* ============== 表单 ============== */
+.fm{display:flex;flex-direction:column;gap:16px}
+.fm-tabs{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px}
+.fm-tab{flex:1;padding:8px 12px;border-radius:7px;font-size:13px;font-weight:500;color:var(--muted);
+  display:flex;align-items:center;justify-content:center;gap:6px;transition:.18s}
+.fm-tab.on{background:var(--card);color:var(--fg);box-shadow:var(--shadow)}
+.fm-tab svg{font-size:14px}
+
+.fm-field{display:flex;flex-direction:column;gap:6px}
+.fm-field label{font-size:12.5px;font-weight:500;color:var(--fg)}
+.fm-field .hint{font-size:11.5px;color:var(--subtle);line-height:1.5}
+
+.fm-input{position:relative}
+.fm-input .lead{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--subtle);font-size:16px;display:flex}
+.fm-input input{width:100%;height:44px;padding:0 14px 0 42px;border:1px solid var(--border);border-radius:10px;
+  background:var(--surface);font-size:14px;color:var(--fg);outline:none;transition:.18s;font-family:inherit}
+.fm-input input::placeholder{color:var(--subtle)}
+.fm-input input:focus{border-color:var(--primary);background:var(--card);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 15%,transparent)}
+.fm-input.has-eye input{padding-right:42px}
+.fm-input .eye{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--subtle);font-size:16px;
+  display:flex;padding:4px;border-radius:6px;transition:.18s}
+.fm-input .eye:hover{color:var(--fg);background:var(--border)}
+
+/* 行内小元素 */
+.fm-row{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;margin-top:-2px}
+.checkbox{display:inline-flex;align-items:center;gap:8px;color:var(--muted);cursor:pointer;user-select:none}
+.checkbox input{appearance:none;width:16px;height:16px;border:1.5px solid var(--border-strong);border-radius:4px;
+  background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.18s;position:relative;flex-shrink:0}
+.checkbox input:checked{background:var(--primary);border-color:var(--primary)}
+.checkbox input:checked::after{content:"";width:9px;height:5px;border:2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translateY(-1px)}
+.fm-row a{color:var(--primary);font-weight:500}
+.fm-row a:hover{text-decoration:underline}
+
+/* 错误态 */
+.fm-field.has-err .fm-input input{border-color:var(--danger);background:color-mix(in srgb,var(--danger-subtle) 30%,var(--surface))}
+.fm-field.has-err .hint{color:var(--danger);display:flex;align-items:center;gap:4px}
+.fm-field.has-err .hint::before{content:"!";font-weight:700}
+
+/* 提交按钮 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;border-radius:10px;
+  background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+  box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s;width:100%}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-lg{padding:13px 24px;font-size:15px;border-radius:11px}
+
+/* ============== 提示卡 ============== */
+.note{margin-top:4px;padding:11px 14px;border-radius:10px;background:var(--warning-subtle);
+  border:1px solid color-mix(in srgb,var(--warning) 30%,transparent);
+  display:flex;align-items:flex-start;gap:10px;font-size:12.5px;line-height:1.6;color:var(--fg)}
+.note .ic{color:var(--warning);font-size:16px;flex-shrink:0;padding-top:1px}
+.note b{color:var(--warning)}
+html.dark .note{background:var(--warning-subtle);border-color:color-mix(in srgb,var(--warning) 30%,transparent)}
+
+/* ============== 分割线 ============== */
+.divider{display:flex;align-items:center;gap:14px;margin:20px 0;color:var(--subtle);font-size:12px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--border)}
+
+/* ============== 演示角色 ============== */
+.role-quick{display:flex;flex-direction:column;gap:8px}
+.role-quick-t{font-size:11.5px;color:var(--subtle);font-weight:500;letter-spacing:.04em;text-transform:uppercase}
+.role-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.role-btn{padding:11px 10px;border:1px solid var(--border);border-radius:10px;background:var(--card);
+  display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--muted);
+  transition:.18s;cursor:pointer}
+.role-btn:hover{border-color:var(--primary);color:var(--fg);background:var(--primary-subtle)}
+.role-btn .ic{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.role-btn.s .ic{background:var(--accent-subtle);color:var(--accent)}
+.role-btn.t .ic{background:var(--primary-subtle);color:var(--primary)}
+.role-btn.a .ic{background:var(--purple-subtle);color:var(--purple)}
+.role-btn b{font-size:13px;color:var(--fg);font-weight:600}
+
+/* ============== 页脚 ============== */
+.foot-note{text-align:center;font-size:12px;color:var(--subtle);line-height:1.7}
+.foot-note a{color:var(--primary);font-weight:500}
+
+/* ============== 响应 ============== */
+@media(max-width:520px){
+  .card{padding:24px 22px;border-radius:14px}
+  .wrap{max-width:100%}
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+.d1{animation-delay:.06s}
+.d2{animation-delay:.12s}
+.d3{animation-delay:.18s}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-cap" viewBox="0 0 24 24"><path d="M2 9 12 4l10 5-10 5z"/><path d="M6 11v5c0 1 3 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-eye-off" viewBox="0 0 24 24"><path d="m2 2 20 20"/><path d="M6.7 6.7C4 8.4 2 12 2 12s3 7 10 7c2 0 3.7-.5 5.2-1.3"/><path d="M9.9 5.1A10 10 0 0 1 22 12c-.6 1.4-1.6 3-3 4.2"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="m12 3 10 18H2z"/><path d="M12 10v5M12 18h.01"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+</svg>
+
+<!-- 顶部细导航 -->
+<header class="pub-nav">
+  <a class="pub-logo" href="index.html">
+    <div class="mark"><svg><use href="#i-cap"/></svg></div>
+    <span>PyLearn</span>
+  </a>
+  <a class="back" href="index.html"><svg><use href="#i-arrow" style="transform:rotate(180deg)"/></svg>返回首页</a>
+  <button class="icon-btn" id="theme-btn" style="margin-left:8px"><svg id="use-theme"><use href="#i-sun"/></svg></button>
+</header>
+
+<main class="shell">
+  <div class="wrap">
+
+    <div class="brand anim">
+      <div class="mark"><svg><use href="#i-cap"/></svg></div>
+      <h1>登录 PyLearn</h1>
+      <p>使用学校下发的账号登录 · 首次登录需修改初始密码</p>
+    </div>
+
+    <form class="card anim d1" id="login-form" onsubmit="return onSubmit(event)">
+      <div class="fm">
+
+        <!-- 身份类型 tab -->
+        <div class="fm-tabs">
+          <div class="fm-tab on" data-tab="email"><svg><use href="#i-mail"/></svg>邮箱</div>
+          <div class="fm-tab" data-tab="id"><svg><use href="#i-user"/></svg>学号 / 工号</div>
+        </div>
+
+        <!-- 邮箱 -->
+        <div class="fm-field" id="f-email">
+          <label for="email">邮箱地址</label>
+          <div class="fm-input">
+            <span class="lead"><svg><use href="#i-mail"/></svg></span>
+            <input type="email" id="email" name="email" placeholder="teacher@example.edu.cn" autocomplete="email" value="wang.jianguo@example.edu.cn">
+          </div>
+          <div class="hint">使用学校下发的邮箱，或与之绑定的其他邮箱</div>
+        </div>
+
+        <!-- 学号/工号 -->
+        <div class="fm-field" id="f-id" style="display:none">
+          <label for="userid">学号 / 工号</label>
+          <div class="fm-input">
+            <span class="lead"><svg><use href="#i-user"/></svg></span>
+            <input type="text" id="userid" name="userid" placeholder="例如 T0018 / S0421" autocomplete="username">
+          </div>
+          <div class="hint">教师工号以 T 开头 · 学生学号以 S 开头</div>
+        </div>
+
+        <!-- 密码 -->
+        <div class="fm-field">
+          <label for="pwd">密码</label>
+          <div class="fm-input has-eye">
+            <span class="lead"><svg><use href="#i-lock"/></svg></span>
+            <input type="password" id="pwd" name="pwd" placeholder="请输入密码" autocomplete="current-password" value="P@ssw0rd123">
+            <span class="eye" id="eye-toggle" title="显示密码"><svg id="eye-icon"><use href="#i-eye"/></svg></span>
+          </div>
+        </div>
+
+        <!-- 记住 / 忘记 -->
+        <div class="fm-row">
+          <label class="checkbox"><input type="checkbox" id="remember" checked>记住此设备 7 天</label>
+          <a href="#" onclick="toast('请联系系统管理员重置密码');return false">忘记密码？</a>
+        </div>
+
+        <!-- 提交 -->
+        <button type="submit" class="btn btn-lg"><svg><use href="#i-arrow"/></svg>登录</button>
+
+        <!-- 首次登录提示 -->
+        <div class="note">
+          <span class="ic"><svg><use href="#i-warn"/></svg></span>
+          <span><b>首次登录？</b>系统会引导你修改初始密码再进入工作台。初始密码由学校管理员通过班级分发或单独告知。</span>
+        </div>
+
+      </div>
+    </form>
+
+    <!-- 演示角色快捷入口（mockup 阶段，方便跳转到对应端） -->
+    <div class="card anim d2" style="padding:18px 22px">
+      <div class="role-quick-t">演示入口 · 一键跳转</div>
+      <div class="role-grid3" style="margin-top:10px">
+        <a class="role-btn s" href="student-dashboard.html">
+          <div class="ic"><svg><use href="#i-user"/></svg></div>
+          <b>学生</b><span>高一(2)班 · 林小雨</span>
+        </a>
+        <a class="role-btn t" href="teacher-dashboard.html">
+          <div class="ic"><svg><use href="#i-cap"/></svg></div>
+          <b>教师</b><span>王建国 · 高一段</span>
+        </a>
+        <a class="role-btn a" href="admin-dashboard.html">
+          <div class="ic"><svg><use href="#i-shield"/></svg></div>
+          <b>管理员</b><span>陈主任</span>
+        </a>
+      </div>
+    </div>
+
+    <p class="foot-note anim d3">
+      账号由学校管理员统一创建 · 学生按班级批量导入<br>
+      没有账号？<a href="#" onclick="toast('请联系学校信息技术老师');return false">联系管理员</a>
+    </p>
+
+  </div>
+</main>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+(function(){
+  // 主题（admin-shared 已处理）
+  var html = document.documentElement;
+  if (localStorage.getItem('theme') === 'dark') {
+    html.classList.add('dark');
+    var u = document.getElementById('use-theme'); if (u) u.setAttribute('href', '#i-moon');
+  }
+  document.getElementById('theme-btn').addEventListener('click', function(){
+    var d = html.classList.toggle('dark');
+    document.getElementById('use-theme').setAttribute('href', d ? '#i-moon' : '#i-sun');
+    localStorage.setItem('theme', d ? 'dark' : 'light');
+  });
+
+  // tab 切换
+  var tabs = document.querySelectorAll('.fm-tab');
+  var fEmail = document.getElementById('f-email');
+  var fId = document.getElementById('f-id');
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){
+      tabs.forEach(function(x){ x.classList.remove('on'); });
+      t.classList.add('on');
+      if (t.dataset.tab === 'email') {
+        fEmail.style.display = '';
+        fId.style.display = 'none';
+      } else {
+        fEmail.style.display = 'none';
+        fId.style.display = '';
+        setTimeout(function(){ document.getElementById('userid').focus(); }, 50);
+      }
+    });
+  });
+
+  // 显示密码
+  var pwd = document.getElementById('pwd');
+  document.getElementById('eye-toggle').addEventListener('click', function(){
+    var on = pwd.type === 'password';
+    pwd.type = on ? 'text' : 'password';
+    document.getElementById('eye-icon').setAttribute('href', on ? '#i-eye-off' : '#i-eye');
+  });
+})();
+
+function onSubmit(e){
+  e.preventDefault();
+  var tab = document.querySelector('.fm-tab.on').dataset.tab;
+  var email = document.getElementById('email').value.trim();
+  var id = document.getElementById('userid').value.trim();
+  var pwd = document.getElementById('pwd').value;
+
+  // 清错
+  document.querySelectorAll('.fm-field').forEach(function(f){ f.classList.remove('has-err'); });
+  document.querySelectorAll('.fm-field .hint').forEach(function(h){ h.removeAttribute('data-orig'); h.textContent = h.dataset.orig || h.textContent; });
+
+  if (tab === 'email' && !email) {
+    var f = document.getElementById('f-email'); f.classList.add('has-err');
+    f.querySelector('.hint').textContent = '请输入邮箱地址';
+    return false;
+  }
+  if (tab === 'id' && !id) {
+    var f = document.getElementById('f-id'); f.classList.add('has-err');
+    f.querySelector('.hint').textContent = '请输入学号或工号';
+    return false;
+  }
+  if (!pwd) {
+    var lbl = document.querySelector('[for="pwd"]').parentNode;
+    lbl.classList.add('has-err');
+    return false;
+  }
+  if (pwd.length < 8) {
+    var lbl2 = document.querySelector('[for="pwd"]').parentNode;
+    lbl2.classList.add('has-err');
+    lbl2.querySelector('.hint').textContent = '密码至少 8 位';
+    return false;
+  }
+
+  // mockup 阶段：直接跳工作台
+  toast('登录成功，正在跳转…');
+  setTimeout(function(){
+    // 按邮箱后缀模拟角色
+    var role = email.indexOf('admin') >= 0 ? 'admin'
+             : email.indexOf('student') >= 0 || /@s\./.test(email) ? 'student'
+             : 'teacher';
+    var map = { student:'student-dashboard.html', teacher:'teacher-dashboard.html', admin:'admin-dashboard.html' };
+    window.location.href = map[role];
+  }, 600);
+  return false;
+}
+</script>
+
+</body>
+</html>

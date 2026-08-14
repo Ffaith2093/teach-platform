@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>教师详情 · 王建国 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0; --border-strong:#CBD5E1;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171;  --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548; --border-strong:#3D4A60;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--purple);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--purple),#EC4899);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.crumb b{color:var(--fg);font-weight:500}
+.crumb .sep{color:var(--border-strong)}
+.crumb .here{color:var(--muted);font-weight:500}
+.search{position:relative;flex:1;max-width:380px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--subtle)}
+.search input{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--border);border-radius:8px;
+              background:var(--surface);color:var(--fg);font-size:14px;outline:none;transition:.18s}
+.search input::placeholder{color:var(--subtle)}
+.search input:focus{border-color:var(--primary);background:var(--card)}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:.18s}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:1140px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-purple{background:var(--purple);color:#fff}
+.btn-purple:hover{background:#7C3AED}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s;background:var(--card)}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-danger{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--danger);color:#fff;font-size:14px;font-weight:500;transition:background .18s}
+.btn-danger:hover{background:#DC2626}
+
+/* ============== 教师头部 ============== */
+.t-head-card{display:flex;align-items:center;gap:20px;padding:24px 28px;border:1px solid var(--border);
+              border-radius:14px;background:var(--card)}
+.t-avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#38BDF8);
+          color:#fff;font-size:26px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+          box-shadow:0 6px 16px -6px color-mix(in srgb,var(--primary) 50%,transparent)}
+.t-info{flex:1;min-width:0}
+.t-info h1{font-size:22px;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.t-info .meta{margin-top:6px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.t-info .meta .sep{width:4px;height:4px;border-radius:50%;background:var(--border)}
+.t-info .meta b{color:var(--fg);font-weight:500}
+.t-info .badges{margin-top:10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 9px;border-radius:999px;font-weight:500}
+.badge .dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.badge.ok{background:var(--success-subtle);color:var(--success)}
+.badge.lock{background:var(--warning-subtle);color:var(--warning)}
+.badge.role{background:var(--purple-subtle);color:var(--purple)}
+.badge.perm{background:var(--primary-subtle);color:var(--primary)}
+.t-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+
+/* ============== 概览 ============== */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.card{border:1px solid var(--border);border-radius:12px;background:var(--card);padding:18px}
+.stat-top{display:flex;align-items:flex-start;justify-content:space-between}
+.stat-label{font-size:12.5px;color:var(--muted)}
+.ic{padding:7px;border-radius:8px;display:flex;font-size:15px}
+.ic-p{background:var(--primary-subtle);color:var(--primary)}
+.ic-a{background:var(--accent-subtle);color:var(--accent)}
+.ic-s{background:var(--success-subtle);color:var(--success)}
+.ic-w{background:var(--warning-subtle);color:var(--warning)}
+.ic-v{background:var(--purple-subtle);color:var(--purple)}
+.stat-num{margin-top:8px;font-size:24px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1;color:var(--fg)}
+.stat-num .u{font-size:13px;font-weight:500;color:var(--subtle);margin-left:3px}
+.stat-foot{margin-top:5px;font-size:11.5px;color:var(--subtle)}
+
+/* ============== Tab ============== */
+.tabs-bar{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);margin-top:6px}
+.tabs{display:flex;gap:6px}
+.tab{padding:11px 16px;font-size:13.5px;font-weight:500;color:var(--muted);position:relative;cursor:pointer;transition:.18s;
+     display:flex;align-items:center;gap:6px}
+.tab:hover{color:var(--fg)}
+.tab.on{color:var(--purple)}
+.tab.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--purple);border-radius:1px 1px 0 0}
+.tab .num{font-size:10.5px;padding:1px 7px;border-radius:999px;background:var(--surface);color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+.tab.on .num{background:var(--purple-subtle);color:var(--purple)}
+.tab-acts{display:flex;align-items:center;gap:8px}
+
+.tab-panel{padding-top:22px;display:none}
+.tab-panel.on{display:block}
+
+/* ============== 基本信息 ============== */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.info-card{border:1px solid var(--border);border-radius:12px;background:var(--card);padding:20px 22px}
+.info-card h3{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.info-card h3 svg{color:var(--purple);font-size:16px}
+.info-row{display:flex;align-items:center;padding:9px 0;border-bottom:1px dashed var(--border);font-size:13px}
+.info-row:last-child{border-bottom:none}
+.info-row .k{width:90px;color:var(--muted);font-size:12.5px}
+.info-row .v{color:var(--fg);font-weight:500;flex:1}
+.info-row .v.muted{color:var(--muted);font-weight:400}
+
+/* ============== 分配班级（核心交互） ============== */
+.assign-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;
+                border:1px solid var(--border);border-radius:10px;background:var(--surface);margin-bottom:14px}
+.assign-toolbar .lbl{font-size:12.5px;color:var(--muted);font-weight:500}
+.assign-toolbar .summary{margin-left:auto;font-size:13px;color:var(--fg);font-weight:500}
+.assign-toolbar .summary b{color:var(--purple);font-variant-numeric:tabular-nums}
+.assign-toolbar select{padding:6px 28px 6px 12px;border:1px solid var(--border);border-radius:8px;
+                       background:var(--card) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") no-repeat right 10px center;
+                       color:var(--fg);font-size:13px;outline:none;cursor:pointer;transition:.18s;
+                       -webkit-appearance:none;appearance:none}
+.assign-toolbar select:focus{border-color:var(--primary)}
+
+.assign-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.assign-col{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden;display:flex;flex-direction:column}
+.assign-col-h{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;
+              border-bottom:1px solid var(--border);background:var(--surface)}
+html.dark .assign-col-h{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.assign-col-h .h{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600}
+.assign-col-h .h svg{font-size:15px;color:var(--muted)}
+.assign-col-h .h .cnt{font-size:11px;padding:2px 8px;border-radius:999px;font-weight:600;font-variant-numeric:tabular-nums;
+                     background:var(--border);color:var(--muted)}
+.assign-col-h .h .cnt.has{background:var(--purple-subtle);color:var(--purple)}
+.assign-col-h .right{display:flex;align-items:center;gap:8px}
+.assign-col-h .search-in{position:relative}
+.assign-col-h .search-in svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--subtle)}
+.assign-col-h .search-in input{width:160px;padding:5px 10px 5px 28px;border:1px solid var(--border);border-radius:7px;
+                               background:var(--card);font-size:12px;outline:none;color:var(--fg);transition:.18s}
+.assign-col-h .search-in input:focus{border-color:var(--primary)}
+.assign-list{flex:1;max-height:520px;overflow-y:auto;padding:6px}
+.assign-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;
+             cursor:pointer;transition:.15s;user-select:none}
+.assign-item:hover{background:var(--surface)}
+.assign-item.checked{background:var(--purple-subtle)}
+.assign-item.checked .cname{color:var(--purple)}
+.assign-checkbox{width:18px;height:18px;border:1.5px solid var(--border-strong);border-radius:5px;
+                 background:var(--card);display:flex;align-items:center;justify-content:center;
+                 transition:.18s;flex-shrink:0}
+.assign-item.checked .assign-checkbox{background:var(--purple);border-color:var(--purple)}
+.assign-item.checked .assign-checkbox::after{content:"";width:9px;height:5px;border:2px solid #fff;
+                                              border-top:0;border-right:0;transform:rotate(-45deg) translateY(-1px)}
+.assign-cic{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+            font-size:14px;background:var(--primary-subtle);color:var(--primary);flex-shrink:0}
+.assign-cinfo{flex:1;min-width:0}
+.assign-cinfo .cname{font-size:13.5px;font-weight:500;line-height:1.2;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.assign-cinfo .cmeta{font-size:11.5px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.assign-cinfo .cmeta .sep{width:3px;height:3px;border-radius:50%;background:var(--border)}
+.assign-cinfo .now{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;color:var(--warning);font-weight:600;
+                   padding:2px 7px;border-radius:4px;background:var(--warning-subtle)}
+.assign-empty{padding:48px 16px;text-align:center;color:var(--muted);font-size:13px}
+.assign-empty svg{font-size:32px;color:var(--subtle);margin-bottom:8px;display:block;margin-inline:auto}
+
+.assign-foot{padding:14px 16px;border-top:1px solid var(--border);background:var(--surface);
+             display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12.5px;color:var(--muted)}
+html.dark .assign-foot{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.assign-foot .note{display:flex;align-items:center;gap:6px}
+.assign-foot .note svg{color:var(--warning);font-size:14px}
+
+.assign-actions{position:sticky;bottom:0;display:flex;justify-content:flex-end;gap:8px;
+                padding:14px 18px;margin-top:14px;border:1px solid var(--border);border-radius:12px;
+                background:var(--card);box-shadow:0 -2px 8px -2px rgba(15,23,42,.06)}
+.assign-actions .hint{margin-right:auto;font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.assign-actions .hint b{color:var(--warning);font-weight:600}
+
+/* ============== 教学课程 ============== */
+.course-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.course-card{border:1px solid var(--border);border-radius:12px;background:var(--card);
+             padding:18px;transition:.18s;cursor:pointer}
+.course-card:hover{border-color:color-mix(in srgb,var(--purple) 40%,transparent);box-shadow:var(--shadow-md)}
+.course-card .stripe{height:6px;border-radius:3px;background:var(--primary);margin:-18px -18px 14px}
+.course-card.c-data .stripe{background:var(--cat-data,var(--primary))}
+.course-card h3{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.course-card .cat{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;padding:2px 7px;border-radius:4px;
+                  font-weight:600;background:var(--primary-subtle);color:var(--primary)}
+.course-card .meta{margin-top:8px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.course-card .stat-row{margin-top:14px;padding-top:12px;border-top:1px dashed var(--border);
+                       display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)}
+.course-card .stat-row b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ============== 操作记录 ============== */
+.log{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.log-item{display:flex;gap:14px;padding:14px 18px;border-bottom:1px solid var(--border);position:relative}
+.log-item:last-child{border-bottom:none}
+.log-line{position:absolute;left:33px;top:32px;bottom:0;width:1px;background:var(--border)}
+.log-item:last-child .log-line{display:none}
+.log-dot{width:24px;height:24px;border-radius:50%;background:var(--surface);border:2px solid var(--border);
+         display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);flex-shrink:0;z-index:1}
+.log-dot.p{background:var(--primary-subtle);border-color:var(--primary);color:var(--primary)}
+.log-dot.a{background:var(--accent-subtle);border-color:var(--accent);color:var(--accent)}
+.log-dot.s{background:var(--success-subtle);border-color:var(--success);color:var(--success)}
+.log-dot.w{background:var(--warning-subtle);border-color:var(--warning);color:var(--warning)}
+.log-body{flex:1;min-width:0}
+.log-body .t{font-size:13.5px;font-weight:500;line-height:1.4}
+.log-body .t b{font-weight:600}
+.log-body .d{margin-top:4px;font-size:11.5px;color:var(--subtle);display:flex;align-items:center;gap:10px}
+.log-body .d .sep{width:3px;height:3px;border-radius:50%;background:var(--border)}
+
+/* 操作按钮 */
+.t-row-actions{display:flex;align-items:center;gap:6px}
+.t-row-actions button{padding:6px;border-radius:6px;color:var(--subtle);transition:.18s;display:flex}
+.t-row-actions button:hover{background:var(--surface);color:var(--fg)}
+
+/* 复制密码按钮 */
+.copy-btn{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:13px;color:var(--fg);
+          background:var(--surface);padding:4px 9px;border-radius:6px;cursor:pointer;border:1px solid var(--border);
+          transition:.18s;display:inline-flex;align-items:center;gap:4px}
+.copy-btn:hover{background:var(--border)}
+.copy-btn svg{font-size:12px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+
+@media(max-width:1100px){
+  .side{display:none}
+  .stats{grid-template-columns:1fr 1fr}
+  .assign-grid,.info-grid{grid-template-columns:1fr}
+  .course-grid{grid-template-columns:1fr 1fr}
+  .t-head-card{flex-direction:column;align-items:flex-start}
+  .content{padding:24px 20px}
+  .topbar{padding:0 20px}
+}
+@media(max-width:720px){
+  .stats{grid-template-columns:1fr}
+  .course-grid{grid-template-columns:1fr}
+  .assign-col-h .search-in input{width:120px}
+}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M3 9 12 3l9 6"/><path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"/><path d="M9 22V12h6v10"/></symbol>
+<symbol id="i-grad" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="m20.6 13.4-8.2 8.2a2 2 0 0 1-2.8 0l-7-7A2 2 0 0 1 2 13.2V4a2 2 0 0 1 2-2h9.2a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+<symbol id="i-exam" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="3" rx="1"/><path d="M9 11h6M9 14h6M9 17h3"/></symbol>
+<symbol id="i-set" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></symbol>
+<symbol id="i-judge" viewBox="0 0 24 24"><path d="m12 2 3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M21.7 7.3a2.5 2.5 0 0 0-3.5 0L8 17.5 6 22l4.5-2L20 10.5a2.5 2.5 0 0 0 0-3.5z"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 9.2-9.2M15 8l4 4"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="m21.7 18-9-15.3a1 1 0 0 0-1.7 0L1.3 18a1 1 0 0 0 .9 1.5h18.6a1 1 0 0 0 .9-1.5z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8"/><path d="M3 3v5h5"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6.7 2.7L3 13"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-shield"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">管理员</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">总览</p>
+      <a class="nav-item" href="admin-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <p class="nav-label">组织</p>
+      <a class="nav-item" href="admin-students.html"><svg><use href="#i-users"/></svg>学生</a>
+      <a class="nav-item active"><svg><use href="#i-grad"/></svg>教师</a>
+      <p class="nav-label">内容</p>
+      <a class="nav-item" href="admin-exams.html"><svg><use href="#i-exam"/></svg>考试<span class="nav-count">47</span></a>
+<a class="nav-item" href="admin-courses.html"><svg><use href="#i-book"/></svg>课程</a>
+      <a class="nav-item" href="admin-banks.html"><svg><use href="#i-tag"/></svg>题库</a>
+      <p class="nav-label">系统</p>
+      <a class="nav-item" href="admin-judge-queue.html"><svg><use href="#i-judge"/></svg>评测队列<span class="nav-count">2</span></a>
+      <a class="nav-item" href="admin-settings.html"><svg><use href="#i-set"/></svg>系统设置</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈主任</div>
+        <div class="s">系统管理员</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb">
+        <a href="admin-teachers.html" style="color:inherit">教师</a>
+        <span class="sep">/</span>
+        <span class="here">王建国</span>
+      </span>
+      <div class="search">
+        <svg><use href="#i-search"/></svg>
+        <input placeholder="搜索教师姓名 / 工号…">
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <!-- 教师头部 -->
+        <div class="t-head-card anim">
+          <div class="t-avatar">王</div>
+          <div class="t-info">
+            <h1>
+              王建国
+              <span class="badge ok"><span class="dot"></span>在职</span>
+              <span class="badge role"><span class="dot"></span>教师</span>
+              <span class="badge perm"><svg><use href="#i-lock"/></svg>已改密</span>
+            </h1>
+            <div class="meta">
+              <span><b>T0018</b> · 工号</span>
+              <span class="sep"></span>
+              <span><svg style="vertical-align:-2px;margin-right:3px"><use href="#i-mail"/></svg>wang.jianguo@example.edu.cn</span>
+              <span class="sep"></span>
+              <span>信息技术组</span>
+              <span class="sep"></span>
+              <span>任职 <b>3 年 2 个月</b>（2022-06 入职）</span>
+            </div>
+            <div class="badges">
+              <span class="badge lock"><svg><use href="#i-warn"/></svg>需 9 月 1 日前完成「年度安全培训」</span>
+            </div>
+          </div>
+          <div class="t-actions">
+            <button class="btn-ghost"><svg><use href="#i-reset"/></svg>重置密码</button>
+            <button class="btn-ghost"><svg><use href="#i-edit"/></svg>编辑</button>
+            <button class="btn-purple"><svg><use href="#i-trash"/></svg>停用</button>
+          </div>
+        </div>
+
+        <!-- 概览 -->
+        <div class="stats anim" style="animation-delay:.04s">
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">分配班级</span>
+              <div class="ic ic-p"><svg><use href="#i-class"/></svg></div></div>
+            <p class="stat-num">3<span class="u">个</span></p>
+            <p class="stat-foot">高一(1)·高一(3)·高一(5)</p>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">学生总数</span>
+              <div class="ic ic-a"><svg><use href="#i-users"/></svg></div></div>
+            <p class="stat-num">152<span class="u">人</span></p>
+            <p class="stat-foot">本周新增 0</p>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">教学课程</span>
+              <div class="ic ic-s"><svg><use href="#i-book"/></svg></div></div>
+            <p class="stat-num">5<span class="u">门</span></p>
+            <p class="stat-foot">2 主授 · 3 协作</p>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">本周提交</span>
+              <div class="ic ic-v"><svg><use href="#i-history"/></svg></div></div>
+            <p class="stat-num">248<span class="u">次</span></p>
+            <p class="stat-foot">判题队列：0 待处理</p>
+          </div>
+        </div>
+
+        <!-- Tab -->
+        <div class="anim" style="animation-delay:.08s">
+          <div class="tabs-bar">
+            <div class="tabs">
+              <div class="tab" data-p="info"><svg><use href="#i-info"/></svg>基本信息</div>
+              <div class="tab on" data-p="classes"><svg><use href="#i-class"/></svg>分配班级 <span class="num">3</span></div>
+              <div class="tab" data-p="courses"><svg><use href="#i-book"/></svg>教学课程 <span class="num">5</span></div>
+              <div class="tab" data-p="log"><svg><use href="#i-history"/></svg>操作记录</div>
+            </div>
+          </div>
+
+          <!-- ============ 分配班级（默认 tab · 核心交互） ============ -->
+          <div class="tab-panel on" data-p="classes">
+
+            <div class="assign-toolbar">
+              <span class="lbl">筛选</span>
+              <select>
+                <option>全部年级</option>
+                <option>高一年级(2024)</option>
+                <option>高二年级(2023)</option>
+                <option>高三年级(2022)</option>
+              </select>
+              <select>
+                <option>全部状态</option>
+                <option>未分配</option>
+                <option>已分配（含本人）</option>
+                <option>被其他人占用</option>
+              </select>
+              <span class="summary">已分配 <b>3</b> / 共 <b>18</b> 个班级</span>
+            </div>
+
+            <div class="assign-grid">
+
+              <!-- 左：未分配 / 其他教师占用的班级 -->
+              <div class="assign-col">
+                <div class="assign-col-h">
+                  <div class="h"><svg><use href="#i-class"/></svg>可分配班级 <span class="cnt">15</span></div>
+                  <div class="right">
+                    <div class="search-in">
+                      <svg><use href="#i-search"/></svg>
+                      <input placeholder="搜索班级…" data-filter="avail">
+                    </div>
+                  </div>
+                </div>
+                <div class="assign-list" id="list-avail">
+
+                  <div class="assign-item" data-cid="C0002">
+                    <div class="assign-checkbox"></div>
+                    <div class="assign-cic"><svg><use href="#i-class"/></svg></div>
+                    <div class="assign-cinfo">
+                      <div class="cname">高一(2)班</div>
+                      <div class="cmeta"><span>48 人</span><span class="sep"></span><span>现任：李雪</span><span class="sep"></span><span>信息学方向</span></div>
+                    </div>
+                    <span class="now"><svg><use href="#i-warn"/></svg>李雪占用</span>
+                  </div>
+
+                  <div class="assign-item" data-cid="C0004">
+                    <div class="assign-checkbox"></div>
+                    <div class="assign-cic"><svg><use href="#i-class"/></svg></div>
+                    <div class="assign-cinfo">
+                      <div class="cname">高一(4)班</div>
+                      <div class="cmeta"><span>51 人</span><span class="sep"></span><span>现任：林志远</span><span class="sep"></span><span>信息学方向</span></div>
+                    </div>
+                    <span class="now"><svg><use href="#i-warn"/></svg>林志远占用</span>
+                  </div>
+
+                  <div class="assign-item" data-cid="C0006">
+                    <div class="assign-checkbox"></div>
+                    <div class="assign-cic"><svg><use href="#i-class"/></svg></div>
+                    <div class="assign-cinfo">
+                      <div class="cname">高一(6)班</div>
+                      <div class="cmeta"><span>47 人</span><span class="sep"></span><span>现任：陈丽华</span><span class="sep"></span><span>信息学方向</span></div>
+                    </div>
+                    <span class="now"><svg><use href="#i-warn"/></svg>陈丽华占用</span>
+                  </div>
+
+                  <div class="assign-item" data-cid="C0007">
+                    <div class="assign-checkbox"></div>
+                    <div class="assign-cic"><svg><use href="#i-class"/></svg></div>
+                    <div class="assign-cinfo">
+                      <div class="cname">高二(1)班</div>
+                      <div class="cmeta"><span>45 人</span><span class="sep"></span><span style="color:var(--subtle)">未分配</span><span class="sep"></span><span>信息学方向</span></div>
+                    </div>
+                  </div>
+
+                  <div class="assign-item" data-cid="C0008">
+                    <div class="assign-checkbox"></div>
+                    <div class="assign-cic"><svg><use href="#i-class"/></svg></div>
+                    <div class="assign-cinfo">
+                      <div class="cname">高二(2)班</div>
+                      <div class="cmeta"><span>49 人</span><span class="sep"></span><span>现任：张明远</span><span class="sep"></span><span>信息学方向</span></div>
+                    </div>
+                    <span class="now"><svg><use href="#i-warn"/></svg>张明远占用</span>
+                  </div>
+
+                  <div class="assign-item" data-cid="C0009">
+                    <div class="assign-checkbox"></div>
+                    <div class="assign-cic"><svg><use href="#i-class"/></svg></div>
+                    <div class="assign-cinfo">
+                      <div class="cname">高二(3)班</div>
+                      <div class="cmeta"><span>50 人</span><span class="sep"></span><span>现任：刘老师</span><span class="sep"></span><span>通用方向</span></div>
+                    </div>
+                    <span class="now"><svg><use href="#i-warn"/></svg>刘老师占用</span>
+                  </div>
+
+                  <div class="assign-item" data-cid="C0010">
+                    <div class="assign-checkbox"></div>
+                    <div class="assign-cic"><svg><use href="#i-class"/></svg></div>
+                    <div class="assign-cinfo">
+                      <div class="cname">高二(4)班</div>
+                      <div class="cmeta"><span>52 人</span><span class="sep"></span><span style="color:var(--subtle)">未分配</span><span class="sep"></span><span>通用方向</span></div>
+                    </div>
+                  </div>
+
+                  <div class="assign-item" data-cid="C0011">
+                    <div class="assign-checkbox"></div>
+                    <div class="assign-cic"><svg><use href="#i-class"/></svg></div>
+                    <div class="assign-cinfo">
+                      <div class="cname">高三(1)班</div>
+                      <div class="cmeta"><span>40 人</span><span class="sep"></span><span>现任：陈教授</span><span class="sep"></span><span>竞赛方向</span></div>
+                    </div>
+                    <span class="now"><svg><use href="#i-warn"/></svg>陈教授占用</span>
+                  </div>
+
+                  <div class="assign-item" data-cid="C0012">
+                    <div class="assign-checkbox"></div>
+                    <div class="assign-cic"><svg><use href="#i-class"/></svg></div>
+                    <div class="assign-cinfo">
+                      <div class="cname">高三(2)班</div>
+                      <div class="cmeta"><span>42 人</span><span class="sep"></span><span style="color:var(--subtle)">未分配</span><span class="sep"></span><span>竞赛方向</span></div>
+                    </div>
+                  </div>
+
+                </div>
+                <div class="assign-foot">
+                  <span class="note"><svg><use href="#i-info"/></svg>勾选即占用 · 占用后原任课教师将自动解绑该班</span>
+                </div>
+              </div>
+
+              <!-- 右：已分配（本人） -->
+              <div class="assign-col">
+                <div class="assign-col-h">
+                  <div class="h"><svg><use href="#i-check"/></svg>已分配（王建国） <span class="cnt has">3</span></div>
+                  <div class="right">
+                    <div class="search-in">
+                      <svg><use href="#i-search"/></svg>
+                      <input placeholder="搜索…" data-filter="mine">
+                    </div>
+                  </div>
+                </div>
+                <div class="assign-list" id="list-mine">
+
+                  <div class="assign-item checked" data-cid="C0001">
+                    <div class="assign-checkbox"></div>
+                    <div class="assign-cic" style="background:var(--purple-subtle);color:var(--purple)"><svg><use href="#i-class"/></svg></div>
+                    <div class="assign-cinfo">
+                      <div class="cname">高一(1)班 <span style="font-size:11px;color:var(--purple);background:var(--purple-subtle);padding:1px 6px;border-radius:999px;font-weight:600">本人</span></div>
+                      <div class="cmeta"><span>52 人</span><span class="sep"></span><span>信息学方向</span><span class="sep"></span><span>2024-08-30 起任课</span></div>
+                    </div>
+                  </div>
+
+                  <div class="assign-item checked" data-cid="C0003">
+                    <div class="assign-checkbox"></div>
+                    <div class="assign-cic" style="background:var(--purple-subtle);color:var(--purple)"><svg><use href="#i-class"/></svg></div>
+                    <div class="assign-cinfo">
+                      <div class="cname">高一(3)班 <span style="font-size:11px;color:var(--purple);background:var(--purple-subtle);padding:1px 6px;border-radius:999px;font-weight:600">本人</span></div>
+                      <div class="cmeta"><span>50 人</span><span class="sep"></span><span>信息学方向</span><span class="sep"></span><span>2024-08-30 起任课</span></div>
+                    </div>
+                  </div>
+
+                  <div class="assign-item checked" data-cid="C0005">
+                    <div class="assign-checkbox"></div>
+                    <div class="assign-cic" style="background:var(--purple-subtle);color:var(--purple)"><svg><use href="#i-class"/></svg></div>
+                    <div class="assign-cinfo">
+                      <div class="cname">高一(5)班 <span style="font-size:11px;color:var(--purple);background:var(--purple-subtle);padding:1px 6px;border-radius:999px;font-weight:600">本人</span></div>
+                      <div class="cmeta"><span>0 人</span><span class="sep"></span><span>通用方向</span><span class="sep"></span><span>2024-09-12 起任课</span></div>
+                    </div>
+                  </div>
+
+                </div>
+                <div class="assign-foot">
+                  <span class="note"><svg><use href="#i-info"/></svg>取消勾选 = 解绑该班级 · 当前班级内若有学生需先转出</span>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="assign-actions">
+              <span class="hint"><svg><use href="#i-warn"/></svg>本次操作将自动解绑 <b>2</b> 个原任课教师（李雪、林志远）</span>
+              <button class="btn-ghost">取消</button>
+              <button class="btn-purple"><svg><use href="#i-check"/></svg>保存分配（已选 3 → 5）</button>
+            </div>
+
+          </div>
+
+          <!-- ============ 基本信息 ============ -->
+          <div class="tab-panel" data-p="info">
+
+            <div class="info-grid">
+
+              <div class="info-card">
+                <h3><svg><use href="#i-info"/></svg>账号信息</h3>
+                <div class="info-row"><div class="k">姓名</div><div class="v">王建国</div></div>
+                <div class="info-row"><div class="k">工号</div><div class="v mono">T0018</div></div>
+                <div class="info-row"><div class="k">邮箱</div><div class="v">wang.jianguo@example.edu.cn</div></div>
+                <div class="info-row"><div class="k">手机</div><div class="v">138****5621</div></div>
+                <div class="info-row"><div class="k">角色</div><div class="v">教师</div></div>
+                <div class="info-row"><div class="k">状态</div><div class="v" style="color:var(--success)">在职</div></div>
+                <div class="info-row"><div class="k">入职</div><div class="v">2022-06-15</div></div>
+                <div class="info-row"><div class="k">最近登录</div><div class="v">2026-08-12 14:32 · Chrome / macOS</div></div>
+              </div>
+
+              <div class="info-card">
+                <h3><svg><use href="#i-grad"/></svg>教学信息</h3>
+                <div class="info-row"><div class="k">所属组</div><div class="v">信息技术组</div></div>
+                <div class="info-row"><div class="k">职称</div><div class="v">高级教师</div></div>
+                <div class="info-row"><div class="k">主授方向</div><div class="v">Python · 数据结构</div></div>
+                <div class="info-row"><div class="k">班级数</div><div class="v">3 个（高一(1)/(3)/(5)）</div></div>
+                <div class="info-row"><div class="k">学生总数</div><div class="v">152 人</div></div>
+                <div class="info-row"><div class="k">初始密码</div><div class="v"><span class="copy-btn" onclick="copyPwd()">Init@2024Edu <svg><use href="#i-copy"/></svg></span></div></div>
+                <div class="info-row"><div class="k">年度培训</div><div class="v" style="color:var(--warning)">待完成 · 截止 2026-09-01</div></div>
+              </div>
+
+              <div class="info-card" style="grid-column:1 / -1">
+                <h3><svg><use href="#i-history"/></svg>近期登录</h3>
+                <div class="info-row"><div class="k">2026-08-12</div><div class="v">14:32 · Chrome 124 · macOS · <span class="muted">10.0.0.42</span></div></div>
+                <div class="info-row"><div class="k">2026-08-11</div><div class="v">09:14 · Chrome 124 · macOS · <span class="muted">10.0.0.42</span></div></div>
+                <div class="info-row"><div class="k">2026-08-10</div><div class="v">21:08 · Safari 17 · iOS · <span class="muted">移动网络</span></div></div>
+                <div class="info-row"><div class="k">2026-08-09</div><div class="v">08:47 · Chrome 124 · macOS · <span class="muted">10.0.0.42</span></div></div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ============ 教学课程 ============ -->
+          <div class="tab-panel" data-p="courses">
+
+            <div class="course-grid">
+
+              <a class="course-card c-data" href="admin-courses-edit.html?cid=C0001">
+                <div class="stripe"></div>
+                <h3>Python 程序设计基础 <span class="cat">数据</span></h3>
+                <div class="meta">主授 · 2025-2026 春</div>
+                <div class="stat-row"><span>3 班 · 152 人</span><span><b>5</b> 作业 · <b>12</b> 试卷</span></div>
+              </a>
+
+              <a class="course-card c-data" href="admin-courses-edit.html?cid=C0002">
+                <div class="stripe" style="background:var(--cat-algo,#8B5CF6)"></div>
+                <h3>数据结构与算法 <span class="cat" style="background:var(--purple-subtle);color:var(--purple)">算法</span></h3>
+                <div class="meta">主授 · 2025-2026 春</div>
+                <div class="stat-row"><span>2 班 · 100 人</span><span><b>6</b> 作业 · <b>8</b> 试卷</span></div>
+              </a>
+
+              <a class="course-card c-data" href="admin-courses-edit.html?cid=C0003">
+                <div class="stripe" style="background:var(--cat-ai,#EC4899)"></div>
+                <h3>走进人工智能 <span class="cat" style="background:var(--pink-subtle);color:var(--pink)">AI</span></h3>
+                <div class="meta">协作 · 2025-2026 春</div>
+                <div class="stat-row"><span>1 班 · 50 人</span><span><b>3</b> 作业 · <b>4</b> 试卷</span></div>
+              </a>
+
+              <a class="course-card c-data" href="admin-courses-edit.html?cid=C0004">
+                <div class="stripe" style="background:var(--cat-net,#F97316)"></div>
+                <h3>计算机网络入门 <span class="cat" style="background:#FFEDD5;color:#F97316">网络</span></h3>
+                <div class="meta">协作 · 2025-2026 春</div>
+                <div class="stat-row"><span>1 班 · 51 人</span><span><b>5</b> 作业 · <b>3</b> 试卷</span></div>
+              </a>
+
+              <a class="course-card c-data" href="admin-courses-edit.html?cid=C0005">
+                <div class="stripe" style="background:var(--cat-inter,#64748B)"></div>
+                <h3>Python 与数学建模 <span class="cat" style="background:#F1F5F9;color:#64748B">交叉</span></h3>
+                <div class="meta">协作 · 2025-2026 春</div>
+                <div class="stat-row"><span>1 班 · 50 人</span><span><b>4</b> 作业 · <b>5</b> 试卷</span></div>
+              </a>
+
+            </div>
+          </div>
+
+          <!-- ============ 操作记录 ============ -->
+          <div class="tab-panel" data-p="log">
+
+            <div class="log">
+
+              <div class="log-item">
+                <div class="log-dot p"><svg><use href="#i-class"/></svg></div>
+                <div class="log-line"></div>
+                <div class="log-body">
+                  <div class="t"><b>分配班级</b> · 王建国新增任课 <b>高一(5)班</b>，自动解绑 <b>李雪</b> 原任课身份</div>
+                  <div class="d">
+                    <span>2026-09-12 10:23</span>
+                    <span class="sep"></span>
+                    <span>操作人：陈主任</span>
+                    <span class="sep"></span>
+                    <span>IP：10.0.0.18</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="log-item">
+                <div class="log-dot a"><svg><use href="#i-key"/></svg></div>
+                <div class="log-line"></div>
+                <div class="log-body">
+                  <div class="t">王建国 <b>完成首次改密</b>（初始密码 Init@2024Edu → 自定义）</div>
+                  <div class="d">
+                    <span>2026-08-30 09:14</span>
+                    <span class="sep"></span>
+                    <span>登录设备：Chrome / macOS</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="log-item">
+                <div class="log-dot s"><svg><use href="#i-book"/></svg></div>
+                <div class="log-line"></div>
+                <div class="log-body">
+                  <div class="t">被加入协作课程 <b>「Python 与数学建模」</b>（协作教师身份）</div>
+                  <div class="d">
+                    <span>2026-08-22 15:08</span>
+                    <span class="sep"></span>
+                    <span>操作人：陈主任</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="log-item">
+                <div class="log-dot s"><svg><use href="#i-book"/></svg></div>
+                <div class="log-line"></div>
+                <div class="log-body">
+                  <div class="t">被加入协作课程 <b>「走进人工智能」</b>（协作教师身份）</div>
+                  <div class="d">
+                    <span>2026-08-15 11:42</span>
+                    <span class="sep"></span>
+                    <span>操作人：陈主任</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="log-item">
+                <div class="log-dot w"><svg><use href="#i-warn"/></svg></div>
+                <div class="log-line"></div>
+                <div class="log-body">
+                  <div class="t">检测到 <b>异地登录</b>（10.0.0.42 → 27.18.221.4）· 系统已发邮件通知</div>
+                  <div class="d">
+                    <span>2026-08-10 21:08</span>
+                    <span class="sep"></span>
+                    <span>Safari 17 · iOS · 用户已确认</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="log-item">
+                <div class="log-dot p"><svg><use href="#i-class"/></svg></div>
+                <div class="log-body">
+                  <div class="t"><b>创建账号</b> · 工号 T0018 · 初始密码 Init@2024Edu · 分配班级 高一(1)/(3)</div>
+                  <div class="d">
+                    <span>2022-06-15 14:00</span>
+                    <span class="sep"></span>
+                    <span>操作人：陈主任</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+boot();
+
+// Tab 切换
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click', function(){
+    document.querySelectorAll('.tab').forEach(function(x){ x.classList.remove('on'); });
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('on'); });
+    t.classList.add('on');
+    var p = document.querySelector('.tab-panel[data-p="' + t.dataset.p + '"]');
+    if (p) p.classList.add('on');
+  });
+});
+
+// 分配班级切换（移动选中项）
+document.addEventListener('click', function(e){
+  var item = e.target.closest('.assign-item');
+  if (!item) return;
+
+  var cid = item.dataset.cid;
+  var mine = document.getElementById('list-mine');
+  var avail = document.getElementById('list-avail');
+  var checked = item.classList.contains('checked');
+
+  if (checked) {
+    // 从已分配移回可分配
+    item.classList.remove('checked');
+    item.style.background = '';
+    // 找到 avail 中对应项，没有就克隆当前 item 的内容
+    var found = avail.querySelector('.assign-item[data-cid="' + cid + '"]');
+    if (!found) {
+      var clone = document.createElement('div');
+      clone.className = 'assign-item';
+      clone.dataset.cid = cid;
+      clone.innerHTML = item.innerHTML.replace('style="background:var(--purple-subtle);color:var(--purple)"', '').replace(/本人/, '').replace('王建国占用', '未分配');
+      avail.appendChild(clone);
+    }
+    item.remove();
+  } else {
+    // 加入已分配
+    item.classList.add('checked');
+    var clone = document.createElement('div');
+    clone.className = 'assign-item checked';
+    clone.dataset.cid = cid;
+    clone.innerHTML = item.innerHTML;
+    // 标记本人徽章
+    var cname = clone.querySelector('.cname');
+    if (cname && cname.innerHTML.indexOf('本人') < 0) {
+      cname.insertAdjacentHTML('beforeend', ' <span style="font-size:11px;color:var(--purple);background:var(--purple-subtle);padding:1px 6px;border-radius:999px;font-weight:600">本人</span>');
+    }
+    mine.appendChild(clone);
+    item.remove();
+    // 给克隆版紫色图标
+    var cic = clone.querySelector('.assign-cic');
+    if (cic) { cic.style.background = 'var(--purple-subtle)'; cic.style.color = 'var(--purple)'; }
+  }
+
+  // 更新计数
+  updateCounts();
+});
+
+function updateCounts(){
+  var mine = document.querySelectorAll('#list-mine .assign-item').length;
+  var avail = document.querySelectorAll('#list-avail .assign-item').length;
+  document.querySelector('.assign-col .cnt.has').textContent = mine;
+  document.querySelectorAll('.assign-col .cnt')[0].textContent = avail;
+  document.querySelector('.assign-toolbar .summary').innerHTML = '已分配 <b>' + mine + '</b> / 共 <b>' + (mine + avail) + '</b> 个班级';
+}
+
+// 列表内搜索
+document.querySelectorAll('[data-filter]').forEach(function(inp){
+  inp.addEventListener('input', function(){
+    var q = inp.value.trim().toLowerCase();
+    var list = inp.closest('.assign-col').querySelector('.assign-list');
+    list.querySelectorAll('.assign-item').forEach(function(it){
+      var hit = !q || it.textContent.toLowerCase().indexOf(q) >= 0;
+      it.style.display = hit ? '' : 'none';
+    });
+  });
+});
+
+function copyPwd(){
+  navigator.clipboard && navigator.clipboard.writeText('Init@2024Edu');
+  toast('初始密码已复制到剪贴板');
+}
+</script>
+
+</body>
+</html>

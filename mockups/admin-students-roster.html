@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>高一(1)班 · 学生名单 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+  --overlay:rgba(15,23,42,.45);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171;  --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+  --overlay:rgba(0,0,0,.6);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--purple);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--purple),#EC4899);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumb b{color:var(--fg);font-weight:500}
+.crumb a:hover{color:var(--primary)}
+.search{position:relative;flex:1;max-width:320px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--subtle)}
+.search input{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--border);border-radius:8px;
+              background:var(--surface);color:var(--fg);font-size:14px;outline:none;transition:.18s}
+.search input::placeholder{color:var(--subtle)}
+.search input:focus{border-color:var(--primary);background:var(--card)}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:background .18s,color .18s}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:1140px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+
+.back-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);
+           font-weight:500;transition:color .18s;align-self:flex-start}
+.back-link:hover{color:var(--primary)}
+.back-link svg{font-size:14px}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+           padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+h1 .yr{font-size:13px;font-weight:500;padding:3px 9px;border-radius:6px;
+       background:var(--accent-subtle);color:var(--accent);letter-spacing:0}
+.page-sub{margin-top:4px;font-size:14px;color:var(--muted)}
+.page-sub .tch{display:inline-flex;align-items:center;gap:5px;color:var(--fg);font-weight:500}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost svg{font-size:14px}
+.btn-danger{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+            background:var(--danger);color:#fff;font-size:14px;font-weight:500;transition:background .18s}
+.btn-danger:hover{background:#DC2626}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.card{border:1px solid var(--border);border-radius:12px;background:var(--card);padding:20px}
+.stat-top{display:flex;align-items:flex-start;justify-content:space-between}
+.stat-label{font-size:13px;color:var(--muted)}
+.ic{padding:7px;border-radius:8px;display:flex;font-size:16px}
+.ic-p{background:var(--primary-subtle);color:var(--primary)}
+.ic-a{background:var(--accent-subtle);color:var(--accent)}
+.ic-s{background:var(--success-subtle);color:var(--success)}
+.ic-w{background:var(--warning-subtle);color:var(--warning)}
+.stat-num{margin-top:10px;font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat-foot{margin-top:4px;font-size:12px;color:var(--subtle)}
+
+/* 工具条 */
+.toolbar{display:flex;align-items:center;gap:10px;padding:12px 16px;flex-wrap:wrap;
+         border:1px solid var(--border);border-radius:12px;background:var(--card)}
+.tb-search{position:relative;flex:1;min-width:200px}
+.tb-search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--subtle)}
+.tb-search input{width:100%;padding:8px 12px 8px 34px;border:1px solid var(--border);border-radius:8px;
+                 background:var(--surface);color:var(--fg);font-size:13.5px;outline:none;transition:.18s}
+.tb-search input:focus{border-color:var(--primary);background:var(--card)}
+.toolbar select{padding:8px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface);
+                color:var(--fg);font-size:13px;outline:none;cursor:pointer}
+
+/* 学生表 */
+.table{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.t-head{display:grid;grid-template-columns:42px 1.5fr 110px 1.5fr 110px 100px 120px 130px;gap:12px;padding:12px 20px;
+        background:var(--surface);font-size:11px;font-weight:600;color:var(--muted);
+        letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);align-items:center}
+html.dark .t-head{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.t-row{display:grid;grid-template-columns:42px 1.5fr 110px 1.5fr 110px 100px 120px 130px;gap:12px;padding:12px 20px;
+       align-items:center;border-bottom:1px solid var(--border);transition:background .18s}
+.t-row:last-child{border-bottom:none}
+.t-row:hover{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.t-row input[type=checkbox],.t-head input[type=checkbox]{width:15px;height:15px;accent-color:var(--primary);cursor:pointer}
+
+.s-name{display:flex;align-items:center;gap:10px;min-width:0}
+.s-av{width:32px;height:32px;border-radius:50%;color:#fff;font-size:12px;font-weight:600;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.s-av.a1{background:linear-gradient(135deg,#0EA5E9,#14B8A6)}
+.s-av.a2{background:linear-gradient(135deg,#8B5CF6,#EC4899)}
+.s-av.a3{background:linear-gradient(135deg,#10B981,#06B6D4)}
+.s-av.a4{background:linear-gradient(135deg,#F97316,#EF4444)}
+.s-av.a5{background:linear-gradient(135deg,#F59E0B,#FACC15)}
+.s-av.gray{background:var(--border);color:var(--subtle)}
+.s-name .txt{min-width:0}
+.s-name h3{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s-name p{font-size:11px;color:var(--muted);margin-top:1px}
+
+.sid{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.email{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.email.none{color:var(--subtle);font-style:italic}
+
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;
+      font-size:11.5px;font-weight:500}
+.pill.ok{background:var(--success-subtle);color:var(--success)}
+.pill.wait{background:var(--warning-subtle);color:var(--warning)}
+.pill.off{background:var(--surface);color:var(--muted)}
+html.dark .pill.off{background:var(--border)}
+
+.pw{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;color:var(--subtle);font-variant-numeric:tabular-nums}
+.pw.changed{color:var(--muted)}
+.time{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.time.never{color:var(--subtle)}
+
+.t-ops{display:flex;gap:4px;justify-content:flex-end}
+.t-ops button{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+              color:var(--subtle);transition:.18s}
+.t-ops button:hover{background:var(--surface);color:var(--fg)}
+.t-ops button.key:hover{background:var(--primary-subtle);color:var(--primary)}
+.t-ops button.danger:hover{background:var(--danger-subtle);color:var(--danger)}
+
+.foot{padding:18px 22px;border-top:1px solid var(--border);background:var(--surface);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+html.dark .foot{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.foot .warn-tag{display:inline-flex;align-items:center;gap:5px;font-weight:500}
+.foot .warn-tag svg{stroke:var(--warning);width:14px;height:14px}
+.pager{display:flex;align-items:center;gap:4px}
+.pager button{min-width:30px;height:30px;padding:0 8px;border-radius:7px;font-size:13px;color:var(--muted);
+              border:1px solid var(--border);transition:.18s;font-variant-numeric:tabular-nums}
+.pager button:hover{background:var(--card);color:var(--fg)}
+.pager button.on{background:var(--primary);color:var(--primary-fg);border-color:transparent;font-weight:600}
+
+/* 改密弹窗 */
+.mask{position:fixed;inset:0;background:var(--overlay);display:none;align-items:center;justify-content:center;
+      z-index:60;padding:24px}
+.mask.open{display:flex}
+.modal{width:100%;max-width:430px;border:1px solid var(--border);border-radius:14px;background:var(--card);
+       box-shadow:var(--shadow-md);overflow:hidden;animation:fadeUp .22s ease-out both}
+.modal-head{display:flex;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid var(--border)}
+.modal-head .mh-ic{width:38px;height:38px;border-radius:9px;background:var(--primary-subtle);color:var(--primary);
+                   display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.modal-head h3{font-size:15px;font-weight:600}
+.modal-head p{font-size:12px;color:var(--muted);margin-top:2px}
+.modal-head .close{margin-left:auto;padding:6px;border-radius:7px;color:var(--subtle);display:flex;font-size:17px}
+.modal-head .close:hover{background:var(--surface);color:var(--fg)}
+.modal-body{padding:20px 22px;display:flex;flex-direction:column;gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;font-weight:500;color:var(--muted)}
+.field input{padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);
+             color:var(--fg);font-size:13.5px;outline:none;transition:.18s}
+.field input:focus{border-color:var(--primary);background:var(--card)}
+.field .hint{font-size:11.5px;color:var(--subtle)}
+.note{padding:11px 13px;border-radius:8px;background:var(--warning-subtle);color:#92400E;
+      font-size:12px;line-height:1.6;display:flex;gap:8px}
+html.dark .note{color:var(--warning)}
+.note svg{font-size:14px;flex-shrink:0;margin-top:1px}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;
+            background:var(--surface)}
+html.dark .modal-foot{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+
+@media(max-width:1100px){
+  .side{display:none}
+  .stats{grid-template-columns:1fr 1fr}
+  .t-head,.t-row{grid-template-columns:36px 1.4fr 100px 100px 110px;gap:10px}
+  .t-head .h3,.t-head .h5,.t-head .h6,
+  .t-row > *:nth-child(4),.t-row > *:nth-child(6),.t-row > *:nth-child(7){display:none}
+  .content{padding:24px 20px}
+  .topbar{padding:0 20px}
+}
+@media(max-width:640px){ .stats{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="i-grad" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="m20.6 13.4-8.2 8.2a2 2 0 0 1-2.8 0l-7-7A2 2 0 0 1 2 13.2V4a2 2 0 0 1 2-2h9.2a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+<symbol id="i-exam" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="3" rx="1"/><path d="M9 11h6M9 14h6M9 17h3"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+<symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="m21.7 18-9-15.3a1 1 0 0 0-1.7 0L1.3 18a1 1 0 0 0 .9 1.5h18.6a1 1 0 0 0 .9-1.5z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></symbol>
+<symbol id="i-import" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5-5 5 5"/><path d="M12 15V3"/></symbol>
+<symbol id="i-export" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+<symbol id="i-set" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></symbol>
+<symbol id="i-judge" viewBox="0 0 24 24"><path d="m12 2 3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-shield"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">管理员</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">总览</p>
+      <a class="nav-item" href="admin-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <p class="nav-label">组织</p>
+      <a class="nav-item active" href="admin-students.html"><svg><use href="#i-users"/></svg>学生</a>
+      <a class="nav-item" href="admin-teachers.html"><svg><use href="#i-grad"/></svg>教师</a>
+      <p class="nav-label">内容</p>
+      <a class="nav-item" href="admin-exams.html"><svg><use href="#i-exam"/></svg>考试<span class="nav-count">47</span></a>
+<a class="nav-item" href="admin-courses.html"><svg><use href="#i-book"/></svg>课程</a>
+      <a class="nav-item" href="admin-banks.html"><svg><use href="#i-tag"/></svg>题库</a>
+      <p class="nav-label">系统</p>
+      <a class="nav-item" href="admin-judge-queue.html"><svg><use href="#i-judge"/></svg>评测队列<span class="nav-count">2</span></a>
+      <a class="nav-item" href="admin-settings.html"><svg><use href="#i-set"/></svg>系统设置</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈主任</div>
+        <div class="s">系统管理员</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb"><b>组织</b> / <a href="admin-students.html">学生</a> / <a href="admin-students-classes.html">高一年级(2024)</a> / <b>高一(1)班</b></span>
+      <div class="search">
+        <svg><use href="#i-search"/></svg>
+        <input placeholder="搜索学号、姓名…">
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <a class="back-link anim" href="admin-students-classes.html"><svg><use href="#i-arrow-l"/></svg>返回班级列表</a>
+
+        <div class="page-head anim" style="animation-delay:.04s">
+          <div>
+            <h1>高一(1)班 <span class="yr">C2024-01</span></h1>
+            <p class="page-sub">高一年级 2024 级 · 任课教师 <span class="tch">王建国（T0018）</span> · 共 52 名学生</p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-ghost"><svg><use href="#i-export"/></svg>导出名单</button>
+            <button class="btn-ghost" onclick="location.href='admin-students-import.html'"><svg><use href="#i-import"/></svg>批量导入</button>
+            <button class="btn"><svg><use href="#i-plus"/></svg>新增学生</button>
+          </div>
+        </div>
+
+        <div class="stats anim" style="animation-delay:.08s">
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">总人数</span>
+              <div class="ic ic-p"><svg><use href="#i-users"/></svg></div></div>
+            <p class="stat-num">52</p>
+            <p class="stat-foot">名单最后更新 2024-09-02</p>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">已激活</span>
+              <div class="ic ic-s"><svg><use href="#i-check"/></svg></div></div>
+            <p class="stat-num">47 <span style="font-size:14px;color:var(--muted);font-weight:500">/ 52</span></p>
+            <p class="stat-foot">90.4% 已完成首次登录</p>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">未激活</span>
+              <div class="ic ic-w"><svg><use href="#i-warn"/></svg></div></div>
+            <p class="stat-num">5</p>
+            <p class="stat-foot">仍使用初始密码</p>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">已自行改密</span>
+              <div class="ic ic-a"><svg><use href="#i-key"/></svg></div></div>
+            <p class="stat-num">41</p>
+            <p class="stat-foot">初始密码 = 学号后 6 位</p>
+          </div>
+        </div>
+
+        <div class="toolbar anim" style="animation-delay:.12s">
+          <div class="tb-search">
+            <svg><use href="#i-search"/></svg>
+            <input placeholder="按姓名 / 学号 / 邮箱搜索…">
+          </div>
+          <select>
+            <option>全部状态</option>
+            <option>已激活</option>
+            <option>未激活</option>
+          </select>
+          <select>
+            <option>按学号升序</option>
+            <option>按姓名</option>
+            <option>按加入时间</option>
+          </select>
+          <button class="btn-ghost" onclick="batchResetPw()"><svg><use href="#i-key"/></svg>批量重置密码</button>
+        </div>
+
+        <div class="table anim" style="animation-delay:.16s">
+          <div class="t-head">
+            <div><input type="checkbox"></div>
+            <div>姓名</div>
+            <div>学号</div>
+            <div class="h3">邮箱</div>
+            <div>状态</div>
+            <div class="h5">初始密码</div>
+            <div class="h6">首次登录</div>
+            <div style="text-align:right">操作</div>
+          </div>
+
+          <div class="t-row">
+            <div><input type="checkbox"></div>
+            <div class="s-name">
+              <div class="s-av a1">张</div>
+              <div class="txt"><h3>张子轩</h3><p>加入于 2024-09-01</p></div>
+            </div>
+            <div class="sid">20244001</div>
+            <div class="email">zhangzx@school.edu</div>
+            <div><span class="pill ok"><svg style="font-size:11px"><use href="#i-check"/></svg>已激活</span></div>
+            <div class="pw changed">已修改</div>
+            <div class="time">2024-09-02</div>
+            <div class="t-ops">
+              <button title="查看信息"><svg><use href="#i-info"/></svg></button>
+              <button title="修改密码" class="key" onclick="openPw('张子轩','20244001')"><svg><use href="#i-key"/></svg></button>
+              
+    <button title="移出班级" class="danger"
+    data-confirm-title="将该学生移出本班？"
+    data-confirm-body="学生账号保留，可重新加入其他班级
+最近提交记录会一并转移到新班级"
+    data-confirm-danger data-confirm-text="移出班级" data-confirm-toast="已移出班级"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row">
+            <div><input type="checkbox"></div>
+            <div class="s-name">
+              <div class="s-av a2">李</div>
+              <div class="txt"><h3>李梓涵</h3><p>加入于 2024-09-01</p></div>
+            </div>
+            <div class="sid">20244002</div>
+            <div class="email">lizih@school.edu</div>
+            <div><span class="pill ok"><svg style="font-size:11px"><use href="#i-check"/></svg>已激活</span></div>
+            <div class="pw changed">已修改</div>
+            <div class="time">2024-09-02</div>
+            <div class="t-ops">
+              <button title="查看信息"><svg><use href="#i-info"/></svg></button>
+              <button title="修改密码" class="key" onclick="openPw('李梓涵','20244002')"><svg><use href="#i-key"/></svg></button>
+              
+    <button title="移出班级" class="danger"
+    data-confirm-title="将该学生移出本班？"
+    data-confirm-body="学生账号保留，可重新加入其他班级
+最近提交记录会一并转移到新班级"
+    data-confirm-danger data-confirm-text="移出班级" data-confirm-toast="已移出班级"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row">
+            <div><input type="checkbox"></div>
+            <div class="s-name">
+              <div class="s-av a3">王</div>
+              <div class="txt"><h3>王皓宇</h3><p>加入于 2024-09-01</p></div>
+            </div>
+            <div class="sid">20244003</div>
+            <div class="email">why@school.edu</div>
+            <div><span class="pill ok"><svg style="font-size:11px"><use href="#i-check"/></svg>已激活</span></div>
+            <div class="pw">244003</div>
+            <div class="time">2024-09-03</div>
+            <div class="t-ops">
+              <button title="查看信息"><svg><use href="#i-info"/></svg></button>
+              <button title="修改密码" class="key" onclick="openPw('王皓宇','20244003')"><svg><use href="#i-key"/></svg></button>
+              
+    <button title="移出班级" class="danger"
+    data-confirm-title="将该学生移出本班？"
+    data-confirm-body="学生账号保留，可重新加入其他班级
+最近提交记录会一并转移到新班级"
+    data-confirm-danger data-confirm-text="移出班级" data-confirm-toast="已移出班级"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row">
+            <div><input type="checkbox"></div>
+            <div class="s-name">
+              <div class="s-av a4">陈</div>
+              <div class="txt"><h3>陈思琪</h3><p>加入于 2024-09-01</p></div>
+            </div>
+            <div class="sid">20244004</div>
+            <div class="email none">未填写</div>
+            <div><span class="pill wait"><svg style="font-size:11px"><use href="#i-warn"/></svg>未激活</span></div>
+            <div class="pw">244004</div>
+            <div class="time never">从未登录</div>
+            <div class="t-ops">
+              <button title="查看信息"><svg><use href="#i-info"/></svg></button>
+              <button title="修改密码" class="key" onclick="openPw('陈思琪','20244004')"><svg><use href="#i-key"/></svg></button>
+              
+    <button title="移出班级" class="danger"
+    data-confirm-title="将该学生移出本班？"
+    data-confirm-body="学生账号保留，可重新加入其他班级
+最近提交记录会一并转移到新班级"
+    data-confirm-danger data-confirm-text="移出班级" data-confirm-toast="已移出班级"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row">
+            <div><input type="checkbox"></div>
+            <div class="s-name">
+              <div class="s-av a5">赵</div>
+              <div class="txt"><h3>赵子轩</h3><p>加入于 2024-09-01</p></div>
+            </div>
+            <div class="sid">20244005</div>
+            <div class="email">zhaozx@school.edu</div>
+            <div><span class="pill ok"><svg style="font-size:11px"><use href="#i-check"/></svg>已激活</span></div>
+            <div class="pw changed">已修改</div>
+            <div class="time">2024-09-02</div>
+            <div class="t-ops">
+              <button title="查看信息"><svg><use href="#i-info"/></svg></button>
+              <button title="修改密码" class="key" onclick="openPw('赵子轩','20244005')"><svg><use href="#i-key"/></svg></button>
+              
+    <button title="移出班级" class="danger"
+    data-confirm-title="将该学生移出本班？"
+    data-confirm-body="学生账号保留，可重新加入其他班级
+最近提交记录会一并转移到新班级"
+    data-confirm-danger data-confirm-text="移出班级" data-confirm-toast="已移出班级"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row">
+            <div><input type="checkbox"></div>
+            <div class="s-name">
+              <div class="s-av a1">孙</div>
+              <div class="txt"><h3>孙雨桐</h3><p>加入于 2024-09-01</p></div>
+            </div>
+            <div class="sid">20244006</div>
+            <div class="email">sunyt@school.edu</div>
+            <div><span class="pill ok"><svg style="font-size:11px"><use href="#i-check"/></svg>已激活</span></div>
+            <div class="pw changed">已修改</div>
+            <div class="time">2024-09-04</div>
+            <div class="t-ops">
+              <button title="查看信息"><svg><use href="#i-info"/></svg></button>
+              <button title="修改密码" class="key" onclick="openPw('孙雨桐','20244006')"><svg><use href="#i-key"/></svg></button>
+              
+    <button title="移出班级" class="danger"
+    data-confirm-title="将该学生移出本班？"
+    data-confirm-body="学生账号保留，可重新加入其他班级
+最近提交记录会一并转移到新班级"
+    data-confirm-danger data-confirm-text="移出班级" data-confirm-toast="已移出班级"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row">
+            <div><input type="checkbox"></div>
+            <div class="s-name">
+              <div class="s-av gray">周</div>
+              <div class="txt"><h3>周辰逸</h3><p>加入于 2024-09-05 · 转入</p></div>
+            </div>
+            <div class="sid">20244007</div>
+            <div class="email none">未填写</div>
+            <div><span class="pill wait"><svg style="font-size:11px"><use href="#i-warn"/></svg>未激活</span></div>
+            <div class="pw">244007</div>
+            <div class="time never">从未登录</div>
+            <div class="t-ops">
+              <button title="查看信息"><svg><use href="#i-info"/></svg></button>
+              <button title="修改密码" class="key" onclick="openPw('周辰逸','20244007')"><svg><use href="#i-key"/></svg></button>
+              
+    <button title="移出班级" class="danger"
+    data-confirm-title="将该学生移出本班？"
+    data-confirm-body="学生账号保留，可重新加入其他班级
+最近提交记录会一并转移到新班级"
+    data-confirm-danger data-confirm-text="移出班级" data-confirm-toast="已移出班级"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="t-row">
+            <div><input type="checkbox"></div>
+            <div class="s-name">
+              <div class="s-av a2">吴</div>
+              <div class="txt"><h3>吴梦琪</h3><p>加入于 2024-09-01</p></div>
+            </div>
+            <div class="sid">20244008</div>
+            <div class="email">wumq@school.edu</div>
+            <div><span class="pill ok"><svg style="font-size:11px"><use href="#i-check"/></svg>已激活</span></div>
+            <div class="pw changed">已修改</div>
+            <div class="time">2024-09-02</div>
+            <div class="t-ops">
+              <button title="查看信息"><svg><use href="#i-info"/></svg></button>
+              <button title="修改密码" class="key" onclick="openPw('吴梦琪','20244008')"><svg><use href="#i-key"/></svg></button>
+              
+    <button title="移出班级" class="danger"
+    data-confirm-title="将该学生移出本班？"
+    data-confirm-body="学生账号保留，可重新加入其他班级
+最近提交记录会一并转移到新班级"
+    data-confirm-danger data-confirm-text="移出班级" data-confirm-toast="已移出班级"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="foot">
+            <span class="warn-tag">
+              <svg><use href="#i-info"/></svg>
+              初始密码为学号后 6 位 · 学生首次登录后建议自行修改 · 管理员改密会立即失效学生现有会话
+            </span>
+            <div class="pager">
+              <button>‹</button>
+              <button class="on">1</button>
+              <button>2</button>
+              <button>3</button>
+              <button>4</button>
+              <button>7</button>
+              <button>›</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- 修改密码弹窗 -->
+<div class="mask" id="pw-mask" onclick="if(event.target===this)closePw()">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="mh-ic"><svg><use href="#i-key"/></svg></div>
+      <div>
+        <h3>修改学生密码</h3>
+        <p id="pw-target">张子轩 · 20244001</p>
+      </div>
+      <button class="close" onclick="closePw()"><svg><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>新密码</label>
+        <input type="text" value="244001" class="mono">
+        <span class="hint">至少 6 位 · 留空则重置为「学号后 6 位」</span>
+      </div>
+      <div class="field">
+        <label>确认新密码</label>
+        <input type="text" class="mono" placeholder="再次输入新密码">
+      </div>
+      <div class="note">
+        <svg><use href="#i-warn"/></svg>
+        <div>改密后该学生所有已登录设备将被强制退出 · 请通过线下方式告知学生新密码</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-ghost" onclick="closePw()">取消</button>
+      <button class="btn" onclick="closePw()"><svg><use href="#i-check"/></svg>确认修改</button>
+    </div>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+function openPw(name,sid){
+  document.getElementById('pw-target').textContent = name + ' · ' + sid;
+  document.getElementById('pw-mask').classList.add('open');
+}
+function closePw(){ document.getElementById('pw-mask').classList.remove('open'); }
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') closePw(); });
+
+function batchResetPw(){
+  Modal.form({
+    title:'批量重置初始密码',
+    fields:[
+      {name:'rule',type:'select',label:'密码规则',required:true,value:'sid6',options:[
+        {value:'sid6',label:'学号后 6 位（推荐）'},
+        {value:'random',label:'随机 8 位字母数字'},
+        {value:'fixed',label:'统一初始密码'}
+      ]},
+      {name:'fixed',label:'统一初始密码',placeholder:'8-16 位字母数字组合',minlength:8,maxlength:16,
+       hint:'仅当选择「统一初始密码」时生效；其他规则下无需填写'}
+    ],
+    submitText:'重置密码',
+    foot:'将影响本班级 46 名学生 · 操作完成后学生首次登录会强制改密',
+    onSubmit:function(v){
+      if(v.rule==='fixed' && !v.fixed) return false;
+      toast('已为 46 名学生重置密码');
+    }
+  });
+}
+</script>
+</body>
+</html>

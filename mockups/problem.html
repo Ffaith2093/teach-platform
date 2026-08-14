@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>斐波那契数列 · 题库练习</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --kw:#AF52A8; --fn:#4078BE; --str:#0A803C; --nm:#098658; --cmt:#6E7D91; --vr:#0F172A;
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171;  --danger-subtle:#451414;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow:0 1px 2px rgba(0,0,0,.3);
+  --kw:#C586C0; --fn:#DCDCAA; --str:#CE9178; --nm:#B5CEA8; --cmt:#6A9955; --vr:#9CDCFE;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;
+}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+
+.shell{display:flex;flex-direction:column;height:100%}
+
+/* 顶栏 */
+.top{height:56px;flex-shrink:0;display:flex;align-items:center;gap:16px;padding:0 16px;
+     border-bottom:1px solid var(--border);background:var(--card)}
+.back{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;
+      font-size:14px;color:var(--muted);transition:.18s}
+.back:hover{background:var(--surface);color:var(--fg)}
+.vline{width:1px;height:20px;background:var(--border)}
+.ptitle{display:flex;align-items:center;gap:10px;min-width:0}
+.ptitle h1{font-size:15px;font-weight:600;white-space:nowrap}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.meta{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-right:8px}
+.meta span{display:flex;align-items:center;gap:6px}
+.meta b{color:var(--fg);font-weight:500;font-variant-numeric:tabular-nums}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:.18s}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:var(--shadow);transition:background .18s}
+.btn:hover{background:var(--primary-hover)}
+.btn svg{font-size:14px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost svg{font-size:14px}
+
+.badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px;
+       font-size:11px;font-weight:500;white-space:nowrap}
+.badge i{width:4px;height:4px;border-radius:50%;background:currentColor}
+.b-w{background:var(--warning-subtle);color:var(--warning)}
+.b-d{background:var(--danger-subtle);color:var(--danger)}
+
+/* 三栏 */
+.panes{flex:1;min-height:0;display:flex}
+.pane{display:flex;flex-direction:column;background:var(--card);min-width:0}
+.pane-l{width:30%;min-width:300px;border-right:1px solid var(--border)}
+.pane-c{flex:1}
+.pane-r{width:33%;min-width:330px;border-left:1px solid var(--border)}
+
+.tabs{display:flex;gap:4px;padding:8px 16px 0;border-bottom:1px solid var(--border);flex-shrink:0}
+.tab{padding:10px 12px;font-size:14px;color:var(--muted);border-bottom:2px solid transparent;
+     margin-bottom:-1px;transition:color .18s}
+.tab:hover{color:var(--fg)}
+.tab.on{color:var(--primary);font-weight:500;border-bottom-color:var(--primary)}
+
+.scroll{flex:1;min-height:0;overflow-y:auto}
+
+/* 题面 */
+.desc{padding:20px}
+.desc p{font-size:13.5px;line-height:1.75;margin-bottom:12px}
+.code-inline{border-radius:4px;background:var(--surface);padding:2px 6px;
+             font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;color:var(--primary)}
+html.dark .code-inline{background:var(--border)}
+.hint{margin:20px 0;border-left:2px solid var(--primary);border-radius:0 8px 8px 0;
+      background:color-mix(in srgb,var(--primary-subtle) 45%,transparent);padding:12px 16px}
+.hint b{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--primary)}
+.hint p{margin:6px 0 0;font-size:13px;color:var(--muted);line-height:1.7}
+h3.sec{margin:24px 0 8px;font-size:12px;font-weight:600;letter-spacing:.06em;
+       text-transform:uppercase;color:var(--muted)}
+.io{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px}
+.io-head{display:flex;align-items:center;justify-content:space-between;
+         padding:6px 12px;background:var(--surface);border-bottom:1px solid var(--border)}
+html.dark .io-head{background:color-mix(in srgb,var(--border) 40%,transparent)}
+.io-head span{font-size:11px;font-weight:500;color:var(--muted)}
+.io-head button{color:var(--subtle);font-size:12px;display:flex;transition:color .18s}
+.io-head button:hover{color:var(--primary)}
+.io pre{padding:10px 12px;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px}
+.tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)}
+.tag{border-radius:999px;background:var(--surface);color:var(--muted);padding:4px 10px;font-size:11px;font-weight:500}
+html.dark .tag{background:var(--border)}
+
+/* 编辑器 */
+.ed-head{height:40px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+         padding:0 16px;border-bottom:1px solid var(--border)}
+.ed-file{display:flex;align-items:center;gap:8px}
+.ed-file svg{font-size:14px;color:var(--primary)}
+.ed-file .name{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12px;color:var(--muted)}
+.chip{border-radius:4px;background:var(--surface);padding:2px 6px;font-size:10px;font-weight:500;color:var(--subtle)}
+html.dark .chip{background:var(--border)}
+.ed-tools{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--subtle)}
+.ed-tools span{display:flex;align-items:center;gap:4px}
+.ed-tools button{display:flex;font-size:14px;transition:color .18s}
+.ed-tools button:hover{color:var(--fg)}
+
+.ed-body{flex:1;min-height:0;overflow:auto;display:flex;
+         font-family:"SF Mono",Menlo,Consolas,monospace;font-size:13px;line-height:22px}
+.gutter{padding:12px;text-align:right;color:var(--subtle);user-select:none;
+        border-right:1px solid var(--border);background:color-mix(in srgb,var(--surface) 50%,transparent)}
+.ed-body pre{flex:1;padding:12px 0 12px 16px}
+.kw{color:var(--kw)}.fn{color:var(--fn)}.st{color:var(--str)}
+.nm{color:var(--nm)}.cm{color:var(--cmt)}.vr{color:var(--vr)}
+
+.ed-foot{height:32px;flex-shrink:0;display:flex;align-items:center;gap:16px;padding:0 16px;
+         border-top:1px solid var(--border);font-size:11px;color:var(--subtle);
+         background:color-mix(in srgb,var(--surface) 50%,transparent)}
+.ed-foot .right{margin-left:auto;display:flex;align-items:center;gap:4px}
+
+/* 判题结果 */
+.res{padding:16px}
+.verdict{border:1px solid color-mix(in srgb,var(--danger) 25%,transparent);border-radius:12px;
+         background:color-mix(in srgb,var(--danger-subtle) 50%,transparent);padding:16px}
+.verdict-top{display:flex;align-items:flex-start;gap:12px}
+.ic{padding:8px;border-radius:8px;display:flex;font-size:20px}
+.ic-d{background:var(--danger-subtle);color:var(--danger)}
+.verdict-top h2{font-size:15px;font-weight:600;color:var(--danger)}
+.verdict-top p{margin-top:2px;font-size:12px;color:var(--muted)}
+.verdict-top .t{font-size:11px;color:var(--subtle);flex-shrink:0}
+.segs{display:flex;gap:4px;margin-top:12px}
+.segs i{height:6px;flex:1;border-radius:999px;display:block}
+.sg-ok{background:var(--success)}.sg-no{background:var(--danger)}.sg-none{background:var(--border)}
+.verdict-foot{display:flex;gap:16px;margin-top:12px;padding-top:12px;font-size:11px;color:var(--muted);
+              border-top:1px solid color-mix(in srgb,var(--danger) 15%,transparent)}
+.verdict-foot span{display:flex;align-items:center;gap:4px}
+.verdict-foot b{color:var(--fg);font-weight:500;font-variant-numeric:tabular-nums}
+
+.res-label{padding:0 4px;margin:16px 0 8px;font-size:11px;font-weight:600;
+           letter-spacing:.06em;text-transform:uppercase;color:var(--subtle)}
+.tc{display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--border);
+    border-radius:8px;margin-bottom:8px;transition:background .18s}
+.tc:hover{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.tc svg{font-size:16px}
+.tc .nm2{flex:1;font-size:13px;font-weight:500}
+.tc .ms{font-size:11px;color:var(--subtle);font-variant-numeric:tabular-nums}
+.tc.pending{border-style:dashed;opacity:.6}
+.tc.pending .nm2{font-weight:400;color:var(--muted)}
+
+.tc-fail{border:1px solid color-mix(in srgb,var(--danger) 30%,transparent);border-radius:8px;
+         background:color-mix(in srgb,var(--danger-subtle) 30%,transparent);
+         overflow:hidden;margin-bottom:8px}
+.tc-fail .row{display:flex;align-items:center;gap:12px;padding:10px 14px}
+.tc-fail .row .nm2{flex:1;font-size:13px;font-weight:500;color:var(--danger)}
+.tc-fail .row svg{font-size:16px}
+.diff{padding:12px 14px;border-top:1px solid color-mix(in srgb,var(--danger) 20%,transparent)}
+.diff-label{margin-bottom:4px;font-size:10px;font-weight:600;letter-spacing:.06em;
+            text-transform:uppercase;color:var(--subtle)}
+.diff pre{border-radius:6px;padding:6px 10px;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12px}
+.diff .in{background:var(--surface)}
+html.dark .diff .in{background:var(--border)}
+.diff-cols{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.diff .exp{border:1px solid color-mix(in srgb,var(--success) 25%,transparent);
+           background:color-mix(in srgb,var(--success-subtle) 50%,transparent)}
+.diff .act{border:1px solid color-mix(in srgb,var(--danger) 25%,transparent);
+           background:color-mix(in srgb,var(--danger-subtle) 60%,transparent)}
+.lb-s{color:var(--success)}.lb-d{color:var(--danger)}
+.diff-note{display:flex;gap:6px;margin-top:10px;font-size:11px;line-height:1.7;color:var(--muted)}
+.diff-note svg{font-size:12px;margin-top:2px}
+
+.hist{border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.hist-row{display:flex;align-items:center;gap:10px;padding:10px 14px;
+          border-bottom:1px solid var(--border);transition:background .18s}
+.hist-row:last-child{border-bottom:none}
+.hist-row:hover{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.hist-row .mid{flex:1;font-size:11px;color:var(--subtle);font-variant-numeric:tabular-nums}
+.hist-row .t{font-size:11px;color:var(--subtle);font-variant-numeric:tabular-nums}
+
+.txt-s{color:var(--success)}.txt-d{color:var(--danger)}.txt-sub{color:var(--subtle)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .28s ease-out both}
+
+@media(max-width:1100px){ .pane-l{display:none} }
+@media(max-width:800px){ .meta{display:none} }
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+<symbol id="i-timer" viewBox="0 0 24 24"><path d="M10 2h4"/><circle cx="12" cy="14" r="8"/><path d="M12 10v4"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="m6 3 14 9-14 9V3z"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+<symbol id="i-fcode" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5"/><path d="m9 18-2-2 2-2"/><path d="m13 14 2 2-2 2"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8"/><path d="M3 3v5h5"/></symbol>
+<symbol id="i-set" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></symbol>
+<symbol id="i-kb" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></symbol>
+<symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></symbol>
+<symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+</svg>
+
+<div class="shell">
+
+  <!-- 顶栏 -->
+  <header class="top">
+    <a class="back" href="dashboard.html"><svg><use href="#i-arrow"/></svg>题库</a>
+    <div class="vline"></div>
+    <div class="ptitle">
+      <h1>斐波那契数列</h1>
+      <span class="badge b-w">中等</span>
+    </div>
+    <div class="top-right">
+      <div class="meta">
+        <span><svg><use href="#i-users"/></svg>通过率 <b>64%</b></span>
+        <span><svg><use href="#i-timer"/></svg><b>3s</b> / <b>128MB</b></span>
+      </div>
+      <button class="icon-btn" onclick="tt()"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+      <button class="btn-ghost"><svg><use href="#i-play"/></svg>运行样例</button>
+      <button class="btn"><svg><use href="#i-send"/></svg>提交评测</button>
+    </div>
+  </header>
+
+  <div class="panes">
+
+    <!-- 左：题面 -->
+    <section class="pane pane-l">
+      <div class="tabs">
+        <button class="tab on">题目</button>
+        <button class="tab">提交记录</button>
+        <button class="tab">题解</button>
+      </div>
+      <div class="scroll desc anim">
+        <p>斐波那契数列定义如下：<br>
+          <span class="mono" style="font-size:13px">F(0) = 0，F(1) = 1</span><br>
+          <span class="mono" style="font-size:13px">F(n) = F(n-1) + F(n-2)</span>，其中 <span class="mono" style="font-size:13px">n ≥ 2</span>
+        </p>
+        <p>给定一个整数 <span class="code-inline">n</span>，请输出 <span class="code-inline">F(n)</span> 的值。</p>
+
+        <div class="hint">
+          <b><svg><use href="#i-bulb"/></svg>提示</b>
+          <p>当 n 较大时，朴素递归会超时。请考虑使用迭代或记忆化。</p>
+        </div>
+
+        <h3 class="sec">输入格式</h3>
+        <p>一行，包含一个整数 <span class="mono" style="font-size:13px">n</span>（<span class="mono" style="font-size:13px">0 ≤ n ≤ 90</span>）</p>
+
+        <h3 class="sec">输出格式</h3>
+        <p>一行，包含一个整数，表示 <span class="mono" style="font-size:13px">F(n)</span></p>
+
+        <h3 class="sec">样例</h3>
+        <div class="io">
+          <div class="io-head"><span>输入</span><button><svg><use href="#i-copy"/></svg></button></div>
+          <pre>10</pre>
+        </div>
+        <div class="io">
+          <div class="io-head"><span>输出</span><button><svg><use href="#i-copy"/></svg></button></div>
+          <pre>55</pre>
+        </div>
+
+        <div class="tags">
+          <span class="tag">#递归</span><span class="tag">#动态规划</span><span class="tag">#入门</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 中：编辑器 -->
+    <section class="pane pane-c">
+      <div class="ed-head">
+        <div class="ed-file">
+          <svg><use href="#i-fcode"/></svg>
+          <span class="name">main.py</span>
+          <span class="chip">Python 3.11</span>
+        </div>
+        <div class="ed-tools">
+          <span><svg class="txt-s" style="font-size:12px"><use href="#i-check"/></svg>已自动保存</span>
+          <button><svg><use href="#i-undo"/></svg></button>
+          <button><svg><use href="#i-set"/></svg></button>
+        </div>
+      </div>
+
+      <div class="ed-body">
+        <div class="gutter">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11<br>12<br>13<br>14</div>
+        <pre><span class="cm"># 读取输入</span>
+<span class="vr">n</span> = <span class="fn">int</span>(<span class="fn">input</span>())
+
+<span class="kw">def</span> <span class="fn">fib</span>(<span class="vr">n</span>):
+    <span class="kw">if</span> <span class="vr">n</span> &lt;= <span class="nm">1</span>:
+        <span class="kw">return</span> <span class="vr">n</span>
+    <span class="vr">a</span>, <span class="vr">b</span> = <span class="nm">0</span>, <span class="nm">1</span>
+    <span class="kw">for</span> <span class="vr">_</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="nm">2</span>, <span class="vr">n</span>):
+        <span class="vr">a</span>, <span class="vr">b</span> = <span class="vr">b</span>, <span class="vr">a</span> + <span class="vr">b</span>
+    <span class="kw">return</span> <span class="vr">b</span>
+
+
+<span class="fn">print</span>(<span class="fn">fib</span>(<span class="vr">n</span>))</pre>
+      </div>
+
+      <div class="ed-foot">
+        <span class="num">行 9, 列 24</span>
+        <span>UTF-8</span>
+        <span class="num">14 行 · 218 字符</span>
+        <span class="right"><svg style="font-size:12px"><use href="#i-kb"/></svg>Ctrl+Enter 提交</span>
+      </div>
+    </section>
+
+    <!-- 右：判题结果 -->
+    <section class="pane pane-r">
+      <div class="tabs">
+        <button class="tab on">测试结果</button>
+        <button class="tab">自测</button>
+      </div>
+      <div class="scroll res">
+
+        <div class="verdict anim">
+          <div class="verdict-top">
+            <div class="ic ic-d"><svg><use href="#i-x"/></svg></div>
+            <div style="flex:1;min-width:0">
+              <h2>答案错误</h2>
+              <p>通过 <b class="num" style="color:var(--fg)">3 / 5</b> 个测试用例</p>
+            </div>
+            <span class="t">刚刚</span>
+          </div>
+          <div class="segs">
+            <i class="sg-ok"></i><i class="sg-ok"></i><i class="sg-ok"></i><i class="sg-no"></i><i class="sg-none"></i>
+          </div>
+          <div class="verdict-foot">
+            <span><svg style="font-size:12px"><use href="#i-timer"/></svg>最大耗时 <b>18ms</b></span>
+            <span><svg style="font-size:12px"><use href="#i-cpu"/></svg>内存 <b>9.2MB</b></span>
+          </div>
+        </div>
+
+        <p class="res-label">测试用例</p>
+
+        <div class="tc"><svg class="txt-s"><use href="#i-ok"/></svg>
+          <span class="nm2">用例 1</span><span class="chip">样例</span><span class="ms">12ms</span></div>
+        <div class="tc"><svg class="txt-s"><use href="#i-ok"/></svg>
+          <span class="nm2">用例 2</span><span class="ms">9ms</span></div>
+        <div class="tc"><svg class="txt-s"><use href="#i-ok"/></svg>
+          <span class="nm2">用例 3</span><span class="ms">11ms</span></div>
+
+        <div class="tc-fail">
+          <div class="row">
+            <svg class="txt-d"><use href="#i-x"/></svg>
+            <span class="nm2">用例 4</span>
+            <span class="ms">18ms</span>
+            <svg class="txt-sub" style="font-size:14px"><use href="#i-up"/></svg>
+          </div>
+          <div class="diff">
+            <p class="diff-label">输入</p>
+            <pre class="in">1</pre>
+            <div class="diff-cols">
+              <div>
+                <p class="diff-label lb-s">期望输出</p>
+                <pre class="exp">1</pre>
+              </div>
+              <div>
+                <p class="diff-label lb-d">实际输出</p>
+                <pre class="act">0</pre>
+              </div>
+            </div>
+            <p class="diff-note"><svg><use href="#i-info"/></svg>
+              第 1 行不匹配。检查 <span class="mono">n = 1</span> 时的边界处理。</p>
+          </div>
+        </div>
+
+        <div class="tc pending"><svg class="txt-sub"><use href="#i-minus"/></svg>
+          <span class="nm2">用例 5</span><span class="ms">未执行</span></div>
+
+        <p class="res-label">本题提交历史</p>
+        <div class="hist">
+          <div class="hist-row">
+            <span class="badge b-d"><i></i>答案错误</span>
+            <span class="mid">3/5 用例</span><span class="t">刚刚</span>
+          </div>
+          <div class="hist-row">
+            <span class="badge b-w"><i></i>超时</span>
+            <span class="mid">1/5 用例</span><span class="t">6 分钟前</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+function tt(){
+  var d=document.documentElement.classList.toggle('dark');
+  document.getElementById('use-theme').setAttribute('href', d?'#i-moon':'#i-sun');
+  localStorage.setItem('theme', d?'dark':'light');
+}
+if(localStorage.getItem('theme')==='dark'){
+  document.documentElement.classList.add('dark');
+  document.getElementById('use-theme').setAttribute('href','#i-moon');
+}
+</script>
+</body>
+</html>

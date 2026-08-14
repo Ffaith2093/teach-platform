@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>系统设置 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171;  --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,select{font:inherit;color:inherit}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--purple);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--purple),#EC4899);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted)}
+.crumb b{color:var(--fg);font-weight:500}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:background .18s,color .18s}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:1000px;margin:0 auto}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+           padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.page-sub{margin-top:4px;font-size:14px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost svg{font-size:14px}
+.btn-danger{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+            border:1px solid color-mix(in srgb,var(--danger) 40%,transparent);font-size:14px;font-weight:500;
+            color:var(--danger);transition:.18s}
+.btn-danger:hover{background:var(--danger-subtle)}
+
+/* 布局：左侧锚点 + 右侧内容 */
+.layout{display:grid;grid-template-columns:180px 1fr;gap:32px;margin-top:28px;align-items:start}
+.anchors{position:sticky;top:96px;display:flex;flex-direction:column;gap:2px}
+.anchors a{padding:7px 12px;border-radius:8px;font-size:13.5px;color:var(--muted);transition:.18s;
+           border-left:2px solid transparent}
+.anchors a:hover{background:var(--surface);color:var(--fg)}
+.anchors a.on{color:var(--primary);font-weight:500;background:var(--primary-subtle)}
+
+.sections{display:flex;flex-direction:column;gap:24px;min-width:0}
+.card{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.c-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.c-head .ci{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.ci-p{background:var(--primary-subtle);color:var(--primary)}
+.ci-a{background:var(--accent-subtle);color:var(--accent)}
+.ci-w{background:var(--warning-subtle);color:var(--warning)}
+.ci-u{background:var(--purple-subtle);color:var(--purple)}
+.ci-d{background:var(--danger-subtle);color:var(--danger)}
+.c-head h2{font-size:15.5px;font-weight:600}
+.c-head p{font-size:12.5px;color:var(--muted);margin-top:2px}
+.c-body{padding:6px 20px}
+
+.row{display:flex;align-items:center;gap:20px;padding:15px 0;border-bottom:1px solid var(--border)}
+.row:last-child{border-bottom:none}
+.row .lab{width:190px;flex-shrink:0}
+.row .lab b{display:block;font-size:13.5px;font-weight:500}
+.row .lab span{display:block;font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
+.row .ctl{flex:1;min-width:0;display:flex;justify-content:flex-end}
+.row.stack{align-items:flex-start}
+
+input[type=text],input[type=number],input[type=email],select{
+  width:100%;max-width:280px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;
+  background:var(--surface);font-size:14px;outline:none;transition:.18s}
+input:focus,select:focus{border-color:var(--primary);background:var(--card)}
+input[type=text]:disabled{color:var(--subtle);cursor:not-allowed}
+select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round'><path d='m6 9 6 6 6-6'/></svg>");
+       background-repeat:no-repeat;background-position:right 10px center;background-size:16px;padding-right:34px}
+.inline-num{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.inline-num input{max-width:96px;text-align:center}
+.inline-num span{font-size:13px;color:var(--muted)}
+
+/* 开关 */
+.sw{position:relative;width:42px;height:24px;border-radius:999px;background:var(--border);
+    transition:background .2s;flex-shrink:0}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;
+           background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
+.sw.on{background:var(--primary)}
+.sw.on::after{transform:translateX(18px)}
+
+.tagpick{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.tagpick button{padding:6px 13px;border-radius:8px;border:1px solid var(--border);font-size:13px;color:var(--muted);transition:.18s}
+.tagpick button:hover{background:var(--surface);color:var(--fg)}
+.tagpick button.on{border-color:var(--primary);background:var(--primary-subtle);color:var(--primary);font-weight:500}
+
+.hint{display:flex;align-items:flex-start;gap:9px;margin:0 20px 18px;padding:11px 13px;border-radius:9px;
+      background:var(--surface);font-size:12.5px;color:var(--muted);line-height:1.6}
+html.dark .hint{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.hint svg{font-size:15px;color:var(--subtle);margin-top:1px}
+
+/* 沙箱只读 */
+.locked{margin:0 20px 18px;border:1px solid color-mix(in srgb,var(--danger) 25%,transparent);border-radius:10px;
+        background:color-mix(in srgb,var(--danger-subtle) 30%,var(--card));overflow:hidden}
+.locked-head{display:flex;align-items:center;gap:8px;padding:11px 14px;font-size:12.5px;font-weight:600;color:var(--danger);
+             border-bottom:1px solid color-mix(in srgb,var(--danger) 18%,transparent)}
+.locked-head .lk{margin-left:auto;font-size:11px;font-weight:500;padding:2px 8px;border-radius:999px;
+                 background:var(--danger);color:#fff}
+.flags{padding:13px 14px;display:flex;flex-wrap:wrap;gap:7px}
+.flag{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;padding:5px 10px;border-radius:6px;
+      background:var(--card);color:var(--fg);border:1px solid var(--border)}
+html.dark .flag{background:var(--border);border-color:transparent}
+.locked p{padding:0 14px 13px;font-size:12px;color:var(--muted);line-height:1.6}
+
+/* 危险区 */
+.danger-card{border:1px solid color-mix(in srgb,var(--danger) 30%,transparent)}
+.danger-card .c-head{border-bottom-color:color-mix(in srgb,var(--danger) 18%,transparent)}
+.danger-card .c-head h2{color:var(--danger)}
+.danger-card .row{border-bottom-color:color-mix(in srgb,var(--danger) 12%,transparent)}
+
+.savebar{position:sticky;bottom:0;margin-top:28px;padding:14px 20px;border:1px solid var(--border);
+         border-radius:12px;background:var(--card);box-shadow:var(--shadow-md);
+         display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.savebar .msg{font-size:13px;color:var(--muted)}
+.savebar .acts{margin-left:auto;display:flex;gap:8px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+
+/* 保存提示 */
+.toast{position:fixed;left:50%;bottom:32px;transform:translate(-50%,20px);opacity:0;pointer-events:none;
+       display:flex;align-items:center;gap:8px;padding:11px 18px;border-radius:10px;
+       background:var(--fg);color:var(--bg);font-size:13.5px;font-weight:500;
+       box-shadow:0 8px 24px -6px rgba(15,23,42,.35);transition:.25s;z-index:60}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media(max-width:1100px){
+  .side{display:none}
+  .layout{grid-template-columns:1fr;gap:0}
+  .anchors{display:none}
+  .content{padding:24px 20px}
+  .topbar{padding:0 20px}
+}
+@media(max-width:640px){
+  .row{flex-direction:column;align-items:flex-start;gap:10px}
+  .row .lab{width:auto}
+  .row .ctl{justify-content:flex-start;width:100%}
+  .tagpick{justify-content:flex-start}
+  .inline-num{justify-content:flex-start}
+}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+<symbol id="i-grad" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="m20.6 13.4-8.2 8.2a2 2 0 0 1-2.8 0l-7-7A2 2 0 0 1 2 13.2V4a2 2 0 0 1 2-2h9.2a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+<symbol id="i-exam" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="3" rx="1"/><path d="M9 11h6M9 14h6M9 17h3"/></symbol>
+<symbol id="i-judge" viewBox="0 0 24 24"><path d="m12 2 3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></symbol>
+<symbol id="i-set" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-school" viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M10 21v-6h4v6"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 8.8-8.8"/><path d="m17 6 3 3"/><path d="m14 9 3 3"/></symbol>
+<symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="m21.7 18-9-15.3a1 1 0 0 0-1.7 0L1.3 18a1 1 0 0 0 .9 1.5h18.6a1 1 0 0 0 .9-1.5z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+<symbol id="i-arch" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-shield"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">管理员</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">总览</p>
+      <a class="nav-item" href="admin-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <p class="nav-label">组织</p>
+      <a class="nav-item" href="admin-students.html"><svg><use href="#i-users"/></svg>学生</a>
+      <a class="nav-item" href="admin-teachers.html"><svg><use href="#i-grad"/></svg>教师</a>
+      <p class="nav-label">内容</p>
+      <a class="nav-item" href="admin-exams.html"><svg><use href="#i-exam"/></svg>考试<span class="nav-count">47</span></a>
+<a class="nav-item" href="admin-courses.html"><svg><use href="#i-book"/></svg>课程</a>
+      <a class="nav-item" href="admin-banks.html"><svg><use href="#i-tag"/></svg>题库</a>
+      <p class="nav-label">系统</p>
+      <a class="nav-item" href="admin-judge-queue.html"><svg><use href="#i-judge"/></svg>评测队列<span class="nav-count">2</span></a>
+      <a class="nav-item active"><svg><use href="#i-set"/></svg>系统设置</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈主任</div>
+        <div class="s">系统管理员</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb"><b>系统</b> / 系统设置</span>
+      <div class="top-actions">
+        <button class="icon-btn"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <div class="page-head anim">
+          <div>
+            <h1>系统设置</h1>
+            <p class="page-sub">学校信息、账号策略与评测参数 · 最后修改 2026-08-02 由 陈主任</p>
+          </div>
+          <button class="btn-ghost" onclick="location.href='admin-dashboard.html'">返回工作台</button>
+        </div>
+
+        <div class="layout">
+
+          <nav class="anchors anim">
+            <a href="#s-school" class="on">学校信息</a>
+            <a href="#s-account">账号策略</a>
+            <a href="#s-judge">评测配置</a>
+            <a href="#s-notify">通知</a>
+            <a href="#s-data">数据与归档</a>
+          </nav>
+
+          <div class="sections">
+
+            <!-- 学校信息 -->
+            <section class="card anim" id="s-school">
+              <div class="c-head">
+                <div class="ci ci-p"><svg><use href="#i-school"/></svg></div>
+                <div>
+                  <h2>学校信息</h2>
+                  <p>显示在登录页与学生端页眉</p>
+                </div>
+              </div>
+              <div class="c-body">
+                <div class="row">
+                  <div class="lab"><b>学校名称</b><span>会出现在登录页标题</span></div>
+                  <div class="ctl"><input type="text" value="市第一中学"></div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>平台名称</b><span>用于页面标题与邮件署名</span></div>
+                  <div class="ctl"><input type="text" value="PyLearn 编程学习平台"></div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>当前学年</b><span>影响年级自动升级与归档时机</span></div>
+                  <div class="ctl">
+                    <select>
+                      <option>2026–2027 学年</option>
+                      <option selected>2025–2026 学年</option>
+                      <option>2024–2025 学年</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>管理员联系邮箱</b><span>学生忘记密码时的求助入口</span></div>
+                  <div class="ctl"><input type="email" value="admin@no1school.edu.cn"></div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 账号策略 -->
+            <section class="card anim" id="s-account">
+              <div class="c-head">
+                <div class="ci ci-u"><svg><use href="#i-key"/></svg></div>
+                <div>
+                  <h2>账号策略</h2>
+                  <p>学生账号由管理员批量创建，不开放自助注册</p>
+                </div>
+              </div>
+              <div class="c-body">
+                <div class="row">
+                  <div class="lab"><b>初始密码规则</b><span>批量导入学生时自动生成</span></div>
+                  <div class="ctl">
+                    <select>
+                      <option selected>学号后 6 位</option>
+                      <option>统一初始密码</option>
+                      <option>随机 8 位（导出后分发）</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>首次登录强制改密</b><span>关闭后学生可一直用初始密码</span></div>
+                  <div class="ctl"><div class="sw on" onclick="sw(this)"></div></div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>密码最短长度</b></div>
+                  <div class="ctl"><div class="inline-num"><input type="number" value="8"><span>位</span></div></div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>登录失败锁定</b><span>连续失败达到次数后锁定 15 分钟</span></div>
+                  <div class="ctl"><div class="inline-num"><input type="number" value="5"><span>次</span></div></div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>会话有效期</b><span>超时后需重新登录</span></div>
+                  <div class="ctl">
+                    <div class="tagpick">
+                      <button onclick="pick(this)">2 小时</button>
+                      <button class="on" onclick="pick(this)">8 小时</button>
+                      <button onclick="pick(this)">7 天</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>允许学生自助注册</b><span>建议保持关闭，避免非本校账号进入</span></div>
+                  <div class="ctl"><div class="sw" onclick="sw(this)"></div></div>
+                </div>
+              </div>
+              <div class="hint">
+                <svg><use href="#i-info"/></svg>
+                <span>教师账号只能由管理员在「教师管理」中创建，且默认不能查看其他班级的学生数据。</span>
+              </div>
+            </section>
+
+            <!-- 评测配置 -->
+            <section class="card anim" id="s-judge">
+              <div class="c-head">
+                <div class="ci ci-a"><svg><use href="#i-cpu"/></svg></div>
+                <div>
+                  <h2>评测配置</h2>
+                  <p>调度相关参数可调，安全隔离参数不可在界面修改</p>
+                </div>
+              </div>
+              <div class="c-body">
+                <div class="row">
+                  <div class="lab"><b>Worker 并发数</b><span>同时运行的评测容器上限</span></div>
+                  <div class="ctl"><div class="inline-num"><input type="number" value="6"><span>个</span></div></div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>单次评测超时</b><span>超时判为运行超时，不计系统错误</span></div>
+                  <div class="ctl"><div class="inline-num"><input type="number" value="10"><span>秒</span></div></div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>队列长度上限</b><span>超出后新提交直接拒绝并提示稍后重试</span></div>
+                  <div class="ctl"><div class="inline-num"><input type="number" value="200"><span>条</span></div></div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>学生提交冷却</b><span>两次提交之间的最短间隔，防刷题机</span></div>
+                  <div class="ctl"><div class="inline-num"><input type="number" value="5"><span>秒</span></div></div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>系统错误自动重试</b><span>SYSTEM_ERROR 自动重排队一次</span></div>
+                  <div class="ctl"><div class="sw on" onclick="sw(this)"></div></div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>向学生展示隐藏用例输出</b><span>始终关闭，仅显示「未通过」与用例编号</span></div>
+                  <div class="ctl"><div class="sw" style="opacity:.5;cursor:not-allowed" title="安全策略，不可开启"></div></div>
+                </div>
+              </div>
+
+              <div class="locked">
+                <div class="locked-head">
+                  <svg><use href="#i-lock"/></svg>沙箱隔离参数
+                  <span class="lk">只读</span>
+                </div>
+                <div class="flags">
+                  <span class="flag">--network=none</span>
+                  <span class="flag">--read-only</span>
+                  <span class="flag">--cap-drop=ALL</span>
+                  <span class="flag">--pids-limit=64</span>
+                  <span class="flag">--security-opt=no-new-privileges</span>
+                  <span class="flag">--memory=256m</span>
+                  <span class="flag">--cpus=1</span>
+                </div>
+                <p>这些是评测隔离的安全底线，只能通过部署配置变更。界面不提供开关，避免为临时排查放开后忘记恢复。</p>
+              </div>
+            </section>
+
+            <!-- 通知 -->
+            <section class="card anim" id="s-notify">
+              <div class="c-head">
+                <div class="ci ci-w"><svg><use href="#i-bell"/></svg></div>
+                <div>
+                  <h2>通知</h2>
+                  <p>什么情况需要打扰管理员</p>
+                </div>
+              </div>
+              <div class="c-body">
+                <div class="row">
+                  <div class="lab"><b>评测系统错误</b><span>连续 3 个 SYSTEM_ERROR 时提醒</span></div>
+                  <div class="ctl"><div class="sw on" onclick="sw(this)"></div></div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>队列积压</b><span>等待任务超过上限的 80% 时提醒</span></div>
+                  <div class="ctl"><div class="sw on" onclick="sw(this)"></div></div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>班级缺任课教师</b><span>新学年开学前的常见遗漏</span></div>
+                  <div class="ctl"><div class="sw on" onclick="sw(this)"></div></div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>教师提交题目待审</b><span>教师上传的自建题目进入公共题库前</span></div>
+                  <div class="ctl"><div class="sw" onclick="sw(this)"></div></div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>邮件通知</b><span>除站内提醒外同时发到管理员邮箱</span></div>
+                  <div class="ctl"><div class="sw" onclick="sw(this)"></div></div>
+                </div>
+              </div>
+            </section>
+
+            <!-- 数据与归档 -->
+            <section class="card danger-card anim" id="s-data">
+              <div class="c-head">
+                <div class="ci ci-d"><svg><use href="#i-arch"/></svg></div>
+                <div>
+                  <h2>数据与归档</h2>
+                  <p>影响范围大的操作，执行前会二次确认</p>
+                </div>
+              </div>
+              <div class="c-body">
+                <div class="row">
+                  <div class="lab"><b>导出全部学生成绩</b><span>按班级分表的 CSV 压缩包</span></div>
+                  <div class="ctl"><button class="btn-ghost" onclick="toast('已开始导出，完成后可在通知中下载')"><svg><use href="#i-down"/></svg>导出</button></div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>归档已毕业年级</b><span>2 个年级可归档 · 归档后账号停用，数据保留只读</span></div>
+                  <div class="ctl"><button class="btn-ghost" onclick="location.href='admin-students.html'">查看可归档年级</button></div>
+                </div>
+                <div class="row">
+                  <div class="lab"><b>清空评测历史</b><span>删除 6 个月前的提交记录与运行日志，成绩汇总保留</span></div>
+                  <div class="ctl"><button class="btn-danger"><svg><use href="#i-warn"/></svg>清空</button></div>
+                </div>
+              </div>
+            </section>
+
+          </div>
+        </div>
+
+        <div class="savebar anim">
+          <span class="msg" id="save-msg">当前没有未保存的修改</span>
+          <div class="acts">
+            <button class="btn-ghost" onclick="location.reload()">放弃修改</button>
+            <button class="btn" onclick="toast('设置已保存')"><svg><use href="#i-save"/></svg>保存设置</button>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"><svg><use href="#i-check"/></svg><span id="toast-txt">已保存</span></div>
+
+<script src="lib/admin-shared.js"></script>
+
+function dirty(){ document.getElementById('save-msg').textContent='有未保存的修改'; }
+function sw(el){ el.classList.toggle('on'); dirty(); }
+function pick(el){
+  el.parentNode.querySelectorAll('button').forEach(function(b){b.classList.remove('on')});
+  el.classList.add('on'); dirty();
+}
+document.querySelectorAll('input,select').forEach(function(el){ el.addEventListener('change', dirty) });
+
+var t;
+function toast(msg){
+  var box=document.getElementById('toast');
+  document.getElementById('toast-txt').textContent=msg;
+  box.classList.add('show');
+  document.getElementById('save-msg').textContent='当前没有未保存的修改';
+  clearTimeout(t); t=setTimeout(function(){box.classList.remove('show')},2200);
+}
+
+// 锚点高亮
+var secs=[].slice.call(document.querySelectorAll('.sections section'));
+var links=[].slice.call(document.querySelectorAll('.anchors a'));
+window.addEventListener('scroll',function(){
+  var top=window.scrollY+140, cur=0;
+  secs.forEach(function(s,i){ if(s.offsetTop<=top) cur=i });
+  links.forEach(function(a,i){ a.classList.toggle('on', i===cur) });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,534 @@
+// Python 教学平台 · 全量数据模型
+// SPEC §2 + §3.3 + §3.4 的所有实体
+// 注：本文件遵循 SPEC §0 技术栈锁定，不使用任何 PG 专属扩展（enum 走 PG 原生 enum，JSON 走 Json）
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============== 用户与组织 ==============
+
+model User {
+  id                 String     @id @default(cuid())
+  email              String     @unique
+  passwordHash       String
+  name               String
+  role               Role
+  status             UserStatus @default(ACTIVE)
+  // STUDENT 字段
+  studentNo          String?    @unique // 学号，学校内唯一
+  classId            String?
+  class              Class?     @relation(fields: [classId], references: [id])
+  // TEACHER 字段
+  teacherNo          String?    @unique // 工号
+  subjects           String[] // 教学科目
+  // 通用
+  phone              String?
+  lastLoginAt        DateTime?
+  mustChangePassword Boolean    @default(false)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  // 反向关系
+  authoredProblems      Problem[]              @relation("ProblemAuthor")
+  classTeachers         ClassTeacher[]
+  uploadedResources     Resource[]
+  courseTeachers        CourseTeacher[]
+  addedCourseClasses    CourseClass[]
+  createdAssignments    Assignment[]
+  submissions           Submission[]
+  examAttempts          ExamAttempt[]
+  gradedSubmissions     AssignmentSubmission[] @relation("SubmissionGrader")
+  assignmentSubmissions AssignmentSubmission[]
+
+  @@index([role, status])
+  @@index([classId])
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+model Grade {
+  id        String   @id @default(cuid())
+  name      String   @unique // "高一年级"
+  joinYear  Int // 入学年份（如 2024）
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  classes Class[]
+}
+
+model Class {
+  id        String   @id @default(cuid())
+  gradeId   String
+  name      String // "高一(1)班"
+  joinYear  Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  grade         Grade          @relation(fields: [gradeId], references: [id])
+  students      User[]
+  teachers      ClassTeacher[]
+  courseClasses CourseClass[]
+
+  @@unique([gradeId, name])
+  @@index([gradeId, isActive])
+}
+
+model ClassTeacher {
+  id        String           @id @default(cuid())
+  classId   String           @unique // 每班一位任课教师，独占
+  teacherId String
+  role      ClassTeacherRole @default(SUBJECT_TEACHER)
+  createdAt DateTime         @default(now())
+
+  class   Class @relation(fields: [classId], references: [id])
+  teacher User  @relation(fields: [teacherId], references: [id])
+
+  @@index([teacherId])
+}
+
+enum ClassTeacherRole {
+  SUBJECT_TEACHER
+}
+
+// ============== 课程 ==============
+
+model Course {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  coverUrl    String?
+  semester    String // "2025-2026 学年 上学期"
+  category    CourseCategory
+  isArchived  Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  classes     CourseClass[]
+  teachers    CourseTeacher[]
+  resources   Resource[]
+  assignments Assignment[]
+  exams       Exam[]
+  questions   Question[]
+
+  @@index([category, isArchived])
+}
+
+enum CourseCategory {
+  DATA
+  ALGORITHM
+  AI
+  NETWORK
+  INTERDISCIPLINARY
+}
+
+model CourseClass {
+  id        String   @id @default(cuid())
+  courseId  String
+  classId   String
+  addedAt   DateTime @default(now())
+  addedById String
+
+  course Course  @relation(fields: [courseId], references: [id])
+  class  Class   @relation(fields: [classId], references: [id])
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  @@unique([courseId, classId])
+  @@index([classId])
+}
+
+model CourseTeacher {
+  id        String            @id @default(cuid())
+  courseId  String
+  teacherId String
+  role      CourseTeacherRole
+  addedAt   DateTime          @default(now())
+
+  course  Course @relation(fields: [courseId], references: [id])
+  teacher User   @relation(fields: [teacherId], references: [id])
+
+  @@unique([courseId, teacherId])
+  @@index([teacherId])
+}
+
+enum CourseTeacherRole {
+  OWNER
+  ASSISTANT
+  CONTRIBUTOR
+}
+
+// ============== 课程资源 ==============
+
+model Resource {
+  id         String   @id @default(cuid())
+  courseId   String
+  name       String
+  storedName String // 磁盘 UUID 文件名（防路径穿越）
+  mimeType   String
+  sizeBytes  Int
+  folder     String   @default("/")
+  uploaderId String
+  downloads  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  course   Course @relation(fields: [courseId], references: [id])
+  uploader User   @relation(fields: [uploaderId], references: [id])
+
+  @@index([courseId, folder])
+}
+
+// ============== 题库与编程题 ==============
+
+model Problem {
+  id                String     @id @default(cuid())
+  title             String
+  description       String // Markdown
+  difficulty        Difficulty
+  timeLimitMs       Int        @default(3000)
+  memoryLimitMb     Int        @default(128)
+  starterCode       String?
+  referenceSolution String?
+  tags              String[]
+  authorId          String
+  isPublic          Boolean    @default(false) // 是否共享到公共题库
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  author             User                @relation("ProblemAuthor", fields: [authorId], references: [id])
+  testCases          TestCase[]
+  questions          Question[]
+  submissions        Submission[]
+  assignmentProblems AssignmentProblem[]
+
+  @@index([authorId, isPublic])
+  @@index([difficulty])
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model TestCase {
+  id        String  @id @default(cuid())
+  problemId String
+  input     String
+  expected  String
+  isSample  Boolean @default(false) // 样例对学生可见
+  score     Int     @default(10)
+  order     Int
+
+  problem    Problem     @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  judgeCases JudgeCase[]
+
+  @@index([problemId, order])
+}
+
+model Question {
+  id          String       @id @default(cuid())
+  bankId      String?
+  type        QuestionType
+  content     String // Markdown 题干
+  options     Json? // 单选：[{key:"A", text:"..."}]
+  answer      Json? // 单选："A" / 填空：["答案1"] / 代码填空：["x+1"]
+  problemId   String?
+  score       Int
+  difficulty  Difficulty
+  tags        String[]
+  explanation String?
+
+  bank          QuestionBank?  @relation(fields: [bankId], references: [id])
+  problem       Problem?       @relation(fields: [problemId], references: [id])
+  course        Course?        @relation(fields: [courseId], references: [id])
+  courseId      String?
+  examQuestions ExamQuestion[]
+  answers       Answer[]
+
+  @@index([bankId, type])
+  @@index([courseId, type])
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+  FILL_BLANK
+  CODE_BLANK
+  PROGRAMMING
+}
+
+model QuestionBank {
+  id        String   @id @default(cuid())
+  name      String
+  courseId  String?
+  ownerId   String
+  createdAt DateTime @default(now())
+
+  questions Question[]
+
+  @@index([ownerId])
+}
+
+// ============== 作业 ==============
+
+model Assignment {
+  id          String    @id @default(cuid())
+  courseId    String
+  title       String
+  description String
+  dueAt       DateTime
+  allowLate   Boolean   @default(true)
+  latePenalty Int       @default(20)
+  totalScore  Int
+  publishedAt DateTime? // null = 草稿
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  course      Course                 @relation(fields: [courseId], references: [id])
+  creator     User                   @relation(fields: [creatorId], references: [id])
+  creatorId   String
+  problems    AssignmentProblem[]
+  submissions AssignmentSubmission[]
+
+  @@index([courseId, publishedAt, dueAt])
+}
+
+model AssignmentProblem {
+  assignmentId String
+  problemId    String
+  score        Int
+  order        Int
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  problem    Problem    @relation(fields: [problemId], references: [id])
+
+  @@id([assignmentId, problemId])
+}
+
+model AssignmentSubmission {
+  id           String           @id @default(cuid())
+  assignmentId String
+  studentId    String
+  textContent  String?
+  fileUrl      String?
+  autoScore    Int?
+  manualScore  Int?
+  finalScore   Int?
+  feedback     String?
+  status       SubmissionStatus @default(DRAFT)
+  submittedAt  DateTime?
+  gradedById   String?
+  gradedAt     DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id])
+  student    User       @relation(fields: [studentId], references: [id])
+  gradedBy   User?      @relation("SubmissionGrader", fields: [gradedById], references: [id])
+
+  @@unique([assignmentId, studentId])
+  @@index([studentId, status])
+}
+
+enum SubmissionStatus {
+  DRAFT
+  SUBMITTED
+  GRADED
+  RETURNED
+}
+
+// ============== 试卷与考试 ==============
+
+model Exam {
+  id              String     @id @default(cuid())
+  courseId        String
+  title           String
+  instructions    String?
+  durationMin     Int
+  openAt          DateTime
+  closeAt         DateTime
+  shuffleQuestion Boolean    @default(true)
+  shuffleOption   Boolean    @default(true)
+  showResultMode  ResultMode
+  totalScore      Int
+  status          ExamStatus @default(DRAFT)
+  drawRules       Json? // { bankId, rules: [{type, difficulty|count|...}] }
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  course    Course         @relation(fields: [courseId], references: [id])
+  questions ExamQuestion[]
+  attempts  ExamAttempt[]
+
+  @@index([courseId, status, openAt])
+}
+
+enum ResultMode {
+  IMMEDIATELY
+  AFTER_CLOSE
+  AFTER_GRADED
+  NEVER
+}
+
+enum ExamStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+model ExamQuestion {
+  examId     String
+  questionId String
+  score      Int
+  order      Int
+
+  exam     Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id])
+
+  @@id([examId, questionId])
+}
+
+model ExamAttempt {
+  id           String        @id @default(cuid())
+  examId       String
+  studentId    String
+  questionIds  String[] // 抽题+乱序后固化的题目序列
+  startedAt    DateTime      @default(now())
+  deadlineAt   DateTime
+  submittedAt  DateTime?
+  isAutoSubmit Boolean       @default(false)
+  autoScore    Int?
+  manualScore  Int?
+  finalScore   Int?
+  status       AttemptStatus @default(IN_PROGRESS)
+
+  exam    Exam     @relation(fields: [examId], references: [id])
+  student User     @relation(fields: [studentId], references: [id])
+  answers Answer[]
+
+  @@unique([examId, studentId])
+  @@index([status, deadlineAt])
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  GRADING
+  GRADED
+}
+
+model Answer {
+  id          String   @id @default(cuid())
+  attemptId   String
+  questionId  String
+  content     Json // 学生作答内容
+  autoScore   Int?
+  manualScore Int?
+  comment     String?
+  gradedById  String?
+  updatedAt   DateTime @updatedAt
+
+  attempt  ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question Question    @relation(fields: [questionId], references: [id])
+
+  @@unique([attemptId, questionId])
+}
+
+// ============== 提交与评测 ==============
+
+model Submission {
+  id          String      @id @default(cuid())
+  problemId   String
+  userId      String
+  code        String
+  language    String      @default("python3.11")
+  status      JudgeStatus @default(PENDING)
+  score       Int         @default(0)
+  passedCount Int         @default(0)
+  totalCount  Int         @default(0)
+  maxTimeMs   Int?
+  maxMemoryKb Int?
+  errorMsg    String?
+  contextType ContextType
+  contextId   String? // PRACTICE 时 null；ASSIGNMENT/EXAM 时为对应 ID
+  createdAt   DateTime    @default(now())
+
+  problem    Problem     @relation(fields: [problemId], references: [id])
+  user       User        @relation(fields: [userId], references: [id])
+  judgeCases JudgeCase[]
+
+  @@index([userId, problemId, createdAt])
+  @@index([contextType, contextId])
+  @@index([status])
+}
+
+enum JudgeStatus {
+  PENDING
+  JUDGING
+  ACCEPTED
+  WRONG_ANSWER
+  TLE
+  MLE
+  RUNTIME_ERROR
+  COMPILE_ERROR
+  SYSTEM_ERROR
+}
+
+enum ContextType {
+  PRACTICE
+  ASSIGNMENT
+  EXAM
+}
+
+model JudgeCase {
+  id           String      @id @default(cuid())
+  submissionId String
+  testCaseId   String
+  status       JudgeStatus
+  timeMs       Int?
+  memoryKb     Int?
+  actualOutput String? // 隐藏用例不返回给学生
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  testCase   TestCase   @relation(fields: [testCaseId], references: [id])
+
+  @@unique([submissionId, testCaseId])
+}
+
+// ============== 系统通知（班级移交等） ==============
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  href      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead, createdAt])
+}
+
+// ============== 标签字典（管理员维护）==============
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  category  String?
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A0024 期中考试 · 提交情况 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+  --qt-choice:#0EA5E9;   --qt-choice-bg:#E0F2FE;
+  --qt-blank:#F59E0B;    --qt-blank-bg:#FEF3C7;
+  --qt-essay:#8B5CF6;    --qt-essay-bg:#EDE9FE;
+  --qt-code:#10B981;     --qt-code-bg:#D1FAE5;
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --primary-muted:#0C4A6E;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171;  --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+  --qt-choice:#38BDF8; --qt-choice-bg:#0C334A;
+  --qt-blank:#FBBF24;  --qt-blank-bg:#422D06;
+  --qt-essay:#A78BFA;  --qt-essay-bg:#2A1B4D;
+  --qt-code:#34D399;   --qt-code-bg:#063B2A;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--primary);
+           display:flex;align-items:center;justify-content:center;color:var(--primary-fg);font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--accent-subtle);color:var(--accent);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-label+.nav-label,.nav-item+.nav-label{padding-top:24px}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--warning),var(--danger));
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumb b{color:var(--fg);font-weight:500}
+.crumb a{transition:color .18s}
+.crumb a:hover{color:var(--primary)}
+.crumb .aid{font-family:"SF Mono",Menlo,Consolas,monospace;color:var(--muted);font-size:12.5px;
+            background:var(--surface);padding:2px 7px;border-radius:5px;margin:0 4px}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:background .18s,color .18s}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+.dot{position:absolute;top:7px;right:7px;width:8px;height:8px;border-radius:50%;
+     background:var(--danger);border:2px solid var(--bg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost svg{font-size:14px}
+
+.back-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);
+           transition:color .18s;align-self:flex-start}
+.back-link:hover{color:var(--primary)}
+.back-link svg{font-size:14px}
+
+/* 班级选择器 */
+.cls-bar{display:flex;align-items:center;gap:12px;padding:14px 18px;border:1px solid var(--border);
+         border-radius:12px;background:var(--card);flex-wrap:wrap}
+.cls-bar .lbl{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.cls-bar .lbl svg{font-size:15px}
+.cls-bar select{padding:8px 32px 8px 12px;border:1px solid var(--border);border-radius:8px;
+                background:var(--card) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") no-repeat right 10px center;
+                color:var(--fg);font-size:13px;font-weight:500;outline:none;cursor:pointer;
+                -webkit-appearance:none;appearance:none;min-width:200px}
+.cls-bar select:focus{border-color:var(--primary)}
+.cls-bar .meta{margin-left:auto;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.cls-bar .meta b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* head */
+.asn-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+          padding-bottom:18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.asn-head .id-block{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.asn-head .aid{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;
+               padding:4px 10px;border-radius:6px;background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+.st{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:999px}
+.st::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.st.live{background:var(--success-subtle);color:var(--success)}
+.st.draft{background:var(--warning-subtle);color:var(--warning)}
+.st.ended{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+.type-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:6px;font-size:11.5px;font-weight:600}
+.type-chip.exam{background:var(--purple-subtle);color:var(--purple)}
+.asn-head h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-top:6px}
+.asn-head .meta{margin-top:6px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.asn-head .meta b{color:var(--fg);font-weight:500}
+.asn-head .acts{display:flex;gap:8px;flex-wrap:wrap}
+
+/* 统计卡 */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.card{border:1px solid var(--border);border-radius:12px;background:var(--card);padding:20px;transition:.2s}
+.card.hoverable:hover{border-color:color-mix(in srgb,var(--primary) 40%,transparent);box-shadow:var(--shadow-md)}
+.stat-top{display:flex;align-items:flex-start;justify-content:space-between}
+.stat-label{font-size:13px;color:var(--muted)}
+.ic{padding:7px;border-radius:8px;display:flex;font-size:16px}
+.ic-p{background:var(--primary-subtle);color:var(--primary)}
+.ic-a{background:var(--accent-subtle);color:var(--accent)}
+.ic-s{background:var(--success-subtle);color:var(--success)}
+.ic-w{background:var(--warning-subtle);color:var(--warning)}
+.ic-d{background:var(--danger-subtle);color:var(--danger)}
+.ic-v{background:var(--purple-subtle);color:var(--purple)}
+.stat-num{margin-top:10px;font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat-foot{margin-top:4px;font-size:12px;color:var(--subtle);display:flex;align-items:center;gap:4px}
+.stat-foot .gap{display:inline-flex;align-items:center;gap:3px}
+.stat-foot .gap i{width:6px;height:6px;border-radius:50%;background:var(--muted);display:inline-block}
+
+/* 进度条 */
+.bar{height:5px;background:var(--surface);border-radius:999px;overflow:hidden}
+html.dark .bar{background:var(--border)}
+.bar span{display:block;height:100%;background:var(--success);border-radius:999px;transition:width .3s}
+.bar span.warn{background:var(--warning)}
+.bar span.bad{background:var(--danger)}
+.bar.mix{display:flex;gap:1px;background:var(--surface)}
+html.dark .bar.mix{background:var(--border)}
+.bar.mix span{border-radius:0;height:100%}
+.bar.mix span:first-child{border-radius:999px 0 0 999px}
+.bar.mix span:last-child{border-radius:0 999px 999px 0}
+.bar.mix span:only-child{border-radius:999px}
+
+/* panel */
+.panel{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.panel-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--surface);flex-wrap:wrap;gap:8px}
+html.dark .panel-hd{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.panel-hd h3{font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:8px}
+.panel-hd h3 svg{font-size:15px;color:var(--muted)}
+.panel-hd .right{display:flex;align-items:center;gap:8px}
+.panel-hd .hd-l{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cls-tag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:5px;background:var(--surface);
+        border:1px solid var(--border);color:var(--muted);font-variant-numeric:tabular-nums;display:inline-flex;align-items:center;gap:4px}
+.cls-tag::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--primary)}
+html.dark .cls-tag{background:var(--card)}
+.panel-hd .link{font-size:12px;color:var(--primary);font-weight:500;cursor:pointer;transition:color .18s;
+              padding:4px 6px;margin:-4px -6px;border-radius:5px;display:inline-flex;align-items:center;gap:3px}
+.panel-hd .link:hover{color:var(--primary-hover);background:var(--primary-subtle)}
+.panel-hd .link::after{content:"→";font-size:11px;opacity:0;transition:opacity .18s,transform .18s}
+.panel-hd .link:hover::after{opacity:1;transform:translateX(2px)}
+.panel-hd select{padding:5px 22px 5px 10px;border:1px solid var(--border);border-radius:6px;
+                 background:var(--card) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") no-repeat right 7px center;
+                 color:var(--fg);font-size:12px;outline:none;cursor:pointer;
+                 -webkit-appearance:none;appearance:none}
+.panel-bd{padding:18px}
+
+/* grid 2-col */
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;align-items:flex-start}
+.grid1{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:flex-start}
+@media(max-width:1100px){ .grid2,.grid1{grid-template-columns:1fr} }
+
+/* 班级维度提交表 */
+.cls-matrix{padding:0;margin:0;list-style:none}
+.cls-row{padding:14px 18px;border-bottom:1px solid var(--border);display:grid;
+         grid-template-columns:1.4fr 1fr 1fr;gap:18px;align-items:center;transition:background .18s}
+.cls-row:last-child{border-bottom:none}
+.cls-row:hover{background:var(--surface)}
+.cls-row .name{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.cls-row .name .v{font-size:12px;color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums}
+.cls-row .prog{display:flex;flex-direction:column;gap:4px}
+.cls-row .prog-top{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted)}
+.cls-row .prog-top .v{font-weight:600;color:var(--fg);font-variant-numeric:tabular-nums}
+.cls-row .prog-top .v .total{color:var(--subtle);font-weight:500}
+.cls-row .seg-bar{display:flex;height:8px;border-radius:999px;background:var(--surface);overflow:hidden}
+html.dark .seg-bar{background:var(--border)}
+.cls-row .seg-bar span{height:100%}
+.cls-row .seg-bar .on-time{background:var(--success)}
+.cls-row .seg-bar .late{background:var(--warning)}
+.cls-row .stats-mini{display:flex;align-items:center;gap:14px;font-size:12px;color:var(--muted);justify-content:flex-end}
+.cls-row .stats-mini .b{display:flex;align-items:center;gap:5px;font-variant-numeric:tabular-nums}
+.cls-row .stats-mini .b .d{width:7px;height:7px;border-radius:2px;background:var(--muted)}
+.cls-row .stats-mini .b .v{color:var(--fg);font-weight:600}
+.cls-row .stats-mini .avg{font-size:16px;font-weight:700;color:var(--fg);font-variant-numeric:tabular-nums}
+.cls-row .stats-mini .avg small{display:block;font-size:10.5px;font-weight:500;color:var(--subtle);margin-top:1px;letter-spacing:.04em}
+
+/* 分布 */
+.dist{display:flex;align-items:center;gap:24px;padding:6px 4px}
+.dist-chart{width:160px;height:160px;flex-shrink:0;position:relative}
+.dist-chart .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.dist-chart .center .v{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.dist-chart .center .l{font-size:11px;color:var(--muted);margin-top:2px}
+.dist-list{flex:1;display:flex;flex-direction:column;gap:10px}
+.dist-item{display:flex;align-items:center;gap:10px;font-size:13px}
+.dist-item .d{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.dist-item .lbl{flex:1}
+.dist-item .nm{margin-left:auto;font-weight:600;font-variant-numeric:tabular-nums}
+.dist-item .nm .pct{color:var(--subtle);font-weight:500;font-size:12px;margin-left:4px}
+
+/* 按题通过率 */
+.q-pass{display:flex;flex-direction:column;gap:14px}
+.q-pass-row{display:grid;grid-template-columns:36px 1.6fr 1fr 60px;gap:14px;align-items:center;font-size:13px}
+.q-pass-row .qn{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12px;font-weight:600;
+                text-align:center;padding:4px 0;background:var(--surface);border-radius:5px;color:var(--muted)}
+.q-pass-row .qt{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;min-width:0}
+.q-pass-row .qt .ti{width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.q-pass-row .qt .ti.code{background:var(--qt-code-bg);color:var(--qt-code)}
+.q-pass-row .qt .ti.blank{background:var(--qt-blank-bg);color:var(--qt-blank)}
+.q-pass-row .qt .ti.essay{background:var(--qt-essay-bg);color:var(--qt-essay)}
+.q-pass-row .qt .ti.choice{background:var(--qt-choice-bg);color:var(--qt-choice)}
+.q-pass-row .qt b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.q-pass-row .bar{height:8px;flex:1}
+.q-pass-row .bar .on{background:var(--success);float:left;height:100%}
+.q-pass-row .bar .part{background:var(--warning);float:left;height:100%}
+.q-pass-row .bar .miss{background:var(--danger);float:left;height:100%}
+.q-pass-row .bar::after{content:"";display:block;clear:both}
+.q-pass-row .num{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:14px}
+.q-pass-row .num .total{color:var(--subtle);font-weight:500;font-size:12px}
+.q-pass-row .num.bad{color:var(--danger)}
+.q-pass-row .num.warn{color:var(--warning)}
+
+/* 相似代码 */
+.plag-list{display:flex;flex-direction:column;gap:10px}
+.plag-row{display:flex;align-items:center;gap:14px;padding:12px 14px;border:1px solid var(--border);
+          border-radius:10px;background:var(--surface);transition:.18s}
+.plag-row:hover{border-color:var(--warning);background:var(--card)}
+.plag-pair{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.plag-p{display:flex;align-items:center;gap:8px;flex:1;min-width:0;padding:6px 10px;background:var(--card);
+        border:1px solid var(--border);border-radius:6px;font-size:12.5px}
+.plag-p .av{width:26px;height:26px;border-radius:50%;color:#fff;font-size:10px;font-weight:600;
+            display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.plag-p .info b{display:block;font-weight:500;line-height:1.2;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plag-p .info span{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+.plag-arrow{color:var(--subtle);font-size:14px;flex-shrink:0}
+.plag-score{padding:3px 10px;border-radius:6px;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;flex-shrink:0}
+.plag-score.high{background:var(--danger-subtle);color:var(--danger)}
+.plag-score.mid{background:var(--warning-subtle);color:var(--warning)}
+.plag-foot{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.plag-foot .v{color:var(--warning);font-weight:600}
+.av-c1{background:linear-gradient(135deg,#0EA5E9,#14B8A6)}
+.av-c2{background:linear-gradient(135deg,#F97316,#EF4444)}
+.av-c3{background:linear-gradient(135deg,#8B5CF6,#EC4899)}
+.av-c4{background:linear-gradient(135deg,#10B981,#0EA5E9)}
+.av-c5{background:linear-gradient(135deg,#F59E0B,#EC4899)}
+.av-c6{background:linear-gradient(135deg,#6366F1,#8B5CF6)}
+
+/* 学生列表 */
+.stu-toolbar{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--border);
+              background:var(--surface);flex-wrap:wrap}
+html.dark .stu-toolbar{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.stu-toolbar .search2{position:relative;flex:1;min-width:200px;max-width:300px}
+.stu-toolbar .search2 svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--subtle)}
+.stu-toolbar .search2 input{width:100%;padding:6px 10px 6px 30px;border:1px solid var(--border);
+                             border-radius:6px;background:var(--card);font-size:13px;outline:none;transition:.18s;color:var(--fg)}
+.stu-toolbar .search2 input:focus{border-color:var(--primary)}
+.stu-toolbar .seg{display:inline-flex;border:1px solid var(--border);border-radius:7px;padding:2px;background:var(--card);gap:1px}
+.stu-toolbar .seg button{padding:4px 11px;border-radius:5px;font-size:12px;color:var(--muted);font-weight:500;transition:.18s}
+.stu-toolbar .seg button.on{background:var(--primary);color:#fff;font-weight:600}
+.stu-toolbar select{padding:5px 22px 5px 10px;border:1px solid var(--border);border-radius:6px;
+                    background:var(--card) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") no-repeat right 7px center;
+                    color:var(--fg);font-size:12px;outline:none;cursor:pointer;
+                    -webkit-appearance:none;appearance:none}
+.stu-toolbar .right{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.stu-toolbar .ico-btn{padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;
+                      color:var(--muted);display:inline-flex;align-items:center;gap:4px;transition:.18s}
+.stu-toolbar .ico-btn:hover{border-color:var(--primary);color:var(--primary)}
+.stu-toolbar .ico-btn svg{font-size:13px}
+
+.stu-table{width:100%;border-collapse:collapse}
+.stu-table th{padding:10px 14px;background:var(--surface);font-size:11px;font-weight:600;color:var(--muted);
+              letter-spacing:.06em;text-transform:uppercase;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+html.dark .stu-table th{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.stu-table th.right{text-align:right}
+.stu-table td{padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;white-space:nowrap}
+.stu-table tr:last-child td{border-bottom:none}
+.stu-table tr:hover td{background:var(--surface)}
+.stu-table .right{text-align:right}
+.stu-table .stu{display:flex;align-items:center;gap:9px}
+.stu-table .stu .av{width:28px;height:28px;border-radius:50%;color:#fff;font-size:11px;font-weight:600;
+                     display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.stu-table .stu b{font-size:13px;font-weight:500;line-height:1.2}
+.stu-table .nm{font-variant-numeric:tabular-nums}
+.stu-table .score{font-weight:700;font-variant-numeric:tabular-nums;font-size:14px}
+.stu-table .score .total{color:var(--subtle);font-weight:500;font-size:12px}
+.stu-table .score.high{color:var(--success)}
+.stu-table .score.mid{color:var(--warning)}
+.stu-table .score.low{color:var(--danger)}
+
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;
+       font-size:11.5px;font-weight:500;white-space:nowrap}
+.badge i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.b-p{background:var(--primary-subtle);color:var(--primary)}
+.b-s{background:var(--success-subtle);color:var(--success)}
+.b-w{background:var(--warning-subtle);color:var(--warning)}
+.b-d{background:var(--danger-subtle);color:var(--danger)}
+.b-m{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+.b-v{background:var(--purple-subtle);color:var(--purple)}
+.b-a{background:var(--accent-subtle);color:var(--accent)}
+html.dark .b-m{background:var(--border)}
+
+.foot{padding:14px 18px;border-top:1px solid var(--border);background:var(--surface);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+html.dark .foot{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+
+.txt-s{color:var(--success)}.txt-w{color:var(--warning)}.txt-d{color:var(--danger)}
+.txt-a{color:var(--accent)}.txt-p{color:var(--primary)}.txt-m{color:var(--muted)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+
+/* 题目分析 modal */
+/* 题目分析 modal */
+.dlg.qa-modal{max-width:780px;width:100%;max-height:88vh;display:flex;flex-direction:column}
+.dlg.qa-modal .dlg-hd{padding:18px 22px 16px;align-items:center}
+.dlg.qa-modal .qa-title{display:flex;align-items:center;gap:10px;flex:1;min-width:0;flex-wrap:wrap}
+.dlg.qa-modal .qa-title h3{font-size:16px;font-weight:600;padding-top:0}
+.dlg.qa-modal .qa-qn{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12px;font-weight:600;
+                  padding:4px 9px;background:var(--surface);border-radius:5px;color:var(--muted)}
+.dlg.qa-modal .qa-body{padding:0 22px 22px;overflow-y:auto;display:flex;flex-direction:column;gap:20px}
+.dlg.qa-modal .qa-sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+.qa-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.qa-metric{border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:var(--surface)}
+.qa-metric .l{font-size:11px;color:var(--muted);letter-spacing:.04em;display:flex;align-items:center;gap:4px}
+.qa-metric .l .hint{margin-left:auto;font-size:10px;color:var(--subtle);font-weight:500}
+.qa-metric .v{margin-top:4px;font-size:22px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.qa-metric .v .t{font-size:13px;color:var(--muted);font-weight:500}
+.qa-metric .v .u{font-size:11px;color:var(--subtle);font-weight:500;margin-left:2px}
+.qa-metric.good .v{color:var(--success)}
+.qa-metric.warn .v{color:var(--warning)}
+.qa-metric.bad .v{color:var(--danger)}
+
+.qa-section{display:flex;flex-direction:column;gap:10px}
+.qa-sec-hd{display:flex;align-items:center;justify-content:space-between}
+.qa-sec-hd h4{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.qa-sec-hd h4 svg{font-size:14px;color:var(--muted)}
+.qa-sec-hd .qa-meta{font-size:11.5px;color:var(--muted)}
+.qa-sec-hd .qa-meta b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* 直方图 */
+.qa-hist{display:flex;align-items:flex-end;gap:6px;height:140px;padding:0 4px 22px;border-bottom:1px solid var(--border);
+          position:relative}
+.qa-hist .h-bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;min-width:0}
+.qa-hist .h-fill{width:100%;background:var(--primary);border-radius:4px 4px 0 0;min-height:2px;transition:height .3s ease}
+.qa-hist .h-fill.low{background:var(--danger)}
+.qa-hist .h-fill.mid{background:var(--warning)}
+.qa-hist .h-fill.high{background:var(--success)}
+.qa-hist .h-cnt{position:absolute;top:-18px;font-size:11px;font-weight:600;color:var(--fg);font-variant-numeric:tabular-nums;white-space:nowrap}
+.qa-hist .h-lbl{position:absolute;bottom:-22px;font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.qa-hist-axis{display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--subtle);padding:0 4px}
+.qa-hist-axis span{display:flex;align-items:center;gap:4px}
+.qa-hist-axis .d{width:8px;height:8px;border-radius:2px}
+
+/* 选项分布 */
+.qa-opts{display:flex;flex-direction:column;gap:8px}
+.qa-opt{display:grid;grid-template-columns:60px 1fr 60px;gap:12px;align-items:center;font-size:13px;
+         padding:8px 12px;background:var(--surface);border-radius:8px;transition:.18s}
+.qa-opt.correct{background:var(--success-subtle);border:1px solid color-mix(in srgb,var(--success) 30%,transparent)}
+.qa-opt .k{font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px}
+.qa-opt .k .ck{color:var(--success)}
+.qa-opt .bar{height:8px}
+.qa-opt .bar span{height:100%;display:block;background:var(--primary);border-radius:999px}
+.qa-opt.correct .bar span{background:var(--success)}
+.qa-opt .v{font-weight:600;font-variant-numeric:tabular-nums;text-align:right;display:flex;align-items:baseline;gap:3px}
+.qa-opt .v .p{font-size:11px;color:var(--subtle);font-weight:500}
+
+/* 参考答案 */
+.qa-code{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;
+          font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;line-height:1.6;color:var(--fg);
+          white-space:pre;overflow-x:auto;max-height:240px}
+.qa-text-answer{background:var(--success-subtle);border:1px solid color-mix(in srgb,var(--success) 30%,transparent);
+                border-radius:10px;padding:14px 16px;color:var(--fg);font-size:13.5px;line-height:1.7}
+.qa-text-answer .lbl{font-size:11px;color:var(--success);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.qa-text-answer .lbl svg{font-size:13px}
+
+.qa-big{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.qa-big-cell{border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--surface)}
+.qa-big-cell .l{font-size:11px;color:var(--muted);font-weight:500;letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px}
+.qa-big-cell .v{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.qa-big-cell .v .t{font-size:13px;color:var(--muted);font-weight:500}
+.qa-big-cell .v .p{font-size:13px;color:var(--success);font-weight:600;margin-left:4px}
+.qa-big-cell .extra{font-size:11.5px;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:4px}
+
+@media(max-width:760px){
+  .qa-metrics{grid-template-columns:repeat(2,1fr)}
+  .qa-big{grid-template-columns:1fr}
+  .qa-grid2{grid-template-columns:1fr}
+  .dlg.qa-modal{max-width:96vw}
+}
+.qa-grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:flex-start}
+
+/* 知识点标签 */
+.qa-tags{display:flex;flex-wrap:wrap;gap:6px}
+.qa-kp{font-size:11.5px;padding:3px 9px;border-radius:5px;background:var(--surface);
+       border:1px solid var(--border);color:var(--muted);font-weight:500;display:inline-flex;align-items:center;gap:5px}
+.qa-kp .b{font-weight:700;color:var(--fg);font-variant-numeric:tabular-nums}
+
+/* 历次考试趋势 */
+.qa-trend{display:flex;align-items:flex-end;gap:14px;height:120px;padding:6px 4px 0}
+.qa-trend-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;position:relative}
+.qa-trend-col .v{font-size:12px;font-weight:700;color:var(--fg);font-variant-numeric:tabular-nums}
+.qa-trend-col .bar-t{width:18px;background:var(--primary);border-radius:3px 3px 0 0;min-height:4px;transition:height .3s}
+.qa-trend-col .bar-t.cur{background:var(--accent);box-shadow:0 0 0 3px var(--accent-subtle)}
+.qa-trend-col .lbl{font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.qa-trend-col .lbl.cur{color:var(--accent);font-weight:600}
+
+/* 典型错误 */
+.qa-errs{display:flex;flex-direction:column;gap:8px}
+.qa-err{display:grid;grid-template-columns:1fr 60px;gap:12px;align-items:center;padding:10px 12px;
+        background:var(--surface);border-radius:8px;border-left:3px solid var(--warning)}
+.qa-err.b1{border-left-color:var(--danger)}
+.qa-err.b2{border-left-color:var(--warning)}
+.qa-err.b3{border-left-color:var(--subtle)}
+.qa-err .ci{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12px;color:var(--danger);
+            background:var(--card);padding:2px 6px;border-radius:4px}
+.qa-err .txt{font-size:12.5px;color:var(--fg);line-height:1.5}
+.qa-err .cnt{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.qa-err .cnt .p{font-size:11px;font-weight:500;color:var(--subtle)}
+
+/* 用时分布 */
+.qa-times{display:flex;align-items:flex-end;gap:4px;height:80px;padding:0 2px 20px;border-bottom:1px solid var(--border);position:relative}
+.qa-times .t-bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative}
+.qa-times .t-fill{width:100%;background:var(--accent);border-radius:3px 3px 0 0;min-height:2px;transition:height .3s}
+.qa-times .t-cnt{position:absolute;top:-15px;font-size:10px;font-weight:600;color:var(--fg);font-variant-numeric:tabular-nums}
+.qa-times .t-lbl{position:absolute;bottom:-18px;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.qa-times-axis{display:flex;justify-content:space-between;margin-top:6px;font-size:10.5px;color:var(--subtle);padding:0 2px}
+
+@media(max-width:1100px){
+  .side{display:none}
+  .stats{grid-template-columns:1fr 1fr}
+  .cls-row{grid-template-columns:1fr;gap:10px}
+  .content{padding:24px 20px}
+  .topbar{padding:0 20px}
+}
+@media(max-width:640px){
+  .stats{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-cap" viewBox="0 0 24 24"><path d="M2 9 12 4l10 5-10 5z"/><path d="M6 11v5c0 1 3 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M3 9 12 3l9 6"/><path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"/><path d="M9 22V12h6v10"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2 2 0 0 1 0-5H20"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6M16 6l6 6-6 6"/></symbol>
+<symbol id="i-bank" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11M9 8v11M15 8v11M19 8v11"/><path d="M3 22h18"/></symbol>
+<symbol id="i-grading" viewBox="0 0 24 24"><path d="M9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+<symbol id="i-monitoring" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M21.7 7.3a2.5 2.5 0 0 0-3.5 0L8 17.5 6 22l4.5-2L20 10.5a2.5 2.5 0 0 0 0-3.5z"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="m21.7 18-9-15.3a1 1 0 0 0-1.7 0L1.3 18a1 1 0 0 0 .9 1.5h18.6a1 1 0 0 0 .9-1.5z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-export" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5-5 5 5"/><path d="M12 5v12"/></symbol>
+<symbol id="i-bell-r" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/><path d="M2 2l20 20"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3v6L4 19a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-10V3"/><path d="M8 3h8M7 14h10"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 10v-4a3 3 0 1 1 6 0v4"/><path d="M5 10h14l-1 7H6z"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4a2 2 0 0 1-2-2V5h4"/><path d="M18 9h2a2 2 0 0 0 2-2V5h-4"/><path d="M6 9V3h12v6a6 6 0 0 1-12 0z"/><path d="M12 15v3"/><path d="M8 21h8"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-cap"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">教师端</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">教学</p>
+      <a class="nav-item" href="teacher-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <a class="nav-item" href="teacher-classes.html"><svg><use href="#i-class"/></svg>我的班级</a>
+      <a class="nav-item" href="teacher-courses.html"><svg><use href="#i-book"/></svg>课程</a>
+      <p class="nav-label">考核</p>
+      <a class="nav-item" href="teacher-assignments.html?type=assignment"><svg><use href="#i-file"/></svg>作业<span class="nav-count">3</span></a>
+      <a class="nav-item" id="nav-problems" href="teacher-problems.html"><svg><use href="#i-code"/></svg>题库</a>
+      <a class="nav-item" href="teacher-assignments.html?type=exam"><svg><use href="#i-bank"/></svg>试卷</a>
+      <a class="nav-item"><svg><use href="#i-grading"/></svg>批改<span class="nav-count">24</span></a>
+      <p class="nav-label">分析</p>
+      <a class="nav-item"><svg><use href="#i-monitoring"/></svg>考试监控</a>
+      <a class="nav-item"><svg><use href="#i-chart"/></svg>成绩分析</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">王</div>
+      <div>
+        <div class="n">王建国</div>
+        <div class="s">信息技术 · 高一段</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb">
+        <a href="teacher-assignments.html?type=exam">试卷</a> /
+        <span class="aid">A0024</span> · 提交情况
+      </span>
+      <div class="top-actions">
+        <button class="icon-btn" onclick="tt()"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg><span class="dot"></span></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <a class="back-link anim" href="teacher-assignments-edit.html?aid=A0024"><svg><use href="#i-arrow-l"/></svg>返回编辑</a>
+
+        <div class="asn-head anim" style="animation-delay:.04s">
+          <div>
+            <div class="id-block">
+              <span class="aid">A0024</span>
+              <span class="st live">进行中</span>
+              <span class="type-chip exam"><svg><use href="#i-bank"/></svg>试卷</span>
+              <span style="font-size:11.5px;color:var(--muted)">开放于 <b style="color:var(--fg);font-weight:500">11/15 09:00</b> · 截止 <b style="color:var(--fg);font-weight:500">11/15 23:59</b></span>
+            </div>
+            <h1>期中考试 - Python 数据处理</h1>
+            <p class="meta">
+              <span>课程 <b>Python 编程入门</b></span>
+              <span>·</span>
+              <span>关联 <b>2</b> 个班 · <b>86</b> 名学生</span>
+              <span>·</span>
+              <span><b>5</b> 道题 · 满分 <b>100</b></span>
+              <span>·</span>
+              <span>时长 <b class="num">120</b> 分钟</span>
+            </p>
+          </div>
+          <div class="acts">
+            <button class="btn-ghost" onclick="exportCsv()"><svg><use href="#i-export"/></svg>导出成绩单</button>
+            <button class="btn-ghost" onclick="remindMissing()"><svg><use href="#i-mail"/></svg>提醒未交 <span class="badge b-d" style="margin-left:4px"><i></i>14</span></button>
+            <button class="btn-ghost" href="teacher-assignments-edit.html?aid=A0024"><svg><use href="#i-edit"/></svg>编辑</button>
+            <a class="btn" href="teacher-assignments-grade.html?aid=A0024" style="text-decoration:none"><svg><use href="#i-grading"/></svg>开始批改 <span class="badge b-w" style="margin-left:4px;background:rgba(255,255,255,.2);color:#fff"><i></i>14</span></a>
+          </div>
+        </div>
+
+        <!-- 班级选择器 -->
+        <div class="cls-bar anim" style="animation-delay:.06s">
+          <span class="lbl"><svg><use href="#i-class"/></svg>按班级查看</span>
+          <select id="cls-sel">
+            <option value="all">全部班级（86 人）</option>
+            <option value="c3">高一(3) 班（42 人）</option>
+            <option value="c4">高一(4) 班（44 人）</option>
+          </select>
+          <span class="meta"><span data-cls-cnt>86</span> 名学生 · <b data-cls-avg>81.4</b> 平均分</span>
+        </div>
+
+        <div class="stats anim" style="animation-delay:.08s">
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">应交 · 已交</span><div class="ic ic-p"><svg><use href="#i-users"/></svg></div></div>
+            <div class="stat-num">72 <span style="font-size:18px;color:var(--muted);font-weight:500">/ 86</span></div>
+            <div class="stat-foot">
+              <span class="gap"><i style="background:var(--success)"></i>按时 68</span>
+              <span class="gap"><i style="background:var(--warning)"></i>补交 4</span>
+              <span class="gap"><i style="background:var(--danger)"></i>未交 14</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">提交率</span><div class="ic ic-s"><svg><use href="#i-check"/></svg></div></div>
+            <div class="stat-num">83.7<span style="font-size:18px;color:var(--muted);font-weight:500">%</span></div>
+            <div class="stat-foot">较上次期初摸底 <span class="txt-s">↑ 5.3%</span></div>
+            <div class="bar" style="margin-top:10px"><span style="width:83.7%"></span></div>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">班级平均分</span><div class="ic ic-a"><svg><use href="#i-trophy"/></svg></div></div>
+            <div class="stat-num">81.4</div>
+            <div class="stat-foot">较预期 <span class="txt-s">+2.4</span> · 高分段偏多</div>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">待批改</span><div class="ic ic-w"><svg><use href="#i-grading"/></svg></div></div>
+            <div class="stat-num">14</div>
+            <div class="stat-foot">含 6 份编程题 + 8 份简答题</div>
+          </div>
+        </div>
+
+        <div class="grid2 anim" style="animation-delay:.12s">
+
+          <!-- 提交状态分布：根据班级筛选 -->
+          <div class="panel" id="dist-panel">
+            <div class="panel-hd">
+              <div class="hd-l">
+                <h3><svg><use href="#i-chart"/></svg>提交状态分布</h3>
+                <span class="cls-tag" data-cls-lbl>全部班级</span>
+              </div>
+              <span class="link" style="font-size:12px">详情</span>
+            </div>
+            <div class="panel-bd">
+              <div class="dist">
+                <div class="dist-chart">
+                  <svg viewBox="0 0 100 100" style="width:100%;height:100%;transform:rotate(-90deg)">
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--success)" stroke-width="18"
+                            stroke-dasharray="198.4 251.3" stroke-dashoffset="0"/>
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--warning)" stroke-width="18"
+                            stroke-dasharray="11.7 251.3" stroke-dashoffset="-198.4"/>
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--danger)" stroke-width="18"
+                            stroke-dasharray="40.9 251.3" stroke-dashoffset="-210.1"/>
+                  </svg>
+                  <div class="center">
+                    <div class="v" data-cls-cnt>86</div>
+                    <div class="l">应交人数</div>
+                  </div>
+                </div>
+                <div class="dist-list">
+                  <div class="dist-item">
+                    <div class="d" style="background:var(--success)"></div>
+                    <div class="lbl">按时提交</div>
+                    <div class="nm"><span data-on-time>68</span><span class="pct" data-on-time-pct>79.1%</span></div>
+                  </div>
+                  <div class="dist-item">
+                    <div class="d" style="background:var(--warning)"></div>
+                    <div class="lbl">补交</div>
+                    <div class="nm"><span data-late>4</span><span class="pct" data-late-pct>4.6%</span></div>
+                  </div>
+                  <div class="dist-item">
+                    <div class="d" style="background:var(--danger)"></div>
+                    <div class="lbl">未交</div>
+                    <div class="nm"><span data-missing>14</span><span class="pct" data-missing-pct>16.3%</span></div>
+                  </div>
+                </div>
+              </div>
+              <div style="margin-top:14px;padding:10px 12px;background:var(--warning-subtle);border-radius:8px;font-size:12px;color:var(--warning);display:flex;align-items:flex-start;gap:8px;line-height:1.6">
+                <svg style="font-size:14px;margin-top:1px;flex-shrink:0"><use href="#i-warn"/></svg>
+                <span>截止时间还有 <b style="font-weight:600">2 小时 17 分</b>，<span data-missing-tip>14</span> 名学生尚未提交。建议在截止前 30 分钟发送提醒。</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 逐题得分情况 右移到这里先占位 -->
+          <div class="panel" id="q-panel">
+            <div class="panel-hd">
+              <div class="hd-l">
+                <h3><svg><use href="#i-target"/></svg>逐题得分情况</h3>
+                <span class="cls-tag" data-cls-lbl>全部班级</span>
+              </div>
+              <div class="right">
+                <select>
+                  <option>按题号</option>
+                  <option>按通过率（低→高）</option>
+                  <option>按分值</option>
+                </select>
+                <span class="link" id="qa-trigger">查看题目分析</span>
+              </div>
+            </div>
+            <div class="panel-bd">
+              <div class="q-pass">
+                <div class="q-pass-row" data-qn="1" data-qtype="code">
+                  <div class="qn">#1</div>
+                  <div class="qt"><div class="ti code"><svg><use href="#i-code"/></svg></div><b>两数之和</b></div>
+                  <div class="bar"><div class="on" style="width:88%"></div><div class="part" style="width:8%"></div><div class="miss" style="width:4%"></div></div>
+                  <div class="num">76<span class="total">/86</span></div>
+                </div>
+                <div class="q-pass-row" data-qn="2" data-qtype="code">
+                  <div class="qn">#2</div>
+                  <div class="qt"><div class="ti code"><svg><use href="#i-code"/></svg></div><b>列表去重</b></div>
+                  <div class="bar"><div class="on" style="width:65%"></div><div class="part" style="width:19%"></div><div class="miss" style="width:16%"></div></div>
+                  <div class="num warn">65<span class="total">/86</span></div>
+                </div>
+                <div class="q-pass-row" data-qn="3" data-qtype="code">
+                  <div class="qn">#3</div>
+                  <div class="qt"><div class="ti code"><svg><use href="#i-code"/></svg></div><b>读取文件并统计词频</b></div>
+                  <div class="bar"><div class="on" style="width:52%"></div><div class="part" style="width:18%"></div><div class="miss" style="width:30%"></div></div>
+                  <div class="num bad">45<span class="total">/86</span></div>
+                </div>
+                <div class="q-pass-row" data-qn="4" data-qtype="blank">
+                  <div class="qn">#4</div>
+                  <div class="qt"><div class="ti blank"><svg><use href="#i-circle"/></svg></div><b>int/str 转换填空</b></div>
+                  <div class="bar"><div class="on" style="width:92%"></div><div class="part" style="width:6%"></div><div class="miss" style="width:2%"></div></div>
+                  <div class="num">79<span class="total">/86</span></div>
+                </div>
+                <div class="q-pass-row" data-qn="5" data-qtype="choice">
+                  <div class="qn">#5</div>
+                  <div class="qt"><div class="ti choice"><svg><use href="#i-circle"/></svg></div><b>Python 中哪个不是可变类型？</b></div>
+                  <div class="bar"><div class="on" style="width:78%"></div><div class="part" style="width:14%"></div><div class="miss" style="width:8%"></div></div>
+                  <div class="num">67<span class="total">/86</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 学生列表 -->
+        <div class="panel anim" style="animation-delay:.20s">
+          <div class="panel-hd">
+            <div class="hd-l">
+              <h3><svg><use href="#i-list"/></svg>学生作答列表</h3>
+              <span class="cls-tag" data-cls-lbl>全部班级</span>
+            </div>
+            <div class="right">
+              <span style="font-size:12px;color:var(--muted)">共 <b style="color:var(--fg);font-weight:600" data-stu-cnt>15</b> / <b style="color:var(--fg);font-weight:600" data-cls-cnt>86</b> 人</span>
+            </div>
+          </div>
+          <div class="stu-toolbar">
+            <div class="search2">
+              <svg><use href="#i-search"/></svg>
+              <input placeholder="按姓名 / 学号搜索…">
+            </div>
+            <div class="seg" id="status-seg">
+              <button class="on" data-filter="all">全部 <span style="opacity:.7;margin-left:3px">86</span></button>
+              <button data-filter="graded">已批改 <span style="opacity:.7;margin-left:3px">40</span></button>
+              <button data-filter="submitted">待批改 <span style="opacity:.7;margin-left:3px">14</span></button>
+              <button data-filter="late">补交 <span style="opacity:.7;margin-left:3px">4</span></button>
+              <button data-filter="missing">未交 <span style="opacity:.7;margin-left:3px">14</span></button>
+            </div>
+            <select>
+              <option>按提交时间（晚→早）</option>
+              <option>按提交时间（早→晚）</option>
+              <option>按成绩（高→低）</option>
+              <option>按成绩（低→高）</option>
+              <option>按学号</option>
+            </select>
+            <div class="right">
+              <button class="ico-btn"><svg><use href="#i-export"/></svg>导出</button>
+              <button class="ico-btn"><svg><use href="#i-mail"/></svg>群发提醒</button>
+            </div>
+          </div>
+          <table class="stu-table">
+            <thead>
+              <tr>
+                <th style="width:24px"><input type="checkbox" style="accent-color:var(--primary)"></th>
+                <th>学生</th>
+                <th>学号</th>
+                <th>班级</th>
+                <th>状态</th>
+                <th>提交时间</th>
+                <th class="right">得分</th>
+                <th class="right">用时</th>
+                <th class="right">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-class="c3">
+                <td><input type="checkbox" style="accent-color:var(--primary)"></td>
+                <td><div class="stu"><div class="av av-c1">李</div><b>李明</b></div></td>
+                <td class="mono">20240101</td>
+                <td><span class="badge b-a"><i></i>高一(3)</span></td>
+                <td><span class="badge b-s"><i></i>已批改</span></td>
+                <td>11/15 14:22</td>
+                <td class="right score high">96<span class="total">/100</span></td>
+                <td class="right"><span class="num txt-m">87 分</span></td>
+                <td class="right"><button class="ico-btn"><svg style="font-size:13px"><use href="#i-eye"/></svg>查看</button></td>
+              </tr>
+              <tr data-class="c3">
+                <td><input type="checkbox" style="accent-color:var(--primary)"></td>
+                <td><div class="stu"><div class="av av-c2">张</div><b>张伟</b></div></td>
+                <td class="mono">20240102</td>
+                <td><span class="badge b-a"><i></i>高一(3)</span></td>
+                <td><span class="badge b-s"><i></i>已批改</span></td>
+                <td>11/15 15:10</td>
+                <td class="right score high">94<span class="total">/100</span></td>
+                <td class="right"><span class="num txt-m">94 分</span></td>
+                <td class="right"><button class="ico-btn"><svg style="font-size:13px"><use href="#i-eye"/></svg>查看</button></td>
+              </tr>
+              <tr data-class="c3">
+                <td><input type="checkbox" style="accent-color:var(--primary)"></td>
+                <td><div class="stu"><div class="av av-c3">陈</div><b>陈静</b></div></td>
+                <td class="mono">20240103</td>
+                <td><span class="badge b-a"><i></i>高一(3)</span></td>
+                <td><span class="badge b-s"><i></i>已批改</span></td>
+                <td>11/15 13:48</td>
+                <td class="right score high">92<span class="total">/100</span></td>
+                <td class="right"><span class="num txt-m">102 分</span></td>
+                <td class="right"><button class="ico-btn"><svg style="font-size:13px"><use href="#i-eye"/></svg>查看</button></td>
+              </tr>
+              <tr data-class="c4">
+                <td><input type="checkbox" style="accent-color:var(--primary)"></td>
+                <td><div class="stu"><div class="av av-c4">王</div><b>王晓东</b></div></td>
+                <td class="mono">20240105</td>
+                <td><span class="badge b-a"><i></i>高一(4)</span></td>
+                <td><span class="badge b-s"><i></i>已批改</span></td>
+                <td>11/15 16:05</td>
+                <td class="right score mid">82<span class="total">/100</span></td>
+                <td class="right"><span class="num txt-m">76 分</span></td>
+                <td class="right"><button class="ico-btn"><svg style="font-size:13px"><use href="#i-eye"/></svg>查看</button></td>
+              </tr>
+              <tr data-class="c4">
+                <td><input type="checkbox" style="accent-color:var(--primary)"></td>
+                <td><div class="stu"><div class="av av-c5">刘</div><b>刘洋</b></div></td>
+                <td class="mono">20240108</td>
+                <td><span class="badge b-a"><i></i>高一(4)</span></td>
+                <td><span class="badge b-s"><i></i>已批改</span></td>
+                <td>11/15 17:20</td>
+                <td class="right score mid">78<span class="total">/100</span></td>
+                <td class="right"><span class="num txt-m">108 分</span></td>
+                <td class="right"><button class="ico-btn"><svg style="font-size:13px"><use href="#i-eye"/></svg>查看</button></td>
+              </tr>
+              <tr data-class="c4">
+                <td><input type="checkbox" style="accent-color:var(--primary)"></td>
+                <td><div class="stu"><div class="av av-c6">赵</div><b>赵敏</b></div></td>
+                <td class="mono">20240112</td>
+                <td><span class="badge b-a"><i></i>高一(4)</span></td>
+                <td><span class="badge b-s"><i></i>已批改</span></td>
+                <td>11/15 18:42</td>
+                <td class="right score mid">75<span class="total">/100</span></td>
+                <td class="right"><span class="num txt-m">95 分</span></td>
+                <td class="right"><button class="ico-btn"><svg style="font-size:13px"><use href="#i-eye"/></svg>查看</button></td>
+              </tr>
+              <tr data-class="c3">
+                <td><input type="checkbox" style="accent-color:var(--primary)"></td>
+                <td><div class="stu"><div class="av av-c1">孙</div><b>孙浩</b></div></td>
+                <td class="mono">20240115</td>
+                <td><span class="badge b-a"><i></i>高一(3)</span></td>
+                <td><span class="badge b-w"><i></i>待批改</span></td>
+                <td>11/15 21:08</td>
+                <td class="right score">— <span class="total">编程/简答</span></td>
+                <td class="right"><span class="num txt-m">115 分</span></td>
+                <td class="right"><button class="ico-btn" style="color:var(--primary);border-color:var(--primary)"><svg style="font-size:13px"><use href="#i-grading"/></svg>批改</button></td>
+              </tr>
+              <tr data-class="c4">
+                <td><input type="checkbox" style="accent-color:var(--primary)"></td>
+                <td><div class="stu"><div class="av av-c2">周</div><b>周婷</b></div></td>
+                <td class="mono">20240120</td>
+                <td><span class="badge b-a"><i></i>高一(4)</span></td>
+                <td><span class="badge b-w"><i></i>待批改</span></td>
+                <td>11/15 22:14</td>
+                <td class="right score">— <span class="total">简答</span></td>
+                <td class="right"><span class="num txt-m">120 分</span></td>
+                <td class="right"><button class="ico-btn" style="color:var(--primary);border-color:var(--primary)"><svg style="font-size:13px"><use href="#i-grading"/></svg>批改</button></td>
+              </tr>
+              <tr data-class="c3">
+                <td><input type="checkbox" style="accent-color:var(--primary)"></td>
+                <td><div class="stu"><div class="av av-c3">吴</div><b>吴杰</b></div></td>
+                <td class="mono">20240122</td>
+                <td><span class="badge b-a"><i></i>高一(3)</span></td>
+                <td><span class="badge b-w"><i></i>待批改</span></td>
+                <td>11/15 20:30</td>
+                <td class="right score">— <span class="total">编程</span></td>
+                <td class="right"><span class="num txt-m">98 分</span></td>
+                <td class="right"><button class="ico-btn" style="color:var(--primary);border-color:var(--primary)"><svg style="font-size:13px"><use href="#i-grading"/></svg>批改</button></td>
+              </tr>
+              <tr data-class="c4">
+                <td><input type="checkbox" style="accent-color:var(--primary)"></td>
+                <td><div class="stu"><div class="av av-c4">郑</div><b>郑雨</b></div></td>
+                <td class="mono">20240125</td>
+                <td><span class="badge b-a"><i></i>高一(4)</span></td>
+                <td><span class="badge b-s"><i></i>已批改</span></td>
+                <td>11/15 15:45</td>
+                <td class="right score high">88<span class="total">/100</span></td>
+                <td class="right"><span class="num txt-m">82 分</span></td>
+                <td class="right"><button class="ico-btn"><svg style="font-size:13px"><use href="#i-eye"/></svg>查看</button></td>
+              </tr>
+              <tr data-class="c3">
+                <td><input type="checkbox" style="accent-color:var(--primary)"></td>
+                <td><div class="stu"><div class="av av-c5">钱</div><b>钱晨</b></div></td>
+                <td class="mono">20240128</td>
+                <td><span class="badge b-a"><i></i>高一(3)</span></td>
+                <td><span class="badge b-w"><i></i>待批改</span></td>
+                <td>11/15 19:12</td>
+                <td class="right score">— <span class="total">简答</span></td>
+                <td class="right"><span class="num txt-m">88 分</span></td>
+                <td class="right"><button class="ico-btn" style="color:var(--primary);border-color:var(--primary)"><svg style="font-size:13px"><use href="#i-grading"/></svg>批改</button></td>
+              </tr>
+              <tr data-class="c4">
+                <td><input type="checkbox" style="accent-color:var(--primary)"></td>
+                <td><div class="stu"><div class="av av-c6">马</div><b>马涛</b></div></td>
+                <td class="mono">20240130</td>
+                <td><span class="badge b-a"><i></i>高一(4)</span></td>
+                <td><span class="badge b-d"><i></i>补交</span></td>
+                <td>11/16 18:30 <small style="color:var(--danger);font-size:10.5px;margin-left:4px">+19h</small></td>
+                <td class="right score">— <span class="total">简答</span></td>
+                <td class="right"><span class="num txt-m">120 分</span></td>
+                <td class="right"><button class="ico-btn" style="color:var(--primary);border-color:var(--primary)"><svg style="font-size:13px"><use href="#i-grading"/></svg>批改</button></td>
+              </tr>
+              <tr data-class="c3">
+                <td><input type="checkbox" style="accent-color:var(--primary)"></td>
+                <td><div class="stu"><div class="av av-c1">徐</div><b>徐磊</b></div></td>
+                <td class="mono">20240133</td>
+                <td><span class="badge b-a"><i></i>高一(3)</span></td>
+                <td><span class="badge b-d"><i></i>补交</span></td>
+                <td>11/16 10:24 <small style="color:var(--danger);font-size:10.5px;margin-left:4px">+11h</small></td>
+                <td class="right score">— <span class="total">编程</span></td>
+                <td class="right"><span class="num txt-m">120 分</span></td>
+                <td class="right"><button class="ico-btn" style="color:var(--primary);border-color:var(--primary)"><svg style="font-size:13px"><use href="#i-grading"/></svg>批改</button></td>
+              </tr>
+              <tr data-class="c4">
+                <td><input type="checkbox" style="accent-color:var(--primary)"></td>
+                <td><div class="stu"><div class="av av-c2">朱</div><b>朱婷婷</b></div></td>
+                <td class="mono">20240140</td>
+                <td><span class="badge b-a"><i></i>高一(4)</span></td>
+                <td><span class="badge b-m"><i></i>未交</span></td>
+                <td style="color:var(--subtle)">—</td>
+                <td class="right score" style="color:var(--subtle)">—</td>
+                <td class="right" style="color:var(--subtle)">—</td>
+                <td class="right"><button class="ico-btn"><svg style="font-size:13px"><use href="#i-mail"/></svg>提醒</button></td>
+              </tr>
+              <tr data-class="c3">
+                <td><input type="checkbox" style="accent-color:var(--primary)"></td>
+                <td><div class="stu"><div class="av av-c3">胡</div><b>胡凯</b></div></td>
+                <td class="mono">20240145</td>
+                <td><span class="badge b-a"><i></i>高一(3)</span></td>
+                <td><span class="badge b-m"><i></i>未交</span></td>
+                <td style="color:var(--subtle)">—</td>
+                <td class="right score" style="color:var(--subtle)">—</td>
+                <td class="right" style="color:var(--subtle)">—</td>
+                <td class="right"><button class="ico-btn"><svg style="font-size:13px"><use href="#i-mail"/></svg>提醒</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="foot">
+            <div class="info">显示前 <b style="color:var(--fg);font-weight:600">15</b> / <b style="color:var(--fg);font-weight:600">86</b> 人</div>
+            <div style="display:flex;gap:4px">
+              <button class="ico-btn" disabled>‹ 上一页</button>
+              <button class="ico-btn" style="background:var(--primary);color:#fff;border-color:var(--primary)">1</button>
+              <button class="ico-btn">2</button>
+              <button class="ico-btn">3</button>
+              <button class="ico-btn">4</button>
+              <button class="ico-btn">5</button>
+              <button class="ico-btn">6</button>
+              <button class="ico-btn">下一页 ›</button>
+            </div>
+            <div class="info">每页 15 条</div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- 题目分析 modal -->
+<div class="mask" id="qa-modal" role="dialog">
+  <div class="dlg qa-modal">
+    <div class="dlg-hd">
+      <div class="qa-title">
+        <span class="qa-qn" id="qa-qn">#1</span>
+        <h3 id="qa-title">两数之和</h3>
+        <span class="badge b-p" id="qa-type">编程题</span>
+        <span class="badge b-m" id="qa-score">20 分</span>
+      </div>
+      <button class="icon-btn" data-close><svg><use href="#i-x"/></svg></button>
+    </div>
+    <div class="qa-body" id="qa-body">
+      <!-- JS 注入 -->
+    </div>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+/* 侧栏 active：根据 aid 类型判定作业 / 试卷 */
+var aid = new URLSearchParams(location.search).get('aid') || 'A0024';
+// A0017/A0021/A0023/A0024 是试卷；其它是作业
+var isExam = /^A00(1[7]|2[134])$/.test(aid);
+document.querySelectorAll('.side .nav-item').forEach(function(n){ n.classList.remove('active'); });
+var sel = isExam ? '.nav-item[href*="type=exam"]' : '.nav-item[href*="type=assignment"]';
+var target = document.querySelector('aside.side ' + sel);
+if(target) target.classList.add('active');
+
+/* 顶部按钮 */
+function exportCsv(){
+  Modal.confirm({
+    title: '导出 A0024 成绩单？',
+    body: ['将导出为 CSV 格式','含学号、姓名、班级、提交时间、各项得分、最终成绩','同时包含未交学生名单'],
+    confirmText: '下载 CSV',
+    onConfirm: function(){ toast('A0024 成绩单已导出'); }
+  });
+}
+function remindMissing(){
+  Modal.confirm({
+    title: '提醒 14 名未交学生？',
+    body: ['将通过站内消息 + 邮件通知学生','提醒内容：「期中考试还有 2 小时截止」','建议截止前 30 分钟发送，避免打扰'],
+    confirmText: '发送提醒',
+    onConfirm: function(){ toast('已向 14 名学生发送提醒'); }
+  });
+}
+/* 状态 seg 切换 */
+document.querySelectorAll('#status-seg button').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('#status-seg button').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+  });
+});
+
+/* ============================================================
+   班级筛选：按所选班级过滤所有数据
+   ============================================================ */
+var CLS_DATA = {
+  all: { label: '全部班级', total: 86, onTime: 68, late: 4, missing: 14, avg: 81.4, submitRate: 83.7,
+         qpass: { 1: [76, 86], 2: [56, 86], 3: [45, 86], 4: [79, 86], 5: [67, 86] } },
+  c3:  { label: '高一(3) 班', total: 42, onTime: 34, late: 2, missing: 6, avg: 83.6, submitRate: 85.7,
+         qpass: { 1: [38, 42], 2: [28, 42], 3: [22, 42], 4: [39, 42], 5: [33, 42] } },
+  c4:  { label: '高一(4) 班', total: 44, onTime: 34, late: 2, missing: 8, avg: 79.0, submitRate: 81.8,
+         qpass: { 1: [38, 44], 2: [26, 44], 3: [23, 44], 4: [40, 44], 5: [34, 44] } }
+};
+
+function setText(sel, v){ var el = document.querySelector(sel); if(el) el.textContent = v; }
+
+function applyClass(cls){
+  var d = CLS_DATA[cls] || CLS_DATA.all;
+  // 顶部标题
+  document.querySelectorAll('[data-cls-lbl]').forEach(function(el){ el.textContent = d.label; });
+  setText('[data-cls-cnt]', d.total);
+  setText('[data-cls-avg]', d.avg);
+  // 提交状态分布
+  var sum = d.onTime + d.late + d.missing;
+  setText('[data-on-time]', d.onTime);
+  setText('[data-on-time-pct]', (d.onTime/sum*100).toFixed(1) + '%');
+  setText('[data-late]', d.late);
+  setText('[data-late-pct]', (d.late/sum*100).toFixed(1) + '%');
+  setText('[data-missing]', d.missing);
+  setText('[data-missing-pct]', (d.missing/sum*100).toFixed(1) + '%');
+  setText('[data-missing-tip]', d.missing);
+  // 顶部 4 统计
+  var statNums = document.querySelectorAll('.stats .stat-num');
+  if(statNums[0]){ statNums[0].innerHTML = (d.onTime + d.late) + ' <span style="font-size:18px;color:var(--muted);font-weight:500">/ ' + d.total + '</span>'; }
+  if(statNums[0]){
+    var foot = statNums[0].parentElement.querySelector('.stat-foot');
+    if(foot){ foot.innerHTML = '<span class="gap"><i style="background:var(--success)"></i>按时 ' + d.onTime + '</span>'
+      + '<span class="gap"><i style="background:var(--warning)"></i>补交 ' + d.late + '</span>'
+      + '<span class="gap"><i style="background:var(--danger)"></i>未交 ' + d.missing + '</span>'; }
+  }
+  if(statNums[1]){ statNums[1].innerHTML = d.submitRate.toFixed(1) + '<span style="font-size:18px;color:var(--muted);font-weight:500">%</span>';
+    var bar = document.querySelectorAll('.stats .bar span')[0]; if(bar) bar.style.width = d.submitRate + '%'; }
+  if(statNums[2]){ statNums[2].innerHTML = d.avg.toFixed(1); }
+  // 逐题得分情况更新右侧数字
+  document.querySelectorAll('.q-pass-row').forEach(function(row){
+    var qn = row.getAttribute('data-qn');
+    var arr = d.qpass[qn]; if(!arr) return;
+    var num = row.querySelector('.num');
+    if(num){ num.innerHTML = arr[0] + '<span class="total">/' + arr[1] + '</span>'; }
+    var bar = row.querySelector('.bar');
+    if(bar){
+      var pct = arr[0] / arr[1];
+      var onPct = (pct * 100).toFixed(1);
+      var partPct = Math.min(8, (100 - pct*100).toFixed(1));
+      var missPct = (100 - parseFloat(onPct) - parseFloat(partPct)).toFixed(1);
+      var on = bar.querySelector('.on'), part = bar.querySelector('.part'), miss = bar.querySelector('.miss');
+      if(on) on.style.width = onPct + '%';
+      if(part) part.style.width = partPct + '%';
+      if(miss) miss.style.width = missPct + '%';
+    }
+  });
+  // 学生列表筛选
+  var stuRows = document.querySelectorAll('.stu-table tbody tr');
+  var visible = 0;
+  stuRows.forEach(function(row){
+    var match = (cls === 'all') || row.getAttribute('data-class') === cls;
+    row.style.display = match ? '' : 'none';
+    if(match) visible++;
+  });
+  setText('[data-stu-cnt]', visible);
+  // 警告条同步
+  var warnNum = document.querySelectorAll('.stats .stat-num')[3];
+  if(warnNum){ warnNum.textContent = Math.max(0, Math.round(d.missing * 0.43)); }
+}
+
+document.getElementById('cls-sel').addEventListener('change', function(e){
+  applyClass(e.target.value);
+});
+
+/* ============================================================
+   题目分析 modal
+   ============================================================ */
+var Q_DATA = {
+  1: { qn: 1, title: '两数之和', type: 'code', typeLabel: '编程题', score: 20, diff: 0.28, discrim: 0.42,
+       avg: 17.5, rate: 87.5, fullScore: 20, total: 8, submitted: 8, comp: 5, part: 2, err: 1,
+       kp: [{n:'哈希表',c:8},{n:'数组',c:8},{n:'基础语法',c:8}],
+       trend: [72, 80, 78, 85, 87.5],
+       avgTime: 12,          // 平均用时（分钟）
+       timeHist: [0, 1, 2, 3, 1, 1, 0, 0],  // 5-10-15-20-25-30-35-40 min
+       errors: [
+         { code:'return [i, seen[c]]', txt:'返回值顺序反了，应先返回 seen[c] 再返回 i', n:2, tier:1 },
+         { code:'for i in range(len(nums))', txt:'未使用 enumerate，无法同时拿到索引和值', n:1, tier:2 }
+       ],
+       refCode: 'def twoSum(nums, target):\n    seen = {}\n    for i, n in enumerate(nums):\n        c = target - n\n        if c in seen:\n            return [seen[c], i]\n        seen[n] = i\n    return [-1, -1]' },
+  2: { qn: 2, title: '列表去重', type: 'code', typeLabel: '编程题', score: 20, diff: 0.45, discrim: 0.38,
+       avg: 13.1, rate: 65.6, fullScore: 20, total: 8, submitted: 8, comp: 3, part: 3, err: 2,
+       kp: [{n:'集合 set',c:6},{n:'列表',c:8},{n:'遍历',c:7}],
+       trend: [55, 60, 62, 68, 65.6],
+       avgTime: 8,
+       timeHist: [0, 1, 3, 2, 1, 1, 0, 0],
+       errors: [
+         { code:'lst = list(set(lst))', txt:'用 set 去重会丢失原始顺序', n:2, tier:1 },
+         { code:'if lst.count(x) == 1:', txt:'用 count 判断效率 O(n²)，大数据超时', n:1, tier:2 }
+       ],
+       refCode: 'def dedup(lst):\n    seen = set()\n    out = []\n    for x in lst:\n        if x not in seen:\n            seen.add(x)\n            out.append(x)\n    return out\n\n# 或一行：list(dict.fromkeys(lst))' },
+  3: { qn: 3, title: '读取文件并统计词频', type: 'code', typeLabel: '编程题', score: 20, diff: 0.62, discrim: 0.55,
+       avg: 10.6, rate: 53.1, fullScore: 20, total: 8, submitted: 8, comp: 1, part: 4, err: 3,
+       kp: [{n:'文件 I/O',c:6},{n:'字典',c:7},{n:'正则',c:4},{n:'字符串处理',c:5}],
+       trend: [38, 45, 48, 50, 53.1],
+       avgTime: 22,
+       timeHist: [0, 0, 1, 2, 2, 2, 1, 0],
+       errors: [
+         { code:'f.read().split()', txt:'按空格 split 但未处理标点，结果混入标点', n:3, tier:1 },
+         { code:'open(path)', txt:'未指定 encoding="utf-8"，含中文时报 UnicodeDecodeError', n:2, tier:1 },
+         { code:'Counter(text)', txt:'直接对整段文本计数，没有先 split 单词', n:2, tier:2 }
+       ],
+       refCode: 'from collections import Counter\nimport re\n\ndef top_words(path, k=10):\n    with open(path, encoding="utf-8") as f:\n        text = f.read().lower()\n    words = re.findall(r"[a-zA-Z一-鿿]+", text)\n    return Counter(words).most_common(k)' },
+  4: { qn: 4, title: 'int/str 转换填空', type: 'blank', typeLabel: '填空题', score: 20, diff: 0.18, discrim: 0.32,
+       avg: 19.2, rate: 96.0, fullScore: 20, total: 8, submitted: 8, correctAnswer: 'str(x)  /  int(s)',
+       kp: [{n:'类型转换',c:8},{n:'内置函数',c:8}],
+       trend: [90, 92, 94, 95, 96],
+       avgTime: 3,
+       timeHist: [0, 5, 2, 1, 0, 0, 0, 0],
+       refCode: '' },
+  5: { qn: 5, title: 'Python 中哪个不是可变类型？', type: 'choice', typeLabel: '选择题', score: 20, diff: 0.36, discrim: 0.48,
+       avg: 17.4, rate: 87.0, fullScore: 20, total: 8, submitted: 8, correctAnswer: 'B',
+       kp: [{n:'数据类型',c:8},{n:'可变 vs 不可变',c:7}],
+       trend: [78, 82, 85, 88, 87],
+       avgTime: 2,
+       timeHist: [0, 6, 2, 0, 0, 0, 0, 0],
+       refCode: '',
+       options: [
+         { k: 'A', label: 'list', pct: 18, pick: true },
+         { k: 'B', label: 'tuple', pct: 67, correct: true },
+         { k: 'C', label: 'dict', pct: 9, pick: true },
+         { k: 'D', label: 'set', pct: 6, pick: true }
+       ] }
+};
+var Q_HIST = {
+  1: [0, 0, 0, 1, 0, 1, 6],
+  2: [1, 1, 1, 2, 1, 1, 1],
+  3: [2, 1, 1, 2, 1, 1, 0],
+  4: [0, 0, 0, 0, 0, 1, 7],
+  5: [0, 0, 0, 0, 0, 1, 7]
+};
+
+function diffLabel(v){ if(v < 0.3) return ['易','good']; if(v < 0.5) return ['中','warn']; return ['难','bad']; }
+function discLabel(v){ if(v < 0.2) return ['差','bad']; if(v < 0.3) return ['弱','warn']; if(v < 0.4) return ['良','']; return ['优','good']; }
+
+function renderQA(qn){
+  try {
+  var d = Q_DATA[qn]; if(!d) return;
+  document.getElementById('qa-qn').textContent = '#' + d.qn;
+  document.getElementById('qa-title').textContent = d.title;
+  document.getElementById('qa-type').textContent = d.typeLabel;
+  document.getElementById('qa-score').textContent = d.score + ' 分';
+
+  var dDiff = diffLabel(d.diff), dDisc = discLabel(d.discrim);
+  var hist = Q_HIST[qn] || [0,0,0,0,0,0,0];
+  var bins = ['0-3', '4-6', '7-9', '10-12', '13-15', '16-18', '19-20'];
+  var maxV = Math.max.apply(null, hist);
+  var histHTML = hist.map(function(v, i){
+    var pct = maxV ? (v / maxV * 100) : 0;
+    var tier = i <= 1 ? 'low' : (i <= 3 ? 'mid' : 'high');
+    if(v === 0) tier = '';
+    return '<div class="h-bar"><div class="h-fill ' + tier + '" style="height:' + pct + '%"></div><div class="h-cnt">' + v + '</div><div class="h-lbl">' + bins[i] + '</div></div>';
+  }).join('');
+
+  // 知识点标签
+  var kpHTML = (d.kp || []).map(function(k){
+    return '<span class="qa-kp">' + k.n + ' <span class="b">' + k.c + '</span></span>';
+  }).join('');
+
+  // 历次考试趋势
+  var trendData = d.trend || [];
+  var trendLabels = ['9月月考', '10月周测', '期中考试', '11月月考', '本次'];
+  var trendMax = Math.max.apply(null, trendData.concat([100]));
+  var trendHTML = trendData.map(function(v, i){
+    var pct = v / trendMax * 100;
+    var isCur = i === trendData.length - 1;
+    return '<div class="qa-trend-col">'
+      + '<div class="v">' + v.toFixed(0) + '%</div>'
+      + '<div class="bar-t' + (isCur ? ' cur' : '') + '" style="height:' + pct + '%"></div>'
+      + '<div class="lbl' + (isCur ? ' cur' : '') + '">' + trendLabels[i] + '</div>'
+      + '</div>';
+  }).join('');
+
+  // 答题用时分布
+  var timeLbls = ['0-5', '5-10', '10-15', '15-20', '20-25', '25-30', '30-40', '40+'];
+  var timeHist = d.timeHist || [0,0,0,0,0,0,0,0];
+  var timeMax = Math.max.apply(null, timeHist);
+  var timeHTML = timeHist.map(function(v, i){
+    var pct = timeMax ? (v / timeMax * 100) : 0;
+    return '<div class="t-bar"><div class="t-fill" style="height:' + pct + '%"></div><div class="t-cnt">' + v + '</div><div class="t-lbl">' + timeLbls[i] + '</div></div>';
+  }).join('');
+
+  // 典型错误
+  var errorsHTML = '';
+  if(d.errors && d.errors.length){
+    errorsHTML = '<div class="qa-section">'
+      + '<div class="qa-sec-hd"><h4><svg><use href="#i-warn"/></svg>学生典型错误</h4><span class="qa-meta">共 <b>' + d.errors.reduce(function(s,e){return s+e.n;},0) + '</b> 人次</span></div>'
+      + '<div class="qa-errs">'
+      + d.errors.map(function(e){
+        return '<div class="qa-err b' + e.tier + '">'
+          + '<div><div class="txt">' + e.txt + '</div><div class="ci" style="margin-top:4px;display:inline-block">' + e.code + '</div></div>'
+          + '<div class="cnt">' + e.n + '<span class="p">人次</span></div>'
+          + '</div>';
+      }).join('')
+      + '</div>'
+      + '</div>';
+  }
+
+  var typeContent = '';
+  if(d.type === 'choice'){
+    var optsHTML = d.options.map(function(o){
+      return '<div class="qa-opt' + (o.correct ? ' correct' : '') + '">'
+        + '<div class="k">' + o.k + (o.correct ? ' <span class="ck"><svg style="font-size:13px"><use href="#i-check"/></svg></span>' : '') + '</div>'
+        + '<div class="bar"><span style="width:' + o.pct + '%"></span></div>'
+        + '<div class="v">' + o.pct + '<span class="p">%</span></div>'
+        + '</div>';
+    }).join('');
+    typeContent = '<div class="qa-section">'
+      + '<div class="qa-sec-hd"><h4><svg><use href="#i-target"/></svg>选项分布</h4><span class="qa-meta">正确答案为 <b>' + d.correctAnswer + '</b></span></div>'
+      + '<div class="qa-opts">' + optsHTML + '</div>'
+      + '</div>';
+  } else if(d.type === 'blank'){
+    typeContent = '<div class="qa-section">'
+      + '<div class="qa-sec-hd"><h4><svg><use href="#i-check"/></svg>答题情况</h4></div>'
+      + '<div class="qa-big">'
+      + '<div class="qa-big-cell"><div class="l">正确率</div><div class="v">' + d.rate.toFixed(1) + '<span class="p">%</span></div><div class="extra">' + Math.round(d.rate/100*8) + ' / 8 人填空完全正确</div></div>'
+      + '<div class="qa-big-cell"><div class="l">正确答案</div><div class="v" style="font-size:18px;font-family:SF Mono,Menlo,Consolas,monospace">' + d.correctAnswer + '</div></div>'
+      + '</div>'
+      + '</div>';
+  } else {
+    typeContent = '<div class="qa-section">'
+      + '<div class="qa-sec-hd"><h4><svg><use href="#i-code"/></svg>参考答案</h4><span class="qa-meta">本题 <b>' + d.fullScore + '</b> 分</span></div>'
+      + '<div class="qa-big">'
+      + '<div class="qa-big-cell"><div class="l">班级平均分</div><div class="v">' + d.avg.toFixed(1) + '<span class="t">/' + d.fullScore + '</span></div><div class="extra">得分率 <b style="color:var(--success)">' + d.rate.toFixed(1) + '%</b> · 优秀线 80%</div></div>'
+      + '<div class="qa-big-cell"><div class="l">提交分布</div><div class="v" style="font-size:14px"><span style="color:var(--success);font-weight:600">' + d.comp + '</span> 满分 · <span style="color:var(--warning)">' + d.part + '</span> 部分 · <span style="color:var(--danger)">' + d.err + '</span> 错</div></div>'
+      + '</div>'
+      + (d.refCode ? '<pre class="qa-code" style="margin-top:12px">' + d.refCode + '</pre>' : '')
+      + '</div>';
+  }
+
+  document.getElementById('qa-body').innerHTML =
+    '<div class="qa-metrics">'
+      + '<div class="qa-metric"><div class="l">班级平均分<span class="hint">/ ' + d.fullScore + '</span></div><div class="v">' + d.avg.toFixed(1) + '<span class="t">/' + d.fullScore + '</span></div></div>'
+      + '<div class="qa-metric"><div class="l">得分率</div><div class="v">' + d.rate.toFixed(1) + '<span class="u">%</span></div></div>'
+      + '<div class="qa-metric ' + dDiff[1] + '"><div class="l">难度系数<span class="hint">' + dDiff[0] + '</span></div><div class="v">' + d.diff.toFixed(2) + '</div></div>'
+      + '<div class="qa-metric ' + dDisc[1] + '"><div class="l">区分度<span class="hint">' + dDisc[0] + '</span></div><div class="v">' + d.discrim.toFixed(2) + '</div></div>'
+      + '</div>'
+      // 知识点 + 历次趋势（2 列）
+      + '<div class="qa-grid2">'
+      + '<div class="qa-section">'
+      + '<div class="qa-sec-hd"><h4><svg><use href="#i-pin"/></svg>涉及知识点</h4><span class="qa-meta">掌握度高的学生数</span></div>'
+      + '<div class="qa-tags">' + kpHTML + '</div>'
+      + '</div>'
+      + '<div class="qa-section">'
+      + '<div class="qa-sec-hd"><h4><svg><use href="#i-chart"/></svg>历次考试趋势</h4><span class="qa-meta">本题近 5 次得分率</span></div>'
+      + '<div class="qa-trend">' + trendHTML + '</div>'
+      + '</div>'
+      + '</div>'
+      // 得分分布直方图
+      + '<div class="qa-section">'
+      + '<div class="qa-sec-hd"><h4><svg><use href="#i-chart"/></svg>得分分布</h4><span class="qa-meta">已交 <b>' + d.submitted + '</b> 人 · 共 <b>' + d.total + '</b> 名学生</span></div>'
+      + '<div class="qa-hist">' + histHTML + '</div>'
+      + '</div>'
+      // 用时分布
+      + '<div class="qa-section">'
+      + '<div class="qa-sec-hd"><h4><svg><use href="#i-clock"/></svg>答题用时分布</h4><span class="qa-meta">平均用时 <b>' + d.avgTime + '</b> 分钟</span></div>'
+      + '<div class="qa-times">' + timeHTML + '</div>'
+      + '</div>'
+      // 典型错误
+      + errorsHTML
+      // 题型专属内容
+      + typeContent;
+
+  Modal.open('qa-modal');
+  } catch(err) {
+    console.error('renderQA error:', err);
+    toast('题目分析加载失败');
+  }
+}
+
+// 关闭按钮
+document.querySelector('#qa-modal [data-close]').addEventListener('click', function(){ Modal.close('qa-modal'); });
+document.getElementById('qa-modal').addEventListener('click', function(e){
+  if(e.target === this) Modal.close('qa-modal');
+});
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape' && document.getElementById('qa-modal').classList.contains('open')){
+    Modal.close('qa-modal');
+  }
+});
+
+// 绑定"查看题目分析"链接
+document.getElementById('qa-trigger').addEventListener('click', function(e){
+  e.stopPropagation();
+  renderQA(1);
+});
+// 事件委托兜底
+document.addEventListener('click', function(e){
+  var t = e.target.closest('#qa-trigger');
+  if(t){ e.stopPropagation(); renderQA(1); }
+});
+
+// 绑定每道题行点击
+document.querySelectorAll('.q-pass-row').forEach(function(row){
+  row.style.cursor = 'pointer';
+  row.addEventListener('click', function(e){
+    if(e.target.closest('select')) return;
+    renderQA(row.getAttribute('data-qn'));
+  });
+});
+
+// hash #qa=N 自动打开
+var hashQn = (location.hash.match(/^#qa=(\d+)/) || [])[1];
+if(hashQn) setTimeout(function(){ renderQA(hashQn); }, 50);
+</script>
+</body>
+</html>

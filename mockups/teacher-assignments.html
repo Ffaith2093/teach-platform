@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>作业 / 试卷 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+  /* 题型色 */
+  --qt-choice:#0EA5E9;   --qt-choice-bg:#E0F2FE;
+  --qt-blank:#F59E0B;    --qt-blank-bg:#FEF3C7;
+  --qt-essay:#8B5CF6;    --qt-essay-bg:#EDE9FE;
+  --qt-code:#10B981;     --qt-code-bg:#D1FAE5;
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --primary-muted:#0C4A6E;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171; --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+  --qt-choice:#38BDF8; --qt-choice-bg:#0C334A;
+  --qt-blank:#FBBF24;  --qt-blank-bg:#422D06;
+  --qt-essay:#A78BFA;  --qt-essay-bg:#2A1B4D;
+  --qt-code:#34D399;   --qt-code-bg:#063B2A;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--primary);
+           display:flex;align-items:center;justify-content:center;color:var(--primary-fg);font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--accent-subtle);color:var(--accent);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-label+.nav-label,.nav-item+.nav-label{padding-top:24px}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--warning),var(--danger));
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumb b{color:var(--fg);font-weight:500}
+.search{position:relative;flex:1;max-width:380px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--subtle)}
+.search input{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--border);border-radius:8px;
+              background:var(--surface);color:var(--fg);font-size:14px;outline:none;transition:.18s}
+.search input::placeholder{color:var(--subtle)}
+.search input:focus{border-color:var(--primary);background:var(--card)}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;
+          display:flex;transition:background .18s,color .18s;position:relative}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+.dot{position:absolute;top:7px;right:7px;width:8px;height:8px;border-radius:50%;
+     background:var(--danger);border:2px solid var(--bg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+           padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap;
+           position:relative;z-index:5}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.page-sub{margin-top:4px;font-size:14px;color:var(--muted);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.page-sub .dot{width:4px;height:4px;border-radius:50%;background:var(--border);position:static;border:none;display:inline-block}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost svg{font-size:14px}
+
+/* 统计 */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.card{border:1px solid var(--border);border-radius:12px;background:var(--card);padding:20px;transition:.2s}
+.card.hoverable:hover{border-color:color-mix(in srgb,var(--primary) 40%,transparent);box-shadow:var(--shadow-md)}
+.stat-top{display:flex;align-items:flex-start;justify-content:space-between}
+.stat-label{font-size:13px;color:var(--muted)}
+.ic{padding:7px;border-radius:8px;display:flex;font-size:16px}
+.ic-p{background:var(--primary-subtle);color:var(--primary)}
+.ic-a{background:var(--accent-subtle);color:var(--accent)}
+.ic-s{background:var(--success-subtle);color:var(--success)}
+.ic-w{background:var(--warning-subtle);color:var(--warning)}
+.ic-v{background:var(--purple-subtle);color:var(--purple)}
+.stat-num{margin-top:10px;font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat-foot{margin-top:4px;font-size:12px;color:var(--subtle);display:flex;align-items:center;gap:4px}
+
+/* 标签页 */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--bg);overflow-x:auto}
+.tab{padding:14px 20px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;
+     position:relative;transition:color .18s;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.tab:hover{color:var(--fg)}
+.tab.on{color:var(--primary)}
+.tab.on::after{content:"";position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--primary);border-radius:2px}
+.tab svg{font-size:15px}
+.tab .cnt{font-size:11px;padding:1px 7px;border-radius:999px;font-weight:600;
+         background:var(--surface);color:var(--muted);font-variant-numeric:tabular-nums}
+.tab.on .cnt{background:var(--primary-subtle);color:var(--primary)}
+html.dark .tab .cnt{background:var(--border)}
+
+/* 二级筛选 */
+.sub-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 18px;
+             border:1px solid var(--border);border-radius:12px;background:var(--card)}
+.sub-filter .lbl{font-size:12px;color:var(--muted);font-weight:500}
+.sub-filter select{padding:7px 28px 7px 12px;border:1px solid var(--border);border-radius:8px;
+                   background:var(--surface) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") no-repeat right 10px center;
+                   color:var(--fg);font-size:13px;outline:none;cursor:pointer;transition:.18s;
+                   -webkit-appearance:none;appearance:none;min-width:120px}
+.sub-filter select:hover{border-color:var(--primary-muted)}
+.sub-filter select:focus{border-color:var(--primary)}
+.sub-filter .right{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12.5px}
+.sub-filter .reset{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;
+                  font-size:12px;color:var(--muted);transition:.18s}
+.sub-filter .reset:hover{background:var(--surface);color:var(--primary)}
+
+/* 表格 */
+.asn-table{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.asn-head{display:grid;grid-template-columns:36px 2.6fr 80px 1.4fr 1.3fr 110px 130px 80px;gap:14px;padding:13px 20px;
+         background:var(--surface);font-size:11px;font-weight:600;color:var(--muted);
+         letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);align-items:center}
+html.dark .asn-head{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.asn-row{display:grid;grid-template-columns:36px 2.6fr 80px 1.4fr 1.3fr 110px 130px 80px;gap:14px;padding:13px 20px;
+         align-items:center;border-bottom:1px solid var(--border);transition:background .18s}
+.asn-row:last-child{border-bottom:none}
+.asn-row:hover{background:color-mix(in srgb,var(--surface) 50%,transparent)}
+.asn-row.sel{background:color-mix(in srgb,var(--primary-subtle) 40%,transparent)}
+.asn-row input[type=checkbox],.asn-head input[type=checkbox]{width:15px;height:15px;accent-color:var(--primary);cursor:pointer;justify-self:center}
+
+.asn-info{min-width:0}
+.asn-info h3{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:8px}
+.asn-info h3 .aid{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11px;color:var(--muted);
+                  background:var(--surface);padding:1px 6px;border-radius:4px;font-weight:500}
+.asn-info p{font-size:11.5px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* 类型 chip */
+.type-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:6px;
+           font-size:11.5px;font-weight:600}
+.type-chip svg{font-size:12px}
+.type-chip.assignment{background:var(--primary-subtle);color:var(--primary)}
+.type-chip.exam{background:var(--purple-subtle);color:var(--purple)}
+
+/* 课程 + 班级 */
+.course-line{font-size:13px;color:var(--fg);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.course-line small{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:1px}
+.cls-line{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;flex-wrap:nowrap;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cls-line .cnt{font-weight:600;color:var(--fg);font-variant-numeric:tabular-nums}
+
+/* 状态 pill */
+.st{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:999px}
+.st::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.st.draft{background:var(--warning-subtle);color:var(--warning)}
+.st.live{background:var(--success-subtle);color:var(--success)}
+.st.scheduled{background:var(--primary-subtle);color:var(--primary)}
+.st.ended{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+.st.archived{background:transparent;color:var(--subtle);border:1px dashed var(--border)}
+
+/* 截止时间 */
+.due{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.35}
+.due b{color:var(--fg);font-weight:600}
+.due .warn{color:var(--warning);font-weight:600}
+.due .danger{color:var(--danger);font-weight:600}
+.due small{display:block;font-size:11px;margin-top:1px}
+
+/* 提交情况 */
+.sub-stat{font-size:12.5px;line-height:1.3}
+.sub-stat .nm{font-size:14px;font-weight:600;color:var(--fg);font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:4px}
+.sub-stat .nm .total{color:var(--subtle);font-weight:500;font-size:12.5px}
+.sub-stat .lb{font-size:11px;color:var(--muted);margin-top:3px;display:flex;align-items:center;gap:6px}
+.pp-bar{width:54px;height:4px;border-radius:999px;background:var(--surface);overflow:hidden;flex-shrink:0}
+html.dark .pp-bar{background:var(--border)}
+.pp-bar span{display:block;height:100%;background:var(--success)}
+.pp-bar.warn span{background:var(--warning)}
+.pp-bar.bad span{background:var(--danger)}
+
+/* 行操作 */
+.t-ops{display:flex;gap:4px;justify-content:flex-end}
+.t-ops button,.t-ops a{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+              color:var(--subtle);transition:.18s}
+.t-ops button:hover,.t-ops a:hover{background:var(--surface);color:var(--fg)}
+.t-ops button.danger:hover{background:var(--danger-subtle);color:var(--danger)}
+
+/* 批量条 */
+.batch-bar{display:none;align-items:center;justify-content:space-between;gap:12px;
+           padding:12px 18px;margin-bottom:14px;border:1px solid var(--primary);border-radius:10px;
+           background:var(--primary-subtle);font-size:13.5px;flex-wrap:wrap}
+.batch-bar.show{display:flex}
+.batch-bar .left{display:flex;align-items:center;gap:10px;color:var(--primary);font-weight:500}
+.batch-bar .left svg{font-size:16px}
+.batch-bar .left b{font-size:15px;font-variant-numeric:tabular-nums}
+.batch-bar .right{display:flex;gap:8px;align-items:center}
+
+/* 空状态 */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;
+        text-align:center;color:var(--muted)}
+.empty .ic-l{padding:14px;border-radius:14px;background:var(--surface);color:var(--subtle);font-size:24px;margin-bottom:14px}
+.empty h3{font-size:15px;font-weight:600;color:var(--fg);margin-bottom:4px}
+.empty p{font-size:13px;max-width:340px;line-height:1.6}
+.empty .acts{margin-top:18px;display:flex;gap:8px}
+
+/* 新建 popover */
+.new-pop{position:absolute;top:calc(100% + 6px);right:0;z-index:30;min-width:220px;
+         background:var(--card);border:1px solid var(--border);border-radius:10px;
+         box-shadow:var(--shadow-md);padding:6px;display:none}
+.new-pop.show{display:block}
+.new-pop button{width:100%;display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:7px;
+                font-size:13.5px;color:var(--fg);text-align:left;transition:.18s}
+.new-pop button:hover{background:var(--surface)}
+.new-pop button .pi{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.new-pop button .pi.assignment{background:var(--primary-subtle);color:var(--primary)}
+.new-pop button .pi.exam{background:var(--purple-subtle);color:var(--purple)}
+.new-pop button .pb{display:flex;flex-direction:column;gap:1px;min-width:0}
+.new-pop button .pb b{font-weight:500;line-height:1.2}
+.new-pop button .pb small{font-size:11.5px;color:var(--muted);font-weight:400;line-height:1.3}
+.new-pop .sep{height:1px;background:var(--border);margin:4px 8px}
+
+.foot{padding:18px 28px;border-top:1px solid var(--border);background:var(--surface);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+html.dark .foot{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.foot .pg{display:flex;align-items:center;gap:4px}
+.foot .pg button{min-width:30px;height:30px;padding:0 8px;border-radius:6px;font-size:13px;color:var(--muted);
+                 transition:.18s;display:flex;align-items:center;justify-content:center}
+.foot .pg button:hover{background:var(--surface);color:var(--fg)}
+.foot .pg button.on{background:var(--primary);color:var(--primary-fg);font-weight:500}
+.foot .pg button:disabled{opacity:.4;cursor:not-allowed}
+.foot .info{display:flex;align-items:center;gap:6px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+
+@media(max-width:1100px){
+  .side{display:none}
+  .stats{grid-template-columns:1fr 1fr}
+  .asn-head,.asn-row{grid-template-columns:36px 2.5fr 80px 1fr 130px 80px;gap:12px}
+  .asn-head .h-cls,.asn-head .h-sub,
+  .asn-row .cls-col,.asn-row .sub-col{display:none}
+  .content{padding:24px 20px}
+  .topbar{padding:0 20px}
+}
+@media(max-width:640px){
+  .stats{grid-template-columns:1fr}
+  .asn-head,.asn-row{grid-template-columns:36px 2fr 80px 110px 80px;gap:10px}
+  .asn-head .h-course,.asn-head .h-cls,.asn-head .h-sub,
+  .asn-row .course-col,.asn-row .cls-col,.asn-row .sub-col{display:none}
+}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-cap" viewBox="0 0 24 24"><path d="M2 9 12 4l10 5-10 5z"/><path d="M6 11v5c0 1 3 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M3 9 12 3l9 6"/><path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"/><path d="M9 22V12h6v10"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6M16 6l6 6-6 6"/></symbol>
+<symbol id="i-bank" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11M9 8v11M15 8v11M19 8v11"/><path d="M3 22h18"/></symbol>
+<symbol id="i-grading" viewBox="0 0 24 24"><path d="M9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+<symbol id="i-monitoring" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M21.7 7.3a2.5 2.5 0 0 0-3.5 0L8 17.5 6 22l4.5-2L20 10.5a2.5 2.5 0 0 0 0-3.5z"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+<symbol id="i-archive" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><path d="M21.4 11.6 12 21l-9-9V3h9z"/><path d="m7 7 5 5"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-cap"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">教师端</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">教学</p>
+      <a class="nav-item" href="teacher-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <a class="nav-item" href="teacher-classes.html"><svg><use href="#i-class"/></svg>我的班级</a>
+      <a class="nav-item" href="teacher-courses.html"><svg><use href="#i-book"/></svg>课程</a>
+      <p class="nav-label">考核</p>
+      <a class="nav-item active" id="nav-asn" href="teacher-assignments.html?type=assignment"><svg><use href="#i-file"/></svg>作业<span class="nav-count" id="nav-asn-cnt">3</span></a>
+      <a class="nav-item" id="nav-problems" href="teacher-problems.html"><svg><use href="#i-code"/></svg>题库</a>
+      <a class="nav-item" id="nav-exam" href="teacher-assignments.html?type=exam"><svg><use href="#i-bank"/></svg>试卷</a>
+      <a class="nav-item"><svg><use href="#i-grading"/></svg>批改<span class="nav-count">24</span></a>
+      <p class="nav-label">分析</p>
+      <a class="nav-item"><svg><use href="#i-monitoring"/></svg>考试监控</a>
+      <a class="nav-item"><svg><use href="#i-chart"/></svg>成绩分析</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">王</div>
+      <div>
+        <div class="n">王建国</div>
+        <div class="s">信息技术 · 高一段</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb"><b id="crumb-section">考核</b> / <span id="crumb-current">作业</span></span>
+      <div class="search">
+        <svg><use href="#i-search"/></svg>
+        <input id="search-input" placeholder="搜索作业 / 试卷名称、ID、关联课程…">
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" onclick="tt()"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg><span class="dot"></span></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <div class="page-head anim">
+          <div>
+            <h1 id="page-title">作业 / 试卷</h1>
+            <p class="page-sub">
+              <span>共 <b class="num" id="stat-total">10</b> 份</span>
+              <span class="dot"></span>
+              <span>进行中 <b class="num" id="stat-live">4</b></span>
+              <span class="dot"></span>
+              <span>已结束 <b class="num" id="stat-ended">4</b></span>
+              <span class="dot"></span>
+              <span>草稿 <b class="num" id="stat-draft">2</b></span>
+            </p>
+          </div>
+          <div style="display:flex;gap:8px;position:relative">
+            <button class="btn-ghost"><svg><use href="#i-eye"/></svg>最近批改</button>
+            <button class="btn" id="new-btn" onclick="toggleNewPop(event)">
+              <svg><use href="#i-plus"/></svg>新建
+              <svg style="font-size:12px;opacity:.7;margin-left:2px"><use href="#i-down"/></svg>
+            </button>
+            <div class="new-pop" id="new-pop">
+              <button onclick="newAssignment('assignment')">
+                <div class="pi assignment"><svg><use href="#i-file"/></svg></div>
+                <div class="pb"><b>新建作业</b><small>编程题为主 · 可补交</small></div>
+              </button>
+              <div class="sep"></div>
+              <button onclick="newAssignment('exam')">
+                <div class="pi exam"><svg><use href="#i-bank"/></svg></div>
+                <div class="pb"><b>新建试卷</b><small>含时长限制 · 统一公布答案</small></div>
+              </button>
+              <div class="sep"></div>
+              <button onclick="newFromTemplate()">
+                <div class="pi" style="background:var(--accent-subtle);color:var(--accent)"><svg><use href="#i-copy"/></svg></div>
+                <div class="pb"><b>从模板创建</b><small>复用已有作业的题目与配置</small></div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats anim" style="animation-delay:.04s">
+          <div class="card hoverable">
+            <div class="stat-top">
+              <div class="stat-label">作业 · 进行中</div>
+              <div class="ic ic-p"><svg><use href="#i-file"/></svg></div>
+            </div>
+            <div class="stat-num">3</div>
+            <div class="stat-foot">下周新增 2 份待发布</div>
+          </div>
+          <div class="card hoverable">
+            <div class="stat-top">
+              <div class="stat-label">试卷 · 进行中</div>
+              <div class="ic ic-v"><svg><use href="#i-bank"/></svg></div>
+            </div>
+            <div class="stat-num">1</div>
+            <div class="stat-foot">期初摸底已结束，期中考试进行中</div>
+          </div>
+          <div class="card hoverable">
+            <div class="stat-top">
+              <div class="stat-label">本周待批改</div>
+              <div class="ic ic-w"><svg><use href="#i-clock"/></svg></div>
+            </div>
+            <div class="stat-num">24</div>
+            <div class="stat-foot">其中 6 份已超过 48 小时</div>
+          </div>
+          <div class="card hoverable">
+            <div class="stat-top">
+              <div class="stat-label">本周平均提交率</div>
+              <div class="ic ic-s"><svg><use href="#i-check"/></svg></div>
+            </div>
+            <div class="stat-num">87<span style="font-size:18px;color:var(--muted);font-weight:500">%</span></div>
+            <div class="stat-foot">较上周 <span style="color:var(--success)">↑ 4%</span></div>
+          </div>
+        </div>
+
+        <div class="tabs anim" style="animation-delay:.08s" id="tabs">
+          <div class="tab on" data-tab="all" onclick="switchTab('all', this)">全部 <span class="cnt">10</span></div>
+          <div class="tab" data-tab="assignment" onclick="switchTab('assignment', this)"><svg style="font-size:13px;color:var(--primary)"><use href="#i-file"/></svg>作业 <span class="cnt">6</span></div>
+          <div class="tab" data-tab="exam" onclick="switchTab('exam', this)"><svg style="font-size:13px;color:var(--purple)"><use href="#i-bank"/></svg>试卷 <span class="cnt">4</span></div>
+          <div class="tab" data-tab="draft" onclick="switchTab('draft', this)">草稿 <span class="cnt">2</span></div>
+          <div class="tab" data-tab="live" onclick="switchTab('live', this)">进行中 <span class="cnt">4</span></div>
+          <div class="tab" data-tab="ended" onclick="switchTab('ended', this)">已结束 <span class="cnt">4</span></div>
+          <div class="tab" data-tab="archived" onclick="switchTab('archived', this)">已归档 <span class="cnt">0</span></div>
+        </div>
+
+        <div class="sub-filter anim" style="animation-delay:.12s">
+          <span class="lbl">课程</span>
+          <select id="f-course">
+            <option value="">全部课程</option>
+            <option>Python 编程入门</option>
+            <option>数据结构与算法</option>
+            <option>算法竞赛入门</option>
+          </select>
+          <span class="lbl">班级</span>
+          <select id="f-cls">
+            <option value="">全部班级</option>
+            <option>高一 (3) 班</option>
+            <option>高一 (4) 班</option>
+            <option>高一 (5) 班</option>
+            <option>竞赛班 A</option>
+          </select>
+          <span class="lbl">时间</span>
+          <select id="f-when">
+            <option value="">不限</option>
+            <option>本周</option>
+            <option>本月</option>
+            <option>本学期</option>
+            <option>已过期</option>
+          </select>
+          <div class="right">
+            <button class="reset" onclick="resetFilter()"><svg style="font-size:12px"><use href="#i-x"/></svg>清空筛选</button>
+          </div>
+        </div>
+
+        <div class="batch-bar" id="batch-bar">
+          <div class="left">
+            <svg><use href="#i-check"/></svg>
+            已选 <b id="sel-cnt">0</b> 份
+          </div>
+          <div class="right">
+            <button class="btn-ghost" onclick="batchOp('publish')"><svg><use href="#i-check"/></svg>批量发布</button>
+            <button class="btn-ghost" onclick="batchOp('archive')"><svg><use href="#i-archive"/></svg>批量归档</button>
+            <button class="btn-ghost" onclick="batchOp('copy')"><svg><use href="#i-copy"/></svg>批量复制</button>
+            <button class="btn-ghost" style="color:var(--danger);border-color:var(--danger)" onclick="batchOp('delete')"><svg><use href="#i-trash"/></svg>批量删除</button>
+            <button class="btn-ghost" onclick="clearSel()">取消</button>
+          </div>
+        </div>
+
+        <div class="asn-table anim" style="animation-delay:.16s" id="table-wrap">
+          <div class="asn-head">
+            <div><input type="checkbox" id="all-cb"></div>
+            <div>名称</div>
+            <div>类型</div>
+            <div class="h-course">关联课程</div>
+            <div class="h-cls">关联班级</div>
+            <div>状态</div>
+            <div class="h-sub">提交 · 截止</div>
+            <div></div>
+          </div>
+
+          <div class="asn-row" data-id="A0024" data-type="exam" data-status="live" data-course="Python 编程入门" data-cls="高一 (3) 班, 高一 (4) 班">
+            <div><input type="checkbox" class="row-cb"></div>
+            <div class="asn-info">
+              <h3>期中考试 - Python 数据处理 <span class="aid">A0024</span></h3>
+              <p><span class="num">120</span> 分钟 · <span class="num">5</span> 道编程题 · 满分 <span class="num">100</span></p>
+            </div>
+            <div><span class="type-chip exam"><svg><use href="#i-bank"/></svg>试卷</span></div>
+            <div class="course-col"><div class="course-line">Python 编程入门<small>第 4-5 章</small></div></div>
+            <div class="cls-col"><div class="cls-line"><span class="cnt">2</span> 个班 · 共 <span class="cnt">86</span> 人</div></div>
+            <div><span class="st live">进行中</span></div>
+            <div class="sub-col">
+              <div class="due"><b>今天 23:59 截止</b><small>已收到 <span class="num" style="color:var(--success);font-weight:600">72</span> / 86 份</small></div>
+            </div>
+            <div class="t-ops">
+              <a title="查看详情" href="teacher-assignments-detail.html?aid=A0024"><svg><use href="#i-eye"/></svg></a>
+              <button title="编辑" onclick="editRow('A0024')"><svg><use href="#i-edit"/></svg></button>
+              <button title="复制" onclick="copyRow('A0024')"><svg><use href="#i-copy"/></svg></button>
+              <button title="归档" data-confirm-title="归档这份试卷？" data-confirm-body="归档后学生端不再显示，已有成绩不受影响。| 可在「已归档」Tab 中恢复。" data-confirm-text="归档" data-confirm-toast="已归档 A0024"><svg><use href="#i-archive"/></svg></button>
+              <button title="删除" class="danger" data-confirm-title="永久删除这份试卷？" data-confirm-body="将删除试卷、题目配置与全部提交记录。| 该操作不可撤销。" data-confirm-text="删除" data-confirm-danger data-confirm-toast="已删除 A0024"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="asn-row" data-id="A0022" data-type="assignment" data-status="live" data-course="Python 编程入门" data-cls="高一 (3) 班">
+            <div><input type="checkbox" class="row-cb"></div>
+            <div class="asn-info">
+              <h3>综合练习 - 文件 I/O <span class="aid">A0022</span></h3>
+              <p><span class="num">4</span> 道题 · 2 编程 + 2 简答 · 满分 <span class="num">80</span></p>
+            </div>
+            <div><span class="type-chip assignment"><svg><use href="#i-file"/></svg>作业</span></div>
+            <div class="course-col"><div class="course-line">Python 编程入门<small>第 5 章 · 文件操作</small></div></div>
+            <div class="cls-col"><div class="cls-line">高一 (3) 班 · <span class="cnt">42</span> 人</div></div>
+            <div><span class="st live">进行中</span></div>
+            <div class="sub-col">
+              <div class="due"><b>本周日 23:59 截止</b><small><span class="num" style="color:var(--success);font-weight:600">38</span> / 42 已交 · 通过率 84%</small></div>
+            </div>
+            <div class="t-ops">
+              <a title="查看详情" href="teacher-assignments-detail.html?aid=A0022"><svg><use href="#i-eye"/></svg></a>
+              <button title="编辑" onclick="editRow('A0022')"><svg><use href="#i-edit"/></svg></button>
+              <button title="复制" onclick="copyRow('A0022')"><svg><use href="#i-copy"/></svg></button>
+              <button title="归档" data-confirm-title="归档这份作业？" data-confirm-body="归档后学生端不再显示，已有成绩不受影响。" data-confirm-text="归档" data-confirm-toast="已归档 A0022"><svg><use href="#i-archive"/></svg></button>
+              <button title="删除" class="danger" data-confirm-title="永久删除这份作业？" data-confirm-body="将删除作业、题目配置与全部提交记录。| 该操作不可撤销。" data-confirm-text="删除" data-confirm-danger data-confirm-toast="已删除 A0022"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="asn-row" data-id="A0018" data-type="assignment" data-status="live" data-course="数据结构与算法" data-cls="高一 (4) 班, 高一 (5) 班">
+            <div><input type="checkbox" class="row-cb"></div>
+            <div class="asn-info">
+              <h3>第三章作业 - 列表与字典 <span class="aid">A0018</span></h3>
+              <p><span class="num">5</span> 道编程题 · 满分 <span class="num">100</span></p>
+            </div>
+            <div><span class="type-chip assignment"><svg><use href="#i-file"/></svg>作业</span></div>
+            <div class="course-col"><div class="course-line">数据结构与算法<small>第 3 章</small></div></div>
+            <div class="cls-col"><div class="cls-line"><span class="cnt">2</span> 个班 · 共 <span class="cnt">81</span> 人</div></div>
+            <div><span class="st live">进行中</span></div>
+            <div class="sub-col">
+              <div class="due">剩 <b class="warn">2</b> 天截止<small><span class="num" style="color:var(--success);font-weight:600">52</span> / 81 已交</small></div>
+            </div>
+            <div class="t-ops">
+              <a title="查看详情" href="teacher-assignments-detail.html?aid=A0018"><svg><use href="#i-eye"/></svg></a>
+              <button title="编辑" onclick="editRow('A0018')"><svg><use href="#i-edit"/></svg></button>
+              <button title="复制" onclick="copyRow('A0018')"><svg><use href="#i-copy"/></svg></button>
+              <button title="归档" data-confirm-title="归档这份作业？" data-confirm-body="归档后学生端不再显示，已有成绩不受影响。" data-confirm-text="归档" data-confirm-toast="已归档 A0018"><svg><use href="#i-archive"/></svg></button>
+              <button title="删除" class="danger" data-confirm-title="永久删除这份作业？" data-confirm-body="将删除作业、题目配置与全部提交记录。| 该操作不可撤销。" data-confirm-text="删除" data-confirm-danger data-confirm-toast="已删除 A0018"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="asn-row" data-id="A0016" data-type="assignment" data-status="live" data-course="Python 编程入门" data-cls="高一 (3) 班, 高一 (4) 班">
+            <div><input type="checkbox" class="row-cb"></div>
+            <div class="asn-info">
+              <h3>第五章作业 - 模块与包 <span class="aid">A0016</span></h3>
+              <p><span class="num">3</span> 道编程题 · 满分 <span class="num">60</span></p>
+            </div>
+            <div><span class="type-chip assignment"><svg><use href="#i-file"/></svg>作业</span></div>
+            <div class="course-col"><div class="course-line">Python 编程入门<small>第 5 章</small></div></div>
+            <div class="cls-col"><div class="cls-line"><span class="cnt">2</span> 个班 · 共 <span class="cnt">86</span> 人</div></div>
+            <div><span class="st scheduled">未开始</span></div>
+            <div class="sub-col">
+              <div class="due">下周一开放<small>开放时间 09:00</small></div>
+            </div>
+            <div class="t-ops">
+              <a title="查看详情" href="teacher-assignments-detail.html?aid=A0016"><svg><use href="#i-eye"/></svg></a>
+              <button title="编辑" onclick="editRow('A0016')"><svg><use href="#i-edit"/></svg></button>
+              <button title="复制" onclick="copyRow('A0016')"><svg><use href="#i-copy"/></svg></button>
+              <button title="归档" data-confirm-title="归档这份作业？" data-confirm-body="归档后学生端不再显示，已有成绩不受影响。" data-confirm-text="归档" data-confirm-toast="已归档 A0016"><svg><use href="#i-archive"/></svg></button>
+              <button title="删除" class="danger" data-confirm-title="永久删除这份作业？" data-confirm-body="将删除作业、题目配置与全部提交记录。| 该操作不可撤销。" data-confirm-text="删除" data-confirm-danger data-confirm-toast="已删除 A0016"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="asn-row" data-id="A0020" data-type="assignment" data-status="draft" data-course="算法竞赛入门" data-cls="竞赛班 A">
+            <div><input type="checkbox" class="row-cb"></div>
+            <div class="asn-info">
+              <h3>第四章作业 - 函数与递归 <span class="aid">A0020</span></h3>
+              <p><span class="num">6</span> 道题 · 草稿未发布</p>
+            </div>
+            <div><span class="type-chip assignment"><svg><use href="#i-file"/></svg>作业</span></div>
+            <div class="course-col"><div class="course-line">算法竞赛入门<small>第 4 章</small></div></div>
+            <div class="cls-col"><div class="cls-line">竞赛班 A · <span class="cnt">18</span> 人</div></div>
+            <div><span class="st draft">草稿</span></div>
+            <div class="sub-col">
+              <div class="due">未发布<small>草稿不会显示给学生</small></div>
+            </div>
+            <div class="t-ops">
+              <a title="查看详情" href="teacher-assignments-detail.html?aid=A0020"><svg><use href="#i-eye"/></svg></a>
+              <button title="编辑" onclick="editRow('A0020')"><svg><use href="#i-edit"/></svg></button>
+              <button title="复制" onclick="copyRow('A0020')"><svg><use href="#i-copy"/></svg></button>
+              <button title="删除" class="danger" data-confirm-title="删除这份草稿？" data-confirm-body="草稿删除后无法恢复。" data-confirm-text="删除" data-confirm-danger data-confirm-toast="已删除 A0020"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="asn-row" data-id="A0017" data-type="exam" data-status="draft" data-course="数据结构与算法" data-cls="高一 (4) 班, 高一 (5) 班, 竞赛班 A">
+            <div><input type="checkbox" class="row-cb"></div>
+            <div class="asn-info">
+              <h3>期末考试 - 算法综合 <span class="aid">A0017</span></h3>
+              <p><span class="num">90</span> 分钟 · <span class="num">8</span> 道题 · 草稿未发布</p>
+            </div>
+            <div><span class="type-chip exam"><svg><use href="#i-bank"/></svg>试卷</span></div>
+            <div class="course-col"><div class="course-line">数据结构与算法<small>期末综合</small></div></div>
+            <div class="cls-col"><div class="cls-line"><span class="cnt">3</span> 个班 · 共 <span class="cnt">99</span> 人</div></div>
+            <div><span class="st draft">草稿</span></div>
+            <div class="sub-col">
+              <div class="due">未发布<small>计划 12 月 28 日开考</small></div>
+            </div>
+            <div class="t-ops">
+              <a title="查看详情" href="teacher-assignments-detail.html?aid=A0017"><svg><use href="#i-eye"/></svg></a>
+              <button title="编辑" onclick="editRow('A0017')"><svg><use href="#i-edit"/></svg></button>
+              <button title="复制" onclick="copyRow('A0017')"><svg><use href="#i-copy"/></svg></button>
+              <button title="删除" class="danger" data-confirm-title="删除这份草稿？" data-confirm-body="草稿删除后无法恢复。" data-confirm-text="删除" data-confirm-danger data-confirm-toast="已删除 A0017"><svg><use href="#i-trash"/></svg></button>
+            </div>
+          </div>
+
+          <div class="asn-row" data-id="A0019" data-type="assignment" data-status="ended" data-course="Python 编程入门" data-cls="高一 (3) 班">
+            <div><input type="checkbox" class="row-cb"></div>
+            <div class="asn-info">
+              <h3>第二章作业 - 条件语句 <span class="aid">A0019</span></h3>
+              <p><span class="num">4</span> 道编程题 · 满分 <span class="num">80</span></p>
+            </div>
+            <div><span class="type-chip assignment"><svg><use href="#i-file"/></svg>作业</span></div>
+            <div class="course-col"><div class="course-line">Python 编程入门<small>第 2 章</small></div></div>
+            <div class="cls-col"><div class="cls-line">高一 (3) 班 · <span class="cnt">42</span> 人</div></div>
+            <div><span class="st ended">已结束</span></div>
+            <div class="sub-col">
+              <div class="due">10 月 14 日截止<small><span class="num" style="color:var(--muted);font-weight:600">42</span> / 42 已交 · 通过率 93%</small></div>
+            </div>
+            <div class="t-ops">
+              <a title="查看详情" href="teacher-assignments-detail.html?aid=A0019"><svg><use href="#i-eye"/></svg></a>
+              <button title="编辑" onclick="editRow('A0019')"><svg><use href="#i-edit"/></svg></button>
+              <button title="复制" onclick="copyRow('A0019')"><svg><use href="#i-copy"/></svg></button>
+              <button title="归档" data-confirm-title="归档这份作业？" data-confirm-body="归档后学生端不再显示，已有成绩不受影响。" data-confirm-text="归档" data-confirm-toast="已归档 A0019"><svg><use href="#i-archive"/></svg></button>
+            </div>
+          </div>
+
+          <div class="asn-row" data-id="A0015" data-type="assignment" data-status="ended" data-course="Python 编程入门" data-cls="高一 (3) 班">
+            <div><input type="checkbox" class="row-cb"></div>
+            <div class="asn-info">
+              <h3>第一章作业 - 基础语法 <span class="aid">A0015</span></h3>
+              <p><span class="num">3</span> 道编程题 · 满分 <span class="num">60</span></p>
+            </div>
+            <div><span class="type-chip assignment"><svg><use href="#i-file"/></svg>作业</span></div>
+            <div class="course-col"><div class="course-line">Python 编程入门<small>第 1 章</small></div></div>
+            <div class="cls-col"><div class="cls-line">高一 (3) 班 · <span class="cnt">42</span> 人</div></div>
+            <div><span class="st ended">已结束</span></div>
+            <div class="sub-col">
+              <div class="due">9 月 28 日截止<small><span class="num" style="color:var(--muted);font-weight:600">40</span> / 42 已交 · 通过率 90%</small></div>
+            </div>
+            <div class="t-ops">
+              <a title="查看详情" href="teacher-assignments-detail.html?aid=A0015"><svg><use href="#i-eye"/></svg></a>
+              <button title="编辑" onclick="editRow('A0015')"><svg><use href="#i-edit"/></svg></button>
+              <button title="复制" onclick="copyRow('A0015')"><svg><use href="#i-copy"/></svg></button>
+              <button title="归档" data-confirm-title="归档这份作业？" data-confirm-body="归档后学生端不再显示，已有成绩不受影响。" data-confirm-text="归档" data-confirm-toast="已归档 A0015"><svg><use href="#i-archive"/></svg></button>
+            </div>
+          </div>
+
+          <div class="asn-row" data-id="A0021" data-type="exam" data-status="ended" data-course="Python 编程入门" data-cls="高一 (3) 班, 高一 (4) 班">
+            <div><input type="checkbox" class="row-cb"></div>
+            <div class="asn-info">
+              <h3>期初摸底考试 <span class="aid">A0021</span></h3>
+              <p><span class="num">60</span> 分钟 · <span class="num">6</span> 道题 · 满分 <span class="num">100</span></p>
+            </div>
+            <div><span class="type-chip exam"><svg><use href="#i-bank"/></svg>试卷</span></div>
+            <div class="course-col"><div class="course-line">Python 编程入门<small>开学期初</small></div></div>
+            <div class="cls-col"><div class="cls-line"><span class="cnt">2</span> 个班 · 共 <span class="cnt">86</span> 人</div></div>
+            <div><span class="st ended">已结束</span></div>
+            <div class="sub-col">
+              <div class="due">9 月 5 日截止<small><span class="num" style="color:var(--muted);font-weight:600">86</span> / 86 已交 · 平均 78.4</small></div>
+            </div>
+            <div class="t-ops">
+              <a title="查看详情" href="teacher-assignments-detail.html?aid=A0021"><svg><use href="#i-eye"/></svg></a>
+              <button title="编辑" onclick="editRow('A0021')"><svg><use href="#i-edit"/></svg></button>
+              <button title="复制" onclick="copyRow('A0021')"><svg><use href="#i-copy"/></svg></button>
+              <button title="归档" data-confirm-title="归档这份试卷？" data-confirm-body="归档后学生端不再显示，已有成绩不受影响。" data-confirm-text="归档" data-confirm-toast="已归档 A0021"><svg><use href="#i-archive"/></svg></button>
+            </div>
+          </div>
+
+          <div class="asn-row" data-id="A0023" data-type="exam" data-status="ended" data-course="算法竞赛入门" data-cls="竞赛班 A">
+            <div><input type="checkbox" class="row-cb"></div>
+            <div class="asn-info">
+              <h3>算法竞赛初赛 <span class="aid">A0023</span></h3>
+              <p><span class="num">180</span> 分钟 · <span class="num">10</span> 道题 · 满分 <span class="num">200</span></p>
+            </div>
+            <div><span class="type-chip exam"><svg><use href="#i-bank"/></svg>试卷</span></div>
+            <div class="course-col"><div class="course-line">算法竞赛入门<small>选拔赛</small></div></div>
+            <div class="cls-col"><div class="cls-line">竞赛班 A · <span class="cnt">18</span> 人</div></div>
+            <div><span class="st ended">已结束</span></div>
+            <div class="sub-col">
+              <div class="due">10 月 26 日截止<small><span class="num" style="color:var(--muted);font-weight:600">18</span> / 18 已交 · 平均 142.3</small></div>
+            </div>
+            <div class="t-ops">
+              <a title="查看详情" href="teacher-assignments-detail.html?aid=A0023"><svg><use href="#i-eye"/></svg></a>
+              <button title="编辑" onclick="editRow('A0023')"><svg><use href="#i-edit"/></svg></button>
+              <button title="复制" onclick="copyRow('A0023')"><svg><use href="#i-copy"/></svg></button>
+              <button title="归档" data-confirm-title="归档这份试卷？" data-confirm-body="归档后学生端不再显示，已有成绩不受影响。" data-confirm-text="归档" data-confirm-toast="已归档 A0023"><svg><use href="#i-archive"/></svg></button>
+            </div>
+          </div>
+
+          <div class="empty" id="empty-state" style="display:none">
+            <div class="ic-l"><svg><use href="#i-file"/></svg></div>
+            <h3 id="empty-title">没有匹配的作业 / 试卷</h3>
+            <p id="empty-desc">尝试调整筛选条件，或新建一份作业 / 试卷</p>
+            <div class="acts">
+              <button class="btn-ghost" onclick="resetFilter()"><svg><use href="#i-x"/></svg>清空筛选</button>
+              <button class="btn" onclick="newAssignment('assignment')"><svg><use href="#i-plus"/></svg>新建作业</button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="foot anim" style="animation-delay:.20s">
+          <div class="info">共 <b style="color:var(--fg);font-weight:600" id="foot-total">10</b> 份 · 已显示 <b style="color:var(--fg);font-weight:600" id="foot-show">10</b> 份</div>
+          <div class="pg">
+            <button disabled><svg><use href="#i-arrow-l"/></svg></button>
+            <button class="on">1</button>
+            <button disabled><svg style="transform:scaleX(-1)"><use href="#i-arrow-l"/></svg></button>
+          </div>
+          <div class="info">每页 20 条</div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+/* 从 URL 读 type 参数，决定初始 tab */
+var urlType = new URLSearchParams(location.search).get('type') || 'all';
+if(urlType === 'assignment' || urlType === 'exam'){
+  switchTab(urlType, document.querySelector('.tab[data-tab="'+urlType+'"]'));
+  document.getElementById('page-title').textContent = urlType === 'exam' ? '试卷' : '作业';
+  document.getElementById('crumb-current').textContent = urlType === 'exam' ? '试卷' : '作业';
+  // 侧栏 active 态
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+  document.getElementById(urlType === 'exam' ? 'nav-exam' : 'nav-asn').classList.add('active');
+  // 隐藏「+ 新建 → 从模板」选项（更聚焦）
+  // (保留所有三个选项)
+}
+
+/* tab 切换 */
+var currentTab = urlType === 'assignment' || urlType === 'exam' ? urlType : 'all';
+function switchTab(tab, el){
+  if(!el) el = document.querySelector('.tab[data-tab="'+tab+'"]');
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('on'); });
+  el.classList.add('on');
+  currentTab = tab;
+  applyFilter();
+}
+
+/* 筛选条件 */
+function getFilters(){
+  return {
+    course: document.getElementById('f-course').value,
+    cls: document.getElementById('f-cls').value,
+    when: document.getElementById('f-when').value,
+    search: document.getElementById('search-input').value.trim().toLowerCase()
+  };
+}
+
+function applyFilter(){
+  var f = getFilters();
+  var rows = document.querySelectorAll('.asn-row');
+  var show = 0;
+  rows.forEach(function(row){
+    var t = row.dataset.type;
+    var s = row.dataset.status;
+    var match = true;
+
+    // tab
+    if(currentTab === 'all'){
+      // 显示全部
+    } else if(currentTab === 'draft' || currentTab === 'live' || currentTab === 'ended' || currentTab === 'archived'){
+      if(s !== currentTab) match = false;
+    } else {
+      if(t !== currentTab) match = false;
+    }
+
+    // 二级筛选
+    if(f.course && row.dataset.course !== f.course) match = false;
+    if(f.cls && !row.dataset.cls.split(', ').some(function(c){ return c.trim() === f.cls; })) match = false;
+
+    // 搜索（匹配名称、ID）
+    if(f.search){
+      var txt = row.textContent.toLowerCase();
+      if(txt.indexOf(f.search) === -1) match = false;
+    }
+
+    row.style.display = match ? '' : 'none';
+    if(match) show++;
+  });
+  document.getElementById('foot-show').textContent = show;
+  // 空状态
+  document.getElementById('empty-state').style.display = show === 0 ? '' : 'none';
+  document.getElementById('empty-title').textContent =
+    currentTab === 'archived' ? '还没有归档的作业 / 试卷' :
+    currentTab === 'draft' ? '还没有草稿' :
+    '没有匹配的作业 / 试卷';
+}
+
+['f-course','f-cls','f-when'].forEach(function(id){
+  document.getElementById(id).addEventListener('change', applyFilter);
+});
+document.getElementById('search-input').addEventListener('input', applyFilter);
+
+function resetFilter(){
+  document.getElementById('f-course').value = '';
+  document.getElementById('f-cls').value = '';
+  document.getElementById('f-when').value = '';
+  document.getElementById('search-input').value = '';
+  switchTab('all', document.querySelector('.tab[data-tab="all"]'));
+}
+
+/* 批量选择 */
+function updateSel(){
+  var checked = document.querySelectorAll('.row-cb:checked');
+  var bar = document.getElementById('batch-bar');
+  document.getElementById('sel-cnt').textContent = checked.length;
+  if(checked.length > 0){
+    bar.classList.add('show');
+    // 行高亮
+    document.querySelectorAll('.asn-row').forEach(function(r){
+      var cb = r.querySelector('.row-cb');
+      r.classList.toggle('sel', cb.checked);
+    });
+  } else {
+    bar.classList.remove('show');
+    document.querySelectorAll('.asn-row').forEach(function(r){ r.classList.remove('sel'); });
+    document.getElementById('all-cb').checked = false;
+  }
+}
+document.addEventListener('change', function(e){
+  if(e.target.classList.contains('row-cb')) updateSel();
+  if(e.target.id === 'all-cb'){
+    var visible = document.querySelectorAll('.asn-row:not([style*="display: none"]) .row-cb');
+    visible.forEach(function(cb){ cb.checked = e.target.checked; });
+    updateSel();
+  }
+});
+function clearSel(){
+  document.querySelectorAll('.row-cb').forEach(function(cb){ cb.checked = false; });
+  updateSel();
+}
+
+function batchOp(op){
+  var ids = Array.from(document.querySelectorAll('.row-cb:checked')).map(function(cb){
+    return cb.closest('.asn-row').dataset.id;
+  });
+  var map = {
+    publish: { title: '批量发布 '+ids.length+' 份？', body: ['将对选中的作业 / 试卷执行发布操作','发布后学生端立即可见','请确认时间安排与题目已检查完毕'], text: '批量发布', toast: '已发布 '+ids.length+' 份' },
+    archive: { title: '批量归档 '+ids.length+' 份？', body: ['归档后学生端不再显示','已有成绩不受影响','可在「已归档」Tab 恢复'], text: '批量归档', toast: '已归档 '+ids.length+' 份' },
+    copy:    { title: '批量复制 '+ids.length+' 份？', body: ['将创建 '+ids.length+' 份副本','副本默认为草稿状态，可独立编辑后发布'], text: '复制', toast: '已复制 '+ids.length+' 份草稿' },
+    delete:  { title: '永久删除 '+ids.length+' 份？', body: ['将删除作业/试卷、题目配置与全部提交记录','该操作不可撤销','建议先导出成绩再做删除'], text: '删除', danger: true, toast: '已删除 '+ids.length+' 份' }
+  };
+  var m = map[op];
+  Modal.confirm({
+    title: m.title,
+    body: m.body,
+    confirmText: m.text,
+    danger: m.danger,
+    onConfirm: function(){ toast(m.toast); clearSel(); }
+  });
+}
+
+/* 行操作 */
+function editRow(id){
+  location.href = 'teacher-assignments-edit.html?aid=' + id;
+}
+function copyRow(id){
+  Modal.confirm({
+    title: '复制 '+id+' ?',
+    body: ['将创建一份草稿副本','题目配置、关联班级都会被复制','可独立编辑后发布'],
+    confirmText: '创建副本',
+    onConfirm: function(){
+      toast('已创建副本 '+id+'-copy');
+      setTimeout(function(){ location.href = 'teacher-assignments-edit.html?aid='+id+'&copy=1'; }, 600);
+    }
+  });
+}
+
+/* 新建 popover */
+function toggleNewPop(e){
+  e.stopPropagation();
+  document.getElementById('new-pop').classList.toggle('show');
+}
+document.addEventListener('click', function(){
+  document.getElementById('new-pop').classList.remove('show');
+});
+document.getElementById('new-pop').addEventListener('click', function(e){ e.stopPropagation(); });
+
+function newAssignment(type){
+  location.href = 'teacher-assignments-edit.html?type=' + type + '&new=1';
+}
+function newFromTemplate(){
+  Modal.form({
+    title: '从模板创建作业 / 试卷',
+    body: '从以下已有作业 / 试卷中选择一份作为模板，复制其题目与配置。',
+    fields: [
+      { name: 'source', type: 'select', label: '选择模板', options: [
+        { value: 'A0018', label: 'A0018 · 第三章作业 - 列表与字典' },
+        { value: 'A0022', label: 'A0022 · 综合练习 - 文件 I/O' },
+        { value: 'A0024', label: 'A0024 · 期中考试 - Python 数据处理' }
+      ]},
+      { name: 'name', label: '新名称', required: true, placeholder: '例如：第四章作业 - 函数与递归' }
+    ],
+    submitText: '创建副本并进入编辑',
+    onSubmit: function(v){
+      if(!v.name || !v.source) return false;
+      toast('已基于 '+v.source+' 创建副本');
+      setTimeout(function(){ location.href = 'teacher-assignments-edit.html?aid='+v.source+'&copy=1&name='+encodeURIComponent(v.name); }, 600);
+    }
+  });
+}
+
+/* 初始化 */
+applyFilter();
+updateSel();
+</script>
+</body>
+</html>

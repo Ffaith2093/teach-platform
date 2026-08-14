@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P0001 两数之和 · 编辑题目 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+  --cat-data:#0EA5E9; --cat-data-bg:#E0F2FE;
+  --cat-algo:#10B981; --cat-algo-bg:#D1FAE5;
+  --cat-ai:#8B5CF6; --cat-ai-bg:#EDE9FE;
+  --cat-net:#F97316; --cat-net-bg:#FFEDD5;
+  --cat-inter:#64748B; --cat-inter-bg:#F1F5F9;
+  --code-bg:#0F172A;
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171; --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+  --cat-data:#38BDF8; --cat-data-bg:#0C334A;
+  --cat-algo:#34D399; --cat-algo-bg:#063B2A;
+  --cat-ai:#A78BFA; --cat-ai-bg:#2A1B4D;
+  --cat-net:#FB923C; --cat-net-bg:#422106;
+  --cat-inter:#94A3B8; --cat-inter-bg:#1E293B;
+  --code-bg:#0B1120;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--purple);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--purple),#EC4899);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumb b{color:var(--fg);font-weight:500}
+.crumb .pid{font-family:"SF Mono",Menlo,Consolas,monospace;color:var(--muted);font-size:12.5px;
+            background:var(--surface);padding:2px 7px;border-radius:5px;margin:0 4px}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:background .18s,color .18s}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost svg{font-size:14px}
+
+/* 编辑头 */
+.edit-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+           padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.edit-head .id-block{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.edit-head .pid{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;
+                padding:4px 10px;border-radius:6px;background:var(--surface);color:var(--muted);
+                border:1px solid var(--border)}
+.edit-head .st{font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:999px;
+               background:var(--success-subtle);color:var(--success)}
+.edit-head .st.draft{background:var(--warning-subtle);color:var(--warning)}
+.edit-head h1{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-top:6px}
+.edit-head .meta{margin-top:6px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.edit-head .meta b{color:var(--fg);font-weight:500}
+.edit-head .acts{display:flex;gap:8px;flex-wrap:wrap}
+
+/* 主体布局 */
+.editor-grid{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:flex-start}
+@media(max-width:1100px){ .editor-grid{grid-template-columns:1fr} }
+
+/* 主编辑区卡片 */
+.ed-card{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.ed-card-hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);
+            background:var(--surface);font-size:13px;font-weight:600;letter-spacing:.02em}
+html.dark .ed-card-hd{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.ed-card-hd svg{font-size:15px;color:var(--muted)}
+.ed-card-hd .req{color:var(--danger);font-weight:700;margin-left:2px}
+.ed-card-hd .hint{margin-left:auto;font-size:11.5px;font-weight:400;color:var(--muted)}
+.ed-card-bd{padding:18px}
+.ed-card-ft{padding:12px 18px;border-top:1px solid var(--border);background:var(--surface);
+            font-size:12px;color:var(--muted);line-height:1.6}
+html.dark .ed-card-ft{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+
+/* 表单 */
+.fm{display:flex;flex-direction:column;gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12.5px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:4px}
+.field label .req{color:var(--danger);font-weight:700}
+.field input,.field textarea,.field select{padding:9px 12px;border:1px solid var(--border);border-radius:8px;
+                background:var(--surface);color:var(--fg);font-size:14px;outline:none;transition:.18s;
+                font-family:inherit;resize:vertical}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--primary);background:var(--card)}
+.field textarea{min-height:90px;line-height:1.6}
+.field-hint{font-size:11.5px;color:var(--subtle);line-height:1.5}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* Markdown 编辑器 */
+.md-toolbar{display:flex;align-items:center;gap:2px;padding:8px 10px;border-bottom:1px solid var(--border);
+             background:var(--surface);flex-wrap:wrap}
+html.dark .md-toolbar{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.md-toolbar button{width:30px;height:28px;border-radius:5px;display:flex;align-items:center;justify-content:center;
+                    color:var(--muted);font-size:14px;transition:.18s}
+.md-toolbar button:hover{background:var(--card);color:var(--fg)}
+.md-toolbar .sep{width:1px;height:18px;background:var(--border);margin:0 4px}
+.md-toolbar .right{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)}
+.md-toolbar .right label{display:flex;align-items:center;gap:5px;cursor:pointer;padding:4px 8px;border-radius:6px}
+.md-toolbar .right label:hover{background:var(--card)}
+.md-editor{width:100%;min-height:340px;padding:14px 16px;border:none;background:transparent;
+           color:var(--fg);font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace;
+           font-size:13.5px;line-height:1.65;outline:none;resize:vertical}
+
+/* 样例 */
+.io-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){ .io-pair{grid-template-columns:1fr} }
+.io-blk{display:flex;flex-direction:column;gap:6px}
+.io-blk label{font-size:12.5px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:6px}
+.io-blk label .tag{font-size:10.5px;padding:2px 7px;border-radius:999px;font-weight:600;
+                   background:var(--primary-subtle);color:var(--primary)}
+.io-blk textarea{min-height:88px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;
+                 background:var(--surface);color:var(--fg);font-family:"SF Mono",Menlo,Consolas,monospace;
+                 font-size:12.5px;line-height:1.6;outline:none;resize:vertical;transition:.18s}
+.io-blk textarea:focus{border-color:var(--primary);background:var(--card)}
+
+/* 测试用例 */
+.tc-meta{display:flex;align-items:center;gap:14px;font-size:12px;color:var(--muted);margin-bottom:12px;flex-wrap:wrap}
+.tc-meta b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+.tc-meta .stats{display:flex;align-items:center;gap:14px}
+.tc-table{border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.tc-thead{display:grid;grid-template-columns:54px 100px 1.4fr 1.4fr 110px 110px 90px;gap:8px;padding:9px 14px;
+          background:var(--surface);font-size:11px;font-weight:600;color:var(--muted);
+          letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid var(--border);align-items:center}
+html.dark .tc-thead{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.tc-thead .h-input{text-align:center}
+.tc-row{display:grid;grid-template-columns:54px 100px 1.4fr 1.4fr 110px 110px 90px;gap:8px;padding:8px 14px;
+         align-items:flex-start;border-bottom:1px solid var(--border);transition:background .18s}
+.tc-row:last-child{border-bottom:none}
+.tc-row:hover{background:color-mix(in srgb,var(--surface) 40%,transparent)}
+.tc-row .idx{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12px;color:var(--muted);
+             padding-top:8px;text-align:center;font-variant-numeric:tabular-nums}
+.tc-row textarea{width:100%;min-height:60px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;
+                 background:var(--surface);color:var(--fg);font-family:"SF Mono",Menlo,Consolas,monospace;
+                 font-size:12px;line-height:1.55;outline:none;resize:vertical;transition:.18s}
+.tc-row textarea:focus{border-color:var(--primary);background:var(--card)}
+.tc-row input[type=number]{padding:7px 10px;border:1px solid var(--border);border-radius:6px;
+                           background:var(--surface);color:var(--fg);font-size:12px;outline:none;
+                           width:100%;text-align:center}
+.tc-row .ops{padding-top:6px;display:flex;flex-direction:column;gap:4px;align-items:center}
+.tc-row .ops button{width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;
+                    color:var(--subtle);transition:.18s}
+.tc-row .ops button:hover{background:var(--surface);color:var(--fg)}
+.tc-row .ops button.up:hover,.tc-row .ops button.down:hover{background:var(--primary-subtle);color:var(--primary)}
+.tc-row .ops button.danger:hover{background:var(--danger-subtle);color:var(--danger)}
+.tc-row.hidden-row .idx::after{content:"·";color:var(--warning)}
+.tc-row.hidden-row textarea{background:color-mix(in srgb,var(--warning-subtle) 30%,var(--surface));border-color:color-mix(in srgb,var(--warning) 40%,var(--border))}
+.tc-row input[type=checkbox]{width:15px;height:15px;accent-color:var(--primary);cursor:pointer;display:block;margin:9px auto 0}
+
+.tc-tools{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.tc-tools .left{display:flex;gap:8px;flex-wrap:wrap}
+.tc-tools .right{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}
+
+/* 右栏 */
+.sidebar{display:flex;flex-direction:column;gap:16px;position:sticky;top:88px}
+
+/* 难度选择 */
+.diff-pick{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.diff-btn{padding:8px 0;border-radius:8px;border:1px solid var(--border);background:var(--card);
+          display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--subtle);cursor:pointer;transition:.18s}
+.diff-btn:hover{border-color:var(--primary);color:var(--fg)}
+.diff-btn.on{background:var(--warning-subtle);border-color:transparent;color:var(--warning);font-weight:600}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:500;background:var(--surface);
+      color:var(--muted);border:1px solid var(--border);display:inline-flex;align-items:center;gap:5px;cursor:pointer;transition:.18s}
+.chip:hover{color:var(--fg);border-color:var(--primary)}
+.chip.on{background:var(--primary-subtle);color:var(--primary);border-color:transparent;font-weight:600}
+.chip.on::before{content:"✓";font-weight:700;font-size:11px}
+.chip.add{border-style:dashed;color:var(--primary)}
+.chip .x{margin-left:2px;opacity:.55;font-size:11px;cursor:pointer}
+.chip .x:hover{opacity:1;color:var(--danger)}
+
+/* 关联班级 */
+.class-list{display:flex;flex-direction:column;gap:6px}
+.class-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;
+           background:var(--surface);font-size:13px;cursor:pointer;transition:.18s}
+.class-row:hover{background:var(--card)}
+.class-row input{accent-color:var(--primary);cursor:pointer}
+.class-row .name{font-weight:500}
+.class-row .meta{margin-left:auto;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* 限制参数 */
+.limit-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.limit-row:last-child{border-bottom:none}
+.limit-row label{flex:1;font-size:13px;color:var(--muted)}
+.limit-row .num-w{padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);
+                 color:var(--fg);font-size:13px;outline:none;width:80px;text-align:center;font-variant-numeric:tabular-nums}
+.limit-row .unit{margin-left:-4px;font-size:12px;color:var(--subtle);min-width:32px}
+
+/* 操作底栏 */
+.foot-bar{position:sticky;bottom:0;margin:0 -32px -32px;padding:14px 32px;
+          background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(8px);
+          border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;z-index:10}
+.foot-bar .info{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.foot-bar .info svg{color:var(--subtle)}
+.foot-bar .acts{display:flex;gap:8px;flex-wrap:wrap}
+.foot-bar .save-state{font-size:12px;color:var(--muted);margin-right:8px;display:inline-flex;align-items:center;gap:5px}
+.foot-bar .save-state.dirty{color:var(--warning)}
+.foot-bar .save-state .dot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.foot-bar .save-state.dirty .dot{background:var(--warning)}
+.foot-bar .save-state.saved{color:var(--success)}
+.foot-bar .save-state.saved .dot{background:var(--success)}
+
+/* 评分细则 */
+.score-row{display:grid;grid-template-columns:1fr 110px 36px;gap:10px;align-items:center;
+           padding:8px 0;border-bottom:1px solid var(--border)}
+.score-row:last-child{border-bottom:none}
+.score-row .name{font-size:13px}
+.score-row .pct{padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);
+               color:var(--fg);font-size:13px;outline:none;width:100%;text-align:center;font-variant-numeric:tabular-nums}
+.score-row .pct:focus{border-color:var(--primary)}
+.score-row .x{padding:6px;border-radius:6px;color:var(--subtle);display:flex;justify-self:center}
+.score-row .x:hover{background:var(--danger-subtle);color:var(--danger)}
+.score-row.case .name{display:flex;align-items:center;gap:6px}
+.score-row.case .name input{accent-color:var(--primary);width:14px;height:14px}
+
+/* 移动折叠 */
+@media(max-width:900px){
+  .tc-thead,.tc-row{grid-template-columns:46px 80px 1fr 1fr;gap:6px}
+  .tc-thead .h-score,.tc-thead .h-time,.tc-thead .h-mem,
+  .tc-row .score,.tc-row .time-col,.tc-row .mem-col{display:none}
+  .field-row{grid-template-columns:1fr}
+  .content{padding:24px 20px}
+  .foot-bar{margin:0 -20px -24px;padding:12px 20px}
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+<symbol id="i-grad" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="m20.6 13.4-8.2 8.2a2 2 0 0 1-2.8 0l-7-7A2 2 0 0 1 2 13.2V4a2 2 0 0 1 2-2h9.2a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+<symbol id="i-exam" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="3" rx="1"/><path d="M9 11h6M9 14h6M9 17h3"/></symbol>
+<symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-b1" viewBox="0 0 24 24"><path d="M5 4h14M5 4v16M13 4v16"/></symbol>
+<symbol id="i-b2" viewBox="0 0 24 24"><path d="M5 5h10a4 4 0 0 1 0 8H5V5zM5 13h11a4 4 0 0 1 0 8H5v-8z"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6M16 6l6 6-6 6"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></symbol>
+<symbol id="i-quote" viewBox="0 0 24 24"><path d="M7 7h4v4H7c0 2 1 4 4 4M13 7h4v4h-4c0 2 1 4 4 4"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+<symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="m21.7 18-9-15.3a1 1 0 0 0-1.7 0L1.3 18a1 1 0 0 0 .9 1.5h18.6a1 1 0 0 0 .9-1.5z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-import" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5-5 5 5"/><path d="M12 15V3"/></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3v6L4 19a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-10V3"/><path d="M8 3h8M7 14h10"/></symbol>
+<symbol id="i-judge" viewBox="0 0 24 24"><path d="m12 2 3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></symbol>
+<symbol id="i-set" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="i-eye-off" viewBox="0 0 24 24"><path d="m2 2 20 20"/><path d="M9.9 5.1A10 10 0 0 1 22 12c-1 1.7-2.5 3.3-4.1 4.5"/><path d="M6.4 6.4C4 8 2.5 10 2 12c0 0 3 7 10 7 1.6 0 3-.3 4.3-.9"/><path d="M14.1 14.1A3 3 0 1 1 9.9 9.9"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-shield"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">管理员</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">总览</p>
+      <a class="nav-item" href="admin-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <p class="nav-label">组织</p>
+      <a class="nav-item" href="admin-students.html"><svg><use href="#i-users"/></svg>学生</a>
+      <a class="nav-item" href="admin-teachers.html"><svg><use href="#i-grad"/></svg>教师</a>
+      <p class="nav-label">内容</p>
+      <a class="nav-item" href="admin-exams.html"><svg><use href="#i-exam"/></svg>考试<span class="nav-count">47</span></a>
+<a class="nav-item" href="admin-courses.html"><svg><use href="#i-book"/></svg>课程</a>
+      <a class="nav-item active" href="admin-banks.html"><svg><use href="#i-tag"/></svg>题库</a>
+      <p class="nav-label">系统</p>
+      <a class="nav-item" href="admin-judge-queue.html"><svg><use href="#i-judge"/></svg>评测队列</a>
+      <a class="nav-item" href="admin-settings.html"><svg><use href="#i-set"/></svg>系统设置</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈主任</div>
+        <div class="s">系统管理员</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb"><b>内容</b> / <a href="admin-banks.html">题库</a> / <span class="pid">P0001</span></span>
+      <div class="top-actions">
+        <button class="icon-btn"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <a class="back-link anim" href="admin-banks.html" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)">
+          <svg style="font-size:14px"><use href="#i-arrow-l"/></svg>返回题库
+        </a>
+
+        <div class="edit-head anim" style="animation-delay:.04s">
+          <div>
+            <div class="id-block">
+              <span class="pid">P0001</span>
+              <span class="st" id="status-pill">已发布</span>
+            </div>
+            <h1 id="prob-h1">两数之和</h1>
+            <p class="meta">
+              <span>创建于 <b>2024-09-01</b></span>
+              <span>作者 <b>王建国 (T0018)</b></span>
+              <span>最近编辑 <b>2024-09-02 14:22</b></span>
+              <span>共 <b>1,286</b> 次提交 · 通过率 <b>82.4%</b></span>
+            </p>
+          </div>
+          <div class="acts">
+            <button class="btn-ghost" onclick="previewProb()"><svg><use href="#i-eye"/></svg>预览</button>
+            <button class="btn-ghost" onclick="runTest()"><svg><use href="#i-flask"/></svg>试运行</button>
+            <button class="btn-ghost" onclick="saveDraft()"><svg><use href="#i-clock"/></svg>保存草稿</button>
+            <button class="btn" onclick="publish()"><svg><use href="#i-check"/></svg>发布</button>
+          </div>
+        </div>
+
+        <div class="editor-grid">
+
+          <!-- ============== 左：主编辑区 ============== -->
+          <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+
+            <!-- 基础信息 -->
+            <div class="ed-card anim" style="animation-delay:.08s">
+              <div class="ed-card-hd"><svg><use href="#i-info"/></svg>基础信息<span class="hint">所有字段对学生可见</span></div>
+              <div class="ed-card-bd">
+                <div class="fm">
+                  <div class="field">
+                    <label>题目标题<span class="req">*</span></label>
+                    <input type="text" value="两数之和" id="title-input">
+                    <span class="field-hint">建议 4-20 字 · 简洁明了，不要包含题号</span>
+                  </div>
+                  <div class="field-row">
+                    <div class="field">
+                      <label>分类<span class="req">*</span></label>
+                      <select id="cat-input">
+                        <option value="data">数据</option>
+                        <option value="algo" selected>算法</option>
+                        <option value="ai">人工智能</option>
+                        <option value="net">计算机网络</option>
+                        <option value="inter">多学科交叉</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label>难度<span class="req">*</span></label>
+                      <div class="diff-pick" id="diff-pick">
+                        <div class="diff-btn on" data-l="1" title="入门">★</div>
+                        <div class="diff-btn" data-l="2" title="简单">★★</div>
+                        <div class="diff-btn" data-l="3" title="中等">★★★</div>
+                        <div class="diff-btn" data-l="4" title="困难">★★★★</div>
+                        <div class="diff-btn" data-l="5" title="挑战">★★★★★</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label>标签<span class="hint" style="margin-left:6px">最多 6 个 · 点击切换选中</span></label>
+                    <div class="chips" id="tags-chips">
+                      <span class="chip on">基础语法</span>
+                      <span class="chip">字符串</span>
+                      <span class="chip">列表</span>
+                      <span class="chip on">字典</span>
+                      <span class="chip">集合</span>
+                      <span class="chip">数学</span>
+                      <span class="chip">递归</span>
+                      <span class="chip">动态规划</span>
+                      <span class="chip">贪心</span>
+                      <span class="chip">分治</span>
+                      <span class="chip">BFS</span>
+                      <span class="chip">DFS</span>
+                      <span class="chip">二分查找</span>
+                      <span class="chip add" onclick="addNewTag()"><svg style="font-size:11px"><use href="#i-plus"/></svg>新建</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 题目描述 -->
+            <div class="ed-card anim" style="animation-delay:.12s">
+              <div class="ed-card-hd">
+                <svg><use href="#i-book"/></svg>题目描述
+                <span class="hint">支持 Markdown · 学生端会原样渲染</span>
+              </div>
+              <div>
+                <div class="md-toolbar">
+                  <button title="加粗" onclick="mdWrap('**','**')"><svg><use href="#i-b1"/></svg></button>
+                  <button title="斜体" onclick="mdWrap('*','*')"><svg style="font-style:italic;font-family:serif;font-weight:700">I</svg></button>
+                  <button title="二级标题" onclick="mdPrefix('## ')"><svg><use href="#i-b2"/></svg></button>
+                  <span class="sep"></span>
+                  <button title="代码块" onclick="mdWrap('\n```\n','\n```\n')"><svg><use href="#i-code"/></svg></button>
+                  <button title="列表" onclick="mdPrefix('- ')"><svg><use href="#i-list"/></svg></button>
+                  <button title="引用" onclick="mdPrefix('> ')"><svg><use href="#i-quote"/></svg></button>
+                  <button title="链接" onclick="mdWrap('[','](https://)')"><svg><use href="#i-link"/></svg></button>
+                  <div class="right">
+                    <label><input type="checkbox" id="md-preview-toggle" onchange="toggleMdPreview()">预览</label>
+                  </div>
+                </div>
+                <textarea class="md-editor" id="md-body">## 题目
+
+给定一个整数数组 `nums` 和一个整数目标值 `target`，请你在该数组中找出 **和为目标值** 的那两个整数，并返回它们的数组下标。
+
+你可以假设每种输入只会对应一个答案，并且你不能使用两次相同的元素。
+
+你可以按任意顺序返回答案。
+
+## 示例
+
+**示例 1：**
+
+```
+输入：nums = [2,7,11,15], target = 9
+输出：[0,1]
+解释：因为 nums[0] + nums[1] == 9
+```
+
+**示例 2：**
+
+```
+输入：nums = [3,2,4], target = 6
+输出：[1,2]
+```
+
+## 提示
+
+- `2 <= nums.length <= 10^4`
+- `-10^9 <= nums[i] <= 10^9`
+- 只会存在一个有效答案
+
+## 进阶
+
+你能想出一个时间复杂度小于 `O(n^2)` 的算法吗？</textarea>
+                <div id="md-preview" style="display:none;padding:18px 22px;font-size:14px;line-height:1.75;color:var(--fg);
+                     background:var(--card);min-height:340px"></div>
+              </div>
+              <div class="ed-card-ft">
+                提示：Markdown 中的代码块使用三个反引号 · 数学符号推荐使用 LaTeX 语法 ($...$) · 涉及版权的图片请使用外链
+              </div>
+            </div>
+
+            <!-- 输入输出格式 -->
+            <div class="ed-card anim" style="animation-delay:.16s">
+              <div class="ed-card-hd">
+                <svg><use href="#i-list"/></svg>输入 / 输出格式
+                <span class="hint">单独说明 · 不属于题目正文</span>
+              </div>
+              <div class="ed-card-bd">
+                <div class="field-row">
+                  <div class="field">
+                    <label>输入格式</label>
+                    <textarea placeholder="描述输入的数据格式、范围、含义…">第一行包含两个整数 n 和 target，分别表示数组长度和目标值。
+第二行包含 n 个整数，表示数组 nums。
+
+1 ≤ n ≤ 10^4
+-10^9 ≤ nums[i] ≤ 10^9</textarea>
+                  </div>
+                  <div class="field">
+                    <label>输出格式</label>
+                    <textarea placeholder="描述输出的格式、单位、精度…">输出一行，包含两个整数，表示满足条件的下标（按升序）。
+
+答案保证唯一。</textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 样例 -->
+            <div class="ed-card anim" style="animation-delay:.18s">
+              <div class="ed-card-hd">
+                <svg><use href="#i-eye"/></svg>样例
+                <span class="hint">样例会展示在题目顶部 · 至少 1 组</span>
+              </div>
+              <div class="ed-card-bd">
+                <div class="io-pair">
+                  <div class="io-blk">
+                    <label>样例输入 1 <span class="tag">例 1</span></label>
+                    <textarea>4 9
+2 7 11 15</textarea>
+                  </div>
+                  <div class="io-blk">
+                    <label>样例输出 1 <span class="tag">例 1</span></label>
+                    <textarea>0 1</textarea>
+                  </div>
+                </div>
+                <div class="io-pair" style="margin-top:12px">
+                  <div class="io-blk">
+                    <label>样例输入 2 <span class="tag">例 2</span></label>
+                    <textarea>3 6
+3 2 4</textarea>
+                  </div>
+                  <div class="io-blk">
+                    <label>样例输出 2 <span class="tag">例 2</span></label>
+                    <textarea>1 2</textarea>
+                  </div>
+                </div>
+                <div style="margin-top:14px;display:flex;justify-content:flex-end">
+                  <button class="btn-ghost" onclick="addSample()"><svg><use href="#i-plus"/></svg>添加样例</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 测试用例 -->
+            <div class="ed-card anim" style="animation-delay:.22s">
+              <div class="ed-card-hd">
+                <svg><use href="#i-flask"/></svg>测试用例
+                <span class="hint">评测用 · 不对学生可见 · 学生提交后会逐条比对</span>
+              </div>
+              <div class="ed-card-bd">
+                <div class="tc-meta">
+                  <span class="stats">
+                    <span>共 <b id="tc-total">8</b> 条</span>
+                    <span>样例 <b id="tc-sample-cnt">2</b></span>
+                    <span>隐藏 <b id="tc-hidden-cnt">6</b></span>
+                  </span>
+                  <span style="margin-left:auto">
+                    <svg style="font-size:13px;color:var(--warning)"><use href="#i-warn"/></svg>
+                    隐藏用例 = 学生不可见的真实评测数据
+                  </span>
+                </div>
+                <div class="tc-table" id="tc-table">
+                  <div class="tc-thead">
+                    <div>#</div>
+                    <div class="h-input">类型</div>
+                    <div>输入</div>
+                    <div>期望输出</div>
+                    <div class="h-score">分值</div>
+                    <div class="h-time">用时上限</div>
+                    <div></div>
+                  </div>
+
+                  <div class="tc-row">
+                    <div class="idx">1</div>
+                    <div><span class="pill" style="background:var(--success-subtle);color:var(--success);font-size:10.5px;padding:2px 8px">样例</span></div>
+                    <div><textarea>4 9
+2 7 11 15</textarea></div>
+                    <div><textarea>0 1</textarea></div>
+                    <div class="score"><input type="number" value="0" disabled title="样例不计分"></div>
+                    <div class="time-col"><input type="number" value="100" min="50" step="50"> ms</div>
+                    <div class="ops">
+                      <button class="up" title="上移"><svg><use href="#i-up"/></svg></button>
+                      <button class="down" title="下移"><svg><use href="#i-down"/></svg></button>
+                    </div>
+                  </div>
+
+                  <div class="tc-row">
+                    <div class="idx">2</div>
+                    <div><span class="pill" style="background:var(--success-subtle);color:var(--success);font-size:10.5px;padding:2px 8px">样例</span></div>
+                    <div><textarea>3 6
+3 2 4</textarea></div>
+                    <div><textarea>1 2</textarea></div>
+                    <div class="score"><input type="number" value="0" disabled></div>
+                    <div class="time-col"><input type="number" value="100" min="50" step="50"> ms</div>
+                    <div class="ops">
+                      <button class="up" title="上移"><svg><use href="#i-up"/></svg></button>
+                      <button class="down" title="下移"><svg><use href="#i-down"/></svg></button>
+                    </div>
+                  </div>
+
+                  <div class="tc-row hidden-row">
+                    <div class="idx">3</div>
+                    <div><span class="pill" style="background:var(--warning-subtle);color:var(--warning);font-size:10.5px;padding:2px 8px">隐藏</span></div>
+                    <div><textarea>2 6
+3 3</textarea></div>
+                    <div><textarea>0 1</textarea></div>
+                    <div class="score"><input type="number" value="20"></div>
+                    <div class="time-col"><input type="number" value="100" min="50" step="50"> ms</div>
+                    <div class="ops">
+                      <button class="up" title="上移"><svg><use href="#i-up"/></svg></button>
+                      <button class="down" title="下移"><svg><use href="#i-down"/></svg></button>
+                      <button class="danger" title="删除"><svg><use href="#i-trash"/></svg></button>
+                    </div>
+                  </div>
+
+                  <div class="tc-row hidden-row">
+                    <div class="idx">4</div>
+                    <div><span class="pill" style="background:var(--warning-subtle);color:var(--warning);font-size:10.5px;padding:2px 8px">隐藏</span></div>
+                    <div><textarea>5 8
+1 2 3 4 5</textarea></div>
+                    <div><textarea>2 4</textarea></div>
+                    <div class="score"><input type="number" value="20"></div>
+                    <div class="time-col"><input type="number" value="100" min="50" step="50"> ms</div>
+                    <div class="ops">
+                      <button class="up"><svg><use href="#i-up"/></svg></button>
+                      <button class="down"><svg><use href="#i-down"/></svg></button>
+                      <button class="danger" title="删除"><svg><use href="#i-trash"/></svg></button>
+                    </div>
+                  </div>
+
+                  <div class="tc-row hidden-row">
+                    <div class="idx">5</div>
+                    <div><span class="pill" style="background:var(--warning-subtle);color:var(--warning);font-size:10.5px;padding:2px 8px">隐藏</span></div>
+                    <div><textarea>1 -1
+-1</textarea></div>
+                    <div><textarea>0 0</textarea></div>
+                    <div class="score"><input type="number" value="20"></div>
+                    <div class="time-col"><input type="number" value="100" min="50" step="50"> ms</div>
+                    <div class="ops">
+                      <button class="up"><svg><use href="#i-up"/></svg></button>
+                      <button class="down"><svg><use href="#i-down"/></svg></button>
+                      <button class="danger" title="删除"><svg><use href="#i-trash"/></svg></button>
+                    </div>
+                  </div>
+
+                  <div class="tc-row hidden-row">
+                    <div class="idx">6</div>
+                    <div><span class="pill" style="background:var(--warning-subtle);color:var(--warning);font-size:10.5px;padding:2px 8px">隐藏</span></div>
+                    <div><textarea>10 19
+1 2 3 4 5 6 7 8 9 10</textarea></div>
+                    <div><textarea>8 9</textarea></div>
+                    <div class="score"><input type="number" value="20"></div>
+                    <div class="time-col"><input type="number" value="200" min="50" step="50"> ms</div>
+                    <div class="ops">
+                      <button class="up"><svg><use href="#i-up"/></svg></button>
+                      <button class="down"><svg><use href="#i-down"/></svg></button>
+                      <button class="danger" title="删除"><svg><use href="#i-trash"/></svg></button>
+                    </div>
+                  </div>
+
+                  <div class="tc-row hidden-row">
+                    <div class="idx">7</div>
+                    <div><span class="pill" style="background:var(--warning-subtle);color:var(--warning);font-size:10.5px;padding:2px 8px">隐藏</span></div>
+                    <div><textarea>4 100
+50 50 50 50</textarea></div>
+                    <div><textarea>0 1</textarea></div>
+                    <div class="score"><input type="number" value="10"></div>
+                    <div class="time-col"><input type="number" value="100" min="50" step="50"> ms</div>
+                    <div class="ops">
+                      <button class="up"><svg><use href="#i-up"/></svg></button>
+                      <button class="down"><svg><use href="#i-down"/></svg></button>
+                      <button class="danger" title="删除"><svg><use href="#i-trash"/></svg></button>
+                    </div>
+                  </div>
+
+                  <div class="tc-row hidden-row">
+                    <div class="idx">8</div>
+                    <div><span class="pill" style="background:var(--warning-subtle);color:var(--warning);font-size:10.5px;padding:2px 8px">隐藏</span></div>
+                    <div><textarea>3 7
+-3 4 3</textarea></div>
+                    <div><textarea>0 2</textarea></div>
+                    <div class="score"><input type="number" value="10"></div>
+                    <div class="time-col"><input type="number" value="100" min="50" step="50"> ms</div>
+                    <div class="ops">
+                      <button class="up"><svg><use href="#i-up"/></svg></button>
+                      <button class="down"><svg><use href="#i-down"/></svg></button>
+                      <button class="danger" title="删除"><svg><use href="#i-trash"/></svg></button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="tc-tools">
+                  <div class="left">
+                    <button class="btn-ghost" onclick="addCase('sample')"><svg><use href="#i-plus"/></svg>添加样例</button>
+                    <button class="btn-ghost" onclick="addCase('hidden')"><svg><use href="#i-plus"/></svg>添加隐藏用例</button>
+                    <button class="btn-ghost" onclick="bulkImport()"><svg><use href="#i-import"/></svg>批量导入</button>
+                  </div>
+                  <div class="right">
+                    <span style="color:var(--subtle)">分值合计</span>
+                    <b id="score-sum" style="color:var(--fg);font-size:14px">100</b>
+                    <span>/ 100</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 评分规则 -->
+            <div class="ed-card anim" style="animation-delay:.26s">
+              <div class="ed-card-hd"><svg><use href="#i-judge"/></svg>评分规则<span class="hint">通过率 / 时间 / 内存 综合判定</span></div>
+              <div class="ed-card-bd">
+                <div class="score-row case">
+                  <div class="name"><input type="checkbox" checked>逐条用例独立判分</div>
+                  <div class="pct">—</div>
+                  <div></div>
+                </div>
+                <div class="score-row case">
+                  <div class="name"><input type="checkbox" checked>全部通过才计满分</div>
+                  <div class="pct">—</div>
+                  <div></div>
+                </div>
+                <div class="score-row">
+                  <div class="name">通过率得分权重</div>
+                  <div class="pct"><input type="number" value="100" min="0" max="100">%</div>
+                  <div class="x" title="删除"><svg><use href="#i-x"/></svg></div>
+                </div>
+                <div class="score-row">
+                  <div class="name">时间分（超过限制线性扣分）</div>
+                  <div class="pct"><input type="number" value="0" min="0" max="100">%</div>
+                  <div class="x"><svg><use href="#i-x"/></svg></div>
+                </div>
+                <div class="score-row">
+                  <div class="name">内存分（超过限制线性扣分）</div>
+                  <div class="pct"><input type="number" value="0" min="0" max="100">%</div>
+                  <div class="x"><svg><use href="#i-x"/></svg></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 提示信息 -->
+            <div class="ed-card anim" style="animation-delay:.30s">
+              <div class="ed-card-hd"><svg><use href="#i-info"/></svg>提示 / 解答<span class="hint">默认折叠 · 学生在通过后可查看</span></div>
+              <div class="ed-card-bd">
+                <div class="field">
+                  <label>官方解答（Markdown）</label>
+                  <textarea placeholder="可写思路说明、复杂度分析、参考实现…">使用哈希表，可以在 `O(n)` 时间内求解：
+
+```python
+def solve(nums, target):
+    seen = {}
+    for i, x in enumerate(nums):
+        if target - x in seen:
+            return [seen[target - x], i]
+        seen[x] = i
+```
+
+**复杂度分析：**
+- 时间复杂度：`O(n)`
+- 空间复杂度：`O(n)`</textarea>
+                </div>
+                <div class="field" style="margin-top:12px">
+                  <label>补充说明</label>
+                  <textarea placeholder="给老师的批注、评分注意点…" style="min-height:60px">本题为入门级哈希表题型 · 通过率应在 80% 以上 · 学生错误主要集中在没读懂「不能使用两次相同的元素」</textarea>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ============== 右栏 ============== -->
+          <aside class="sidebar anim" style="animation-delay:.10s">
+
+            <!-- 运行环境 -->
+            <div class="ed-card">
+              <div class="ed-card-hd"><svg><use href="#i-flask"/></svg>运行限制</div>
+              <div class="ed-card-bd" style="padding-top:6px;padding-bottom:6px">
+                <div class="limit-row">
+                  <label>单用例时间上限</label>
+                  <input class="num-w" type="number" value="1000" min="100" step="100">
+                  <span class="unit">ms</span>
+                </div>
+                <div class="limit-row">
+                  <label>总时间上限</label>
+                  <input class="num-w" type="number" value="2000" min="100" step="100">
+                  <span class="unit">ms</span>
+                </div>
+                <div class="limit-row">
+                  <label>内存上限</label>
+                  <input class="num-w" type="number" value="256" min="64" step="64">
+                  <span class="unit">MB</span>
+                </div>
+                <div class="limit-row">
+                  <label>评测语言</label>
+                  <select style="flex:0 0 110px;padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--fg);font-size:13px;outline:none">
+                    <option>Python 3.10</option>
+                    <option>Python 3.11</option>
+                    <option>Python 3.12</option>
+                  </select>
+                  <span class="unit"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 关联课程 -->
+            <div class="ed-card">
+              <div class="ed-card-hd"><svg><use href="#i-book"/></svg>关联课程<span class="hint">引用此题的课程</span></div>
+              <div class="ed-card-bd">
+                <div class="class-list">
+                  <label class="class-row"><input type="checkbox" checked>
+                    <span class="name">Python 编程入门</span>
+                    <span class="meta">第 3 章</span>
+                  </label>
+                  <label class="class-row"><input type="checkbox">
+                    <span class="name">数据结构与算法</span>
+                    <span class="meta">第 1 章</span>
+                  </label>
+                  <label class="class-row"><input type="checkbox">
+                    <span class="name">算法竞赛入门</span>
+                    <span class="meta">第 2 章</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 历史操作 -->
+            <div class="ed-card">
+              <div class="ed-card-hd"><svg><use href="#i-clock"/></svg>操作记录</div>
+              <div class="ed-card-bd" style="padding-top:6px;padding-bottom:6px;font-size:12.5px;color:var(--muted)">
+                <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;gap:10px">
+                  <div style="width:6px;height:6px;border-radius:50%;background:var(--success);margin-top:7px;flex-shrink:0"></div>
+                  <div><b style="color:var(--fg);font-weight:500">王建国</b> · 编辑了用例 #7<br><span style="font-size:11.5px">2024-09-02 14:22</span></div>
+                </div>
+                <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;gap:10px">
+                  <div style="width:6px;height:6px;border-radius:50%;background:var(--primary);margin-top:7px;flex-shrink:0"></div>
+                  <div><b style="color:var(--fg);font-weight:500">王建国</b> · 发布<br><span style="font-size:11.5px">2024-09-01 10:08</span></div>
+                </div>
+                <div style="padding:8px 0;display:flex;gap:10px">
+                  <div style="width:6px;height:6px;border-radius:50%;background:var(--muted);margin-top:7px;flex-shrink:0"></div>
+                  <div><b style="color:var(--fg);font-weight:500">王建国</b> · 创建题目<br><span style="font-size:11.5px">2024-09-01 09:54</span></div>
+                </div>
+              </div>
+            </div>
+
+          </aside>
+
+        </div>
+
+        <!-- 底部操作栏 -->
+        <div class="foot-bar anim" style="animation-delay:.34s">
+          <span class="info">
+            <svg><use href="#i-info"/></svg>
+            <span class="save-state saved" id="save-state"><span class="dot"></span>所有更改已保存 · 2 分钟前</span>
+          </span>
+          <div class="acts">
+            <button class="btn-ghost" onclick="discard()">放弃修改</button>
+            <button class="btn-ghost" onclick="saveDraft()"><svg><use href="#i-clock"/></svg>保存草稿</button>
+            <button class="btn" onclick="publish()"><svg><use href="#i-check"/></svg>发布</button>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+/* 难度选择 */
+document.querySelectorAll('#diff-pick .diff-btn').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('#diff-pick .diff-btn').forEach(function(x){x.classList.remove('on')});
+    b.classList.add('on');
+    markDirty();
+  });
+});
+
+/* 标签选择 */
+document.querySelectorAll('#tags-chips .chip:not(.add)').forEach(function(c){
+  c.addEventListener('click', function(){
+    c.classList.toggle('on');
+    markDirty();
+  });
+});
+
+/* Markdown 工具栏 */
+function mdWrap(left, right){
+  var ta = document.getElementById('md-body');
+  var s = ta.selectionStart, e = ta.selectionEnd;
+  var sel = ta.value.slice(s, e) || '文本';
+  ta.value = ta.value.slice(0, s) + left + sel + right + ta.value.slice(e);
+  ta.focus();
+  ta.selectionStart = s + left.length;
+  ta.selectionEnd = s + left.length + sel.length;
+  markDirty();
+}
+function mdPrefix(prefix){
+  var ta = document.getElementById('md-body');
+  var s = ta.selectionStart;
+  // 把光标所在行行首加 prefix
+  var before = ta.value.slice(0, s);
+  var lineStart = before.lastIndexOf('\n') + 1;
+  ta.value = ta.value.slice(0, lineStart) + prefix + ta.value.slice(lineStart);
+  ta.focus();
+  ta.selectionStart = ta.selectionEnd = s + prefix.length;
+  markDirty();
+}
+function toggleMdPreview(){
+  var ta = document.getElementById('md-body');
+  var pv = document.getElementById('md-preview');
+  var on = document.getElementById('md-preview-toggle').checked;
+  if(on){
+    pv.textContent = ta.value;
+    pv.style.display = '';
+    ta.style.display = 'none';
+  }else{
+    pv.style.display = 'none';
+    ta.style.display = '';
+  }
+}
+
+/* 测试用例操作 */
+function addCase(kind){
+  var table = document.getElementById('tc-table');
+  var rows = table.querySelectorAll('.tc-row').length + 1;
+  var pillColor = kind === 'sample'
+    ? 'background:var(--success-subtle);color:var(--success)'
+    : 'background:var(--warning-subtle);color:var(--warning)';
+  var pillTxt = kind === 'sample' ? '样例' : '隐藏';
+  var score = kind === 'sample' ? '<input type="number" value="0" disabled>' : '<input type="number" value="0">';
+  var op = kind === 'sample'
+    ? '<div class="ops"><button class="up" title="上移"><svg><use href="#i-up"/></svg></button><button class="down" title="下移"><svg><use href="#i-down"/></svg></button></div>'
+    : '<div class="ops"><button class="up"><svg><use href="#i-up"/></svg></button><button class="down"><svg><use href="#i-down"/></svg></button><button class="danger" title="删除"><svg><use href="#i-trash"/></svg></button></div>';
+  var cls = kind === 'sample' ? 'tc-row' : 'tc-row hidden-row';
+  var row = document.createElement('div');
+  row.className = cls;
+  row.innerHTML =
+    '<div class="idx">'+rows+'</div>' +
+    '<div><span class="pill" style="'+pillColor+';font-size:10.5px;padding:2px 8px">'+pillTxt+'</span></div>' +
+    '<div><textarea></textarea></div>' +
+    '<div><textarea></textarea></div>' +
+    '<div class="score">'+score+'</div>' +
+    '<div class="time-col"><input type="number" value="100" min="50" step="50"> ms</div>' +
+    op;
+  table.appendChild(row);
+  refreshTcStats();
+  markDirty();
+}
+function refreshTcStats(){
+  var rows = document.querySelectorAll('#tc-table .tc-row');
+  document.getElementById('tc-total').textContent = rows.length;
+  document.getElementById('tc-sample-cnt').textContent = document.querySelectorAll('#tc-table .tc-row:not(.hidden-row)').length;
+  document.getElementById('tc-hidden-cnt').textContent = document.querySelectorAll('#tc-table .tc-row.hidden-row').length;
+  rows.forEach(function(r, i){ r.querySelector('.idx').textContent = i + 1; });
+  // 分值合计
+  var sum = 0;
+  document.querySelectorAll('#tc-table .tc-row.hidden-row .score input').forEach(function(inp){
+    sum += parseInt(inp.value || 0, 10);
+  });
+  document.getElementById('score-sum').textContent = sum;
+}
+
+/* 监听测试用例分数输入变化 */
+document.addEventListener('input', function(e){
+  if(e.target.matches('#tc-table .score input')){
+    refreshTcStats();
+    markDirty();
+  }
+});
+
+/* 监听测试用例行操作（事件委托） */
+document.getElementById('tc-table').addEventListener('click', function(e){
+  var row = e.target.closest('.tc-row');
+  if(!row) return;
+  if(e.target.closest('.danger')){
+    Modal.confirm({
+      title:'删除这条测试用例？',
+      body:['测试用例 #'+row.querySelector('.idx').textContent+' 将被永久移除','删除后无法恢复，建议先备份题库。'],
+      confirmText:'删除', danger:true,
+      onConfirm:function(){
+        row.remove();
+        refreshTcStats();
+        markDirty();
+        toast('已删除测试用例');
+      }
+    });
+  } else if(e.target.closest('.up')){
+    if(row.previousElementSibling) row.parentNode.insertBefore(row, row.previousElementSibling);
+    refreshTcStats();
+    markDirty();
+  } else if(e.target.closest('.down')){
+    if(row.nextElementSibling) row.parentNode.insertBefore(row.nextElementSibling, row);
+    refreshTcStats();
+    markDirty();
+  }
+});
+
+function bulkImport(){
+  Modal.form({
+    title:'批量导入测试用例',
+    fields:[
+      {name:'fmt',type:'select',label:'导入格式',value:'std',options:[
+        {value:'std',label:'标准格式（in/out 对）'},
+        {value:'csv',label:'CSV（case,in,out,score）'},
+        {value:'json',label:'JSON 数组'}
+      ]},
+      {name:'mode',type:'select',label:'用例类型',value:'hidden',options:[
+        {value:'sample',label:'样例（学生可见）'},
+        {value:'hidden',label:'隐藏（评测用）'}
+      ]},
+      {name:'data',type:'textarea',label:'粘贴数据',placeholder:'例如 (标准格式)：\n\n2 9\n1 8\n\n0 1\n\n---\n\n3 6\n1 2 5\n\n1 2\n\n用例之间用 --- 分隔',rows:8}
+    ],
+    submitText:'导入',
+    foot:'现有测试用例会保留，新用例追加到末尾',
+    onSubmit:function(v){
+      if(!v.data.trim()) return false;
+      toast('已批量导入测试用例');
+      markDirty();
+    }
+  });
+}
+
+function addSample(){
+  var n = document.querySelectorAll('.io-pair').length + 1;
+  var div = document.createElement('div');
+  div.className = 'io-pair';
+  div.style.marginTop = '12px';
+  div.innerHTML =
+    '<div class="io-blk"><label>样例输入 '+n+' <span class="tag">例 '+n+'</span></label>' +
+    '<textarea></textarea></div>' +
+    '<div class="io-blk"><label>样例输出 '+n+' <span class="tag">例 '+n+'</span></label>' +
+    '<textarea></textarea></div>';
+  // 插入到 .add-sample 按钮的前面
+  var addBtn = document.querySelector('[onclick="addSample()"]').closest('div');
+  addBtn.parentNode.insertBefore(div, addBtn);
+  markDirty();
+}
+
+/* 新建标签 */
+function addNewTag(){
+  Modal.form({
+    title:'新建标签',
+    fields:[
+      {name:'name',label:'标签名称',placeholder:'例如：图论',required:true,maxlength:8},
+      {name:'kind',type:'select',label:'类型',value:'c',options:[
+        {value:'c',label:'概念（黄色）'},
+        {value:'k',label:'考点（蓝色）'},
+        {value:'t',label:'工具（粉色）'}
+      ]}
+    ],
+    submitText:'创建',
+    onSubmit:function(v){
+      var span = document.createElement('span');
+      span.className = 'chip';
+      span.textContent = v.name;
+      span.addEventListener('click', function(){ span.classList.toggle('on'); markDirty(); });
+      document.getElementById('tags-chips').insertBefore(span, document.querySelector('#tags-chips .chip.add'));
+      toast('已新建标签「'+v.name+'」');
+      markDirty();
+    }
+  });
+}
+
+/* 顶部按钮 */
+function previewProb(){
+  Modal.confirm({
+    title:'在学生端预览？',
+    body:['将以只读模式打开学生做题视角','用于检查渲染效果、样例展示和提示信息'],
+    confirmText:'打开预览',
+    onConfirm:function(){ toast('预览窗口已打开'); }
+  });
+}
+function runTest(){
+  Modal.confirm({
+    title:'试运行当前用例？',
+    body:['将使用随机正确实现对全部用例跑一遍','用于检查用例设计与时间/内存设置是否合理','约需 3-5 秒'],
+    confirmText:'开始试运行',
+    onSubmit:function(){},
+    onConfirm:function(){ toast('试运行完成 · 8/8 通过 · 平均 168ms'); }
+  });
+}
+function saveDraft(){
+  markSaved('草稿已保存 · 刚刚');
+  toast('草稿已保存');
+}
+function publish(){
+  Modal.confirm({
+    title:'发布该题目？',
+    body:['题目会进入「已发布」状态，对所有引用课程的学生可见','隐藏测试用例的实际输出将永久对前端隐藏','发布前请确认题目描述与样例已检查完毕'],
+    confirmText:'发布',
+    onConfirm:function(){
+      document.getElementById('status-pill').textContent = '已发布';
+      document.getElementById('status-pill').classList.remove('draft');
+      markSaved('已发布 · 刚刚');
+      toast('题目 P0001 已发布');
+    }
+  });
+}
+function discard(){
+  Modal.confirm({
+    title:'放弃当前所有修改？',
+    body:['将恢复为上次保存的版本','已修改但未保存的内容将丢失'],
+    confirmText:'放弃修改', danger:true,
+    onConfirm:function(){
+      markSaved('已恢复上次保存 · 2 分钟前');
+      toast('已恢复');
+    }
+  });
+}
+
+/* 保存状态 */
+function markDirty(){
+  var s = document.getElementById('save-state');
+  s.className = 'save-state dirty';
+  s.innerHTML = '<span class="dot"></span>有未保存的修改';
+}
+function markSaved(text){
+  var s = document.getElementById('save-state');
+  s.className = 'save-state saved';
+  s.innerHTML = '<span class="dot"></span>' + text;
+}
+
+/* 监听所有编辑输入触发 dirty */
+document.addEventListener('input', function(e){
+  if(e.target.matches('input,textarea,select') && !e.target.matches('#tc-table .score input')){
+    markDirty();
+  }
+});
+</script>
+</body>
+</html>

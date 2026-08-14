@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Python 数据处理基础 · 编辑课程 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171; --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--purple);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--purple),#EC4899);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumb b{color:var(--fg);font-weight:500}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:background .18s,color .18s}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost svg{font-size:14px}
+
+/* 编辑头 */
+.edit-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+           padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.edit-head h1{font-size:22px;font-weight:600;letter-spacing:-.02em;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.edit-head h1 .pill{font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px}
+.edit-head .meta{margin-top:6px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.edit-head .meta b{color:var(--fg);font-weight:500}
+.edit-head .acts{display:flex;gap:8px;flex-wrap:wrap}
+
+/* 主体 */
+.editor-grid{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:flex-start}
+@media(max-width:1100px){ .editor-grid{grid-template-columns:1fr} }
+
+.ed-card{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.ed-card-hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);
+            background:var(--surface);font-size:13px;font-weight:600;letter-spacing:.02em}
+html.dark .ed-card-hd{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.ed-card-hd svg{font-size:15px;color:var(--muted)}
+.ed-card-hd .req{color:var(--danger);font-weight:700;margin-left:2px}
+.ed-card-hd .hint{margin-left:auto;font-size:11.5px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0}
+.ed-card-bd{padding:18px}
+.ed-card-ft{padding:12px 18px;border-top:1px solid var(--border);background:var(--surface);
+            font-size:12px;color:var(--muted);line-height:1.6}
+html.dark .ed-card-ft{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+
+/* 表单 */
+.fm{display:flex;flex-direction:column;gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12.5px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:4px}
+.field label .req{color:var(--danger);font-weight:700}
+.field input,.field textarea,.field select{padding:9px 12px;border:1px solid var(--border);border-radius:8px;
+                background:var(--surface);color:var(--fg);font-size:14px;outline:none;transition:.18s;
+                font-family:inherit;resize:vertical}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--primary);background:var(--card)}
+.field textarea{min-height:88px;line-height:1.6}
+.field-hint{font-size:11.5px;color:var(--subtle);line-height:1.5}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* 封面 */
+.cover{display:flex;align-items:center;gap:14px;padding:14px;border:1px dashed var(--border);
+       border-radius:10px;background:var(--surface)}
+.cover-thumb{width:96px;height:64px;border-radius:8px;flex-shrink:0;
+             background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;
+             display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600}
+.cover-info{flex:1;min-width:0}
+.cover-info p{font-size:13px;color:var(--muted);margin-bottom:6px;line-height:1.5}
+.cover-info .acts{display:flex;gap:6px}
+.cover-info .acts button{font-size:12px;padding:6px 10px}
+
+/* 章节列表 */
+.chapter{display:flex;flex-direction:column;gap:0;border:1px solid var(--border);
+         border-radius:10px;background:var(--card);margin-bottom:10px;overflow:hidden;transition:.18s}
+.chapter:hover{border-color:var(--primary)}
+.chapter.dragging{opacity:.6;background:var(--surface)}
+.chapter-hd{display:flex;align-items:center;gap:10px;padding:12px 14px;
+            background:var(--surface);border-bottom:1px solid transparent}
+html.dark .chapter-hd{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.chapter.open .chapter-hd{border-bottom-color:var(--border)}
+.chapter-handle{cursor:grab;color:var(--subtle);padding:4px;border-radius:5px;transition:.18s}
+.chapter-handle:hover{background:var(--card);color:var(--fg)}
+.chapter-handle:active{cursor:grabbing}
+.chapter-num{width:30px;height:30px;border-radius:8px;background:var(--primary-subtle);color:var(--primary);
+             display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.chapter-title{flex:1;min-width:0}
+.chapter-title input{font-size:14px;font-weight:600;padding:4px 8px;border:1px solid transparent;
+                    background:transparent;color:var(--fg);border-radius:6px;outline:none;transition:.18s;width:100%}
+.chapter-title input:hover{border-color:var(--border)}
+.chapter-title input:focus{border-color:var(--primary);background:var(--card)}
+.chapter-meta{display:flex;align-items:center;gap:14px;font-size:12px;color:var(--muted);flex-shrink:0}
+.chapter-meta b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+.chapter-ops{display:flex;gap:4px}
+.chapter-actions{display:flex;gap:4px}
+.chapter-actions button{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+                        color:var(--subtle);transition:.18s}
+.chapter-actions button:hover{background:var(--card);color:var(--fg)}
+.chapter-actions button.danger:hover{background:var(--danger-subtle);color:var(--danger)}
+.chapter-toggle{margin-left:4px;padding:4px;border-radius:5px;color:var(--subtle);transition:transform .18s}
+.chapter.open .chapter-toggle{transform:rotate(180deg)}
+.chapter-bd{padding:14px 18px;display:flex;flex-direction:column;gap:10px;display:none}
+.chapter.open .chapter-bd{display:flex}
+.lesson{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:var(--surface);
+        font-size:13px}
+.lesson:hover{background:var(--card)}
+.lesson .li-num{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;color:var(--muted);
+                width:30px;flex-shrink:0}
+.lesson .li-title{flex:1;font-weight:500}
+.lesson .li-meta{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.lesson .li-meta b{color:var(--fg);font-weight:600}
+.lesson .li-ops{display:flex;gap:2px}
+.lesson .li-ops button{width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;
+                       color:var(--subtle);transition:.18s}
+.lesson .li-ops button:hover{background:var(--card);color:var(--fg)}
+.lesson .li-ops button.danger:hover{background:var(--danger-subtle);color:var(--danger)}
+
+.add-chapter{padding:14px;border:1px dashed var(--border);border-radius:10px;display:flex;align-items:center;
+             justify-content:center;gap:8px;color:var(--muted);font-size:13.5px;cursor:pointer;transition:.18s}
+.add-chapter:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-subtle)}
+
+/* 关联试卷 */
+.exam-link{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);
+           border-radius:10px;background:var(--surface);transition:border-color .18s,background .18s}
+.exam-link:hover{border-color:var(--primary);background:var(--card)}
+.exam-link-id{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.exam-no{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11px;font-weight:700;color:var(--primary);
+         background:var(--primary-subtle);padding:5px 9px;border-radius:6px;flex-shrink:0;letter-spacing:.02em}
+html.dark .exam-no{background:color-mix(in srgb,var(--primary) 22%,transparent)}
+.exam-link-title{font-size:13.5px;font-weight:500;margin-bottom:3px;line-height:1.4}
+.exam-link-meta{display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--muted);flex-wrap:wrap}
+.exam-link-meta .sep{width:3px;height:3px;border-radius:50%;background:var(--border)}
+.exam-link-tag{background:var(--warning-subtle);color:var(--warning);padding:2px 8px;border-radius:4px;
+               font-size:10.5px;font-weight:500;flex-shrink:0}
+.exam-link-tag.green{background:var(--success-subtle);color:var(--success)}
+.exam-link-tag.purple{background:var(--purple-subtle);color:var(--purple)}
+.exam-link-actions{display:flex;gap:4px;flex-shrink:0}
+.exam-link-actions button{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;
+                          justify-content:center;color:var(--muted);transition:background .18s,color .18s;font-size:14px}
+.exam-link-actions button:hover{background:var(--card);color:var(--fg)}
+.exam-link-actions button.danger:hover{background:var(--danger-subtle);color:var(--danger)}
+.exam-link-add{padding:12px;border:1px dashed var(--border);border-radius:10px;display:flex;
+               align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:13.5px;
+               cursor:pointer;transition:border-color .18s,color .18s,background .18s}
+.exam-link-add:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-subtle)}
+.exam-tip{display:flex;gap:10px;padding:10px 12px;border-radius:8px;background:var(--primary-subtle);
+          color:var(--primary);font-size:12px;line-height:1.6;align-items:flex-start}
+.exam-tip b{font-weight:600}
+.exam-tip svg{flex-shrink:0;font-size:14px;margin-top:1px}
+.exam-tip code{font-family:"SF Mono",Menlo,Consolas,monospace;background:var(--card);padding:1px 6px;
+               border-radius:4px;font-size:11px;color:var(--primary);border:1px solid color-mix(in srgb,var(--primary) 20%,transparent)}
+
+/* 班级列表 */
+.class-list{display:flex;flex-direction:column;gap:6px}
+.class-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;
+           background:var(--surface);font-size:13px;cursor:pointer;transition:.18s}
+.class-row:hover{background:var(--card)}
+.class-row input{accent-color:var(--primary);cursor:pointer}
+.class-row .name{font-weight:500}
+.class-row .meta{margin-left:auto;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.limit-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.limit-row:last-child{border-bottom:none}
+.limit-row label{flex:1;font-size:13px;color:var(--muted)}
+.limit-row .num-w{padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);
+                 color:var(--fg);font-size:13px;outline:none;width:80px;text-align:center;font-variant-numeric:tabular-nums}
+.limit-row .unit{margin-left:-4px;font-size:12px;color:var(--subtle);min-width:32px}
+
+/* 教师 */
+.teacher-card{display:flex;align-items:center;gap:12px;padding:10px;border:1px solid var(--border);
+               border-radius:8px;background:var(--surface)}
+.teacher-card .av{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+                  background:linear-gradient(135deg,#0EA5E9,#14B8A6);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.teacher-card .ti p{font-size:13px;font-weight:500}
+.teacher-card .ti span{font-size:11.5px;color:var(--muted)}
+.teacher-card .badge{margin-left:auto;font-size:10.5px;padding:3px 8px;border-radius:999px;
+                     background:var(--primary-subtle);color:var(--primary);font-weight:600}
+.teacher-card .change{margin-left:6px;font-size:12px;padding:5px 10px}
+
+.co-teachers{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.co-tag{display:flex;align-items:center;gap:6px;padding:4px 8px 4px 4px;border-radius:999px;
+        background:var(--surface);font-size:12px;color:var(--muted);border:1px solid var(--border)}
+.co-tag .av{width:22px;height:22px;font-size:10px;border-radius:50%;color:#fff;
+            background:linear-gradient(135deg,#8B5CF6,#EC4899);display:flex;align-items:center;justify-content:center;font-weight:600}
+.co-tag .x{margin-left:2px;color:var(--subtle);cursor:pointer}
+.co-tag .x:hover{color:var(--danger)}
+.co-add{padding:4px 10px;border-radius:999px;font-size:12px;color:var(--primary);border:1px dashed var(--primary);
+        background:var(--primary-subtle);cursor:pointer}
+
+/* 侧栏 */
+.sidebar{display:flex;flex-direction:column;gap:16px;position:sticky;top:88px}
+
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;
+      font-size:11.5px;font-weight:500}
+.pill.live{background:var(--success-subtle);color:var(--success)}
+.pill.draft{background:var(--warning-subtle);color:var(--warning)}
+
+/* 操作底栏 */
+.foot-bar{position:sticky;bottom:0;margin:0 -32px -32px;padding:14px 32px;
+          background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(8px);
+          border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;z-index:10}
+.foot-bar .info{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.foot-bar .info svg{color:var(--subtle)}
+.foot-bar .acts{display:flex;gap:8px;flex-wrap:wrap}
+.foot-bar .save-state{font-size:12px;color:var(--muted);margin-right:8px;display:inline-flex;align-items:center;gap:5px}
+.foot-bar .save-state.dirty{color:var(--warning)}
+.foot-bar .save-state .dot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.foot-bar .save-state.dirty .dot{background:var(--warning)}
+.foot-bar .save-state.saved{color:var(--success)}
+.foot-bar .save-state.saved .dot{background:var(--success)}
+
+@media(max-width:640px){
+  .field-row{grid-template-columns:1fr}
+  .content{padding:24px 20px}
+  .foot-bar{margin:0 -20px -24px;padding:12px 20px}
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+
+/* 拖拽高亮 */
+.drag-over{border-color:var(--primary) !important;background:var(--primary-subtle) !important}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+<symbol id="i-grad" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="m20.6 13.4-8.2 8.2a2 2 0 0 1-2.8 0l-7-7A2 2 0 0 1 2 13.2V4a2 2 0 0 1 2-2h9.2a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+<symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-drag" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.4"/><circle cx="15" cy="6" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="18" r="1.4"/><circle cx="15" cy="18" r="1.4"/></symbol>
+<symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="m21.7 18-9-15.3a1 1 0 0 0-1.7 0L1.3 18a1 1 0 0 0 .9 1.5h18.6a1 1 0 0 0 .9-1.5z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></symbol>
+<symbol id="i-judge" viewBox="0 0 24 24"><path d="m12 2 3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></symbol>
+<symbol id="i-set" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3v6L4 19a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-10V3"/><path d="M8 3h8M7 14h10"/></symbol>
+<symbol id="i-exam" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="3" rx="1"/><path d="M9 11h6M9 14h6M9 17h3"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-shield"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">管理员</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">总览</p>
+      <a class="nav-item" href="admin-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <p class="nav-label">组织</p>
+      <a class="nav-item" href="admin-students.html"><svg><use href="#i-users"/></svg>学生</a>
+      <a class="nav-item" href="admin-teachers.html"><svg><use href="#i-grad"/></svg>教师</a>
+      <p class="nav-label">内容</p>
+      <a class="nav-item" href="admin-exams.html"><svg><use href="#i-exam"/></svg>考试<span class="nav-count">47</span></a>
+      <a class="nav-item active" href="admin-courses.html"><svg><use href="#i-book"/></svg>课程</a>
+      <a class="nav-item" href="admin-banks.html"><svg><use href="#i-tag"/></svg>题库</a>
+      <p class="nav-label">系统</p>
+      <a class="nav-item" href="admin-judge-queue.html"><svg><use href="#i-judge"/></svg>评测队列</a>
+      <a class="nav-item" href="admin-settings.html"><svg><use href="#i-set"/></svg>系统设置</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈主任</div>
+        <div class="s">系统管理员</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb"><b>内容</b> / <a href="admin-courses.html">课程</a> / Python 数据处理基础</span>
+      <div class="top-actions">
+        <button class="icon-btn"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <a class="back-link anim" href="admin-courses.html" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)">
+          <svg style="font-size:14px"><use href="#i-arrow-l"/></svg>返回课程列表
+        </a>
+
+        <div class="edit-head anim" style="animation-delay:.04s">
+          <div>
+            <h1>
+              Python 数据处理基础
+              <span class="pill live">● 在用</span>
+            </h1>
+            <p class="meta">
+              <span>创建于 <b>2025-08-15</b></span>
+              <span>2025-2026 学年 上学期</span>
+              <span>共 <b>5</b> 章 <b>23</b> 课时 · 引用题目 <b>48</b> 道</span>
+              <span><b>4</b> 个班级 · <b>186</b> 名学生</span>
+            </p>
+          </div>
+          <div class="acts">
+            <button class="btn-ghost" onclick="previewCourse()"><svg><use href="#i-eye"/></svg>预览</button>
+            <button class="btn-ghost" onclick="shareCourse()"><svg><use href="#i-link"/></svg>复制分享</button>
+            <button class="btn-ghost" onclick="archiveCourse()"><svg><use href="#i-trash"/></svg>归档</button>
+            <button class="btn" onclick="publishCourse()"><svg><use href="#i-check"/></svg>保存并发布</button>
+          </div>
+        </div>
+
+        <div class="editor-grid">
+
+          <!-- ============== 左：主编辑区 ============== -->
+          <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+
+            <!-- 基础信息 -->
+            <div class="ed-card anim" style="animation-delay:.08s">
+              <div class="ed-card-hd"><svg><use href="#i-book"/></svg>基础信息<span class="hint">对学生可见 · 修改后立即生效</span></div>
+              <div class="ed-card-bd">
+                <div class="fm">
+                  <div class="field">
+                    <label>课程标题<span class="req">*</span></label>
+                    <input type="text" value="Python 数据处理基础">
+                    <span class="field-hint">建议 4-16 字 · 简洁明了，避免包含年级/学期</span>
+                  </div>
+                  <div class="field">
+                    <label>课程简介<span class="req">*</span></label>
+                    <textarea>本课程面向高中一年级学生，系统讲解 Python 在数据处理场景下的核心能力：内置数据结构、文件 I/O、pandas 基础、数据清洗与可视化入门。课程强调「读懂数据 → 处理数据 → 解释数据」的完整闭环。</textarea>
+                    <span class="field-hint">200 字以内 · 学生可在课程列表看到</span>
+                  </div>
+                  <div class="field">
+                    <label>封面图</label>
+                    <div class="cover">
+                      <div class="cover-thumb">Py</div>
+                      <div class="cover-info">
+                        <p>推荐 16:9 比例 · 至少 800×450 · 自动压缩到 200 KB 以内</p>
+                        <div class="acts">
+                          <button class="btn-ghost"><svg><use href="#i-image"/></svg>上传</button>
+                          <button class="btn-ghost">从图库选择</button>
+                          <button class="btn-ghost" style="color:var(--danger)">移除</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field-row">
+                    <div class="field">
+                      <label>分类<span class="req">*</span></label>
+                      <select>
+                        <option>数据</option>
+                        <option>算法</option>
+                        <option>人工智能</option>
+                        <option selected>计算机网络</option>
+                        <option>多学科交叉</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label>难度等级</label>
+                      <select>
+                        <option>★ 入门</option>
+                        <option selected>★★ 简单</option>
+                        <option>★★★ 中等</option>
+                        <option>★★★★ 困难</option>
+                        <option>★★★★★ 挑战</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="field-row">
+                    <div class="field">
+                      <label>学年度<span class="req">*</span></label>
+                      <select>
+                        <option>2024-2025 下学期</option>
+                        <option selected>2025-2026 上学期</option>
+                        <option>2025-2026 下学期</option>
+                        <option>2026-2027 上学期</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label>预计总课时</label>
+                      <input type="number" value="23" min="1" max="200">
+                      <span class="field-hint">用于排课和教师工作量统计</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 章节大纲 -->
+            <div class="ed-card anim" style="animation-delay:.12s">
+              <div class="ed-card-hd">
+                <svg><use href="#i-list"/></svg>章节大纲
+                <span class="hint"><span id="chap-stats">5 章 · 23 课时 · 48 题</span></span>
+              </div>
+              <div class="ed-card-bd">
+
+                <div class="chapter open" data-chap="1">
+                  <div class="chapter-hd">
+                    <span class="chapter-handle" title="拖拽排序"><svg style="font-size:16px"><use href="#i-drag"/></svg></span>
+                    <div class="chapter-num">1</div>
+                    <div class="chapter-title"><input value="Python 基础与开发环境"></div>
+                    <div class="chapter-meta">
+                      <span><b>3</b> 课时</span>
+                      <span><b>6</b> 题</span>
+                    </div>
+                    <div class="chapter-actions">
+                      <button title="上移"><svg><use href="#i-up"/></svg></button>
+                      <button title="下移"><svg><use href="#i-down"/></svg></button>
+                      <button title="删除" class="danger"><svg><use href="#i-trash"/></svg></button>
+                    </div>
+                    <button class="chapter-toggle" onclick="toggleChap(this)" title="展开/折叠"><svg><use href="#i-up"/></svg></button>
+                  </div>
+                  <div class="chapter-bd">
+                    <div class="lesson"><span class="li-num">1.1</span><span class="li-title">变量、数据类型与运算符</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>2</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div class="lesson"><span class="li-num">1.2</span><span class="li-title">控制流：if / for / while</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>2</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div class="lesson"><span class="li-num">1.3</span><span class="li-title">函数与模块</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>2</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div style="display:flex;justify-content:flex-end;padding-top:4px">
+                      <button class="btn-ghost" onclick="addLesson(this)" style="font-size:12px;padding:5px 10px"><svg><use href="#i-plus"/></svg>添加课时</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="chapter" data-chap="2">
+                  <div class="chapter-hd">
+                    <span class="chapter-handle" title="拖拽排序"><svg style="font-size:16px"><use href="#i-drag"/></svg></span>
+                    <div class="chapter-num">2</div>
+                    <div class="chapter-title"><input value="内置数据结构"></div>
+                    <div class="chapter-meta">
+                      <span><b>5</b> 课时</span>
+                      <span><b>12</b> 题</span>
+                    </div>
+                    <div class="chapter-actions">
+                      <button title="上移"><svg><use href="#i-up"/></svg></button>
+                      <button title="下移"><svg><use href="#i-down"/></svg></button>
+                      <button title="删除" class="danger"><svg><use href="#i-trash"/></svg></button>
+                    </div>
+                    <button class="chapter-toggle" onclick="toggleChap(this)" title="展开/折叠"><svg><use href="#i-up"/></svg></button>
+                  </div>
+                  <div class="chapter-bd">
+                    <div class="lesson"><span class="li-num">2.1</span><span class="li-title">列表与元组</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>3</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div class="lesson"><span class="li-num">2.2</span><span class="li-title">字典与集合</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>3</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div class="lesson"><span class="li-num">2.3</span><span class="li-title">字符串处理</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>2</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div class="lesson"><span class="li-num">2.4</span><span class="li-title">推导式与生成器</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>2</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div class="lesson"><span class="li-num">2.5</span><span class="li-title">综合练习：学生成绩分析</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>2</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div style="display:flex;justify-content:flex-end;padding-top:4px">
+                      <button class="btn-ghost" onclick="addLesson(this)" style="font-size:12px;padding:5px 10px"><svg><use href="#i-plus"/></svg>添加课时</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="chapter" data-chap="3">
+                  <div class="chapter-hd">
+                    <span class="chapter-handle"><svg style="font-size:16px"><use href="#i-drag"/></svg></span>
+                    <div class="chapter-num">3</div>
+                    <div class="chapter-title"><input value="文件 I/O 与数据读取"></div>
+                    <div class="chapter-meta">
+                      <span><b>4</b> 课时</span>
+                      <span><b>10</b> 题</span>
+                    </div>
+                    <div class="chapter-actions">
+                      <button title="上移"><svg><use href="#i-up"/></svg></button>
+                      <button title="下移"><svg><use href="#i-down"/></svg></button>
+                      <button title="删除" class="danger"><svg><use href="#i-trash"/></svg></button>
+                    </div>
+                    <button class="chapter-toggle" onclick="toggleChap(this)"><svg><use href="#i-up"/></svg></button>
+                  </div>
+                  <div class="chapter-bd">
+                    <div class="lesson"><span class="li-num">3.1</span><span class="li-title">文本文件读写</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>2</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div class="lesson"><span class="li-num">3.2</span><span class="li-title">CSV 与 JSON 处理</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>3</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div class="lesson"><span class="li-num">3.3</span><span class="li-title">异常处理</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>2</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div class="lesson"><span class="li-num">3.4</span><span class="li-title">实战：分析班级成绩单</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>3</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div style="display:flex;justify-content:flex-end;padding-top:4px">
+                      <button class="btn-ghost" onclick="addLesson(this)" style="font-size:12px;padding:5px 10px"><svg><use href="#i-plus"/></svg>添加课时</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="chapter" data-chap="4">
+                  <div class="chapter-hd">
+                    <span class="chapter-handle"><svg style="font-size:16px"><use href="#i-drag"/></svg></span>
+                    <div class="chapter-num">4</div>
+                    <div class="chapter-title"><input value="pandas 数据分析"></div>
+                    <div class="chapter-meta">
+                      <span><b>6</b> 课时</span>
+                      <span><b>14</b> 题</span>
+                    </div>
+                    <div class="chapter-actions">
+                      <button title="上移"><svg><use href="#i-up"/></svg></button>
+                      <button title="下移"><svg><use href="#i-down"/></svg></button>
+                      <button title="删除" class="danger"><svg><use href="#i-trash"/></svg></button>
+                    </div>
+                    <button class="chapter-toggle" onclick="toggleChap(this)"><svg><use href="#i-up"/></svg></button>
+                  </div>
+                  <div class="chapter-bd">
+                    <div class="lesson"><span class="li-num">4.1</span><span class="li-title">Series 与 DataFrame</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>2</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div class="lesson"><span class="li-num">4.2</span><span class="li-title">数据筛选与排序</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>3</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div class="lesson"><span class="li-num">4.3</span><span class="li-title">分组聚合</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>2</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div class="lesson"><span class="li-num">4.4</span><span class="li-title">数据清洗与缺失值</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>3</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div class="lesson"><span class="li-num">4.5</span><span class="li-title">数据可视化入门</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>2</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div class="lesson"><span class="li-num">4.6</span><span class="li-title">期末项目：城市数据分析</span><span class="li-meta"><b>90</b> 分钟</span><span class="li-meta"><b>2</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div style="display:flex;justify-content:flex-end;padding-top:4px">
+                      <button class="btn-ghost" onclick="addLesson(this)" style="font-size:12px;padding:5px 10px"><svg><use href="#i-plus"/></svg>添加课时</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="chapter" data-chap="5">
+                  <div class="chapter-hd">
+                    <span class="chapter-handle"><svg style="font-size:16px"><use href="#i-drag"/></svg></span>
+                    <div class="chapter-num">5</div>
+                    <div class="chapter-title"><input value="综合实战与期末复习"></div>
+                    <div class="chapter-meta">
+                      <span><b>5</b> 课时</span>
+                      <span><b>6</b> 题</span>
+                    </div>
+                    <div class="chapter-actions">
+                      <button title="上移"><svg><use href="#i-up"/></svg></button>
+                      <button title="下移"><svg><use href="#i-down"/></svg></button>
+                      <button title="删除" class="danger"><svg><use href="#i-trash"/></svg></button>
+                    </div>
+                    <button class="chapter-toggle" onclick="toggleChap(this)"><svg><use href="#i-up"/></svg></button>
+                  </div>
+                  <div class="chapter-bd">
+                    <div class="lesson"><span class="li-num">5.1</span><span class="li-title">真题演练：期中综合</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta"><b>2</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div class="lesson"><span class="li-num">5.2</span><span class="li-title">真题演练：期末综合</span><span class="li-meta"><b>90</b> 分钟</span><span class="li-meta"><b>2</b> 题</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div class="lesson"><span class="li-num">5.3</span><span class="li-title">课程回顾与答疑</span><span class="li-meta"><b>45</b> 分钟</span><span class="li-meta">—</span><div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div></div>
+                    <div style="display:flex;justify-content:flex-end;padding-top:4px">
+                      <button class="btn-ghost" onclick="addLesson(this)" style="font-size:12px;padding:5px 10px"><svg><use href="#i-plus"/></svg>添加课时</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="add-chapter" onclick="addChapter()">
+                  <svg><use href="#i-plus"/></svg>
+                  新增章节
+                </div>
+
+              </div>
+              <div class="ed-card-ft">
+                拖拽左侧手柄可调整章节顺序 · 课时数量会自动汇总到「学情分析」 · 删除章节不会删除引用题目，题目会回到「未分配章节」状态
+              </div>
+            </div>
+
+            <!-- 关联试卷 -->
+            <div class="ed-card anim" style="animation-delay:.14s">
+              <div class="ed-card-hd">
+                <svg><use href="#i-exam"/></svg>关联试卷
+                <span class="hint"><span id="exam-stats">3 份 · 引用 18 次</span></span>
+              </div>
+              <div class="ed-card-bd">
+
+                <div style="display:flex;flex-direction:column;gap:8px" id="exam-list">
+
+                  <div class="exam-link" data-eid="A0001">
+                    <div class="exam-link-id">
+                      <span class="exam-no">A0001</span>
+                      <div style="min-width:0">
+                        <div class="exam-link-title">高一数学期中考试</div>
+                        <div class="exam-link-meta">
+                          <span>5 题 · 100 分</span>
+                          <span class="sep"></span>
+                          <span>★★★ 中等</span>
+                          <span class="sep"></span>
+                          <span>已被 <b style="color:var(--fg);font-weight:600">12</b> 门课程引用</span>
+                          <span class="exam-link-tag">期中考试</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="exam-link-actions">
+                      <button title="在试卷库查看" onclick="viewExam('A0001')"><svg><use href="#i-eye"/></svg></button>
+                      <button title="移除" class="danger" onclick="removeExam(this, 'A0001')"><svg><use href="#i-x"/></svg></button>
+                    </div>
+                  </div>
+
+                  <div class="exam-link" data-eid="A0003">
+                    <div class="exam-link-id">
+                      <span class="exam-no">A0003</span>
+                      <div style="min-width:0">
+                        <div class="exam-link-title">Python 基础测试卷</div>
+                        <div class="exam-link-meta">
+                          <span>8 题 · 100 分</span>
+                          <span class="sep"></span>
+                          <span>★★ 简单</span>
+                          <span class="sep"></span>
+                          <span>已被 <b style="color:var(--fg);font-weight:600">4</b> 门课程引用</span>
+                          <span class="exam-link-tag green">章节小测</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="exam-link-actions">
+                      <button title="在试卷库查看" onclick="viewExam('A0003')"><svg><use href="#i-eye"/></svg></button>
+                      <button title="移除" class="danger" onclick="removeExam(this, 'A0003')"><svg><use href="#i-x"/></svg></button>
+                    </div>
+                  </div>
+
+                  <div class="exam-link" data-eid="A0015">
+                    <div class="exam-link-id">
+                      <span class="exam-no">A0015</span>
+                      <div style="min-width:0">
+                        <div class="exam-link-title">期末综合编程（上）</div>
+                        <div class="exam-link-meta">
+                          <span>6 题 · 100 分</span>
+                          <span class="sep"></span>
+                          <span>★★★★ 困难</span>
+                          <span class="sep"></span>
+                          <span>已被 <b style="color:var(--fg);font-weight:600">2</b> 门课程引用</span>
+                          <span class="exam-link-tag purple">期末考试</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="exam-link-actions">
+                      <button title="在试卷库查看" onclick="viewExam('A0015')"><svg><use href="#i-eye"/></svg></button>
+                      <button title="移除" class="danger" onclick="removeExam(this, 'A0015')"><svg><use href="#i-x"/></svg></button>
+                    </div>
+                  </div>
+
+                </div>
+
+                <div class="exam-link-add" onclick="addExam()" style="margin-top:10px">
+                  <svg><use href="#i-plus"/></svg>
+                  添加关联试卷
+                </div>
+
+                <div class="exam-tip" style="margin-top:14px">
+                  <svg><use href="#i-info"/></svg>
+                  <div>
+                    <b>试卷库协作 ·</b> 引用试卷后，本课程的学生会直接看到试卷内容。
+                    其他教师可通过试卷编号（如 <code>A0001</code>）一键复制或引用同一份试卷，无需重复出题。
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- 学习目标 -->
+            <div class="ed-card anim" style="animation-delay:.18s">
+              <div class="ed-card-hd"><svg><use href="#i-judge"/></svg>学习目标<span class="hint">完成本课程后学生应掌握的能力</span></div>
+              <div class="ed-card-bd">
+                <div class="fm">
+                  <div class="field">
+                    <label>知识目标</label>
+                    <textarea style="min-height:64px">1. 熟练掌握 Python 内置数据结构（list / dict / set / tuple）的特性与适用场景
+2. 理解函数式编程与模块化思想，能写出可复用的工具函数
+3. 掌握 pandas DataFrame 的核心操作：筛选、聚合、连接、透视</textarea>
+                  </div>
+                  <div class="field">
+                    <label>能力目标</label>
+                    <textarea style="min-height:64px">1. 能独立完成「读 CSV → 清洗 → 聚合 → 输出」完整数据处理流程
+2. 能用 matplotlib 绘制 4 种基础图表，并解释数据含义
+3. 具备 200 行代码以内的项目组织能力</textarea>
+                  </div>
+                  <div class="field">
+                    <label>评价方式</label>
+                    <textarea style="min-height:64px">平时作业 40% + 期中项目 20% + 期末综合 40%
+平时作业：每周一次客观题作业，共 12 次
+期中项目：「分析班级成绩单」数据分析报告
+期末综合：90 分钟限时综合编程</textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 共享与可见性 -->
+            <div class="ed-card anim" style="animation-delay:.20s">
+              <div class="ed-card-hd"><svg><use href="#i-link"/></svg>共享与可见性<span class="hint">其他教师可协同编辑</span></div>
+              <div class="ed-card-bd">
+                <div class="field-row">
+                  <div class="field">
+                    <label>可见范围</label>
+                    <select>
+                      <option>仅我可见</option>
+                      <option>同教研组</option>
+                      <option selected>全校教师</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>学生可见性</label>
+                    <select>
+                      <option selected>关联班级可见</option>
+                      <option>所有学生可见</option>
+                      <option>仅教师预览</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="field" style="margin-top:12px">
+                  <label>允许复制本课程</label>
+                  <select>
+                    <option>不允许</option>
+                    <option selected>同教研组可复制</option>
+                    <option>全校教师可复制</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ============== 右栏 ============== -->
+          <aside class="sidebar anim" style="animation-delay:.10s">
+
+            <!-- 教师 -->
+            <div class="ed-card">
+              <div class="ed-card-hd"><svg><use href="#i-grad"/></svg>授课教师</div>
+              <div class="ed-card-bd">
+                <div class="teacher-card">
+                  <div class="av">王</div>
+                  <div class="ti">
+                    <p>王建国</p>
+                    <span>T0018 · 信息技术</span>
+                  </div>
+                  <span class="badge">所有者</span>
+                </div>
+                <div class="co-teachers">
+                  <span class="co-tag"><span class="av">陈</span>陈丽华 <span class="x">×</span></span>
+                  <span class="co-tag"><span class="av">李</span>李雪 <span class="x">×</span></span>
+                  <span class="co-tag"><span class="av">林</span>林志远 <span class="x">×</span></span>
+                  <span class="co-add" onclick="addTeacher()">+ 添加</span>
+                </div>
+                <p style="margin-top:10px;font-size:11.5px;color:var(--subtle);line-height:1.5">
+                  协同教师可以编辑章节、调整题目、查看学情，但不能删除课程或转让所有权
+                </p>
+              </div>
+            </div>
+
+            <!-- 关联班级 -->
+            <div class="ed-card">
+              <div class="ed-card-hd"><svg><use href="#i-users"/></svg>关联班级<span class="hint">4 班 · 186 名学生</span></div>
+              <div class="ed-card-bd">
+                <div class="class-list">
+                  <label class="class-row"><input type="checkbox" checked>
+                    <span class="name">高一(1)班</span>
+                    <span class="meta">52 人</span>
+                  </label>
+                  <label class="class-row"><input type="checkbox" checked>
+                    <span class="name">高一(2)班</span>
+                    <span class="meta">48 人</span>
+                  </label>
+                  <label class="class-row"><input type="checkbox" checked>
+                    <span class="name">高一(3)班</span>
+                    <span class="meta">45 人</span>
+                  </label>
+                  <label class="class-row"><input type="checkbox" checked>
+                    <span class="name">高一(4)班</span>
+                    <span class="meta">41 人</span>
+                  </label>
+                  <label class="class-row"><input type="checkbox">
+                    <span class="name">高一(5)班</span>
+                    <span class="meta">47 人</span>
+                  </label>
+                </div>
+                <button class="btn-ghost" style="margin-top:10px;width:100%;justify-content:center" onclick="addClass()">
+                  <svg><use href="#i-plus"/></svg>添加班级
+                </button>
+              </div>
+            </div>
+
+            <!-- 数据摘要 -->
+            <div class="ed-card">
+              <div class="ed-card-hd"><svg><use href="#i-info"/></svg>数据摘要</div>
+              <div class="ed-card-bd" style="padding-top:6px;padding-bottom:6px">
+                <div class="limit-row"><label>总课时</label><b style="font-size:13px;font-variant-numeric:tabular-nums">23</b></div>
+                <div class="limit-row"><label>引用题目</label><b style="font-size:13px;font-variant-numeric:tabular-nums">48</b></div>
+                <div class="limit-row"><label>引用试卷</label><b style="font-size:13px;font-variant-numeric:tabular-nums">3</b></div>
+                <div class="limit-row"><label>关联班级</label><b style="font-size:13px;font-variant-numeric:tabular-nums">4</b></div>
+                <div class="limit-row"><label>学习人数</label><b style="font-size:13px;font-variant-numeric:tabular-nums">186</b></div>
+                <div class="limit-row"><label>累计提交</label><b style="font-size:13px;font-variant-numeric:tabular-nums">8,724</b></div>
+                <div class="limit-row"><label>平均通过率</label><b style="font-size:13px;font-variant-numeric:tabular-nums;color:var(--success)">78.2%</b></div>
+              </div>
+            </div>
+
+            <!-- 操作记录 -->
+            <div class="ed-card">
+              <div class="ed-card-hd"><svg><use href="#i-clock"/></svg>操作记录</div>
+              <div class="ed-card-bd" style="padding-top:6px;padding-bottom:6px;font-size:12.5px;color:var(--muted)">
+                <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;gap:10px">
+                  <div style="width:6px;height:6px;border-radius:50%;background:var(--primary);margin-top:7px;flex-shrink:0"></div>
+                  <div><b style="color:var(--fg);font-weight:500">王建国</b> · 添加了课时 4.6「期末项目」<br><span style="font-size:11.5px">2025-09-12 16:48</span></div>
+                </div>
+                <div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;gap:10px">
+                  <div style="width:6px;height:6px;border-radius:50%;background:var(--accent);margin-top:7px;flex-shrink:0"></div>
+                  <div><b style="color:var(--fg);font-weight:500">陈丽华</b> · 编辑了章节 3「文件 I/O」<br><span style="font-size:11.5px">2025-09-10 11:23</span></div>
+                </div>
+                <div style="padding:8px 0;display:flex;gap:10px">
+                  <div style="width:6px;height:6px;border-radius:50%;background:var(--muted);margin-top:7px;flex-shrink:0"></div>
+                  <div><b style="color:var(--fg);font-weight:500">王建国</b> · 创建课程<br><span style="font-size:11.5px">2025-08-15 09:12</span></div>
+                </div>
+              </div>
+            </div>
+
+          </aside>
+
+        </div>
+
+        <!-- 底部操作栏 -->
+        <div class="foot-bar anim" style="animation-delay:.24s">
+          <span class="info">
+            <svg><use href="#i-info"/></svg>
+            <span class="save-state saved" id="save-state"><span class="dot"></span>所有更改已保存 · 8 分钟前</span>
+          </span>
+          <div class="acts">
+            <button class="btn-ghost" onclick="discardAll()">放弃修改</button>
+            <button class="btn-ghost" onclick="saveDraft()">保存草稿</button>
+            <button class="btn" onclick="publishCourse()"><svg><use href="#i-check"/></svg>保存并发布</button>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+/* 章节展开折叠 */
+function toggleChap(btn){
+  var chap = btn.closest('.chapter');
+  chap.classList.toggle('open');
+  markDirty();
+}
+
+/* 新增章节 */
+function addChapter(){
+  var chap = document.querySelector('.chapter:last-of-type').cloneNode(true);
+  // 重置编号与字段
+  var nextNum = document.querySelectorAll('.chapter').length + 1;
+  chap.dataset.chap = nextNum;
+  chap.querySelector('.chapter-num').textContent = nextNum;
+  chap.querySelector('input').value = '';
+  chap.querySelector('.chapter-meta').innerHTML = '<span><b>0</b> 课时</span><span><b>0</b> 题</span>';
+  chap.querySelector('.chapter-bd').innerHTML =
+    '<div style="display:flex;justify-content:center;padding:20px;color:var(--muted);font-size:13px">' +
+      '空章节 · 添加第一堂课开始编辑' +
+    '</div>' +
+    '<div style="display:flex;justify-content:flex-end;padding-top:4px">' +
+      '<button class="btn-ghost" onclick="addLesson(this)" style="font-size:12px;padding:5px 10px"><svg><use href="#i-plus"/></svg>添加课时</button>' +
+    '</div>';
+  chap.classList.add('open');
+  document.querySelector('.add-chapter').before(chap);
+  refreshChapStats();
+  markDirty();
+  toast('已新增章节 · 默认展开');
+}
+
+/* 添加课时 */
+function addLesson(btn){
+  Modal.form({
+    title:'添加课时',
+    fields:[
+      {name:'title',label:'课时标题',placeholder:'例如：字符串处理',required:true,maxlength:40},
+      {name:'min',label:'时长（分钟）',type:'number',value:45,min:10,max:200},
+      {name:'desc',type:'textarea',label:'课时说明（选填）',placeholder:'本节课的学习目标和作业安排…',rows:3}
+    ],
+    submitText:'添加',
+    onSubmit:function(v){
+      var bd = btn.closest('.chapter-bd');
+      var lessons = bd.querySelectorAll('.lesson').length;
+      var chapNum = btn.closest('.chapter').dataset.chap;
+      var num = chapNum + '.' + (lessons + 1);
+      var div = document.createElement('div');
+      div.className = 'lesson';
+      div.innerHTML = '<span class="li-num">'+num+'</span><span class="li-title">'+v.title+'</span>' +
+        '<span class="li-meta"><b>'+v.min+'</b> 分钟</span>' +
+        '<span class="li-meta">—</span>' +
+        '<div class="li-ops"><button title="编辑"><svg><use href="#i-set"/></svg></button></div>';
+      btn.parentElement.before(div);
+      markDirty();
+      toast('已添加课时 '+num);
+    }
+  });
+}
+
+/* 章节操作（事件委托） */
+document.querySelector('.ed-card-bd').addEventListener('click', function(e){
+  var chap = e.target.closest('.chapter');
+  if(!chap) return;
+  if(e.target.closest('.chapter-actions .danger')){
+    Modal.confirm({
+      title:'删除该章节？',
+      body:['章节将被永久删除','章节下的 '+chap.querySelectorAll('.lesson').length+' 个课时也会一起删除','引用本章的题目会回到「未分配章节」状态'],
+      confirmText:'删除章节', danger:true,
+      onConfirm:function(){
+        chap.remove();
+        refreshChapStats();
+        markDirty();
+        toast('已删除章节');
+      }
+    });
+  } else if(e.target.closest('.chapter-actions button[title="上移"]')){
+    if(chap.previousElementSibling && chap.previousElementSibling.classList.contains('chapter')){
+      chap.parentNode.insertBefore(chap, chap.previousElementSibling);
+      refreshChapNums();
+      markDirty();
+    }
+  } else if(e.target.closest('.chapter-actions button[title="下移"]')){
+    if(chap.nextElementSibling && chap.nextElementSibling.classList.contains('chapter')){
+      chap.parentNode.insertBefore(chap.nextElementSibling, chap);
+      refreshChapNums();
+      markDirty();
+    }
+  }
+});
+
+function refreshChapStats(){
+  var chaps = document.querySelectorAll('.chapter');
+  var totalLessons = 0;
+  chaps.forEach(function(c){ totalLessons += c.querySelectorAll('.lesson').length; });
+  document.getElementById('chap-stats').textContent = chaps.length + ' 章 · ' + totalLessons + ' 课时 · — 题';
+}
+function refreshChapNums(){
+  document.querySelectorAll('.chapter').forEach(function(c, i){
+    c.dataset.chap = i + 1;
+    c.querySelector('.chapter-num').textContent = i + 1;
+    c.querySelectorAll('.lesson .li-num').forEach(function(n, j){
+      n.textContent = (i+1) + '.' + (j+1);
+    });
+  });
+}
+
+/* 添加协同教师 */
+function addTeacher(){
+  Modal.form({
+    title:'添加协同教师',
+    fields:[
+      {name:'tid',label:'教师工号',placeholder:'例如：T0019',required:true,pattern:/^T\d{4}$/,hint:'4 位数字 · T0001-T9999'},
+      {name:'role',type:'select',label:'角色',value:'editor',options:[
+        {value:'editor',label:'可编辑（推荐）'},
+        {value:'viewer',label:'只读（仅查看学情）'}
+      ]}
+    ],
+    submitText:'添加',
+    onSubmit:function(v){
+      var span = document.createElement('span');
+      span.className = 'co-tag';
+      span.innerHTML = '<span class="av">新</span>'+v.tid+' <span class="x">×</span>';
+      document.querySelector('.co-add').before(span);
+      markDirty();
+      toast('已邀请 '+v.tid+' 协同');
+    }
+  });
+}
+
+/* 添加班级 */
+function addClass(){
+  Modal.form({
+    title:'添加班级',
+    fields:[
+      {name:'grade',type:'select',label:'年级',value:'g1',options:[
+        {value:'g1',label:'高一年级'},
+        {value:'g2',label:'高二年级'},
+        {value:'g3',label:'高三年级'}
+      ]},
+      {name:'num',label:'班级编号',type:'number',value:5,min:1,max:30,required:true},
+      {name:'head',label:'班主任',placeholder:'姓名（选填）',maxlength:20}
+    ],
+    submitText:'添加',
+    onSubmit:function(v){
+      var gradeName = v.grade === 'g1' ? '高一' : v.grade === 'g2' ? '高二' : '高三';
+      var label = document.createElement('label');
+      label.className = 'class-row';
+      label.innerHTML = '<input type="checkbox" checked><span class="name">'+gradeName+'(' + v.num + ')班</span><span class="meta">— 人</span>';
+      document.querySelector('.class-list').appendChild(label);
+      markDirty();
+      toast('已添加 '+gradeName+'(' + v.num + ')班');
+    }
+  });
+}
+
+/* 顶部按钮 */
+function previewCourse(){
+  Modal.confirm({
+    title:'在学生端预览？',
+    body:['以学生视角查看课程首页、章节列表、样例题目','用于检查展示效果'],
+    confirmText:'打开预览',
+    onConfirm:function(){ toast('预览窗口已打开'); }
+  });
+}
+function shareCourse(){
+  Modal.confirm({
+    title:'复制课程分享链接？',
+    body:['链接格式：https://pylearn.school/c/py-data-2025','链接 7 天有效 · 收到链接的教师可申请复制本课程'],
+    confirmText:'复制链接',
+    onConfirm:function(){
+      toast('已复制 · 7 天有效');
+    }
+  });
+}
+function archiveCourse(){
+  Modal.confirm({
+    title:'归档该课程？',
+    body:['归档后教师无法将该课程加入新作业','已有的引用与学生成绩不受影响','归档课程可随时恢复'],
+    confirmText:'归档课程',
+    onConfirm:function(){ toast('课程已归档'); }
+  });
+}
+function publishCourse(){
+  Modal.confirm({
+    title:'保存并发布该课程？',
+    body:['所有修改将立即对关联班级的学生可见','班级层面的覆盖设置仍由各班教师控制'],
+    confirmText:'保存并发布',
+    onConfirm:function(){
+      markSaved('已保存 · 刚刚');
+      toast('课程已保存并发布');
+    }
+  });
+}
+function discardAll(){
+  Modal.confirm({
+    title:'放弃所有未保存修改？',
+    body:['当前编辑的内容将丢失','章节与课时结构恢复为上次保存版本'],
+    confirmText:'放弃修改', danger:true,
+    onConfirm:function(){
+      markSaved('已恢复上次保存 · 8 分钟前');
+      toast('已恢复');
+    }
+  });
+}
+function saveDraft(){
+  markSaved('草稿已保存 · 刚刚');
+  toast('草稿已保存');
+}
+
+/* 保存状态 */
+function markDirty(){
+  var s = document.getElementById('save-state');
+  s.className = 'save-state dirty';
+  s.innerHTML = '<span class="dot"></span>有未保存的修改';
+}
+function markSaved(text){
+  var s = document.getElementById('save-state');
+  s.className = 'save-state saved';
+  s.innerHTML = '<span class="dot"></span>' + text;
+}
+
+/* 监听编辑触发 dirty */
+document.addEventListener('input', function(e){
+  if(e.target.matches('.chapter-title input, .fm input, .fm textarea, .fm select')){
+    markDirty();
+  }
+});
+
+/* 试卷库 — 公共试卷字典（mock） */
+var EXAM_LIB = {
+  A0001: {title: '高一数学期中考试',      count: 5,  score: 100, diff: '★★★ 中等', refs: 12, tag: '期中考试', tagCls: ''},
+  A0002: {title: '高一英语阅读综合',      count: 8,  score: 100, diff: '★★ 简单', refs: 6,  tag: '章节小测', tagCls: 'green'},
+  A0003: {title: 'Python 基础测试卷',    count: 8,  score: 100, diff: '★★ 简单', refs: 4,  tag: '章节小测', tagCls: 'green'},
+  A0004: {title: '算法入门阶段测',        count: 6,  score: 100, diff: '★★ 简单', refs: 3,  tag: '章节小测', tagCls: 'green'},
+  A0006: {title: '数据结构期末模拟',      count: 8,  score: 100, diff: '★★★★ 困难', refs: 5,  tag: '期末考试', tagCls: 'purple'},
+  A0010: {title: 'pandas 数据处理专项',  count: 5,  score: 80,  diff: '★★★ 中等', refs: 2,  tag: '章节小测', tagCls: 'green'},
+  A0012: {title: '高一期中（信息学）',    count: 10, score: 100, diff: '★★★ 中等', refs: 8,  tag: '期中考试', tagCls: ''},
+  A0015: {title: '期末综合编程（上）',    count: 6,  score: 100, diff: '★★★★ 困难', refs: 2,  tag: '期末考试', tagCls: 'purple'},
+  A0018: {title: '编程入门综合测试',      count: 4,  score: 60,  diff: '★★ 简单', refs: 7,  tag: '章节小测', tagCls: 'green'},
+  A0022: {title: '递归与分治单元测',      count: 5,  score: 100, diff: '★★★ 中等', refs: 3,  tag: '章节小测', tagCls: 'green'},
+  A0031: {title: '高一期末模拟卷',        count: 12, score: 150, diff: '★★★★ 困难', refs: 1,  tag: '期末考试', tagCls: 'purple'},
+  A0044: {title: '高一新生摸底',          count: 6,  score: 100, diff: '★ 入门', refs: 4,  tag: '章节小测', tagCls: 'green'}
+};
+
+/* 关联试卷 · 添加 */
+function addExam(){
+  // 用 Modal.form 的 hint 给用户看可选列表
+  var keys = Object.keys(EXAM_LIB).slice(0, 8).join(' · ');
+  Modal.form({
+    title: '关联试卷库中的试卷',
+    bodyIntro: '从公共试卷库 47 份试卷中挑选 · 直接输入试卷编号可引用其他教师创建的公开试卷',
+    fields: [
+      {name: 'eid', label: '试卷编号', placeholder: '例如 A0001', required: true, pattern: /^A\d{4}$/,
+       hint: 'A + 4 位数字 · 例：A0001 / A0022'},
+      {name: 'note', type: 'textarea', label: '关联说明（选填）', placeholder: '例如：作为章节 5 单元测验', rows: 2, maxlength: 60}
+    ],
+    submitText: '关联试卷',
+    onSubmit: function(v){
+      var eid = v.eid.toUpperCase();
+      // 检查是否已关联
+      if(document.querySelector('.exam-link[data-eid="'+eid+'"]')){
+        toast('试卷 '+eid+' 已经在关联列表中', 'warning');
+        return;
+      }
+      var ex = EXAM_LIB[eid];
+      var node = document.createElement('div');
+      node.className = 'exam-link';
+      node.dataset.eid = eid;
+      if(ex){
+        node.innerHTML =
+          '<div class="exam-link-id">' +
+            '<span class="exam-no">'+eid+'</span>' +
+            '<div style="min-width:0">' +
+              '<div class="exam-link-title">'+ex.title+'</div>' +
+              '<div class="exam-link-meta">' +
+                '<span>'+ex.count+' 题 · '+ex.score+' 分</span>' +
+                '<span class="sep"></span>' +
+                '<span>'+ex.diff+'</span>' +
+                '<span class="sep"></span>' +
+                '<span>已被 <b style="color:var(--fg);font-weight:600">'+ex.refs+'</b> 门课程引用</span>' +
+                '<span class="exam-link-tag '+(ex.tagCls||'')+'">'+ex.tag+'</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="exam-link-actions">' +
+            '<button title="在试卷库查看" onclick="viewExam(\''+eid+'\')"><svg><use href="#i-eye"/></svg></button>' +
+            '<button title="移除" class="danger" onclick="removeExam(this, \''+eid+'\')"><svg><use href="#i-x"/></svg></button>' +
+          '</div>';
+      } else {
+        // 不在字典里：当作「其他教师公开试卷」处理
+        node.innerHTML =
+          '<div class="exam-link-id">' +
+            '<span class="exam-no">'+eid+'</span>' +
+            '<div style="min-width:0">' +
+              '<div class="exam-link-title">外部试卷 · '+(v.note||'未命名')+'</div>' +
+              '<div class="exam-link-meta">' +
+                '<span style="color:var(--warning)">未在本地试卷库找到 · 引用外部公开试卷</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="exam-link-actions">' +
+            '<button title="在试卷库查看" onclick="viewExam(\''+eid+'\')"><svg><use href="#i-eye"/></svg></button>' +
+            '<button title="移除" class="danger" onclick="removeExam(this, \''+eid+'\')"><svg><use href="#i-x"/></svg></button>' +
+          '</div>';
+      }
+      document.getElementById('exam-list').appendChild(node);
+      refreshExamStats();
+      markDirty();
+      toast('已关联试卷 '+eid+(ex?(' · '+ex.title):' · 外部公开试卷'), 'success');
+    }
+  });
+}
+
+/* 查看试卷（在试卷库） */
+function viewExam(eid){
+  toast('跳转到试卷 '+eid+' · admin-exam-edit.html?eid='+eid, 'info');
+  // 真实跳转：window.location.href = 'admin-exam-edit.html?eid='+eid;
+}
+
+/* 移除关联 */
+function removeExam(btn, eid){
+  Modal.confirm({
+    title: '移除关联试卷 '+eid+'？',
+    body: ['本课程的章节作业将不再包含此试卷','若学生在考试中已完成作答，成绩数据保留','试卷本身仍在公共试卷库中'],
+    confirmText:'移除关联',
+    onConfirm: function(){
+      btn.closest('.exam-link').remove();
+      refreshExamStats();
+      markDirty();
+      toast('已移除 '+eid, 'success');
+    }
+  });
+}
+
+/* 刷新关联试卷统计 */
+function refreshExamStats(){
+  var list = document.querySelectorAll('#exam-list .exam-link');
+  var refs = 0;
+  list.forEach(function(n){
+    var eid = n.dataset.eid;
+    var ex = EXAM_LIB[eid];
+    if(ex) refs += ex.refs;
+  });
+  document.getElementById('exam-stats').textContent = list.length + ' 份 · 引用 '+refs+' 次';
+}
+
+/* 章节原生 HTML5 拖拽（mockup 演示用） */
+(function(){
+  var drag = null;
+  document.querySelectorAll('.chapter-handle').forEach(function(h){
+    h.addEventListener('mousedown', function(){
+      var chap = h.closest('.chapter');
+      chap.draggable = true;
+      chap.addEventListener('dragstart', function(){ drag = chap; chap.classList.add('dragging'); });
+      chap.addEventListener('dragend', function(){
+        chap.classList.remove('dragging');
+        document.querySelectorAll('.chapter').forEach(function(c){c.classList.remove('drag-over');});
+        chap.draggable = false;
+        refreshChapNums();
+        markDirty();
+      });
+    });
+  });
+  document.querySelectorAll('.chapter').forEach(function(c){
+    c.addEventListener('dragover', function(e){
+      e.preventDefault();
+      if(!drag || drag === c) return;
+      c.classList.add('drag-over');
+    });
+    c.addEventListener('dragleave', function(){ c.classList.remove('drag-over'); });
+    c.addEventListener('drop', function(e){
+      e.preventDefault();
+      c.classList.remove('drag-over');
+      if(!drag || drag === c) return;
+      c.parentNode.insertBefore(drag, c);
+      drag = null;
+    });
+  });
+})();
+</script>
+</body>
+</html>

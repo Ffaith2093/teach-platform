@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>课程资源 · Python 程序设计基础 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --pink:#EC4899; --pink-subtle:#FCE7F3;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0; --border-strong:#CBD5E1;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171; --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --pink:#F472B6; --pink-subtle:#4A1232;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548; --border-strong:#3D4A60;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--surface);color:var(--fg);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--primary),#38BDF8);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--accent-subtle);color:var(--accent);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto;min-height:0}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);margin-bottom:2px;transition:background .18s,color .18s}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;
+         background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,#0EA5E9,#38BDF8);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:14px;
+        padding:0 24px;border-bottom:1px solid var(--border);background:var(--bg)}
+.searchbox{flex:1;max-width:480px;position:relative}
+.searchbox input{width:100%;height:36px;padding:0 14px 0 38px;border-radius:8px;border:1px solid var(--border);
+                 background:var(--surface);font-size:13.5px;color:var(--fg);outline:none;transition:.18s}
+.searchbox input:focus{border-color:var(--primary);background:var(--card)}
+.searchbox svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--subtle)}
+.top-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;
+          display:flex;transition:background .18s,color .18s;position:relative}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+.icon-btn .dot{position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--danger);border:2px solid var(--bg)}
+
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;
+       font-size:11px;font-weight:500;white-space:nowrap}
+.badge i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.b-w{background:var(--warning-subtle);color:var(--warning)}
+.b-d{background:var(--danger-subtle);color:var(--danger)}
+.b-p{background:var(--primary-subtle);color:var(--primary)}
+.b-s{background:var(--success-subtle);color:var(--success)}
+.b-a{background:var(--accent-subtle);color:var(--accent)}
+.b-n{background:var(--purple-subtle);color:var(--purple)}
+.b-m{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:13px;font-weight:500;transition:background .18s}
+.btn:hover{background:var(--primary-hover)}
+.btn.ghost{background:var(--card);color:var(--muted);border:1px solid var(--border)}
+.btn.sm{padding:5px 12px;font-size:12px}
+
+.content{padding:24px 28px 48px;max-width:1320px;width:100%;margin:0 auto}
+
+.breadcrumb{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.breadcrumb a{color:var(--muted)}
+.breadcrumb a:hover{color:var(--primary)}
+.breadcrumb svg{font-size:11px;color:var(--subtle)}
+.breadcrumb .on{color:var(--fg);font-weight:500}
+
+.page-h{display:flex;align-items:flex-end;gap:24px;margin-bottom:16px;flex-wrap:wrap}
+.page-h .ph-left{flex:1;min-width:240px}
+.page-h h1{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.page-h .sub{margin-top:4px;color:var(--muted);font-size:13px}
+.page-h .ph-right{display:flex;gap:8px;flex-wrap:wrap}
+
+/* 资源布局 */
+.res-layout{display:grid;grid-template-columns:240px 1fr;gap:18px;align-items:flex-start}
+
+/* 目录树 */
+.tree{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 0;position:sticky;top:84px;max-height:calc(100vh - 100px);overflow-y:auto}
+.tree-h{padding:0 16px 12px;font-size:12px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--border)}
+.tree-h .count{margin-left:auto;background:var(--surface);color:var(--muted);font-weight:500;padding:1px 7px;border-radius:4px;font-size:10.5px}
+.tree ul{list-style:none;padding:6px 0}
+.tree-item{display:flex;align-items:center;gap:8px;padding:7px 16px;font-size:13px;color:var(--muted);
+           cursor:pointer;transition:.15s;position:relative}
+.tree-item:hover{background:var(--surface);color:var(--fg)}
+.tree-item.on{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.tree-item.on::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:3px;background:var(--primary);border-radius:0 2px 2px 0}
+.tree-item svg.arr{font-size:11px;margin-left:auto;transition:transform .15s}
+.tree-item.open svg.arr{transform:rotate(90deg)}
+.tree-item .ct{font-size:10.5px;color:var(--subtle);background:var(--surface);padding:1px 6px;border-radius:4px;font-variant-numeric:tabular-nums;margin-left:auto}
+.tree-item.on .ct{background:var(--card);color:var(--primary-subtle-fg,#0284C7)}
+.tree ul ul{padding:0}
+.tree ul ul .tree-item{padding-left:36px}
+.tree ul ul ul .tree-item{padding-left:54px}
+
+/* 主区 */
+.res-main{display:flex;flex-direction:column;gap:14px}
+.filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+            padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px}
+.filter-bar select{height:34px;padding:0 28px 0 12px;border-radius:8px;border:1px solid var(--border);
+                   background:var(--surface);font-size:13px;color:var(--fg);outline:none;cursor:pointer;font-family:inherit}
+.filter-bar .spacer{flex:1}
+.filter-bar .count{font-size:12px;color:var(--muted)}
+
+/* 资源网格 */
+.res-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.res{padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--card);
+     display:flex;align-items:flex-start;gap:12px;transition:.18s;cursor:pointer;position:relative}
+.res:hover{border-color:var(--primary-muted);box-shadow:var(--shadow-md)}
+.res-ic{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+        font-size:18px;flex-shrink:0}
+.res-ic.pdf{background:var(--danger-subtle);color:var(--danger)}
+.res-ic.pptx{background:var(--warning-subtle);color:var(--warning)}
+.res-ic.docx{background:var(--primary-subtle);color:var(--primary)}
+.res-ic.xlsx{background:var(--success-subtle);color:var(--success)}
+.res-ic.zip{background:var(--purple-subtle);color:var(--purple)}
+.res-ic.py{background:var(--accent-subtle);color:var(--accent)}
+.res-ic.ipynb{background:var(--pink-subtle);color:var(--pink)}
+.res-ic.md{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+.res-ic.png{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+.res-ic.mp4{background:var(--danger-subtle);color:var(--danger)}
+.res-body{flex:1;min-width:0}
+.res-body .t{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.res-body .m{margin-top:4px;font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.res-body .m .sep{color:var(--border-strong)}
+.res-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.res-actions .btn{padding:5px 10px;font-size:12px}
+.res-badge{position:absolute;top:10px;right:10px}
+
+@media (max-width:1100px){
+  .res-layout{grid-template-columns:1fr}
+  .res-grid{grid-template-columns:1fr}
+  .tree{position:relative;top:0;max-height:none}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="i-dash" viewBox="0 0 24 24"><path d="M3 12L12 3l9 9"/><path d="M5 10v10a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V10"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+<symbol id="i-grade" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13l2 2 4-4"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
+<symbol id="i-hist" viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 106 5.3L3 8"/><path d="M12 7v5l4 2"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-5"/></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 002.5 2.5z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></symbol>
+<symbol id="i-folder-open" viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2zM22 19l-3-9H6"/></symbol>
+<symbol id="i-arr" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+<symbol id="i-archive" viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+</defs>
+</svg>
+
+<div class="app">
+
+<aside class="side">
+  <div class="logo">
+      <div class="logo-mark">Py</div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">学生端</span>
+    </div>
+  <nav class="nav">
+    <a class="nav-item" href="student-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+    <a class="nav-item" href="student-my-class.html"><svg><use href="#i-class"/></svg>我的班级</a>
+    <a class="nav-item active" href="student-courses.html"><svg><use href="#i-book"/></svg>我的课程</a>
+    <a class="nav-item" href="student-assignments.html"><svg><use href="#i-file"/></svg>作业<span class="nav-count">2</span></a>
+    <a class="nav-item" href="student-problems.html"><svg><use href="#i-code"/></svg>题库练习</a>
+    <a class="nav-item" href="student-submissions.html"><svg><use href="#i-hist"/></svg>提交记录</a>
+    <a class="nav-item" href="student-exams.html"><svg><use href="#i-clip"/></svg>考试</a>
+      <a class="nav-item" href="student-grades.html"><svg><use href="#i-grade"/></svg>成绩单</a>
+
+  </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈思雨</div>
+        <div class="s">高一(3)班</div>
+      </div>
+    </div>
+  
+</aside>
+
+<main class="main">
+
+  <header class="topbar">
+    <div class="searchbox">
+      <svg><use href="#i-search"/></svg>
+      <input placeholder="搜索文件名、章节..." />
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" title="通知"><svg><use href="#i-bell"/></svg><span class="dot"></span></button>
+      <button class="icon-btn" title="主题" onclick="tt()"><svg><use href="#i-sun" id="use-theme"/></svg></button></div>
+  </header>
+
+  <div class="content">
+
+    <div class="breadcrumb">
+      <a href="student-courses.html">我的课程</a>
+      <svg><use href="#i-chev"/></svg>
+      <a href="student-course-detail.html?cid=C0001">Python 程序设计基础</a>
+      <svg><use href="#i-chev"/></svg>
+      <span class="on">课程资源</span>
+    </div>
+
+    <div class="page-h">
+      <div class="ph-left">
+        <h1>课程资源</h1>
+        <div class="sub">Python 程序设计基础 · <b>24 个文件</b> · 上次更新 5 天前</div>
+      </div>
+      <div class="ph-right">
+        <button class="btn ghost"><svg><use href="#i-download"/></svg>我的下载</button>
+      </div>
+    </div>
+
+    <div class="res-layout">
+
+      <!-- 目录树 -->
+      <aside class="tree">
+        <div class="tree-h">
+          <svg style="color:var(--primary);font-size:14px"><use href="#i-folder"/></svg>
+          全部文件
+          <span class="count">24</span>
+        </div>
+        <ul>
+          <li>
+            <div class="tree-item">
+              <svg><use href="#i-folder-open"/></svg>
+              第一章 · Python 起步
+              <span class="ct">8</span>
+            </div>
+            <ul>
+              <li>
+                <div class="tree-item">
+                  <svg><use href="#i-folder"/></svg>
+                  1.1 变量与类型
+                  <span class="ct">3</span>
+                </div>
+              </li>
+              <li>
+                <div class="tree-item">
+                  <svg><use href="#i-folder"/></svg>
+                  1.2 控制流
+                  <span class="ct">2</span>
+                </div>
+              </li>
+              <li>
+                <div class="tree-item">
+                  <svg><use href="#i-folder"/></svg>
+                  1.3 函数
+                  <span class="ct">3</span>
+                </div>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <div class="tree-item">
+              <svg><use href="#i-folder"/></svg>
+              第二章 · 数据结构
+              <span class="ct">6</span>
+            </div>
+          </li>
+          <li>
+            <div class="tree-item">
+              <svg><use href="#i-folder"/></svg>
+              补充资料
+              <span class="ct">5</span>
+            </div>
+          </li>
+          <li>
+            <div class="tree-item">
+              <svg><use href="#i-folder"/></svg>
+              试卷与答案
+              <span class="ct">3</span>
+            </div>
+          </li>
+          <li>
+            <div class="tree-item">
+              <svg><use href="#i-folder"/></svg>
+              其它
+              <span class="ct">2</span>
+            </div>
+          </li>
+        </ul>
+      </aside>
+
+      <!-- 主区 -->
+      <section class="res-main">
+
+        <div class="filter-bar">
+          <select title="文件类型">
+            <option>全部类型</option>
+            <option>PDF 文档 · 6</option>
+            <option>PPTX 课件 · 5</option>
+            <option>DOCX 笔记 · 3</option>
+            <option>PY 代码 · 4</option>
+            <option>ZIP 压缩包 · 3</option>
+            <option>MD 阅读 · 2</option>
+            <option>图片 · 1</option>
+          </select>
+          <select title="排序">
+            <option>最新上传 ↓</option>
+            <option>文件名</option>
+            <option>文件大小</option>
+            <option>下载次数</option>
+          </select>
+          <select title="章节">
+            <option>全部章节</option>
+            <option>第 1 章</option>
+            <option>第 2 章</option>
+            <option>第 3 章</option>
+            <option>第 4 章</option>
+            <option>第 5 章</option>
+          </select>
+          <span class="spacer"></span>
+          <span class="count">第 1 章 · 8 个文件</span>
+        </div>
+
+        <div class="res-grid">
+
+          <a class="res" href="#">
+            <span class="res-badge"><span class="badge b-p">最新</span></span>
+            <div class="res-ic pdf"><svg><use href="#i-file"/></svg></div>
+            <div class="res-body">
+              <div class="t">第 5 章课件 · 高阶函数.pdf</div>
+              <div class="m">
+                <span>1.8 MB</span><span class="sep">·</span>
+                <span>王建国</span><span class="sep">·</span>
+                <span>5 天前</span><span class="sep">·</span>
+                <span>19 下载</span>
+              </div>
+            </div>
+            <div class="res-actions">
+              <button class="btn sm" onclick="event.preventDefault()"><svg><use href="#i-download"/></svg>下载</button>
+            </div>
+          </a>
+
+          <a class="res" href="#">
+            <div class="res-ic py"><svg><use href="#i-code"/></svg></div>
+            <div class="res-body">
+              <div class="t">课堂练习 · 函数式编程示例.py</div>
+              <div class="m">
+                <span>4 KB</span><span class="sep">·</span>
+                <span>李明</span><span class="sep">·</span>
+                <span>1 周前</span><span class="sep">·</span>
+                <span>42 下载</span>
+              </div>
+            </div>
+            <div class="res-actions">
+              <button class="btn sm ghost" onclick="event.preventDefault()"><svg><use href="#i-play"/></svg>预览</button>
+              <button class="btn sm" onclick="event.preventDefault()"><svg><use href="#i-download"/></svg></button>
+            </div>
+          </a>
+
+          <a class="res" href="#">
+            <div class="res-ic zip"><svg><use href="#i-archive"/></svg></div>
+            <div class="res-body">
+              <div class="t">递归可视化代码包.zip</div>
+              <div class="m">
+                <span>4.2 MB</span><span class="sep">·</span>
+                <span>李明</span><span class="sep">·</span>
+                <span>1 周前</span><span class="sep">·</span>
+                <span>15 下载</span>
+              </div>
+            </div>
+            <div class="res-actions">
+              <button class="btn sm" onclick="event.preventDefault()"><svg><use href="#i-download"/></svg>下载</button>
+            </div>
+          </a>
+
+          <a class="res" href="#">
+            <div class="res-ic pdf"><svg><use href="#i-file"/></svg></div>
+            <div class="res-body">
+              <div class="t">第 1 章课件 · Python 起步.pdf</div>
+              <div class="m">
+                <span>2.1 MB</span><span class="sep">·</span>
+                <span>王建国</span><span class="sep">·</span>
+                <span>3 周前</span><span class="sep">·</span>
+                <span>78 下载</span>
+              </div>
+            </div>
+            <div class="res-actions">
+              <button class="btn sm" onclick="event.preventDefault()"><svg><use href="#i-download"/></svg>下载</button>
+            </div>
+          </a>
+
+          <a class="res" href="#">
+            <div class="res-ic md"><svg><use href="#i-file"/></svg></div>
+            <div class="res-body">
+              <div class="t">第 1 章 · 拓展阅读.md</div>
+              <div class="m">
+                <span>12 KB</span><span class="sep">·</span>
+                <span>李明</span><span class="sep">·</span>
+                <span>2 周前</span><span class="sep">·</span>
+                <span>18 下载</span>
+              </div>
+            </div>
+            <div class="res-actions">
+              <button class="btn sm ghost" onclick="event.preventDefault()"><svg><use href="#i-play"/></svg>预览</button>
+              <button class="btn sm" onclick="event.preventDefault()"><svg><use href="#i-download"/></svg></button>
+            </div>
+          </a>
+
+          <a class="res" href="#">
+            <div class="res-ic png"><svg><use href="#i-pin"/></svg></div>
+            <div class="res-body">
+              <div class="t">if-else 流程图.png</div>
+              <div class="m">
+                <span>240 KB</span><span class="sep">·</span>
+                <span>张老师</span><span class="sep">·</span>
+                <span>3 周前</span><span class="sep">·</span>
+                <span>36 下载</span>
+              </div>
+            </div>
+            <div class="res-actions">
+              <button class="btn sm ghost" onclick="event.preventDefault()"><svg><use href="#i-play"/></svg>预览</button>
+              <button class="btn sm" onclick="event.preventDefault()"><svg><use href="#i-download"/></svg></button>
+            </div>
+          </a>
+
+          <a class="res" href="#">
+            <div class="res-ic docx"><svg><use href="#i-file"/></svg></div>
+            <div class="res-body">
+              <div class="t">第 1.2 节课堂笔记.docx</div>
+              <div class="m">
+                <span>48 KB</span><span class="sep">·</span>
+                <span>王建国</span><span class="sep">·</span>
+                <span>2 周前</span><span class="sep">·</span>
+                <span>29 下载</span>
+              </div>
+            </div>
+            <div class="res-actions">
+              <button class="btn sm" onclick="event.preventDefault()"><svg><use href="#i-download"/></svg>下载</button>
+            </div>
+          </a>
+
+          <a class="res" href="#">
+            <div class="res-ic ipynb"><svg><use href="#i-code"/></svg></div>
+            <div class="res-body">
+              <div class="t">函数式编程 · Jupyter Notebook.ipynb</div>
+              <div class="m">
+                <span>86 KB</span><span class="sep">·</span>
+                <span>王建国</span><span class="sep">·</span>
+                <span>1 周前</span><span class="sep">·</span>
+                <span>22 下载</span>
+              </div>
+            </div>
+            <div class="res-actions">
+              <button class="btn sm ghost" onclick="event.preventDefault()"><svg><use href="#i-play"/></svg>预览</button>
+              <button class="btn sm" onclick="event.preventDefault()"><svg><use href="#i-download"/></svg></button>
+            </div>
+          </a>
+
+        </div>
+
+      </section>
+
+    </div>
+
+  </div>
+
+</main>
+
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+function tt(){
+  var d=document.documentElement.classList.toggle('dark');
+  document.getElementById('use-theme').setAttribute('href', d?'#i-moon':'#i-sun');
+  localStorage.setItem('theme', d?'dark':'light');
+}
+if(localStorage.getItem('theme')==='dark'){
+  document.documentElement.classList.add('dark');
+  document.getElementById('use-theme').setAttribute('href','#i-moon');
+}
+// tree toggle (visual only — flat demo data)
+document.querySelectorAll('.tree-item').forEach(function(t){
+  t.addEventListener('click', function(){
+    document.querySelectorAll('.tree-item').forEach(function(x){ x.classList.remove('on'); });
+    t.classList.add('on');
+  });
+});
+</script>
+
+</body>
+</html>

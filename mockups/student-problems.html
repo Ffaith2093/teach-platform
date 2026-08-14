@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>题库练习 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0; --border-strong:#CBD5E1;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+  --diff-easy:#10B981; --diff-easy-bg:#D1FAE5;
+  --diff-mid:#F59E0B; --diff-mid-bg:#FEF3C7;
+  --diff-hard:#EF4444; --diff-hard-bg:#FEE2E2;
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171; --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548; --border-strong:#3D4A60;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --diff-easy:#34D399; --diff-easy-bg:#063B2A;
+  --diff-mid:#FBBF24; --diff-mid-bg:#422D06;
+  --diff-hard:#F87171; --diff-hard-bg:#451414;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--surface);color:var(--fg);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--primary),#38BDF8);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--accent-subtle);color:var(--accent);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto;min-height:0}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);margin-bottom:2px;transition:background .18s,color .18s}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;
+         background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,#0EA5E9,#38BDF8);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:14px;
+        padding:0 24px;border-bottom:1px solid var(--border);background:var(--bg)}
+.searchbox{flex:1;max-width:480px;position:relative}
+.searchbox input{width:100%;height:36px;padding:0 14px 0 38px;border-radius:8px;border:1px solid var(--border);
+                 background:var(--surface);font-size:13.5px;color:var(--fg);outline:none;transition:.18s}
+.searchbox input:focus{border-color:var(--primary);background:var(--card)}
+.searchbox svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--subtle)}
+.top-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;
+          display:flex;transition:background .18s,color .18s;position:relative}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+.icon-btn .dot{position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--danger);border:2px solid var(--bg)}
+
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;
+       font-size:11px;font-weight:500;white-space:nowrap}
+.badge i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.b-p{background:var(--primary-subtle);color:var(--primary)}
+.b-s{background:var(--success-subtle);color:var(--success)}
+.b-w{background:var(--warning-subtle);color:var(--warning)}
+.b-d{background:var(--danger-subtle);color:var(--danger)}
+.b-m{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:13px;font-weight:500;transition:background .18s}
+.btn:hover{background:var(--primary-hover)}
+
+.content{padding:28px 32px 48px;max-width:1320px;width:100%;margin:0 auto}
+.page-h{display:flex;align-items:flex-end;gap:24px;margin-bottom:20px;flex-wrap:wrap}
+.page-h .ph-left{flex:1;min-width:240px}
+.page-h h1{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.page-h .sub{margin-top:6px;color:var(--muted);font-size:13.5px}
+.page-h .sub b{color:var(--fg)}
+.page-h .ph-right{display:flex;gap:8px;flex-wrap:wrap}
+
+/* 每日推荐 */
+.daily{padding:18px 22px;border-radius:14px;background:linear-gradient(135deg,var(--primary-subtle),rgba(139,92,246,.10));
+       border:1px solid var(--primary-muted);display:flex;align-items:center;gap:18px;margin-bottom:18px}
+.daily-ic{width:48px;height:48px;border-radius:12px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.daily-body{flex:1;min-width:0}
+.daily-body .t{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px}
+.daily-body .t small{font-size:11.5px;color:var(--muted);font-weight:400}
+.daily-body .p{margin-top:4px;font-size:12.5px;color:var(--muted)}
+.daily-cta{display:flex;gap:8px;flex-shrink:0}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.stat{padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--card);
+      display:flex;align-items:center;gap:12px}
+.stat-ic{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.stat-ic.p{background:var(--primary-subtle);color:var(--primary)}
+.stat-ic.s{background:var(--success-subtle);color:var(--success)}
+.stat-ic.w{background:var(--warning-subtle);color:var(--warning)}
+.stat-ic.n{background:var(--purple-subtle);color:var(--purple)}
+.stat-ic.a{background:var(--accent-subtle);color:var(--accent)}
+.stat .n{font-size:20px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.stat .lb{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* filter */
+.fbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+      padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:14px}
+.fbar select,.fbar .chip-sel{height:34px;padding:0 28px 0 12px;border-radius:8px;border:1px solid var(--border);
+             background:var(--surface);font-size:13px;color:var(--fg);outline:none;cursor:pointer;font-family:inherit}
+.fbar select:focus{border-color:var(--primary)}
+.fbar .spacer{flex:1}
+.fbar .count{font-size:12px;color:var(--muted)}
+
+/* tag cloud */
+.tags{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px;background:var(--card);
+      border:1px solid var(--border);border-radius:12px;margin-bottom:14px;align-items:center}
+.tags .lbl{font-size:12px;color:var(--muted);margin-right:6px}
+.tags .tg{padding:3px 10px;border-radius:6px;background:var(--surface);font-size:12px;color:var(--muted);
+          cursor:pointer;transition:.15s;border:1px solid transparent;font-family:inherit}
+.tags .tg:hover{background:var(--primary-subtle);color:var(--primary)}
+.tags .tg.on{background:var(--primary);color:#fff}
+
+/* grid */
+.probs{display:flex;flex-direction:column;gap:8px}
+.prob{padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--card);
+      display:flex;align-items:center;gap:14px;transition:.18s;cursor:pointer}
+.prob:hover{border-color:var(--primary-muted);box-shadow:var(--shadow-md)}
+.prob-id{width:54px;flex-shrink:0;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12px;color:var(--subtle);
+         font-variant-numeric:tabular-nums;text-align:center}
+.prob-id .diff{margin-top:4px;display:block;padding:2px 0;border-radius:5px;font-size:10.5px;font-weight:600}
+.prob-id .diff.easy{background:var(--diff-easy-bg);color:var(--diff-easy)}
+.prob-id .diff.mid{background:var(--diff-mid-bg);color:var(--diff-mid)}
+.prob-id .diff.hard{background:var(--diff-hard-bg);color:var(--diff-hard)}
+.prob-body{flex:1;min-width:0}
+.prob-body .t{font-size:14px;font-weight:600;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.prob-body .m{margin-top:4px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.prob-body .m .sep{color:var(--border-strong)}
+.prob-body .tg{margin-top:6px;display:flex;gap:5px;flex-wrap:wrap}
+.prob-body .tg .p{padding:1px 7px;border-radius:5px;background:var(--surface);font-size:10.5px;color:var(--muted);
+                border:1px solid var(--border)}
+.prob-meta{display:flex;align-items:center;gap:14px;flex-shrink:0;font-size:12px;color:var(--muted);width:300px;justify-content:flex-end}
+.prob-meta .m-cell{display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:64px}
+.prob-meta .m-cell .v{font-size:13.5px;font-weight:600;color:var(--fg);font-variant-numeric:tabular-nums}
+.prob-meta .m-cell .lb{font-size:10.5px;color:var(--muted)}
+.prob-status{padding:3px 10px;border-radius:6px;font-size:11.5px;font-weight:500}
+.prob-status.solved{background:var(--success-subtle);color:var(--success)}
+.prob-status.attempt{background:var(--warning-subtle);color:var(--warning)}
+.prob-status.todo{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+.prob-arrow{color:var(--subtle);font-size:14px;margin-left:6px}
+
+@media (max-width:1100px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .prob-meta{width:auto}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="i-dash" viewBox="0 0 24 24"><path d="M3 12L12 3l9 9"/><path d="M5 10v10a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V10"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+<symbol id="i-grade" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13l2 2 4-4"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
+<symbol id="i-hist" viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 106 5.3L3 8"/><path d="M12 7v5l4 2"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-5"/></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 002.5 2.5z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7c.6.5 1 1.3 1 2v.3h6v-.3c0-.7.4-1.5 1-2A7 7 0 0012 2z"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></symbol>
+</defs>
+</svg>
+
+<div class="app">
+
+<aside class="side">
+  <div class="logo">
+      <div class="logo-mark">Py</div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">学生端</span>
+    </div>
+  <nav class="nav">
+    <a class="nav-item" href="student-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+    <a class="nav-item" href="student-my-class.html"><svg><use href="#i-class"/></svg>我的班级</a>
+    <a class="nav-item" href="student-courses.html"><svg><use href="#i-book"/></svg>我的课程</a>
+    <a class="nav-item" href="student-assignments.html"><svg><use href="#i-file"/></svg>作业<span class="nav-count">2</span></a>
+    <a class="nav-item active" href="student-problems.html"><svg><use href="#i-code"/></svg>题库练习</a>
+    <a class="nav-item" href="student-submissions.html"><svg><use href="#i-hist"/></svg>提交记录</a>
+    <a class="nav-item" href="student-exams.html"><svg><use href="#i-clip"/></svg>考试</a>
+      <a class="nav-item" href="student-grades.html"><svg><use href="#i-grade"/></svg>成绩单</a>
+
+  </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈思雨</div>
+        <div class="s">高一(3)班</div>
+      </div>
+    </div>
+  
+</aside>
+
+<main class="main">
+
+  <header class="topbar">
+    <div class="searchbox">
+      <svg><use href="#i-search"/></svg>
+      <input placeholder="按题号、标题、描述搜索..." />
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" title="通知"><svg><use href="#i-bell"/></svg><span class="dot"></span></button>
+      <button class="icon-btn" title="主题" onclick="tt()"><svg><use href="#i-sun" id="use-theme"/></svg></button></div>
+  </header>
+
+  <div class="content">
+
+    <div class="page-h">
+      <div class="ph-left">
+        <h1>题库练习</h1>
+        <div class="sub">共 <b>248 题</b> · 已通过 <b>62 题</b> · 通过率 <b>25%</b></div>
+      </div>
+      <div class="ph-right">
+        <button class="btn" style="background:var(--card);color:var(--muted);border:1px solid var(--border)"><svg><use href="#i-refresh"/></svg>随机抽题</button>
+        <button class="btn"><svg><use href="#i-play"/></svg>开始挑战</button>
+      </div>
+    </div>
+
+    <!-- 每日推荐 -->
+    <div class="daily">
+      <div class="daily-ic"><svg><use href="#i-target"/></svg></div>
+      <div class="daily-body">
+        <div class="t">每日一练 · 8 月 12 日 <span class="badge b-p">智能推荐</span></div>
+        <div class="p">基于你最近 3 次错题和章节进度，专属推荐 <b>3 题</b>（入门 1 + 中等 2），预计用时 35 分钟</div>
+      </div>
+      <div class="daily-cta">
+        <button class="btn"><svg><use href="#i-play"/></svg>开始</button>
+      </div>
+    </div>
+
+    <!-- stats -->
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-ic p"><svg><use href="#i-target"/></svg></div>
+        <div><div class="n">248</div><div class="lb">题库总数</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-ic s"><svg><use href="#i-check"/></svg></div>
+        <div><div class="n">62</div><div class="lb">已通过</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-ic w"><svg><use href="#i-bulb"/></svg></div>
+        <div><div class="n">18</div><div class="lb">尝试中</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-ic n"><svg><use href="#i-user"/></svg></div>
+        <div><div class="n">3</div><div class="lb">错题回顾</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-ic a"><svg><use href="#i-flame"/></svg></div>
+        <div><div class="n">12<span style="font-size:13px;color:var(--muted);margin-left:3px">天</span></div><div class="lb">连续打卡</div></div>
+      </div>
+    </div>
+
+    <!-- filter -->
+    <div class="fbar">
+      <select title="难度">
+        <option>全部难度</option>
+        <option>入门 Easy · 92 题</option>
+        <option>中等 Medium · 110 题</option>
+        <option>困难 Hard · 46 题</option>
+      </select>
+      <select title="状态">
+        <option>全部状态</option>
+        <option>已通过</option>
+        <option>尝试中</option>
+        <option>未尝试</option>
+        <option>未通过</option>
+      </select>
+      <select title="来源">
+        <option>全部来源</option>
+        <option>Python 程序设计基础 · 86 题</option>
+        <option>数据结构与算法 · 92 题</option>
+        <option>算法竞赛入门 · 70 题</option>
+      </select>
+      <select title="排序">
+        <option>按编号 ↑</option>
+        <option>按通过率 ↓</option>
+        <option>按难度</option>
+        <option>按最近提交</option>
+      </select>
+      <span class="spacer"></span>
+      <span class="count">共 80 题 · 显示 1-12</span>
+    </div>
+
+    <!-- tag cloud -->
+    <div class="tags">
+      <span class="lbl"><svg><use href="#i-tag"/></svg>标签：</span>
+      <button class="tg on">全部</button>
+      <button class="tg">数组</button>
+      <button class="tg">字符串</button>
+      <button class="tg">哈希表</button>
+      <button class="tg">双指针</button>
+      <button class="tg">栈</button>
+      <button class="tg">队列</button>
+      <button class="tg">链表</button>
+      <button class="tg">二叉树</button>
+      <button class="tg">递归</button>
+      <button class="tg">动态规划</button>
+      <button class="tg">贪心</button>
+      <button class="tg">二分查找</button>
+      <button class="tg">排序</button>
+      <button class="tg">图论</button>
+      <button class="tg">数学</button>
+      <button class="tg">模拟</button>
+    </div>
+
+    <!-- problems -->
+    <div class="probs">
+
+      <a class="prob" href="student-problem-do.html?pid=P0001">
+        <div class="prob-id">P0001<span class="diff easy">入门</span></div>
+        <div class="prob-body">
+          <div class="t">两个数的和 · 基础输入输出</div>
+          <div class="m"><span>Python 程序设计基础</span><span class="sep">·</span><span>通过率 92%</span><span class="sep">·</span><span>3,452 提交</span></div>
+          <div class="tg"><span class="p">数组</span><span class="p">数学</span></div>
+        </div>
+        <div class="prob-meta">
+          <div class="m-cell"><div class="v">2 ms</div><div class="lb">最快</div></div>
+          <div class="m-cell"><div class="v">1 次</div><div class="lb">你的提交</div></div>
+          <span class="prob-status solved">已通过</span>
+          <svg class="prob-arrow"><use href="#i-chev"/></svg>
+        </div>
+      </a>
+
+      <a class="prob" href="student-problem-do.html?pid=P0002">
+        <div class="prob-id">P0002<span class="diff easy">入门</span></div>
+        <div class="prob-body">
+          <div class="t">列表去重 · 保留原始顺序</div>
+          <div class="m"><span>Python 程序设计基础</span><span class="sep">·</span><span>通过率 78%</span><span class="sep">·</span><span>2,891 提交</span></div>
+          <div class="tg"><span class="p">数组</span><span class="p">哈希表</span></div>
+        </div>
+        <div class="prob-meta">
+          <div class="m-cell"><div class="v">12 ms</div><div class="lb">最快</div></div>
+          <div class="m-cell"><div class="v">2 次</div><div class="lb">你的提交</div></div>
+          <span class="prob-status solved">已通过</span>
+          <svg class="prob-arrow"><use href="#i-chev"/></svg>
+        </div>
+      </a>
+
+      <a class="prob" href="student-problem-do.html?pid=P0003">
+        <div class="prob-id">P0003<span class="diff easy">入门</span></div>
+        <div class="prob-body">
+          <div class="t">字符串反转 · 三种解法</div>
+          <div class="m"><span>Python 程序设计基础</span><span class="sep">·</span><span>通过率 86%</span><span class="sep">·</span><span>3,201 提交</span></div>
+          <div class="tg"><span class="p">字符串</span><span class="p">双指针</span></div>
+        </div>
+        <div class="prob-meta">
+          <div class="m-cell"><div class="v">4 ms</div><div class="lb">最快</div></div>
+          <div class="m-cell"><div class="v">—</div><div class="lb">未尝试</div></div>
+          <span class="prob-status todo">未尝试</span>
+          <svg class="prob-arrow"><use href="#i-chev"/></svg>
+        </div>
+      </a>
+
+      <a class="prob" href="student-problem-do.html?pid=P0004">
+        <div class="prob-id">P0004<span class="diff easy">入门</span></div>
+        <div class="prob-body">
+          <div class="t">斐波那契数列 · 入门</div>
+          <div class="m"><span>数据结构与算法</span><span class="sep">·</span><span>通过率 84%</span><span class="sep">·</span><span>2,756 提交</span></div>
+          <div class="tg"><span class="p">递归</span><span class="p">动态规划</span></div>
+        </div>
+        <div class="prob-meta">
+          <div class="m-cell"><div class="v">8 ms</div><div class="lb">最快</div></div>
+          <div class="m-cell"><div class="v">3 次</div><div class="lb">你的提交</div></div>
+          <span class="prob-status solved">已通过</span>
+          <svg class="prob-arrow"><use href="#i-chev"/></svg>
+        </div>
+      </a>
+
+      <a class="prob" href="student-problem-do.html?pid=P0005">
+        <div class="prob-id">P0005<span class="diff mid">中等</span></div>
+        <div class="prob-body">
+          <div class="t">两数之和 II · 有序数组</div>
+          <div class="m"><span>数据结构与算法</span><span class="sep">·</span><span>通过率 71%</span><span class="sep">·</span><span>2,134 提交</span></div>
+          <div class="tg"><span class="p">数组</span><span class="p">双指针</span><span class="p">二分查找</span></div>
+        </div>
+        <div class="prob-meta">
+          <div class="m-cell"><div class="v">15 ms</div><div class="lb">最快</div></div>
+          <div class="m-cell"><div class="v">5 次</div><div class="lb">你的提交</div></div>
+          <span class="prob-status attempt">尝试中</span>
+          <svg class="prob-arrow"><use href="#i-chev"/></svg>
+        </div>
+      </a>
+
+      <a class="prob" href="student-problem-do.html?pid=P0006">
+        <div class="prob-id">P0006<span class="diff mid">中等</span></div>
+        <div class="prob-body">
+          <div class="t">最长回文子串</div>
+          <div class="m"><span>数据结构与算法</span><span class="sep">·</span><span>通过率 62%</span><span class="sep">·</span><span>1,892 提交</span></div>
+          <div class="tg"><span class="p">字符串</span><span class="p">动态规划</span></div>
+        </div>
+        <div class="prob-meta">
+          <div class="m-cell"><div class="v">48 ms</div><div class="lb">最快</div></div>
+          <div class="m-cell"><div class="v">2 次</div><div class="lb">你的提交</div></div>
+          <span class="prob-status attempt">未通过</span>
+          <svg class="prob-arrow"><use href="#i-chev"/></svg>
+        </div>
+      </a>
+
+      <a class="prob" href="student-problem-do.html?pid=P0007">
+        <div class="prob-id">P0007<span class="diff mid">中等</span></div>
+        <div class="prob-body">
+          <div class="t">二叉树层序遍历</div>
+          <div class="m"><span>数据结构与算法</span><span class="sep">·</span><span>通过率 78%</span><span class="sep">·</span><span>1,654 提交</span></div>
+          <div class="tg"><span class="p">二叉树</span><span class="p">队列</span><span class="p">BFS</span></div>
+        </div>
+        <div class="prob-meta">
+          <div class="m-cell"><div class="v">22 ms</div><div class="lb">最快</div></div>
+          <div class="m-cell"><div class="v">—</div><div class="lb">未尝试</div></div>
+          <span class="prob-status todo">未尝试</span>
+          <svg class="prob-arrow"><use href="#i-chev"/></svg>
+        </div>
+      </a>
+
+      <a class="prob" href="student-problem-do.html?pid=P0008">
+        <div class="prob-id">P0008<span class="diff mid">中等</span></div>
+        <div class="prob-body">
+          <div class="t">最小栈 · getMin O(1)</div>
+          <div class="m"><span>数据结构与算法</span><span class="sep">·</span><span>通过率 64%</span><span class="sep">·</span><span>1,234 提交</span></div>
+          <div class="tg"><span class="p">栈</span><span class="p">设计</span></div>
+        </div>
+        <div class="prob-meta">
+          <div class="m-cell"><div class="v">18 ms</div><div class="lb">最快</div></div>
+          <div class="m-cell"><div class="v">1 次</div><div class="lb">你的提交</div></div>
+          <span class="prob-status solved">已通过</span>
+          <svg class="prob-arrow"><use href="#i-chev"/></svg>
+        </div>
+      </a>
+
+      <a class="prob" href="student-problem-do.html?pid=P0009">
+        <div class="prob-id">P0009<span class="diff hard">困难</span></div>
+        <div class="prob-body">
+          <div class="t">合并 K 个升序链表</div>
+          <div class="m"><span>算法竞赛入门</span><span class="sep">·</span><span>通过率 41%</span><span class="sep">·</span><span>892 提交</span></div>
+          <div class="tg"><span class="p">链表</span><span class="p">分治</span><span class="p">堆</span></div>
+        </div>
+        <div class="prob-meta">
+          <div class="m-cell"><div class="v">128 ms</div><div class="lb">最快</div></div>
+          <div class="m-cell"><div class="v">—</div><div class="lb">未尝试</div></div>
+          <span class="prob-status todo">未尝试</span>
+          <svg class="prob-arrow"><use href="#i-chev"/></svg>
+        </div>
+      </a>
+
+      <a class="prob" href="student-problem-do.html?pid=P0010">
+        <div class="prob-id">P0010<span class="diff mid">中等</span></div>
+        <div class="prob-body">
+          <div class="t">二分查找 · 标准模板</div>
+          <div class="m"><span>算法竞赛入门</span><span class="sep">·</span><span>通过率 74%</span><span class="sep">·</span><span>1,567 提交</span></div>
+          <div class="tg"><span class="p">二分查找</span><span class="p">数组</span></div>
+        </div>
+        <div class="prob-meta">
+          <div class="m-cell"><div class="v">10 ms</div><div class="lb">最快</div></div>
+          <div class="m-cell"><div class="v">3 次</div><div class="lb">你的提交</div></div>
+          <span class="prob-status solved">已通过</span>
+          <svg class="prob-arrow"><use href="#i-chev"/></svg>
+        </div>
+      </a>
+
+      <a class="prob" href="student-problem-do.html?pid=P0011">
+        <div class="prob-id">P0011<span class="diff hard">困难</span></div>
+        <div class="prob-body">
+          <div class="t">LRU 缓存机制 · O(1) 读写</div>
+          <div class="m"><span>算法竞赛入门</span><span class="sep">·</span><span>通过率 38%</span><span class="sep">·</span><span>756 提交</span></div>
+          <div class="tg"><span class="p">设计</span><span class="p">哈希表</span><span class="p">链表</span></div>
+        </div>
+        <div class="prob-meta">
+          <div class="m-cell"><div class="v">256 ms</div><div class="lb">最快</div></div>
+          <div class="m-cell"><div class="v">—</div><div class="lb">未尝试</div></div>
+          <span class="prob-status todo">未尝试</span>
+          <svg class="prob-arrow"><use href="#i-chev"/></svg>
+        </div>
+      </a>
+
+      <a class="prob" href="student-problem-do.html?pid=P0012">
+        <div class="prob-id">P0012<span class="diff mid">中等</span></div>
+        <div class="prob-body">
+          <div class="t">打家劫舍 · 入门 DP</div>
+          <div class="m"><span>算法竞赛入门</span><span class="sep">·</span><span>通过率 81%</span><span class="sep">·</span><span>1,892 提交</span></div>
+          <div class="tg"><span class="p">动态规划</span><span class="p">数组</span></div>
+        </div>
+        <div class="prob-meta">
+          <div class="m-cell"><div class="v">6 ms</div><div class="lb">最快</div></div>
+          <div class="m-cell"><div class="v">1 次</div><div class="lb">你的提交</div></div>
+          <span class="prob-status solved">已通过</span>
+          <svg class="prob-arrow"><use href="#i-chev"/></svg>
+        </div>
+      </a>
+
+    </div>
+
+    <div style="display:flex;justify-content:center;padding:24px 0">
+      <button class="btn" style="background:var(--card);color:var(--muted);border:1px solid var(--border)">加载更多（还有 68 题）</button>
+    </div>
+
+  </div>
+
+</main>
+
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+function tt(){
+  var d=document.documentElement.classList.toggle('dark');
+  document.getElementById('use-theme').setAttribute('href', d?'#i-moon':'#i-sun');
+  localStorage.setItem('theme', d?'dark':'light');
+}
+if(localStorage.getItem('theme')==='dark'){
+  document.documentElement.classList.add('dark');
+  document.getElementById('use-theme').setAttribute('href','#i-moon');
+}
+// tag toggle
+document.querySelectorAll('.tags .tg').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('.tags .tg').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+  });
+});
+</script>
+
+</body>
+</html>

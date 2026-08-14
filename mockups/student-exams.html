@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>考试 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --pink:#EC4899; --pink-subtle:#FCE7F3;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0; --border-strong:#CBD5E1;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171; --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --pink:#F472B6; --pink-subtle:#4A1232;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548; --border-strong:#3D4A60;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--surface);color:var(--fg);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--primary),#38BDF8);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--accent-subtle);color:var(--accent);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto;min-height:0}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);margin-bottom:2px;transition:background .18s,color .18s}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;
+         background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,#0EA5E9,#38BDF8);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:14px;
+        padding:0 24px;border-bottom:1px solid var(--border);background:var(--bg)}
+.searchbox{flex:1;max-width:480px;position:relative}
+.searchbox input{width:100%;height:36px;padding:0 14px 0 38px;border-radius:8px;border:1px solid var(--border);
+                 background:var(--surface);font-size:13.5px;color:var(--fg);outline:none;transition:.18s}
+.searchbox input:focus{border-color:var(--primary);background:var(--card)}
+.searchbox svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--subtle)}
+.top-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;
+          display:flex;transition:background .18s,color .18s;position:relative}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+.icon-btn .dot{position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--danger);border:2px solid var(--bg)}
+
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;
+       font-size:11px;font-weight:500;white-space:nowrap}
+.badge i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.b-w{background:var(--warning-subtle);color:var(--warning)}
+.b-d{background:var(--danger-subtle);color:var(--danger)}
+.b-p{background:var(--primary-subtle);color:var(--primary)}
+.b-s{background:var(--success-subtle);color:var(--success)}
+.b-a{background:var(--accent-subtle);color:var(--accent)}
+.b-n{background:var(--purple-subtle);color:var(--purple)}
+.b-m{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:13px;font-weight:500;transition:background .18s}
+.btn:hover{background:var(--primary-hover)}
+.btn.ghost{background:var(--card);color:var(--muted);border:1px solid var(--border)}
+.btn.sm{padding:5px 12px;font-size:12px}
+.btn.danger{background:var(--danger)}
+
+.content{padding:28px 32px 48px;max-width:1320px;width:100%;margin:0 auto}
+
+.page-h{display:flex;align-items:flex-end;gap:24px;margin-bottom:20px;flex-wrap:wrap}
+.page-h .ph-left{flex:1;min-width:240px}
+.page-h h1{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.page-h .sub{margin-top:6px;color:var(--muted);font-size:13.5px}
+.page-h .sub b{color:var(--fg)}
+.page-h .ph-right{display:flex;gap:8px;flex-wrap:wrap}
+
+/* 进行中横幅 */
+.banner{padding:18px 22px;border-radius:14px;background:linear-gradient(135deg,var(--primary),#38BDF8);
+        color:#fff;position:relative;overflow:hidden;margin-bottom:18px;display:flex;align-items:center;gap:18px}
+.banner::after{content:'';position:absolute;right:-30px;top:-30px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.08)}
+.banner::before{content:'';position:absolute;right:80px;bottom:-40px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.06)}
+.banner-ic{width:54px;height:54px;border-radius:13px;background:rgba(255,255,255,.2);
+           display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;backdrop-filter:blur(8px);position:relative;z-index:1}
+.banner-body{flex:1;min-width:0;position:relative;z-index:1}
+.banner-body .t{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px}
+.banner-body .p{margin-top:4px;font-size:12.5px;opacity:.9;display:flex;gap:14px;flex-wrap:wrap}
+.banner-body .p .sep{opacity:.5}
+.banner-cta{position:relative;z-index:1;display:flex;gap:8px;flex-shrink:0}
+.banner-cta .btn{background:#fff;color:var(--primary);font-weight:600}
+.banner-cta .btn:hover{background:var(--surface)}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.stat{padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--card);
+      display:flex;align-items:center;gap:12px}
+.stat-ic{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.stat-ic.p{background:var(--primary-subtle);color:var(--primary)}
+.stat-ic.s{background:var(--success-subtle);color:var(--success)}
+.stat-ic.w{background:var(--warning-subtle);color:var(--warning)}
+.stat-ic.n{background:var(--purple-subtle);color:var(--purple)}
+.stat-ic.a{background:var(--accent-subtle);color:var(--accent)}
+.stat .n{font-size:20px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.stat .lb{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* filter */
+.fbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+      padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:14px}
+.fbar select{height:34px;padding:0 28px 0 12px;border-radius:8px;border:1px solid var(--border);
+             background:var(--surface);font-size:13px;color:var(--fg);outline:none;cursor:pointer;font-family:inherit}
+.fbar .spacer{flex:1}
+.fbar .count{font-size:12px;color:var(--muted)}
+
+/* tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.tab{padding:10px 16px;font-size:13.5px;color:var(--muted);font-weight:500;border-bottom:2px solid transparent;
+     cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:-1px}
+.tab:hover{color:var(--fg)}
+.tab.on{color:var(--primary);border-bottom-color:var(--primary)}
+.tab .num{background:var(--primary-subtle);color:var(--primary);font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px}
+.tab:not(.on) .num{background:var(--surface);color:var(--muted)}
+
+/* exam list */
+.exam-list{display:flex;flex-direction:column;gap:10px}
+.exam{padding:16px 18px;border:1px solid var(--border);border-radius:12px;background:var(--card);
+      display:flex;align-items:center;gap:14px;transition:.18s;cursor:pointer;position:relative}
+.exam:hover{border-color:var(--primary-muted);box-shadow:var(--shadow-md)}
+.exam.live{border-left:4px solid var(--danger);background:linear-gradient(90deg,var(--danger-subtle) 0%,var(--card) 30%)}
+.exam.upcoming{border-left:4px solid var(--primary)}
+.exam.done{border-left:4px solid var(--success)}
+.exam-ic{width:46px;height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.exam-ic.live{background:var(--danger-subtle);color:var(--danger)}
+.exam-ic.upcoming{background:var(--primary-subtle);color:var(--primary)}
+.exam-ic.done{background:var(--success-subtle);color:var(--success)}
+.exam-body{flex:1;min-width:0}
+.exam-body .t{font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.exam-body .m{margin-top:5px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.exam-body .m .sep{color:var(--border-strong)}
+.exam-body .m .meta{display:inline-flex;align-items:center;gap:4px}
+.exam-meta{display:flex;align-items:center;gap:14px;flex-shrink:0;font-size:12px;color:var(--muted);width:280px;justify-content:flex-end}
+.exam-meta .cell{display:flex;flex-direction:column;align-items:flex-end;gap:1px;min-width:64px}
+.exam-meta .cell .v{font-size:14px;font-weight:600;color:var(--fg);font-variant-numeric:tabular-nums}
+.exam-meta .cell .lb{font-size:10.5px;color:var(--muted)}
+.exam-actions{display:flex;gap:6px;flex-shrink:0}
+.exam-countdown{display:inline-flex;align-items:center;gap:4px;background:var(--danger-subtle);color:var(--danger);
+                padding:3px 9px;border-radius:6px;font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.exam-countdown svg{font-size:12px}
+
+@media (max-width:1100px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .exam-meta{width:auto}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="i-dash" viewBox="0 0 24 24"><path d="M3 12L12 3l9 9"/><path d="M5 10v10a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V10"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+<symbol id="i-grade" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13l2 2 4-4"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol>
+<symbol id="i-hist" viewBox="0 0 24 24"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 106 5.3L3 8"/><path d="M12 7v5l4 2"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-5"/></symbol>
+<symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 002.5 2.5z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+<symbol id="i-alarm" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3L2 6M19 3l3 3"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4a2 2 0 01-2-2V5a2 2 0 012-2h2M18 9h2a2 2 0 002-2V5a2 2 0 00-2-2h-2M6 3h12v8a6 6 0 11-12 0V3zM9 21h6M12 17v4"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+</defs>
+</svg>
+
+<div class="app">
+
+<aside class="side">
+  <div class="logo">
+      <div class="logo-mark">Py</div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">学生端</span>
+    </div>
+  <nav class="nav">
+    <a class="nav-item" href="student-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+    <a class="nav-item" href="student-my-class.html"><svg><use href="#i-class"/></svg>我的班级</a>
+    <a class="nav-item" href="student-courses.html"><svg><use href="#i-book"/></svg>我的课程</a>
+    <a class="nav-item" href="student-assignments.html"><svg><use href="#i-file"/></svg>作业<span class="nav-count">2</span></a>
+    <a class="nav-item" href="student-problems.html"><svg><use href="#i-code"/></svg>题库练习</a>
+    <a class="nav-item" href="student-submissions.html"><svg><use href="#i-hist"/></svg>提交记录</a>
+    <a class="nav-item active" href="student-exams.html"><svg><use href="#i-clip"/></svg>考试</a>
+      <a class="nav-item" href="student-grades.html"><svg><use href="#i-grade"/></svg>成绩单</a>
+
+  </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈思雨</div>
+        <div class="s">高一(3)班</div>
+      </div>
+    </div>
+  
+</aside>
+
+<main class="main">
+
+  <header class="topbar">
+    <div class="searchbox">
+      <svg><use href="#i-search"/></svg>
+      <input placeholder="搜索考试名称..." />
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" title="通知"><svg><use href="#i-bell"/></svg><span class="dot"></span></button>
+      <button class="icon-btn" title="主题" onclick="tt()"><svg><use href="#i-sun" id="use-theme"/></svg></button></div>
+  </header>
+
+  <div class="content">
+
+    <div class="page-h">
+      <div class="ph-left">
+        <h1>考试</h1>
+        <div class="sub">本学期共 <b>6 场</b> · 待考 <b>3 场</b> · 已完成 <b>2 场</b> · 班级平均分 <b>89.6</b></div>
+      </div>
+      <div class="ph-right">
+        <button class="btn ghost"><svg><use href="#i-hist"/></svg>历史成绩</button>
+        <button class="btn"><svg><use href="#i-clip"/></svg>考试规则</button>
+      </div>
+    </div>
+
+    <!-- 进行中考试横幅 -->
+    <div class="banner">
+      <div class="banner-ic"><svg><use href="#i-alarm"/></svg></div>
+      <div class="banner-body">
+        <div class="t">期中模拟考试 <span class="badge b-d" style="background:rgba(255,255,255,.25);color:#fff;border:1px solid rgba(255,255,255,.3)">进行中</span></div>
+        <div class="p">
+          <span class="meta"><svg><use href="#i-clock"/></svg>14:00 - 16:00</span>
+          <span class="sep">·</span>
+          <span>120 分钟</span>
+          <span class="sep">·</span>
+          <span>满分 100 · 4 道编程题</span>
+          <span class="sep">·</span>
+          <span class="meta"><svg><use href="#i-user"/></svg>参考 42 / 45 人</span>
+        </div>
+      </div>
+      <div class="banner-cta">
+        <a class="btn" href="student-exam-take.html?eid=E0001"><svg><use href="#i-play"/></svg>立即进入</a>
+      </div>
+    </div>
+
+    <!-- stats -->
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-ic p"><svg><use href="#i-clip"/></svg></div>
+        <div><div class="n">6</div><div class="lb">本学期考试</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-ic w"><svg><use href="#i-alarm"/></svg></div>
+        <div><div class="n">3</div><div class="lb">待考</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-ic s"><svg><use href="#i-check"/></svg></div>
+        <div><div class="n">2</div><div class="lb">已完成</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-ic n"><svg><use href="#i-chart"/></svg></div>
+        <div><div class="n">90.0</div><div class="lb">平均分</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-ic a"><svg><use href="#i-trophy"/></svg></div>
+        <div><div class="n">98</div><div class="lb">最高分</div></div>
+      </div>
+    </div>
+
+    <!-- tabs -->
+    <div class="tabs">
+      <div class="tab on" data-tab="all">全部 <span class="num">6</span></div>
+      <div class="tab" data-tab="upcoming">待考 <span class="num">3</span></div>
+      <div class="tab" data-tab="done">已完成 <span class="num">2</span></div>
+      <div class="tab" data-tab="missed">已错过 <span class="num">1</span></div>
+    </div>
+
+    <!-- filter -->
+    <div class="fbar">
+      <select title="课程">
+        <option>全部课程</option>
+        <option>Python 程序设计基础 · 3</option>
+        <option>数据结构与算法 · 2</option>
+        <option>算法竞赛入门 · 1</option>
+      </select>
+      <select title="类型">
+        <option>全部类型</option>
+        <option>期中 / 期末考试 · 2</option>
+        <option>章节测验 · 3</option>
+        <option>模拟考试 · 1</option>
+      </select>
+      <select title="排序">
+        <option>按开始时间 ↑</option>
+        <option>按考试类型</option>
+        <option>按成绩</option>
+      </select>
+      <span class="spacer"></span>
+      <span class="count">共 6 场</span>
+    </div>
+
+    <!-- exam list -->
+    <div class="exam-list">
+
+      <!-- 进行中 -->
+      <a class="exam live" href="student-exam-take.html?eid=E0001">
+        <div class="exam-ic live"><svg><use href="#i-alarm"/></svg></div>
+        <div class="exam-body">
+          <div class="t">期中模拟考试 <span class="badge b-d">进行中</span><span class="exam-countdown"><svg><use href="#i-clock"/></svg>01:42:18</span></div>
+          <div class="m">
+            <span class="meta"><svg><use href="#i-book"/></svg>Python 程序设计基础</span>
+            <span class="sep">·</span>
+            <span>2025-08-12 14:00 - 16:00</span>
+            <span class="sep">·</span>
+            <span>120 分钟</span>
+            <span class="sep">·</span>
+            <span>满分 100</span>
+            <span class="sep">·</span>
+            <span>4 道编程题</span>
+          </div>
+        </div>
+        <div class="exam-meta">
+          <div class="cell"><div class="v">42 / 45</div><div class="lb">已参考</div></div>
+          <div class="cell"><div class="v">—</div><div class="lb">我的状态</div></div>
+        </div>
+        <div class="exam-actions"><span class="btn danger">立即作答</span></div>
+      </a>
+
+      <!-- 即将开始 -->
+      <a class="exam upcoming" href="student-exam-detail.html?eid=E0002">
+        <div class="exam-ic upcoming"><svg><use href="#i-clip"/></svg></div>
+        <div class="exam-body">
+          <div class="t">第 4 章测验 · 列表与字符串 <span class="badge b-p">8/18 截止</span></div>
+          <div class="m">
+            <span class="meta"><svg><use href="#i-book"/></svg>Python 程序设计基础</span>
+            <span class="sep">·</span>
+            <span>2025-08-12 ~ 08-18 23:59</span>
+            <span class="sep">·</span>
+            <span>60 分钟</span>
+            <span class="sep">·</span>
+            <span>满分 100</span>
+            <span class="sep">·</span>
+            <span>12 题</span>
+          </div>
+        </div>
+        <div class="exam-meta">
+          <div class="cell"><div class="v">6d 12h</div><div class="lb">距截止</div></div>
+          <div class="cell"><div class="v">未参加</div><div class="lb">我的状态</div></div>
+        </div>
+        <div class="exam-actions"><span class="btn sm">查看</span></div>
+      </a>
+
+      <a class="exam upcoming" href="student-exam-detail.html?eid=E0003">
+        <div class="exam-ic upcoming"><svg><use href="#i-clip"/></svg></div>
+        <div class="exam-body">
+          <div class="t">第 5 章小测 · 函数与模块 <span class="badge b-p">8/20 截止</span></div>
+          <div class="m">
+            <span class="meta"><svg><use href="#i-book"/></svg>Python 程序设计基础</span>
+            <span class="sep">·</span>
+            <span>2025-08-15 ~ 08-20 23:59</span>
+            <span class="sep">·</span>
+            <span>45 分钟</span>
+            <span class="sep">·</span>
+            <span>满分 50</span>
+            <span class="sep">·</span>
+            <span>6 题</span>
+          </div>
+        </div>
+        <div class="exam-meta">
+          <div class="cell"><div class="v">8d 12h</div><div class="lb">距截止</div></div>
+          <div class="cell"><div class="v">未参加</div><div class="lb">我的状态</div></div>
+        </div>
+        <div class="exam-actions"><span class="btn sm">查看</span></div>
+      </a>
+
+      <a class="exam upcoming" href="student-exam-detail.html?eid=E0004">
+        <div class="exam-ic upcoming"><svg><use href="#i-target"/></svg></div>
+        <div class="exam-body">
+          <div class="t">期中考试 · 章节 1-5 <span class="badge b-w">9/10 开考</span></div>
+          <div class="m">
+            <span class="meta"><svg><use href="#i-book"/></svg>Python 程序设计基础</span>
+            <span class="sep">·</span>
+            <span>2025-09-10 09:00 - 11:30</span>
+            <span class="sep">·</span>
+            <span>150 分钟</span>
+            <span class="sep">·</span>
+            <span>满分 150</span>
+            <span class="sep">·</span>
+            <span>10 题（含 1 道附加）</span>
+          </div>
+        </div>
+        <div class="exam-meta">
+          <div class="cell"><div class="v">28d 12h</div><div class="lb">距开始</div></div>
+          <div class="cell"><div class="v">未参加</div><div class="lb">我的状态</div></div>
+        </div>
+        <div class="exam-actions"><span class="btn sm ghost">查看</span></div>
+      </a>
+
+      <!-- 已完成 -->
+      <a class="exam done" href="student-exam-result.html?eid=E0005">
+        <div class="exam-ic done"><svg><use href="#i-check"/></svg></div>
+        <div class="exam-body">
+          <div class="t">第 1-3 章单元测试 <span class="badge b-s">已完成</span></div>
+          <div class="m">
+            <span class="meta"><svg><use href="#i-book"/></svg>Python 程序设计基础</span>
+            <span class="sep">·</span>
+            <span>2025-07-22 提交</span>
+            <span class="sep">·</span>
+            <span>90 分钟</span>
+            <span class="sep">·</span>
+            <span>满分 100</span>
+          </div>
+        </div>
+        <div class="exam-meta">
+          <div class="cell"><div class="v" style="color:var(--success)">92</div><div class="lb">我的得分</div></div>
+          <div class="cell"><div class="v">No.4 / 45</div><div class="lb">排名</div></div>
+        </div>
+        <div class="exam-actions"><span class="btn sm ghost">查看成绩</span></div>
+      </a>
+
+      <a class="exam done" href="student-exam-result.html?eid=E0006">
+        <div class="exam-ic done"><svg><use href="#i-trophy"/></svg></div>
+        <div class="exam-body">
+          <div class="t">Python 综合测试 · 入学摸底 <span class="badge b-s">已完成</span></div>
+          <div class="m">
+            <span class="meta"><svg><use href="#i-book"/></svg>Python 程序设计基础</span>
+            <span class="sep">·</span>
+            <span>2025-06-15 提交</span>
+            <span class="sep">·</span>
+            <span>60 分钟</span>
+            <span class="sep">·</span>
+            <span>满分 100</span>
+          </div>
+        </div>
+        <div class="exam-meta">
+          <div class="cell"><div class="v">88</div><div class="lb">我的得分</div></div>
+          <div class="cell"><div class="v">No.7 / 45</div><div class="lb">排名</div></div>
+        </div>
+        <div class="exam-actions"><span class="btn sm ghost">查看成绩</span></div>
+      </a>
+
+      <!-- 已错过 -->
+      <div class="exam" style="opacity:.65;cursor:default;border-left:4px solid var(--muted)">
+        <div class="exam-ic" style="background:var(--surface);color:var(--muted)"><svg><use href="#i-alarm"/></svg></div>
+        <div class="exam-body">
+          <div class="t">第 2 章小测 · 控制流 <span class="badge b-m">已错过</span></div>
+          <div class="m">
+            <span class="meta"><svg><use href="#i-book"/></svg>Python 程序设计基础</span>
+            <span class="sep">·</span>
+            <span>截止 2025-06-30 23:59</span>
+            <span class="sep">·</span>
+            <span>45 分钟</span>
+            <span class="sep">·</span>
+            <span>满分 50</span>
+          </div>
+        </div>
+        <div class="exam-meta">
+          <div class="cell"><div class="v">0</div><div class="lb">我的得分</div></div>
+          <div class="cell"><div class="v">未参加</div><div class="lb">我的状态</div></div>
+        </div>
+        <div class="exam-actions"><span class="btn sm ghost" style="opacity:.5;cursor:not-allowed">已结束</span></div>
+      </div>
+
+    </div>
+
+  </div>
+
+</main>
+
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+function tt(){
+  var d=document.documentElement.classList.toggle('dark');
+  document.getElementById('use-theme').setAttribute('href', d?'#i-moon':'#i-sun');
+  localStorage.setItem('theme', d?'dark':'light');
+}
+if(localStorage.getItem('theme')==='dark'){
+  document.documentElement.classList.add('dark');
+  document.getElementById('use-theme').setAttribute('href','#i-moon');
+}
+// tabs
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click', function(){
+    document.querySelectorAll('.tab').forEach(function(x){ x.classList.remove('on'); });
+    t.classList.add('on');
+  });
+});
+</script>
+
+</body>
+</html>

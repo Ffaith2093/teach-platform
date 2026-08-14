@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>高一年级(2024) · 班级列表 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171;  --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--purple);
+           display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--purple-subtle);color:var(--purple);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--purple),#EC4899);
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.crumb b{color:var(--fg);font-weight:500}
+.crumb a:hover{color:var(--primary)}
+.search{position:relative;flex:1;max-width:340px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--subtle)}
+.search input{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--border);border-radius:8px;
+              background:var(--surface);color:var(--fg);font-size:14px;outline:none;transition:.18s}
+.search input::placeholder{color:var(--subtle)}
+.search input:focus{border-color:var(--primary);background:var(--card)}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:background .18s,color .18s}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:1140px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+
+.back-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);
+           font-weight:500;transition:color .18s;align-self:flex-start}
+.back-link:hover{color:var(--primary)}
+.back-link svg{font-size:14px}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+           padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+h1 .yr{font-size:13px;font-weight:500;padding:3px 9px;border-radius:6px;
+       background:var(--primary-subtle);color:var(--primary);letter-spacing:0}
+.page-sub{margin-top:4px;font-size:14px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost svg{font-size:14px}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.card{border:1px solid var(--border);border-radius:12px;background:var(--card);padding:20px}
+.stat-top{display:flex;align-items:flex-start;justify-content:space-between}
+.stat-label{font-size:13px;color:var(--muted)}
+.ic{padding:7px;border-radius:8px;display:flex;font-size:16px}
+.ic-p{background:var(--primary-subtle);color:var(--primary)}
+.ic-a{background:var(--accent-subtle);color:var(--accent)}
+.ic-s{background:var(--success-subtle);color:var(--success)}
+.ic-w{background:var(--warning-subtle);color:var(--warning)}
+.stat-num{margin-top:10px;font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat-foot{margin-top:4px;font-size:12px;color:var(--subtle)}
+
+/* 班级表 */
+.table{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.t-head{display:grid;grid-template-columns:1.6fr 100px 1.5fr 1.2fr 120px 130px;gap:14px;padding:12px 20px;
+        background:var(--surface);font-size:11px;font-weight:600;color:var(--muted);
+        letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);align-items:center}
+.t-head > div{text-align:center}
+html.dark .t-head{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.t-row{display:grid;grid-template-columns:1.6fr 100px 1.5fr 1.2fr 120px 130px;gap:14px;padding:14px 20px;
+       align-items:center;border-bottom:1px solid var(--border);transition:background .18s}
+.t-row:last-child{border-bottom:none}
+.t-row:hover{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.t-row > div{display:flex;justify-content:center;align-items:center;min-width:0;text-align:center}
+
+.c-title{display:flex;align-items:center;justify-content:center;gap:12px;min-width:0}
+.c-ic{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+      font-size:16px;flex-shrink:0;background:var(--accent-subtle);color:var(--accent)}
+.c-ic.empty{background:var(--warning-subtle);color:var(--warning)}
+.c-info{min-width:0;text-align:center}
+.c-info h3{font-size:14px;font-weight:600;text-align:center}
+.c-info p{font-size:11.5px;color:var(--muted);margin-top:2px;text-align:center}
+
+.metric{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;justify-content:center}
+.metric span{font-size:11px;color:var(--muted);font-weight:400;margin-left:3px}
+.metric.zero{color:var(--warning)}
+
+.teacher{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0}
+.teacher .av{width:28px;height:28px;border-radius:50%;color:#fff;font-size:11px;font-weight:600;
+             display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.teacher .av.t1{background:linear-gradient(135deg,#F97316,#EF4444)}
+.teacher .av.t2{background:linear-gradient(135deg,#0EA5E9,#14B8A6)}
+.teacher .av.t3{background:linear-gradient(135deg,#8B5CF6,#EC4899)}
+.teacher .av.t4{background:linear-gradient(135deg,#10B981,#06B6D4)}
+.teacher .av.t5{background:linear-gradient(135deg,#F59E0B,#FACC15)}
+.teacher-info p{font-size:13px;font-weight:500;line-height:1.2}
+.teacher-info span{font-size:11px;color:var(--muted);font-family:"SF Mono",Menlo,Consolas,monospace}
+.teacher.none{color:var(--danger)}
+.teacher.none .av{background:var(--danger-subtle);color:var(--danger)}
+.teacher.none span{font-size:12px}
+
+.act{font-size:12px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px}
+.act b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+
+.time{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;justify-content:center}
+
+.t-ops{display:flex;gap:4px;justify-content:center}
+.t-ops button{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+              color:var(--subtle);transition:.18s}
+.t-ops button:hover{background:var(--surface);color:var(--fg)}
+.t-ops button.danger:hover{background:var(--danger-subtle);color:var(--danger)}
+.t-ops .enter{width:auto;padding:0 10px;gap:5px;font-size:12px;font-weight:500;color:var(--primary)}
+.t-ops .enter:hover{background:var(--primary-subtle);color:var(--primary)}
+
+.foot{padding:18px 22px;border-top:1px solid var(--border);background:var(--surface);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:var(--muted)}
+html.dark .foot{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.foot .warn-tag{display:inline-flex;align-items:center;gap:5px;font-weight:500}
+.foot .warn-tag svg{stroke:var(--warning);width:14px;height:14px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+
+@media(max-width:1100px){
+  .side{display:none}
+  .stats{grid-template-columns:1fr 1fr}
+  .t-head,.t-row{grid-template-columns:1.5fr 80px 1.2fr 110px;gap:12px}
+  .t-head .h4,.t-head .h5,
+  .t-row > *:nth-child(4),.t-row > *:nth-child(5){display:none}
+  .content{padding:24px 20px}
+  .topbar{padding:0 20px}
+}
+@media(max-width:640px){ .stats{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+<symbol id="i-grad" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="m20.6 13.4-8.2 8.2a2 2 0 0 1-2.8 0l-7-7A2 2 0 0 1 2 13.2V4a2 2 0 0 1 2-2h9.2a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+<symbol id="i-exam" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="3" rx="1"/><path d="M9 11h6M9 14h6M9 17h3"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M3 9 12 3l9 6"/><path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"/><path d="M9 22V12h6v10"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M21.7 7.3a2.5 2.5 0 0 0-3.5 0L8 17.5 6 22l4.5-2L20 10.5a2.5 2.5 0 0 0 0-3.5z"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+<symbol id="i-arrow-r" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+<symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="m21.7 18-9-15.3a1 1 0 0 0-1.7 0L1.3 18a1 1 0 0 0 .9 1.5h18.6a1 1 0 0 0 .9-1.5z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-import" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5-5 5 5"/><path d="M12 15V3"/></symbol>
+<symbol id="i-set" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></symbol>
+<symbol id="i-judge" viewBox="0 0 24 24"><path d="m12 2 3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-shield"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">管理员</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">总览</p>
+      <a class="nav-item" href="admin-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <p class="nav-label">组织</p>
+      <a class="nav-item active" href="admin-students.html"><svg><use href="#i-users"/></svg>学生</a>
+      <a class="nav-item" href="admin-teachers.html"><svg><use href="#i-grad"/></svg>教师</a>
+      <p class="nav-label">内容</p>
+      <a class="nav-item" href="admin-exams.html"><svg><use href="#i-exam"/></svg>考试<span class="nav-count">47</span></a>
+<a class="nav-item" href="admin-courses.html"><svg><use href="#i-book"/></svg>课程</a>
+      <a class="nav-item" href="admin-banks.html"><svg><use href="#i-tag"/></svg>题库</a>
+      <p class="nav-label">系统</p>
+      <a class="nav-item" href="admin-judge-queue.html"><svg><use href="#i-judge"/></svg>评测队列<span class="nav-count">2</span></a>
+      <a class="nav-item" href="admin-settings.html"><svg><use href="#i-set"/></svg>系统设置</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">陈</div>
+      <div>
+        <div class="n">陈主任</div>
+        <div class="s">系统管理员</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb"><b>组织</b> / <a href="admin-students.html">学生</a> / <b>高一年级(2024)</b></span>
+      <div class="search">
+        <svg><use href="#i-search"/></svg>
+        <input placeholder="搜索班级名、任课教师…">
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <a class="back-link anim" href="admin-students.html"><svg><use href="#i-arrow-l"/></svg>返回年级列表</a>
+
+        <div class="page-head anim" style="animation-delay:.04s">
+          <div>
+            <h1>高一年级 <span class="yr">2024 级</span></h1>
+            <p class="page-sub">管理该年级下的班级 · 每个班级需分配一名任课教师 · 进入班级管理学生名单</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-ghost" onclick="location.href='admin-students-import.html'"><svg><use href="#i-import"/></svg>批量导入学生</button>
+            <button class="btn" onclick="newClass()"><svg><use href="#i-plus"/></svg>新建班级</button>
+          </div>
+        </div>
+
+        <div class="stats anim" style="animation-delay:.08s">
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">班级数</span>
+              <div class="ic ic-p"><svg><use href="#i-class"/></svg></div></div>
+            <p class="stat-num">6</p>
+            <p class="stat-foot">高一(1)班 — 高一(6)班</p>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">学生总数</span>
+              <div class="ic ic-a"><svg><use href="#i-users"/></svg></div></div>
+            <p class="stat-num">298</p>
+            <p class="stat-foot">平均每班 50 人</p>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">已分配任课教师</span>
+              <div class="ic ic-s"><svg><use href="#i-link"/></svg></div></div>
+            <p class="stat-num">5 <span style="font-size:14px;color:var(--muted);font-weight:500">/ 6</span></p>
+            <p class="stat-foot">83.3% 覆盖率</p>
+          </div>
+          <div class="card">
+            <div class="stat-top"><span class="stat-label">空班级</span>
+              <div class="ic ic-w"><svg><use href="#i-warn"/></svg></div></div>
+            <p class="stat-num">1</p>
+            <p class="stat-foot">高一(5)班 · 待导入名单</p>
+          </div>
+        </div>
+
+        <div class="table anim" style="animation-delay:.12s">
+          <div class="t-head">
+            <div>班级</div>
+            <div>学生数</div>
+            <div>任课教师</div>
+            <div class="h4">近 7 日活跃</div>
+            <div class="h5">创建时间</div>
+            <div style="text-align:right">操作</div>
+          </div>
+
+          <div class="t-row"><div class="c-title"><div class="c-ic"><svg><use href="#i-class"/></svg></div><div class="c-info"><h3>高一(1)班</h3><p>C0001 · 信息学方向</p></div></div><div class="metric">52<span>人</span></div><div class="teacher"><div class="av t1">王</div><div class="teacher-info"><p>王建国</p><span>T0018</span></div></div><div class="act"><b>84%</b></div><div class="time">2024-08-30</div><div class="t-ops"><button title="重命名" onclick="renameClass('高一(1)班')"><svg><use href="#i-edit"/></svg></button><button title="删除班级" class="danger"><svg><use href="#i-trash"/></svg></button><button class="enter" onclick="location.href='admin-students-roster.html'">进入<svg><use href="#i-arrow-r"/></svg></button></div></div>
+
+          <div class="t-row"><div class="c-title"><div class="c-ic"><svg><use href="#i-class"/></svg></div><div class="c-info"><h3>高一(2)班</h3><p>C0002 · 信息学方向</p></div></div><div class="metric">48<span>人</span></div><div class="teacher"><div class="av t2">李</div><div class="teacher-info"><p>李雪</p><span>T0031</span></div></div><div class="act"><b>76%</b></div><div class="time">2024-08-30</div><div class="t-ops"><button title="重命名" onclick="renameClass('高一(2)班')"><svg><use href="#i-edit"/></svg></button><button title="删除班级" class="danger"><svg><use href="#i-trash"/></svg></button><button class="enter" onclick="location.href='admin-students-roster.html'">进入<svg><use href="#i-arrow-r"/></svg></button></div></div>
+
+          <div class="t-row"><div class="c-title"><div class="c-ic"><svg><use href="#i-class"/></svg></div><div class="c-info"><h3>高一(3)班</h3><p>C0003 · 信息学方向</p></div></div><div class="metric">50<span>人</span></div><div class="teacher"><div class="av t3">张</div><div class="teacher-info"><p>张明远</p><span>T0033</span></div></div><div class="act"><b>91%</b></div><div class="time">2024-08-30</div><div class="t-ops"><button title="重命名" onclick="renameClass('高一(3)班')"><svg><use href="#i-edit"/></svg></button><button title="删除班级" class="danger"><svg><use href="#i-trash"/></svg></button><button class="enter" onclick="location.href='admin-students-roster.html'">进入<svg><use href="#i-arrow-r"/></svg></button></div></div>
+
+          <div class="t-row"><div class="c-title"><div class="c-ic"><svg><use href="#i-class"/></svg></div><div class="c-info"><h3>高一(4)班</h3><p>C0004 · 信息学方向</p></div></div><div class="metric">51<span>人</span></div><div class="teacher"><div class="av t4">林</div><div class="teacher-info"><p>林志远</p><span>T0019</span></div></div><div class="act"><b>68%</b></div><div class="time">2024-08-30</div><div class="t-ops"><button title="重命名" onclick="renameClass('高一(4)班')"><svg><use href="#i-edit"/></svg></button><button title="删除班级" class="danger"><svg><use href="#i-trash"/></svg></button><button class="enter" onclick="location.href='admin-students-roster.html'">进入<svg><use href="#i-arrow-r"/></svg></button></div></div>
+
+          <div class="t-row"><div class="c-title"><div class="c-ic empty"><svg><use href="#i-warn"/></svg></div><div class="c-info"><h3>高一(5)班</h3><p>空班级 · 待导入学生名单</p></div></div><div class="metric zero">0<span>人</span></div><div class="teacher none"><span>未分配</span></div><div class="act">—</div><div class="time">2024-09-12</div><div class="t-ops"><button title="重命名" onclick="renameClass('高一(5)班')"><svg><use href="#i-edit"/></svg></button><button title="删除班级" class="danger"><svg><use href="#i-trash"/></svg></button><button class="enter" onclick="location.href='admin-students-roster.html'">进入<svg><use href="#i-arrow-r"/></svg></button></div></div>
+
+          <div class="t-row"><div class="c-title"><div class="c-ic"><svg><use href="#i-class"/></svg></div><div class="c-info"><h3>高一(6)班</h3><p>C0006 · 信息学方向</p></div></div><div class="metric">47<span>人</span></div><div class="teacher"><div class="av t5">陈</div><div class="teacher-info"><p>陈丽华</p><span>T0027</span></div></div><div class="act"><b>82%</b></div><div class="time">2024-08-30</div><div class="t-ops"><button title="重命名" onclick="renameClass('高一(6)班')"><svg><use href="#i-edit"/></svg></button><button title="删除班级" class="danger"><svg><use href="#i-trash"/></svg></button><button class="enter" onclick="location.href='admin-students-roster.html'">进入<svg><use href="#i-arrow-r"/></svg></button></div></div>
+        </div>
+
+        <div class="foot anim" style="animation-delay:.16s">
+          <span class="warn-tag">
+            <svg><use href="#i-info"/></svg>
+            一个班级只能绑定一名任课教师 · 删除班级前需先清空该班学生名单
+          </span>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+function newClass(){
+  Modal.form({
+    title:'新建班级',
+    fields:[
+      {name:'name',label:'班级名称',placeholder:'例如：高一(1)班',required:true,maxlength:20},
+      {name:'teacher',label:'任课教师',placeholder:'留空则稍后分配'}
+    ],
+    submitText:'创建',
+    foot:'班级编号会按当前年级序号自动生成',
+    onSubmit:function(v){ toast('已创建「'+v.name+'」'); }
+  });
+}
+function renameClass(cur){
+  Modal.form({
+    title:'重命名班级',
+    fields:[{name:'name',label:'新名称',value:cur,required:true,maxlength:20}],
+    submitText:'保存',
+    onSubmit:function(v){
+      if(v.name===cur) toast('名称未变');
+      else toast('已重命名为「'+v.name+'」');
+    }
+  });
+}
+</script>
+</body>
+</html>

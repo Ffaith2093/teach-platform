@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>批改 · A0024 期中考试 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+  --qt-choice:#0EA5E9; --qt-choice-bg:#E0F2FE;
+  --qt-blank:#F59E0B;  --qt-blank-bg:#FEF3C7;
+  --qt-essay:#8B5CF6;  --qt-essay-bg:#EDE9FE;
+  --qt-code:#10B981;   --qt-code-bg:#D1FAE5;
+  --kw:#AF52A8; --fn:#4078BE; --str:#0A803C; --nm:#098658; --cmt:#6E7D91; --vr:#0F172A;
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --primary-muted:#0C4A6E;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171; --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(0,0,0,.4);
+  --qt-choice:#38BDF8; --qt-choice-bg:#0C334A;
+  --qt-blank:#FBBF24;  --qt-blank-bg:#422D06;
+  --qt-essay:#A78BFA;  --qt-essay-bg:#2A1B4D;
+  --qt-code:#34D399;   --qt-code-bg:#063B2A;
+  --kw:#C586C0; --fn:#DCDCAA; --str:#CE9178; --nm:#B5CEA8; --cmt:#6A9955; --vr:#9CDCFE;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+/* ============== 侧栏（教师端精简版） ============== */
+.side{width:220px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:56px;padding:0 20px;border-bottom:1px solid var(--border)}
+.logo-mark{width:28px;height:28px;border-radius:7px;background:var(--primary);
+           display:flex;align-items:center;justify-content:center;color:var(--primary-fg);font-size:16px}
+.logo-text{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:999px;
+      background:var(--accent-subtle);color:var(--accent);font-weight:500}
+.nav{flex:1;padding:14px 10px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:10px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-label+.nav-label,.nav-item+.nav-label{padding-top:20px}
+.nav-item{display:flex;align-items:center;gap:11px;padding:7px 12px;border-radius:8px;
+          font-size:13px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:15px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:1px 6px;font-size:10px;font-weight:600}
+.userbox{margin:10px;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);display:flex;align-items:center;gap:9px}
+.avatar{width:32px;height:32px;border-radius:50%;color:#fff;font-size:12px;font-weight:600;
+        background:linear-gradient(135deg,var(--warning),var(--danger));
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:12px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:10.5px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+/* ============== 主区 ============== */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:56px;display:flex;align-items:center;gap:14px;
+        padding:0 20px;border-bottom:1px solid var(--border);background:var(--bg)}
+.back{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);transition:.18s}
+.back:hover{color:var(--primary)}
+.back svg{font-size:14px}
+.vline{width:1px;height:18px;background:var(--border)}
+.crumb{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;min-width:0}
+.crumb b{color:var(--fg);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aid{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11px;color:var(--muted);
+     background:var(--surface);padding:2px 6px;border-radius:5px}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:7px;border-radius:7px;color:var(--muted);font-size:16px;
+          display:flex;transition:background .18s,color .18s}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;
+           border:1px solid var(--border);font-size:13px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost svg{font-size:13px}
+
+.content{flex:1;display:flex;min-height:0}
+.workspace{flex:1;display:flex;min-width:0;min-height:0}
+
+/* ============== 三栏通用 ============== */
+.col{display:flex;flex-direction:column;background:var(--card);min-width:0;min-height:0}
+.col-l{width:300px;flex-shrink:0;border-right:1px solid var(--border)}
+.col-c{flex:1;display:flex;flex-direction:column}
+.col-r{width:380px;flex-shrink:0;border-left:1px solid var(--border);background:var(--bg)}
+
+.col-hd{height:46px;flex-shrink:0;display:flex;align-items:center;gap:10px;padding:0 16px;
+        border-bottom:1px solid var(--border);background:var(--card)}
+.col-hd h3{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px}
+.col-hd h3 svg{font-size:14px;color:var(--muted)}
+.col-hd .right{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)}
+.col-hd select{padding:4px 20px 4px 9px;border:1px solid var(--border);border-radius:6px;
+               background:var(--card) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") no-repeat right 7px center;
+               color:var(--fg);font-size:11.5px;outline:none;cursor:pointer;
+               -webkit-appearance:none;appearance:none}
+.scroll{flex:1;min-height:0;overflow-y:auto}
+
+/* ============== 左栏：进度 + 学生列表 ============== */
+.progress{padding:14px 16px;border-bottom:1px solid var(--border);background:var(--surface)}
+html.dark .progress{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.prog-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.prog-row h4{font-size:13px;font-weight:600}
+.prog-row .pct{font-size:13px;font-weight:600;color:var(--primary);font-variant-numeric:tabular-nums}
+.prog-bar{height:6px;background:var(--card);border-radius:999px;overflow:hidden;border:1px solid var(--border)}
+html.dark .prog-bar{background:var(--border);border-color:transparent}
+.prog-bar span{display:block;height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:999px;transition:width .3s}
+.prog-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px}
+.prog-stats .cell{padding:8px 6px;border:1px solid var(--border);border-radius:7px;text-align:center;background:var(--card)}
+.prog-stats .n{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.prog-stats .lb{font-size:10px;color:var(--muted);margin-top:2px}
+.prog-stats .cell.s .n{color:var(--success)}
+.prog-stats .cell.w .n{color:var(--warning)}
+.prog-stats .cell.d .n{color:var(--danger)}
+.prog-stats .cell.m .n{color:var(--muted)}
+
+.seg-list{display:flex;padding:8px 12px;gap:4px;border-bottom:1px solid var(--border);overflow-x:auto}
+.seg-list button{flex:1;padding:6px 8px;border-radius:6px;font-size:11.5px;color:var(--muted);font-weight:500;
+                 transition:.18s;white-space:nowrap}
+.seg-list button:hover{background:var(--surface)}
+.seg-list button.on{background:var(--primary);color:var(--primary-fg);font-weight:600}
+
+.student-list{padding:6px 0}
+.stu-row{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;
+         border-bottom:1px solid var(--border);transition:background .18s}
+.stu-row:last-child{border-bottom:none}
+.stu-row:hover{background:var(--surface)}
+.stu-row.on{background:var(--primary-subtle)}
+html.dark .stu-row.on{background:color-mix(in srgb,var(--primary-subtle) 50%,transparent)}
+.stu-row .av{width:34px;height:34px;border-radius:50%;color:#fff;font-size:12px;font-weight:600;
+             display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.stu-row .info{flex:1;min-width:0}
+.stu-row .info b{display:block;font-size:13px;font-weight:500;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stu-row .info span{font-size:11px;color:var(--muted);font-family:"SF Mono",Menlo,Consolas,monospace;margin-top:2px;display:block}
+.stu-row .info small{display:block;font-size:11px;color:var(--subtle);margin-top:1px}
+.stu-row .st{flex-shrink:0;font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600}
+.stu-row .st.s{background:var(--success-subtle);color:var(--success)}
+.stu-row .st.w{background:var(--warning-subtle);color:var(--warning)}
+.stu-row .st.d{background:var(--danger-subtle);color:var(--danger)}
+.stu-row .st.m{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+html.dark .stu-row .st.m{background:var(--border);border-color:transparent}
+
+.av-c1{background:linear-gradient(135deg,#0EA5E9,#14B8A6)}
+.av-c2{background:linear-gradient(135deg,#F97316,#EF4444)}
+.av-c3{background:linear-gradient(135deg,#8B5CF6,#EC4899)}
+.av-c4{background:linear-gradient(135deg,#10B981,#0EA5E9)}
+.av-c5{background:linear-gradient(135deg,#F59E0B,#EC4899)}
+.av-c6{background:linear-gradient(135deg,#6366F1,#8B5CF6)}
+.av-c7{background:linear-gradient(135deg,#06B6D4,#3B82F6)}
+.av-c8{background:linear-gradient(135deg,#84CC16,#10B981)}
+
+/* ============== 中栏：题目 + 作答 ============== */
+.q-head{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--card)}
+.q-head .qnav{display:flex;align-items:center;gap:4px}
+.q-head .qnav button{width:30px;height:30px;border-radius:6px;border:1px solid var(--border);
+                     display:flex;align-items:center;justify-content:center;color:var(--muted);transition:.18s}
+.q-head .qnav button:hover{background:var(--surface);color:var(--fg)}
+.q-head .qnav button:disabled{opacity:.4;cursor:not-allowed}
+.q-head .qsel{position:relative}
+.q-head .qsel .qb{padding:6px 28px 6px 12px;border:1px solid var(--border);border-radius:7px;
+                 background:var(--card);font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;cursor:pointer;transition:.18s}
+.q-head .qsel .qb:hover{border-color:var(--primary)}
+.q-head .qsel .qb .qt-chip{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600}
+.q-head .qsel .qb svg.chev{font-size:14px;color:var(--muted)}
+.q-head .qsel .menu{position:absolute;top:calc(100% + 4px);left:0;min-width:280px;background:var(--card);
+                    border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px -8px rgba(15,23,42,.2);
+                    padding:4px;z-index:30;display:none}
+.q-head .qsel.open .menu{display:block}
+.q-head .qsel .menu button{display:flex;width:100%;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;
+                           font-size:13px;color:var(--fg);text-align:left;transition:.18s}
+.q-head .qsel .menu button:hover{background:var(--surface)}
+.q-head .qsel .menu button .qt-chip{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600}
+.q-head .qsel .menu button .st{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.q-head .qsel .menu button .st.ok{background:var(--success-subtle);color:var(--success)}
+.q-head .qsel .menu button .st.no{background:var(--border);color:var(--subtle)}
+.q-head .qsel .menu button .st svg{font-size:11px;stroke-width:3}
+.q-head .qsel .menu button .n{font-size:10px;color:var(--subtle);font-family:"SF Mono",Menlo,Consolas,monospace}
+
+.q-head .qa{margin-left:auto;display:flex;align-items:center;gap:6px}
+.q-head .qa .label{font-size:11.5px;color:var(--muted)}
+.q-head .qa .score{font-size:13px;font-weight:600;color:var(--fg);font-variant-numeric:tabular-nums}
+.q-head .qa .score b{color:var(--primary);font-size:15px}
+.q-head .qa .qt{font-size:10.5px;padding:2px 7px;border-radius:4px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.q-head .qa .qt svg{font-size:11px}
+.qt-c{background:var(--qt-choice-bg);color:var(--qt-choice)}
+.qt-b{background:var(--qt-blank-bg);color:var(--qt-blank)}
+.qt-e{background:var(--qt-essay-bg);color:var(--qt-essay)}
+.qt-p{background:var(--qt-code-bg);color:var(--qt-code)}
+
+.q-body{flex:1;min-height:0;overflow-y:auto;padding:20px 24px 80px;display:flex;flex-direction:column;gap:16px}
+
+.qcard{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.qcard-hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--surface)}
+html.dark .qcard-hd{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.qcard-hd .num{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:13px;font-weight:700;color:var(--primary);flex-shrink:0}
+.qcard-hd .title{font-size:14px;font-weight:600;flex:1;min-width:0}
+.qcard-hd .meta{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.qcard-hd .meta span{display:flex;align-items:center;gap:4px}
+
+.qcard-bd{padding:18px 20px}
+.qcard-bd p{font-size:13.5px;line-height:1.75;margin-bottom:10px;color:var(--fg)}
+.qcard-bd p:last-child{margin-bottom:0}
+.qcard-bd .code-inline{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;
+                       background:var(--surface);padding:2px 7px;border-radius:4px;color:var(--primary)}
+html.dark .code-inline{background:var(--border)}
+.qcard-bd .hint{margin-top:14px;border-left:2px solid var(--primary);border-radius:0 8px 8px 0;
+                background:color-mix(in srgb,var(--primary-subtle) 45%,transparent);padding:10px 14px}
+.qcard-bd .hint b{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--primary)}
+.qcard-bd .hint p{margin:5px 0 0;font-size:12.5px;color:var(--muted);line-height:1.7}
+
+/* 学生作答：选择题 */
+.ans-choices{display:flex;flex-direction:column;gap:10px}
+.ans-choice{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border:1px solid var(--border);
+            border-radius:9px;background:var(--surface);position:relative}
+html.dark .ans-choice{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.ans-choice.correct{border-color:var(--success);background:var(--success-subtle)}
+.ans-choice.wrong{border-color:var(--danger);background:var(--danger-subtle)}
+.ans-choice .key{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+                 font-size:11px;font-weight:700;flex-shrink:0;background:var(--card);color:var(--muted);border:1px solid var(--border)}
+.ans-choice.correct .key{background:var(--success);color:#fff;border-color:var(--success)}
+.ans-choice.wrong .key{background:var(--danger);color:#fff;border-color:var(--danger)}
+.ans-choice .txt{flex:1;font-size:13.5px;line-height:1.6}
+.ans-choice .tag{margin-left:auto;font-size:10.5px;padding:2px 7px;border-radius:4px;font-weight:600;flex-shrink:0}
+.ans-choice .tag.s{background:var(--success-subtle);color:var(--success)}
+.ans-choice .tag.d{background:var(--danger-subtle);color:var(--danger)}
+.ans-choice .tag.p{background:var(--primary-subtle);color:var(--primary)}
+
+/* 学生作答：填空题 */
+.ans-blanks{display:flex;flex-direction:column;gap:8px}
+.ans-blank{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
+html.dark .ans-blank{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.ans-blank .pos{font-size:11px;color:var(--muted);font-family:"SF Mono",Menlo,Consolas,monospace;flex-shrink:0}
+.ans-blank .val{flex:1;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:13px;color:var(--fg);word-break:break-all}
+.ans-blank.correct{border-color:var(--success)}
+.ans-blank.wrong{border-color:var(--danger)}
+.ans-blank .tag{font-size:10.5px;padding:2px 7px;border-radius:4px;font-weight:600;flex-shrink:0}
+.ans-blank .tag.s{background:var(--success-subtle);color:var(--success)}
+.ans-blank .tag.d{background:var(--danger-subtle);color:var(--danger)}
+
+/* 学生作答：简答题 */
+.ans-essay{padding:14px 16px;border:1px solid var(--border);border-radius:9px;background:var(--surface);
+           font-size:13.5px;line-height:1.8;color:var(--fg);white-space:pre-wrap;font-family:inherit}
+html.dark .ans-essay{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.ans-essay .placeholder{color:var(--subtle);font-style:italic}
+.rubric{margin-top:12px;padding:12px 14px;border:1px dashed var(--border);border-radius:8px;background:var(--card)}
+.rubric-head{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer}
+.rubric-head svg{font-size:13px;transition:transform .18s}
+.rubric.open .rubric-head svg{transform:rotate(90deg)}
+.rubric-list{margin-top:8px;font-size:12.5px;color:var(--muted);line-height:1.7;padding-left:18px;display:none}
+.rubric.open .rubric-list{display:block}
+
+/* 学生作答：编程题 */
+.code-block{border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--card)}
+.code-hd{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:var(--surface);border-bottom:1px solid var(--border)}
+html.dark .code-hd{background:color-mix(in srgb,var(--border) 40%,transparent)}
+.code-hd .file{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);font-family:"SF Mono",Menlo,Consolas,monospace}
+.code-hd .file svg{font-size:13px;color:var(--qt-code)}
+.code-hd .tools{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--subtle)}
+.code-body{flex:1;display:flex;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;line-height:21px;overflow:auto}
+.code-body .gutter{padding:10px 8px;text-align:right;color:var(--subtle);user-select:none;border-right:1px solid var(--border);
+                   background:color-mix(in srgb,var(--surface) 50%,transparent);min-width:36px}
+.code-body pre{flex:1;padding:10px 14px;white-space:pre}
+.kw{color:var(--kw)}.fn{color:var(--fn)}.st{color:var(--str)}
+.nm{color:var(--nm)}.cm{color:var(--cmt)}.vr{color:var(--vr)}
+
+/* 自动评测摘要 */
+.verdict{border:1px solid color-mix(in srgb,var(--success) 25%,transparent);border-radius:12px;
+         background:color-mix(in srgb,var(--success-subtle) 50%,transparent);padding:14px 16px;display:flex;align-items:center;gap:14px}
+.verdict.fail{border-color:color-mix(in srgb,var(--warning) 30%,transparent);
+              background:color-mix(in srgb,var(--warning-subtle) 50%,transparent)}
+.verdict .ic{padding:9px;border-radius:8px;display:flex;font-size:18px}
+.verdict .ic.ok{background:var(--success-subtle);color:var(--success)}
+.verdict .ic.fail{background:var(--warning-subtle);color:var(--warning)}
+.verdict h4{font-size:14px;font-weight:600;color:var(--fg)}
+.verdict p{font-size:12px;color:var(--muted);margin-top:2px}
+.verdict .meta{margin-left:auto;display:flex;gap:14px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.verdict .meta span{display:flex;align-items:center;gap:4px}
+.verdict .meta b{color:var(--fg);font-weight:500}
+
+/* 失败用例 diff */
+.tc-fail{border:1px solid color-mix(in srgb,var(--danger) 30%,transparent);border-radius:8px;
+         background:color-mix(in srgb,var(--danger-subtle) 30%,transparent);overflow:hidden;margin-top:10px}
+.tc-fail .row{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer}
+.tc-fail .row svg.idx{font-size:14px;color:var(--danger)}
+.tc-fail .row .nm{flex:1;font-size:13px;font-weight:500;color:var(--danger)}
+.tc-fail .row .ms{font-size:11px;color:var(--subtle);font-variant-numeric:tabular-nums}
+.tc-fail .row svg.chev{font-size:14px;color:var(--subtle);transition:transform .18s}
+.tc-fail.open .row svg.chev{transform:rotate(90deg)}
+.tc-fail .diff{padding:10px 14px;border-top:1px solid color-mix(in srgb,var(--danger) 20%,transparent);display:none}
+.tc-fail.open .diff{display:block}
+.tc-fail .diff-label{margin-bottom:3px;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--subtle)}
+.tc-fail pre{border-radius:5px;padding:5px 9px;font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;background:var(--card)}
+.tc-fail .diff-cols{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+
+/* ============== 右栏：评分 ============== */
+.score-card{padding:14px 16px;border-bottom:1px solid var(--border);background:var(--surface)}
+html.dark .score-card{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.score-card .stu{display:flex;align-items:center;gap:12px}
+.score-card .stu .av{width:46px;height:46px;border-radius:50%;color:#fff;font-size:15px;font-weight:600;
+                     display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.score-card .stu .info{flex:1;min-width:0}
+.score-card .stu .info b{display:block;font-size:14.5px;font-weight:600}
+.score-card .stu .info span{font-size:11.5px;color:var(--muted);font-family:"SF Mono",Menlo,Consolas,monospace;display:block;margin-top:2px}
+.score-card .stu .info small{font-size:11px;color:var(--subtle);display:block;margin-top:2px}
+.score-card .stu .badges{margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0}
+
+.score-total{padding:14px 16px;border-bottom:1px solid var(--border)}
+.score-total .row{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:6px}
+.score-total .row b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+.score-total .row.big{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:13px}
+.score-total .row.big b{font-size:18px;color:var(--primary)}
+.score-total .bar{height:5px;background:var(--surface);border-radius:999px;overflow:hidden;margin-top:6px}
+html.dark .score-total .bar{background:var(--border)}
+.score-total .bar span{display:block;height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:999px}
+
+.score-input{padding:14px 16px;border-bottom:1px solid var(--border)}
+.score-input label{font-size:11.5px;color:var(--muted);font-weight:500;margin-bottom:6px;display:block}
+.score-input .box{display:flex;align-items:center;gap:8px}
+.score-input input{flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:8px;
+                   background:var(--card);font-size:18px;font-weight:600;text-align:center;font-variant-numeric:tabular-nums;
+                   outline:none;transition:.18s;color:var(--fg)}
+.score-input input:focus{border-color:var(--primary)}
+.score-input .slash{font-size:16px;color:var(--muted)}
+.score-input .full{padding:6px 12px;border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--muted);transition:.18s}
+.score-input .full:hover{border-color:var(--primary);color:var(--primary)}
+.score-input .autograde{margin-top:8px;padding:8px 12px;border:1px dashed var(--border);border-radius:7px;
+                        background:var(--surface);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;width:100%;transition:.18s}
+.score-input .autograde:hover{border-color:var(--primary);color:var(--primary)}
+.score-input .autograde b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+
+.comment{padding:14px 16px;border-bottom:1px solid var(--border)}
+.comment label{font-size:11.5px;color:var(--muted);font-weight:500;margin-bottom:6px;display:block}
+.comment textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;
+                  background:var(--card);font-size:13px;color:var(--fg);outline:none;resize:vertical;min-height:80px;
+                  font-family:inherit;line-height:1.6;transition:.18s}
+.comment textarea:focus{border-color:var(--primary)}
+.comment .ch{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.comment .chip{padding:4px 10px;border:1px solid var(--border);border-radius:999px;font-size:11.5px;
+               color:var(--muted);background:var(--card);transition:.18s;cursor:pointer}
+.comment .chip:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-subtle)}
+
+.shortcut-card{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface)}
+html.dark .shortcut-card{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.shortcut-card h5{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;
+                  display:flex;align-items:center;gap:6px;cursor:pointer}
+.shortcut-card h5 svg{font-size:12px;transition:transform .18s}
+.shortcut-card.open h5 svg{transform:rotate(90deg)}
+.shortcut-list{font-size:11.5px;color:var(--muted);line-height:1.9;display:none}
+.shortcut-card.open .shortcut-list{display:block}
+.shortcut-list kbd{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:10.5px;
+                   background:var(--card);border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;
+                   padding:1px 6px;color:var(--fg);margin-right:6px;display:inline-block;min-width:14px;text-align:center}
+
+.actions{padding:14px 16px;display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--border);background:var(--card)}
+.actions .primary{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;border-radius:8px;
+                  background:var(--primary);color:var(--primary-fg);font-size:13.5px;font-weight:500;
+                  box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s}
+.actions .primary:hover{background:var(--primary-hover)}
+.actions .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.actions .secondary{display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;border-radius:8px;
+                    border:1px solid var(--border);font-size:12.5px;color:var(--muted);transition:.18s}
+.actions .secondary:hover{background:var(--surface);color:var(--fg)}
+.actions .danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 30%,transparent)}
+.actions .danger:hover{background:var(--danger-subtle);color:var(--danger);border-color:var(--danger)}
+
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 8px;
+       font-size:11px;font-weight:500;white-space:nowrap}
+.badge i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.b-s{background:var(--success-subtle);color:var(--success)}
+.b-w{background:var(--warning-subtle);color:var(--warning)}
+.b-d{background:var(--danger-subtle);color:var(--danger)}
+.b-m{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+.b-p{background:var(--primary-subtle);color:var(--primary)}
+html.dark .b-m{background:var(--border);border-color:transparent}
+
+.qt-chip-c{background:var(--qt-choice-bg);color:var(--qt-choice)}
+.qt-chip-b{background:var(--qt-blank-bg);color:var(--qt-blank)}
+.qt-chip-e{background:var(--qt-essay-bg);color:var(--qt-essay)}
+.qt-chip-p{background:var(--qt-code-bg);color:var(--qt-code)}
+
+.txt-s{color:var(--success)}.txt-w{color:var(--warning)}.txt-d{color:var(--danger)}.txt-p{color:var(--primary)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .28s ease-out both}
+
+@media(max-width:1380px){
+  .col-l{width:260px}
+  .col-r{width:340px}
+}
+@media(max-width:1200px){
+  .side{display:none}
+}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-cap" viewBox="0 0 24 24"><path d="M2 9 12 4l10 5-10 5z"/><path d="M6 11v5c0 1 3 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M3 9 12 3l9 6"/><path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"/><path d="M9 22V12h6v10"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2 2 0 0 1 0-5H20"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6M16 6l6 6-6 6"/></symbol>
+<symbol id="i-bank" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11M9 8v11M15 8v11M19 8v11"/><path d="M3 22h18"/></symbol>
+<symbol id="i-grading" viewBox="0 0 24 24"><path d="M9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+<symbol id="i-monitoring" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+<symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8"/><path d="M3 3v5h5"/></symbol>
+<symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></symbol>
+<symbol id="i-timer" viewBox="0 0 24 24"><circle cx="12" cy="14" r="8"/><path d="M12 10v4"/><path d="M9 2h6"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></symbol>
+<symbol id="i-fcode" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="m21.7 18-9-15.3a1 1 0 0 0-1.7 0L1.3 18a1 1 0 0 0 .9 1.5h18.6a1 1 0 0 0 .9-1.5z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+<symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-cap"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">教师端</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">教学</p>
+      <a class="nav-item" href="teacher-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <a class="nav-item" href="teacher-classes.html"><svg><use href="#i-class"/></svg>我的班级</a>
+      <a class="nav-item" href="teacher-courses.html"><svg><use href="#i-book"/></svg>课程</a>
+      <p class="nav-label">考核</p>
+      <a class="nav-item" href="teacher-assignments.html?type=assignment"><svg><use href="#i-file"/></svg>作业</a>
+      <a class="nav-item" id="nav-problems" href="teacher-problems.html"><svg><use href="#i-code"/></svg>题库</a>
+      <a class="nav-item" href="teacher-assignments.html?type=exam"><svg><use href="#i-bank"/></svg>试卷</a>
+      <a class="nav-item active"><svg><use href="#i-grading"/></svg>批改<span class="nav-count">14</span></a>
+      <p class="nav-label">分析</p>
+      <a class="nav-item"><svg><use href="#i-monitoring"/></svg>考试监控</a>
+      <a class="nav-item"><svg><use href="#i-chart"/></svg>成绩分析</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">王</div>
+      <div>
+        <div class="n">王建国</div>
+        <div class="s">信息技术 · 高一段</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <a class="back" href="teacher-assignments-detail.html?aid=A0024"><svg><use href="#i-arrow-l"/></svg>返回详情</a>
+      <div class="vline"></div>
+      <span class="crumb">
+        <span class="badge b-p"><i></i>试卷</span>
+        <b>A0024 期中考试 · Python 数据处理</b>
+      </span>
+      <div class="top-actions">
+        <span style="font-size:12px;color:var(--muted)"><svg style="color:var(--success);font-size:13px"><use href="#i-check"/></svg> 已自动暂存</span>
+        <button class="btn-ghost"><svg><use href="#i-export"/></svg>导出全部成绩</button>
+        <button class="icon-btn"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg><span class="dot"></span></button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <div class="workspace">
+
+        <!-- 左栏 -->
+        <section class="col col-l">
+          <div class="progress">
+            <div class="prog-row">
+              <h4>批改进度</h4>
+              <span class="pct"><span class="num">12</span> / <span class="num">72</span></span>
+            </div>
+            <div class="prog-bar"><span style="width:16.7%"></span></div>
+            <div class="prog-stats">
+              <div class="cell s"><div class="n">12</div><div class="lb">已批</div></div>
+              <div class="cell w"><div class="n">2</div><div class="lb">待批</div></div>
+              <div class="cell m"><div class="n">58</div><div class="lb">未提交</div></div>
+              <div class="cell"><div class="n">72</div><div class="lb">总数</div></div>
+            </div>
+          </div>
+
+          <div class="seg-list" id="seg">
+            <button class="on" data-filter="all">全部 <span style="opacity:.7;margin-left:2px" class="num">72</span></button>
+            <button data-filter="pending">待批 <span style="opacity:.7;margin-left:2px" class="num">2</span></button>
+            <button data-filter="graded">已批 <span style="opacity:.7;margin-left:2px" class="num">12</span></button>
+            <button data-filter="missing">未交 <span style="opacity:.7;margin-left:2px" class="num">58</span></button>
+          </div>
+
+          <div class="scroll">
+            <div class="student-list" id="student-list">
+
+              <div class="stu-row on" data-id="20240101" data-status="pending">
+                <div class="av av-c1">李</div>
+                <div class="info"><b>李明</b><span class="mono">20240101</span><small>高一(3)班 · 班长</small></div>
+                <span class="st w">待批</span>
+              </div>
+
+              <div class="stu-row" data-id="20240102" data-status="pending">
+                <div class="av av-c2">张</div>
+                <div class="info"><b>张伟</b><span class="mono">20240102</span><small>高一(3)班</small></div>
+                <span class="st w">待批</span>
+              </div>
+
+              <div class="stu-row" data-id="20240103" data-status="graded">
+                <div class="av av-c3">陈</div>
+                <div class="info"><b>陈静</b><span class="mono">20240103</span><small>高一(3)班 · 学委</small></div>
+                <span class="st s">已批</span>
+              </div>
+
+              <div class="stu-row" data-id="20240105" data-status="graded">
+                <div class="av av-c4">王</div>
+                <div class="info"><b>王晓东</b><span class="mono">20240105</span><small>高一(3)班</small></div>
+                <span class="st s">已批</span>
+              </div>
+
+              <div class="stu-row" data-id="20240108" data-status="graded">
+                <div class="av av-c5">刘</div>
+                <div class="info"><b>刘洋</b><span class="mono">20240108</span><small>高一(3)班</small></div>
+                <span class="st s">已批</span>
+              </div>
+
+              <div class="stu-row" data-id="20240110" data-status="late">
+                <div class="av av-c6">赵</div>
+                <div class="info"><b>赵敏</b><span class="mono">20240110</span><small>高一(3)班 · 补交</small></div>
+                <span class="st d">补交</span>
+              </div>
+
+              <div class="stu-row" data-id="20240115" data-status="graded">
+                <div class="av av-c7">孙</div>
+                <div class="info"><b>孙浩</b><span class="mono">20240115</span><small>高一(3)班</small></div>
+                <span class="st s">已批</span>
+              </div>
+
+              <div class="stu-row" data-id="20240120" data-status="graded">
+                <div class="av av-c8">周</div>
+                <div class="info"><b>周婷</b><span class="mono">20240120</span><small>高一(3)班</small></div>
+                <span class="st s">已批</span>
+              </div>
+
+              <div class="stu-row" data-id="20240122" data-status="graded">
+                <div class="av av-c1">吴</div>
+                <div class="info"><b>吴杰</b><span class="mono">20240122</span><small>高一(3)班</small></div>
+                <span class="st s">已批</span>
+              </div>
+
+              <div class="stu-row" data-id="20240125" data-status="graded">
+                <div class="av av-c2">郑</div>
+                <div class="info"><b>郑雨</b><span class="mono">20240125</span><small>高一(3)班 · 副班长</small></div>
+                <span class="st s">已批</span>
+              </div>
+
+              <div class="stu-row" data-id="20240128" data-status="graded">
+                <div class="av av-c3">钱</div>
+                <div class="info"><b>钱晨</b><span class="mono">20240128</span><small>高一(3)班</small></div>
+                <span class="st s">已批</span>
+              </div>
+
+              <div class="stu-row" data-id="20240130" data-status="graded">
+                <div class="av av-c4">马</div>
+                <div class="info"><b>马涛</b><span class="mono">20240130</span><small>高一(3)班</small></div>
+                <span class="st s">已批</span>
+              </div>
+
+              <div class="stu-row" data-id="20240201" data-status="missing">
+                <div class="av av-c5">徐</div>
+                <div class="info"><b>徐丽</b><span class="mono">20240201</span><small>高一(4)班</small></div>
+                <span class="st m">未交</span>
+              </div>
+
+              <div class="stu-row" data-id="20240202" data-status="missing">
+                <div class="av av-c6">韩</div>
+                <div class="info"><b>韩磊</b><span class="mono">20240202</span><small>高一(4)班</small></div>
+                <span class="st m">未交</span>
+              </div>
+
+              <div class="stu-row" data-id="20240203" data-status="graded">
+                <div class="av av-c7">高</div>
+                <div class="info"><b>高翔</b><span class="mono">20240203</span><small>高一(4)班</small></div>
+                <span class="st s">已批</span>
+              </div>
+
+              <div class="stu-row" data-id="20240205" data-status="graded">
+                <div class="av av-c8">梁</div>
+                <div class="info"><b>梁莹</b><span class="mono">20240205</span><small>高一(4)班 · 课代表</small></div>
+                <span class="st s">已批</span>
+              </div>
+
+              <div class="stu-row" data-id="20240208" data-status="graded">
+                <div class="av av-c1">宋</div>
+                <div class="info"><b>宋宇</b><span class="mono">20240208</span><small>高一(4)班</small></div>
+                <span class="st s">已批</span>
+              </div>
+
+              <div class="stu-row" data-id="20240211" data-status="late">
+                <div class="av av-c2">谢</div>
+                <div class="info"><b>谢明</b><span class="mono">20240211</span><small>高一(4)班 · 补交</small></div>
+                <span class="st d">补交</span>
+              </div>
+
+              <div class="stu-row" data-id="20240214" data-status="graded">
+                <div class="av av-c3">范</div>
+                <div class="info"><b>范琳</b><span class="mono">20240214</span><small>高一(4)班</small></div>
+                <span class="st s">已批</span>
+              </div>
+
+              <div class="stu-row" data-id="20240218" data-status="graded">
+                <div class="av av-c4">彭</div>
+                <div class="info"><b>彭辉</b><span class="mono">20240218</span><small>高一(4)班</small></div>
+                <span class="st s">已批</span>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- 中栏 -->
+        <section class="col col-c">
+          <div class="q-head">
+            <div class="qnav">
+              <button disabled title="上一题"><svg style="transform:rotate(90deg)"><use href="#i-down"/></svg></button>
+            </div>
+            <div class="qsel" id="qsel">
+              <div class="qb" onclick="toggleQSel()">
+                <span class="qt-chip qt-chip-p"><svg style="font-size:11px"><use href="#i-code"/></svg>编程</span>
+                <span><b>#1</b> 两数之和</span>
+                <svg class="chev"><use href="#i-down"/></svg>
+              </div>
+              <div class="menu" id="qsel-menu">
+                <button><span class="qt-chip qt-chip-p"><svg style="font-size:11px"><use href="#i-code"/></svg>编程</span><span>两数之和</span><span class="st ok"><svg><use href="#i-check"/></svg></span><span class="n">20 分</span></button>
+                <button><span class="qt-chip qt-chip-p"><svg style="font-size:11px"><use href="#i-code"/></svg>编程</span><span>列表去重</span><span class="st ok"><svg><use href="#i-check"/></svg></span><span class="n">20 分</span></button>
+                <button><span class="qt-chip qt-chip-p"><svg style="font-size:11px"><use href="#i-code"/></svg>编程</span><span>词频统计</span><span class="st no">·</span><span class="n">20 分</span></button>
+                <button><span class="qt-chip qt-chip-c"><svg style="font-size:11px"><use href="#i-check"/></svg>选择</span><span>int 与 str 的区别</span><span class="st ok"><svg><use href="#i-check"/></svg></span><span class="n">20 分</span></button>
+                <button><span class="qt-chip qt-chip-e"><svg style="font-size:11px"><use href="#i-target"/></svg>简答</span><span>list vs tuple 适用场景</span><span class="st no">·</span><span class="n">20 分</span></button>
+              </div>
+            </div>
+            <div class="qnav">
+              <button title="下一题" onclick="nextQ()"><svg style="transform:rotate(-90deg)"><use href="#i-down"/></svg></button>
+            </div>
+
+            <div class="qa">
+              <span class="label">当前题</span>
+              <span class="score"><b class="num">20</b> / 20</span>
+              <span class="qt qt-p"><svg><use href="#i-code"/></svg>编程题</span>
+            </div>
+          </div>
+
+          <div class="q-body">
+
+            <!-- 题面 -->
+            <div class="qcard">
+              <div class="qcard-hd">
+                <span class="num">#1</span>
+                <span class="title">两数之和</span>
+                <span class="meta">
+                  <span><svg style="color:var(--qt-code)"><use href="#i-code"/></svg>编程题</span>
+                  <span>·</span>
+                  <span>满分 <b class="num" style="color:var(--fg)">20</b></span>
+                  <span>·</span>
+                  <span>中等</span>
+                </span>
+              </div>
+              <div class="qcard-bd">
+                <p>给定一个整数数组 <span class="code-inline">nums</span> 和一个目标值 <span class="code-inline">target</span>，请在数组中找出和为目标值的<strong>两个</strong>整数，返回它们的下标。</p>
+                <p>你可以假设每种输入<strong>只会对应一个</strong>答案，且同一元素不能被重复使用。</p>
+                <div class="hint">
+                  <b><svg><use href="#i-bulb"/></svg>提示</b>
+                  <p>可以使用哈希表将「查找 target - x」的时间复杂度从 O(n) 降到 O(1)，整体复杂度 O(n)。</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 学生作答 · 编程题 -->
+            <div class="qcard">
+              <div class="qcard-hd">
+                <span class="num" style="background:var(--qt-code);color:#fff">提交</span>
+                <span class="title">李明 · 高一(3)班 · 学号 20240101</span>
+                <span class="meta">
+                  <span><svg><use href="#i-timer"/></svg>用时 <b style="color:var(--fg)">12 分 38 秒</b></span>
+                  <span>·</span>
+                  <span>提交次数 <b style="color:var(--fg)">2</b></span>
+                </span>
+              </div>
+
+              <div class="qcard-bd">
+
+                <!-- 自动评测 -->
+                <div class="verdict">
+                  <div class="ic ok"><svg><use href="#i-check"/></svg></div>
+                  <div style="flex:1">
+                    <h4>通过全部用例</h4>
+                    <p>自动评测 · <b style="color:var(--fg)" class="num">5 / 5</b> 用例通过</p>
+                  </div>
+                  <div class="meta">
+                    <span><svg><use href="#i-timer"/></svg>最大耗时 <b>32 ms</b></span>
+                    <span><svg><use href="#i-cpu"/></svg>内存 <b>15.6 MB</b></span>
+                  </div>
+                </div>
+
+                <!-- 代码 -->
+                <div style="margin-top:14px">
+                  <div class="code-block">
+                    <div class="code-hd">
+                      <div class="file"><svg><use href="#i-fcode"/></svg>main.py · Python 3.11</div>
+                      <div class="tools">
+                        <span class="num">18 行 · 412 字符</span>
+                        <button title="复制" style="color:var(--subtle);font-size:13px"><svg><use href="#i-copy"/></svg></button>
+                      </div>
+                    </div>
+                    <div class="code-body">
+                      <div class="gutter">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10<br>11<br>12<br>13<br>14<br>15<br>16<br>17<br>18</div>
+<pre><span class="cm"># 两数之和 · 哈希表解法</span>
+<span class="kw">def</span> <span class="fn">two_sum</span>(<span class="vr">nums</span>, <span class="vr">target</span>):
+    <span class="vr">seen</span> = {}
+    <span class="kw">for</span> <span class="vr">i</span>, <span class="vr">n</span> <span class="kw">in</span> <span class="fn">enumerate</span>(<span class="vr">nums</span>):
+        <span class="vr">complement</span> = <span class="vr">target</span> - <span class="vr">n</span>
+        <span class="kw">if</span> <span class="vr">complement</span> <span class="kw">in</span> <span class="vr">seen</span>:
+            <span class="kw">return</span> [<span class="vr">seen</span>[<span class="vr">complement</span>], <span class="vr">i</span>]
+        <span class="vr">seen</span>[<span class="vr">n</span>] = <span class="vr">i</span>
+    <span class="kw">return</span> []
+
+<span class="cm"># 读取输入</span>
+<span class="vr">line</span> = <span class="fn">input</span>().<span class="fn">strip</span>()
+<span class="vr">nums</span> = <span class="fn">list</span>(<span class="fn">map</span>(<span class="fn">int</span>, <span class="vr">line</span>.<span class="fn">split</span>()))
+<span class="vr">target</span> = <span class="fn">int</span>(<span class="fn">input</span>().<span class="fn">strip</span>())
+
+<span class="vr">result</span> = <span class="fn">two_sum</span>(<span class="vr">nums</span>, <span class="vr">target</span>)
+<span class="fn">print</span>(<span class="vr">result</span>[<span class="nm">0</span>], <span class="vr">result</span>[<span class="nm">1</span>])</pre>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 提交历史 -->
+                <div style="margin-top:14px">
+                  <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:.06em;
+                              text-transform:uppercase;color:var(--muted);margin-bottom:8px">
+                    <svg style="font-size:13px"><use href="#i-clip"/></svg> 本题提交历史
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:6px">
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:8px">
+                      <span class="badge b-s"><i></i>通过</span>
+                      <span style="flex:1;font-size:12px;color:var(--muted)">5/5 用例 · 32ms · 15.6MB</span>
+                      <span style="font-size:11px;color:var(--subtle)" class="num">第 2 次 · 8 分钟前</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border);border-radius:8px">
+                      <span class="badge b-d"><i></i>答案错误</span>
+                      <span style="flex:1;font-size:12px;color:var(--muted)">3/5 用例 · 第 3 用例期望 [0,3] 实际 [1,2]</span>
+                      <span style="font-size:11px;color:var(--subtle)" class="num">第 1 次 · 21 分钟前</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- 右栏 -->
+        <section class="col col-r">
+
+          <div class="score-card">
+            <div class="stu">
+              <div class="av av-c1">李</div>
+              <div class="info">
+                <b>李明</b>
+                <span class="mono">20240101</span>
+                <small>高一(3)班 · 班长</small>
+              </div>
+              <div class="badges"><span class="badge b-w"><i></i>待批改</span></div>
+            </div>
+            <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:14px;font-size:11.5px;color:var(--muted)">
+              <span><svg style="font-size:13px;color:var(--success)"><use href="#i-check"/></svg> 已提交</span>
+              <span><svg style="font-size:13px"><use href="#i-timer"/></svg> 8 分钟前</span>
+              <span><svg style="font-size:13px"><use href="#i-clock"/></svg> 用时 12:38</span>
+            </div>
+          </div>
+
+          <div class="score-total">
+            <div class="row"><span>已评题目</span><b><span class="num">0</span> / 5</b></div>
+            <div class="row"><span>当前题得分</span><b><span class="num">20</span> / 20</b></div>
+            <div class="row big"><span>当前总分</span><b><span class="num">0</span> / 100</b></div>
+            <div class="bar"><span style="width:0%"></span></div>
+          </div>
+
+          <div class="score-input">
+            <label>本题得分</label>
+            <div class="box">
+              <input type="number" id="score-input" value="20" min="0" max="20" step="1">
+              <span class="slash">/</span>
+              <span style="font-size:18px;font-weight:600;color:var(--muted)" class="num">20</span>
+              <button class="full" onclick="setFull()">满分</button>
+            </div>
+            <button class="autograde" onclick="applyAuto()">
+              <svg style="font-size:14px"><use href="#i-cpu"/></svg>
+              应用自动评测分 <b>20</b>
+            </button>
+          </div>
+
+          <div class="comment">
+            <label>评语 <span style="color:var(--subtle);font-weight:400">（120 字以内）</span></label>
+            <textarea id="comment" placeholder="给这位同学写点反馈…"></textarea>
+            <div class="ch">
+              <span class="chip" onclick="insertChip(this)">代码风格好</span>
+              <span class="chip" onclick="insertChip(this)">思路清晰</span>
+              <span class="chip" onclick="insertChip(this)">边界未处理</span>
+              <span class="chip" onclick="insertChip(this)">超时优化空间</span>
+              <span class="chip" onclick="insertChip(this)">变量命名可改进</span>
+              <span class="chip" onclick="insertChip(this)">答案正确但效率低</span>
+            </div>
+          </div>
+
+          <div class="shortcut-card open" id="shortcut-card">
+            <h5 onclick="toggleShortcut()"><svg><use href="#i-chev"/></svg>键盘快捷键</h5>
+            <div class="shortcut-list">
+              <div><kbd>↓</kbd>下一位学生</div>
+              <div><kbd>↑</kbd>上一位学生</div>
+              <div><kbd>Ctrl</kbd>+<kbd>Enter</kbd>保存并下一位</div>
+              <div><kbd>1</kbd>~<kbd>9</kbd>应用常用评语</div>
+              <div><kbd>Esc</kbd>关闭弹窗</div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="primary" onclick="saveNext()">
+              <svg><use href="#i-check"/></svg>
+              保存并下一题 <span style="opacity:.7;font-size:11px;margin-left:4px">Ctrl+↵</span>
+            </button>
+            <div class="row">
+              <button class="secondary" onclick="saveNextStudent()">
+                <svg style="font-size:13px"><use href="#i-arrow-l" /></svg>
+                下一位待批
+              </button>
+              <button class="secondary" onclick="skipQ()">跳过本题</button>
+            </div>
+            <button class="secondary danger" onclick="returnToStudent()">
+              <svg style="font-size:13px"><use href="#i-undo"/></svg>
+              打回重做
+            </button>
+          </div>
+
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+/* 侧栏 active */
+var aid = new URLSearchParams(location.search).get('aid') || 'A0024';
+document.querySelectorAll('.side .nav-item').forEach(function(n){ n.classList.remove('active'); });
+// 批改入口 active
+document.querySelectorAll('.side .nav-item').forEach(function(n){
+  var svg = n.querySelector('svg use');
+  if(svg && svg.getAttribute('href') === '#i-grading') n.classList.add('active');
+});
+
+/* 题号下拉 */
+function toggleQSel(){
+  document.getElementById('qsel').classList.toggle('open');
+}
+document.addEventListener('click', function(e){
+  if(!e.target.closest('#qsel')){
+    var qs = document.getElementById('qsel');
+    if(qs) qs.classList.remove('open');
+  }
+});
+
+/* 左侧筛选 */
+document.querySelectorAll('#seg button').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('#seg button').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    var f = b.dataset.filter;
+    var rows = document.querySelectorAll('#student-list .stu-row');
+    rows.forEach(function(r){
+      if(f === 'all'){ r.style.display = ''; return; }
+      var st = r.dataset.status;
+      // pending+late 都算「待批相关」？pending 是真待批，late 是补交待批
+      var show = false;
+      if(f === 'pending') show = (st === 'pending' || st === 'late');
+      else if(f === 'graded') show = (st === 'graded');
+      else if(f === 'missing') show = (st === 'missing');
+      r.style.display = show ? '' : 'none';
+    });
+  });
+});
+
+/* 学生切换 */
+document.querySelectorAll('#student-list .stu-row').forEach(function(r){
+  r.addEventListener('click', function(){
+    document.querySelectorAll('#student-list .stu-row').forEach(function(x){ x.classList.remove('on'); });
+    r.classList.add('on');
+    toast('已切换到 ' + r.querySelector('b').textContent);
+  });
+});
+
+/* 评分快捷 */
+function setFull(){ document.getElementById('score-input').value = 20; toast('已设为满分'); }
+function applyAuto(){
+  document.getElementById('score-input').value = 20;
+  toast('已应用自动评测分 20');
+}
+
+/* 常用评语 chip */
+function insertChip(el){
+  var ta = document.getElementById('comment');
+  var txt = el.textContent;
+  var insert = (ta.value && !ta.value.endsWith('，') && !ta.value.endsWith(';') ? '，' : '') + txt;
+  ta.value = (ta.value || '') + insert;
+  ta.focus();
+}
+
+/* 操作按钮 */
+function saveNext(){ toast('已保存李明 · 第 1 题：20/20 · 跳到第 2 题'); }
+function saveNextStudent(){
+  toast('已保存 · 自动跳到下一位「待批」学生');
+}
+function skipQ(){ toast('已跳过本题（未保存）'); }
+function returnToStudent(){
+  Modal.confirm({
+    title: '打回李明的期中考试？',
+    body: ['学生会收到「需要修改重交」的通知','本次成绩不会被记录','打回后他可以重新提交一份'],
+    confirmText: '确认打回', danger: true,
+    onConfirm: function(){ toast('已打回 · 李明将收到通知'); }
+  });
+}
+
+/* 快捷键卡片折叠 */
+function toggleShortcut(){
+  document.getElementById('shortcut-card').classList.toggle('open');
+}
+
+/* 全局快捷键 */
+document.addEventListener('keydown', function(e){
+  if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if(e.key === 'ArrowDown'){
+    var rows = Array.from(document.querySelectorAll('#student-list .stu-row'));
+    var idx = rows.findIndex(function(r){ return r.classList.contains('on'); });
+    var next = rows[idx + 1];
+    if(next) next.click();
+  } else if(e.key === 'ArrowUp'){
+    var rows = Array.from(document.querySelectorAll('#student-list .stu-row'));
+    var idx = rows.findIndex(function(r){ return r.classList.contains('on'); });
+    var prev = rows[idx - 1];
+    if(prev) prev.click();
+  } else if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){
+    saveNext();
+  } else if(/^[1-6]$/.test(e.key)){
+    var chips = document.querySelectorAll('.comment .chip');
+    var n = parseInt(e.key, 10) - 1;
+    if(chips[n]) insertChip(chips[n]);
+  }
+});
+
+/* 评分失败用例折叠 */
+document.querySelectorAll('.tc-fail').forEach(function(r){
+  r.querySelector('.row').addEventListener('click', function(){
+    r.classList.toggle('open');
+  });
+});
+
+/* 题号下拉项点击 */
+document.querySelectorAll('#qsel-menu button').forEach(function(b){
+  b.addEventListener('click', function(){
+    var title = b.querySelectorAll('span')[1].textContent;
+    document.querySelector('#qsel .qb').innerHTML = b.innerHTML;
+    document.getElementById('qsel').classList.remove('open');
+    toast('已切换到 ' + title);
+  });
+});
+
+function nextQ(){ toast('下一题'); }
+</script>
+</body>
+</html>

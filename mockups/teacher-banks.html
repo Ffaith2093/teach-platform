@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>我的题库 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --pink:#EC4899;   --pink-subtle:#FCE7F3;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --primary-muted:#0C4A6E;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171;  --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --pink:#F472B6;   --pink-subtle:#3F0F2A;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+
+.app{display:flex;min-height:100vh}
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--primary);
+           display:flex;align-items:center;justify-content:center;color:var(--primary-fg);font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--accent-subtle);color:var(--accent);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-label+.nav-label,.nav-item+.nav-label{padding-top:24px}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--warning),var(--danger));
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted)}
+.crumb b{color:var(--fg);font-weight:500}
+.search{position:relative;flex:1;max-width:380px}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--subtle)}
+.search input{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--border);border-radius:8px;
+              background:var(--surface);color:var(--fg);font-size:14px;outline:none;transition:.18s}
+.search input::placeholder{color:var(--subtle)}
+.search input:focus{border-color:var(--primary);background:var(--card)}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;
+          display:flex;transition:background .18s,color .18s;position:relative}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+.dot{position:absolute;top:7px;right:7px;width:8px;height:8px;border-radius:50%;
+     background:var(--danger);border:2px solid var(--bg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+           padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+h1{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.page-sub{margin-top:4px;font-size:14px;color:var(--muted);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.page-sub .sep{width:4px;height:4px;border-radius:50%;background:var(--border)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost svg{font-size:14px}
+
+/* 统计 */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.card{border:1px solid var(--border);border-radius:12px;background:var(--card);padding:20px;transition:.2s}
+.card.hoverable:hover{border-color:color-mix(in srgb,var(--primary) 40%,transparent);box-shadow:var(--shadow-md)}
+.stat-top{display:flex;align-items:flex-start;justify-content:space-between}
+.stat-label{font-size:13px;color:var(--muted)}
+.ic{padding:7px;border-radius:8px;display:flex;font-size:16px}
+.ic-p{background:var(--primary-subtle);color:var(--primary)}
+.ic-a{background:var(--accent-subtle);color:var(--accent)}
+.ic-s{background:var(--success-subtle);color:var(--success)}
+.ic-w{background:var(--warning-subtle);color:var(--warning)}
+.ic-d{background:var(--danger-subtle);color:var(--danger)}
+.ic-v{background:var(--purple-subtle);color:var(--purple)}
+.ic-pink{background:var(--pink-subtle);color:var(--pink)}
+.stat-num{margin-top:10px;font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat-foot{margin-top:4px;font-size:12px;color:var(--subtle);display:flex;align-items:center;gap:4px}
+.stat-foot .delta-up{color:var(--success);font-weight:600}
+.stat-foot .delta-dn{color:var(--danger);font-weight:600}
+
+/* 筛选 */
+.sub-filter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 18px;
+             border:1px solid var(--border);border-radius:12px;background:var(--card)}
+.sub-filter .lbl{font-size:12px;color:var(--muted);font-weight:500}
+.sub-filter select{padding:7px 28px 7px 12px;border:1px solid var(--border);border-radius:8px;
+                   background:var(--surface) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") no-repeat right 10px center;
+                   color:var(--fg);font-size:13px;outline:none;cursor:pointer;transition:.18s;
+                   -webkit-appearance:none;appearance:none;min-width:120px}
+.sub-filter select:hover{border-color:var(--primary-muted)}
+.sub-filter select:focus{border-color:var(--primary)}
+.sub-filter .right{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12.5px}
+.sub-filter .reset{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;
+                  font-size:12px;color:var(--muted);transition:.18s}
+.sub-filter .reset:hover{background:var(--surface);color:var(--primary)}
+
+/* ============ 题库卡片网格 ============ */
+.bank-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.bank-card{position:relative;border:1px solid var(--border);border-radius:14px;background:var(--card);
+            overflow:hidden;transition:.22s;cursor:pointer}
+.bank-card:hover{border-color:color-mix(in srgb,var(--primary) 50%,transparent);box-shadow:var(--shadow-md);transform:translateY(-2px)}
+
+/* 顶部彩条 16:9 */
+.bank-banner{position:relative;aspect-ratio:16/6;overflow:hidden;
+             background:linear-gradient(135deg,var(--c1),var(--c2));display:flex;align-items:flex-end;padding:16px}
+.bank-banner::after{content:"";position:absolute;inset:0;background:
+  radial-gradient(circle at 20% 30%,rgba(255,255,255,.18),transparent 50%),
+  radial-gradient(circle at 80% 70%,rgba(0,0,0,.12),transparent 55%);pointer-events:none}
+.bank-banner-content{position:relative;color:#fff;z-index:1;display:flex;align-items:center;gap:12px;width:100%}
+.bank-banner-content .ic-l{padding:9px;border-radius:9px;background:rgba(255,255,255,.22);color:#fff;font-size:18px;display:flex;backdrop-filter:blur(8px)}
+.bank-banner-content .tt{font-size:17px;font-weight:600;letter-spacing:-.01em;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.18)}
+.bank-banner-content .cc{margin-left:auto;display:flex;align-items:center;gap:6px;padding:4px 10px;
+                       border-radius:999px;background:rgba(255,255,255,.22);color:#fff;font-size:11px;
+                       backdrop-filter:blur(8px);font-weight:500}
+
+/* 题目类型分布 */
+.bank-body{padding:16px 20px 14px}
+.bank-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;
+           font-size:12px;color:var(--muted)}
+.bank-meta .role-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;
+                     border-radius:999px;font-size:11px;font-weight:600}
+.bank-meta .role-chip.owner{background:var(--primary-subtle);color:var(--primary)}
+.bank-meta .role-chip.collab{background:var(--accent-subtle);color:var(--accent)}
+.bank-meta .meta-dot{width:3px;height:3px;border-radius:50%;background:var(--subtle)}
+
+.type-dist{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0 12px}
+.type-cell{padding:10px 8px;border:1px solid var(--border);border-radius:10px;background:var(--surface);
+           display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
+.type-cell .icx{padding:6px;border-radius:8px;display:flex;font-size:13px;margin-bottom:3px}
+.type-cell .icx.t-radio{background:var(--primary-subtle);color:var(--primary)}
+.type-cell .icx.t-blank{background:var(--success-subtle);color:var(--success)}
+.type-cell .icx.t-cblank{background:var(--warning-subtle);color:var(--warning)}
+.type-cell .icx.t-code{background:var(--purple-subtle);color:var(--purple)}
+.type-cell .nn{font-size:18px;font-weight:700;color:var(--fg);font-variant-numeric:tabular-nums;line-height:1.1}
+.type-cell .lb{font-size:10.5px;color:var(--muted)}
+.type-cell.zero .nn{color:var(--subtle)}
+.type-cell.zero .icx{background:var(--surface);color:var(--subtle)}
+
+/* bank foot */
+.bank-foot{display:flex;align-items:center;justify-content:space-between;padding:11px 20px;
+           border-top:1px solid var(--border);background:var(--surface);font-size:12px;color:var(--muted)}
+.bank-foot .left{display:flex;align-items:center;gap:10px}
+.bank-foot b{color:var(--fg);font-weight:500}
+.bank-foot .enter{display:inline-flex;align-items:center;gap:4px;color:var(--primary);font-weight:500;font-size:12px;transition:.18s;opacity:0;transform:translateX(-4px)}
+.bank-card:hover .bank-foot .enter{opacity:1;transform:none}
+
+/* 卡片右上角菜单 */
+.bank-menu{position:absolute;top:10px;right:10px;z-index:2}
+.bank-menu-btn{padding:6px 7px;border-radius:7px;color:#fff;font-size:14px;display:flex;
+               background:rgba(255,255,255,.22);backdrop-filter:blur(8px);transition:.18s}
+.bank-menu-btn:hover{background:rgba(255,255,255,.36);color:#fff}
+.bank-menu-list{position:absolute;top:calc(100% + 4px);right:0;min-width:170px;background:var(--card);
+                border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px -8px rgba(15,23,42,.18);
+                padding:4px;z-index:30;display:none}
+.bank-menu.open .bank-menu-list{display:block}
+.bank-menu-list button{display:flex;align-items:center;gap:9px;width:100%;padding:7px 10px;border-radius:6px;
+                       font-size:12.5px;color:var(--fg);text-align:left;transition:.18s}
+.bank-menu-list button:hover{background:var(--surface)}
+.bank-menu-list button svg{font-size:13px;color:var(--muted)}
+.bank-menu-list button.danger{color:var(--danger)}
+.bank-menu-list button.danger svg{color:var(--danger)}
+.bank-menu-list .sep-line{height:1px;background:var(--border);margin:4px 0}
+
+/* 空状态 */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
+       padding:80px 24px;border:1px dashed var(--border);border-radius:14px;background:var(--card)}
+html.dark .empty{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.empty-ic{padding:18px;border-radius:50%;background:var(--primary-subtle);color:var(--primary);font-size:24px;display:flex}
+.empty h3{margin-top:18px;font-size:15px;font-weight:600}
+.empty p{margin-top:6px;max-width:320px;text-align:center;font-size:13px;line-height:1.7;color:var(--muted)}
+.empty .btn{margin-top:18px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+
+@media(max-width:1200px){ .side{display:none} }
+@media(max-width:900px){
+  .bank-grid{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr}
+  .content{padding:24px 20px}
+  .topbar{padding:0 20px}
+}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-cap" viewBox="0 0 24 24"><path d="M2 9 12 4l10 5-10 5z"/><path d="M6 11v5c0 1 3 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M3 9 12 3l9 6"/><path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"/><path d="M9 22V12h6v10"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2 2 0 0 1 0-5H20"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6M16 6l6 6-6 6"/></symbol>
+<symbol id="i-bank" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11M9 8v11M15 8v11M19 8v11"/><path d="M3 22h18"/></symbol>
+<symbol id="i-grading" viewBox="0 0 24 24"><path d="M9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+<symbol id="i-monitoring" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></symbol>
+<symbol id="i-crown" viewBox="0 0 24 24"><path d="m2 19 3-12h14l3 12-10 4z"/><path d="M5 13h14M12 7l3 6 3-6M12 7l-3 6-3-6"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-arrow-r" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></symbol>
+<symbol id="i-tcode" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6M16 6l6 6-6 6"/><path d="m14 4-4 16"/></symbol>
+<symbol id="i-text" viewBox="0 0 24 24"><path d="M4 7V4h16v3"/><path d="M9 20h6M12 4v16"/></symbol>
+<symbol id="i-toggle" viewBox="0 0 24 24"><path d="M3 17V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-cap"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">教师端</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">教学</p>
+      <a class="nav-item" href="teacher-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <a class="nav-item" href="teacher-classes.html"><svg><use href="#i-class"/></svg>我的班级</a>
+      <a class="nav-item" href="teacher-courses.html"><svg><use href="#i-book"/></svg>课程<span class="nav-count">5</span></a>
+      <p class="nav-label">考核</p>
+      <a class="nav-item" href="teacher-assignments.html?type=assignment"><svg><use href="#i-file"/></svg>作业<span class="nav-count">3</span></a>
+      <a class="nav-item active" id="nav-problems" href="teacher-problems.html"><svg><use href="#i-code"/></svg>题库</a>
+      <a class="nav-item" href="teacher-assignments.html?type=exam"><svg><use href="#i-bank"/></svg>试卷</a>
+      <a class="nav-item" href="teacher-assignments-grade.html?aid=A0024"><svg><use href="#i-grading"/></svg>批改<span class="nav-count">24</span></a>
+      <p class="nav-label">分析</p>
+      <a class="nav-item"><svg><use href="#i-monitoring"/></svg>考试监控</a>
+      <a class="nav-item"><svg><use href="#i-chart"/></svg>成绩分析</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">王</div>
+      <div>
+        <div class="n">王建国</div>
+        <div class="s">信息技术 · 高一段</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb"><b>考核</b> / 我的题库</span>
+      <div class="search">
+        <svg><use href="#i-search"/></svg>
+        <input id="search-input" placeholder="搜索题库名、课程、标签…">
+      </div>
+      <div class="top-actions">
+        <a class="btn-ghost" href="teacher-problems.html" style="text-decoration:none"><svg><use href="#i-code"/></svg>编程题视图</a>
+        <button class="icon-btn" onclick="tt()"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg><span class="dot"></span></button>
+        <button class="btn" onclick="createBank()"><svg><use href="#i-plus"/></svg>新建题库</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <!-- 页头 -->
+        <div class="page-head anim">
+          <div>
+            <h1>我的题库</h1>
+            <p class="page-sub">
+              <span>本人创建 <b class="num txt-p">4</b> 个</span>
+              <span class="sep"></span>
+              <span>协管 <b class="num">1</b> 个</span>
+              <span class="sep"></span>
+              <span>涵盖 <b class="num">70</b> 道题目</span>
+              <span class="sep"></span>
+              <span><b class="num txt-w">3</b> 个题库标记为「共享」</span>
+            </p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-ghost" onclick="importBank()"><svg><use href="#i-download"/></svg>导入题库</button>
+            <button class="btn-ghost"><svg><use href="#i-share"/></svg>共享设置</button>
+          </div>
+        </div>
+
+        <!-- 统计 -->
+        <div class="stats anim" style="animation-delay:.04s">
+          <div class="card hoverable">
+            <div class="stat-top"><span class="stat-label">我的题库</span>
+              <div class="ic ic-p"><svg><use href="#i-bank"/></svg></div></div>
+            <p class="stat-num">5</p>
+            <p class="stat-foot"><b class="num">4</b> 我创建 · <b class="num">1</b> 协管</p>
+          </div>
+          <div class="card hoverable">
+            <div class="stat-top"><span class="stat-label">题目总数</span>
+              <div class="ic ic-s"><svg><use href="#i-list"/></svg></div></div>
+            <p class="stat-num">70</p>
+            <p class="stat-foot"><b class="num">14</b> 单选 · <b class="num">8</b> 填空 · <b class="num">5</b> 代码填空 · <b class="num">43</b> 编程</p>
+          </div>
+          <div class="card hoverable">
+            <div class="stat-top"><span class="stat-label">被引用次数</span>
+              <div class="ic ic-a"><svg><use href="#i-share"/></svg></div></div>
+            <p class="stat-num">142</p>
+            <p class="stat-foot"><span class="delta-up">↑ 12%</span> 较上月</p>
+          </div>
+          <div class="card hoverable">
+            <div class="stat-top"><span class="stat-label">本月新增题目</span>
+              <div class="ic ic-v"><svg><use href="#i-plus"/></svg></div></div>
+            <p class="stat-num">8</p>
+            <p class="stat-foot">最近 <b>2 天前</b></p>
+          </div>
+        </div>
+
+        <!-- 筛选 -->
+        <div class="sub-filter anim" style="animation-delay:.08s">
+          <span class="lbl">课程</span>
+          <select id="f-course">
+            <option value="">全部课程</option>
+            <option>Python 编程基础（C0001）</option>
+            <option>数据结构（C0002）</option>
+            <option>算法设计与分析（C0003）</option>
+            <option>Web 开发实战（C0004）</option>
+            <option>人工智能导论（C0005）</option>
+          </select>
+          <span class="lbl">角色</span>
+          <select id="f-role">
+            <option value="">全部</option>
+            <option value="owner">我创建的</option>
+            <option value="collab">我协管的</option>
+          </select>
+          <span class="lbl">可见性</span>
+          <select id="f-vis">
+            <option value="">全部</option>
+            <option>私有</option>
+            <option>校内共享</option>
+            <option>公开</option>
+          </select>
+          <span class="lbl">排序</span>
+          <select id="f-sort">
+            <option value="edit-desc">最近更新</option>
+            <option value="edit-asc">最早更新</option>
+            <option value="cnt-desc">题目数（高→低）</option>
+            <option value="use-desc">被引用（多→少）</option>
+            <option value="create-desc">创建时间（晚→早）</option>
+          </select>
+          <div class="right">
+            <button class="reset" onclick="resetFilter()"><svg style="font-size:12px"><use href="#i-x"/></svg>清空筛选</button>
+          </div>
+        </div>
+
+        <!-- 题库卡片 -->
+        <div class="bank-grid anim" style="animation-delay:.12s">
+
+          <!-- 卡片 1 · OWNER · Python 入门 -->
+          <div class="bank-card" onclick="enterBank('B0001')">
+            <div class="bank-banner" style="--c1:#0EA5E9;--c2:#38BDF8">
+              <div class="bank-banner-content">
+                <div class="ic-l"><svg><use href="#i-bank"/></svg></div>
+                <div>
+                  <div class="tt">Python 入门题库</div>
+                </div>
+                <span class="cc">C0001 · Python 编程基础</span>
+              </div>
+            </div>
+            <div class="bank-menu" onclick="event.stopPropagation();toggleMenu(this)">
+              <button class="bank-menu-btn"><svg><use href="#i-dots"/></svg></button>
+              <div class="bank-menu-list">
+                <button onclick="editBank('B0001')"><svg><use href="#i-edit"/></svg>编辑题库信息</button>
+                <button onclick="enterBank('B0001')"><svg><use href="#i-list"/></svg>查看题目</button>
+                <button onclick="transferBank('B0001')"><svg><use href="#i-share"/></svg>转让所有权</button>
+                <div class="sep-line"></div>
+                <button class="danger" onclick="delBank('B0001')"><svg><use href="#i-trash"/></svg>删除题库</button>
+              </div>
+            </div>
+            <div class="bank-body">
+              <div class="bank-meta">
+                <span class="role-chip owner"><svg style="font-size:11px"><use href="#i-crown"/></svg>OWNER</span>
+                <span class="meta-dot"></span>
+                <span>高一段 · 信息技术</span>
+                <span class="meta-dot"></span>
+                <span>仅本人可见</span>
+              </div>
+              <div class="type-dist">
+                <div class="type-cell"><div class="icx t-radio"><svg><use href="#i-toggle"/></svg></div><div class="nn">4</div><div class="lb">单选</div></div>
+                <div class="type-cell"><div class="icx t-blank"><svg><use href="#i-text"/></svg></div><div class="nn">2</div><div class="lb">填空</div></div>
+                <div class="type-cell"><div class="icx t-cblank"><svg><use href="#i-tcode"/></svg></div><div class="nn">2</div><div class="lb">代码填空</div></div>
+                <div class="type-cell"><div class="icx t-code"><svg><use href="#i-code"/></svg></div><div class="nn">8</div><div class="lb">编程</div></div>
+              </div>
+            </div>
+            <div class="bank-foot">
+              <div class="left">
+                <span>更新时间 <b>2 天前</b></span>
+                <span style="margin:0 6px">·</span>
+                <span>被引用 <b>18</b> 次</span>
+              </div>
+              <span class="enter">进入题库 <svg><use href="#i-arrow-r"/></svg></span>
+            </div>
+          </div>
+
+          <!-- 卡片 2 · OWNER · 数据结构 -->
+          <div class="bank-card" onclick="enterBank('B0002')">
+            <div class="bank-banner" style="--c1:#14B8A6;--c2:#2DD4BF">
+              <div class="bank-banner-content">
+                <div class="ic-l"><svg><use href="#i-bank"/></svg></div>
+                <div class="tt">数据结构练习</div>
+                <span class="cc">C0002 · 数据结构</span>
+              </div>
+            </div>
+            <div class="bank-menu" onclick="event.stopPropagation();toggleMenu(this)">
+              <button class="bank-menu-btn"><svg><use href="#i-dots"/></svg></button>
+              <div class="bank-menu-list">
+                <button onclick="editBank('B0002')"><svg><use href="#i-edit"/></svg>编辑题库信息</button>
+                <button onclick="enterBank('B0002')"><svg><use href="#i-list"/></svg>查看题目</button>
+                <button onclick="transferBank('B0002')"><svg><use href="#i-share"/></svg>转让所有权</button>
+                <div class="sep-line"></div>
+                <button class="danger" onclick="delBank('B0002')"><svg><use href="#i-trash"/></svg>删除题库</button>
+              </div>
+            </div>
+            <div class="bank-body">
+              <div class="bank-meta">
+                <span class="role-chip owner"><svg style="font-size:11px"><use href="#i-crown"/></svg>OWNER</span>
+                <span class="meta-dot"></span>
+                <span>高二段 · 信息技术</span>
+                <span class="meta-dot"></span>
+                <span style="color:var(--success)">校内共享</span>
+              </div>
+              <div class="type-dist">
+                <div class="type-cell"><div class="icx t-radio"><svg><use href="#i-toggle"/></svg></div><div class="nn">2</div><div class="lb">单选</div></div>
+                <div class="type-cell"><div class="icx t-blank"><svg><use href="#i-text"/></svg></div><div class="nn">1</div><div class="lb">填空</div></div>
+                <div class="type-cell zero"><div class="icx t-cblank"><svg><use href="#i-tcode"/></svg></div><div class="nn">0</div><div class="lb">代码填空</div></div>
+                <div class="type-cell"><div class="icx t-code"><svg><use href="#i-code"/></svg></div><div class="nn">9</div><div class="lb">编程</div></div>
+              </div>
+            </div>
+            <div class="bank-foot">
+              <div class="left">
+                <span>更新时间 <b>1 周前</b></span>
+                <span style="margin:0 6px">·</span>
+                <span>被引用 <b>27</b> 次</span>
+              </div>
+              <span class="enter">进入题库 <svg><use href="#i-arrow-r"/></svg></span>
+            </div>
+          </div>
+
+          <!-- 卡片 3 · OWNER · 算法竞赛 -->
+          <div class="bank-card" onclick="enterBank('B0003')">
+            <div class="bank-banner" style="--c1:#8B5CF6;--c2:#A78BFA">
+              <div class="bank-banner-content">
+                <div class="ic-l"><svg><use href="#i-bank"/></svg></div>
+                <div class="tt">算法竞赛精选</div>
+                <span class="cc">C0003 · 算法设计与分析</span>
+              </div>
+            </div>
+            <div class="bank-menu" onclick="event.stopPropagation();toggleMenu(this)">
+              <button class="bank-menu-btn"><svg><use href="#i-dots"/></svg></button>
+              <div class="bank-menu-list">
+                <button onclick="editBank('B0003')"><svg><use href="#i-edit"/></svg>编辑题库信息</button>
+                <button onclick="enterBank('B0003')"><svg><use href="#i-list"/></svg>查看题目</button>
+                <button onclick="transferBank('B0003')"><svg><use href="#i-share"/></svg>转让所有权</button>
+                <div class="sep-line"></div>
+                <button class="danger" onclick="delBank('B0003')"><svg><use href="#i-trash"/></svg>删除题库</button>
+              </div>
+            </div>
+            <div class="bank-body">
+              <div class="bank-meta">
+                <span class="role-chip owner"><svg style="font-size:11px"><use href="#i-crown"/></svg>OWNER</span>
+                <span class="meta-dot"></span>
+                <span>高三段 · 信息技术</span>
+                <span class="meta-dot"></span>
+                <span style="color:var(--success)">校内共享</span>
+              </div>
+              <div class="type-dist">
+                <div class="type-cell zero"><div class="icx t-radio"><svg><use href="#i-toggle"/></svg></div><div class="nn">0</div><div class="lb">单选</div></div>
+                <div class="type-cell zero"><div class="icx t-blank"><svg><use href="#i-text"/></svg></div><div class="nn">0</div><div class="lb">填空</div></div>
+                <div class="type-cell zero"><div class="icx t-cblank"><svg><use href="#i-tcode"/></svg></div><div class="nn">0</div><div class="lb">代码填空</div></div>
+                <div class="type-cell"><div class="icx t-code"><svg><use href="#i-code"/></svg></div><div class="nn">20</div><div class="lb">编程</div></div>
+              </div>
+            </div>
+            <div class="bank-foot">
+              <div class="left">
+                <span>更新时间 <b>2 周前</b></span>
+                <span style="margin:0 6px">·</span>
+                <span>被引用 <b>54</b> 次</span>
+              </div>
+              <span class="enter">进入题库 <svg><use href="#i-arrow-r"/></svg></span>
+            </div>
+          </div>
+
+          <!-- 卡片 4 · OWNER · Web 开发 -->
+          <div class="bank-card" onclick="enterBank('B0004')">
+            <div class="bank-banner" style="--c1:#F59E0B;--c2:#FBBF24">
+              <div class="bank-banner-content">
+                <div class="ic-l"><svg><use href="#i-bank"/></svg></div>
+                <div class="tt">Web 开发实战</div>
+                <span class="cc">C0004 · Web 开发实战</span>
+              </div>
+            </div>
+            <div class="bank-menu" onclick="event.stopPropagation();toggleMenu(this)">
+              <button class="bank-menu-btn"><svg><use href="#i-dots"/></svg></button>
+              <div class="bank-menu-list">
+                <button onclick="editBank('B0004')"><svg><use href="#i-edit"/></svg>编辑题库信息</button>
+                <button onclick="enterBank('B0004')"><svg><use href="#i-list"/></svg>查看题目</button>
+                <button onclick="transferBank('B0004')"><svg><use href="#i-share"/></svg>转让所有权</button>
+                <div class="sep-line"></div>
+                <button class="danger" onclick="delBank('B0004')"><svg><use href="#i-trash"/></svg>删除题库</button>
+              </div>
+            </div>
+            <div class="bank-body">
+              <div class="bank-meta">
+                <span class="role-chip owner"><svg style="font-size:11px"><use href="#i-crown"/></svg>OWNER</span>
+                <span class="meta-dot"></span>
+                <span>高二段 · 信息技术</span>
+                <span class="meta-dot"></span>
+                <span>仅本人可见</span>
+              </div>
+              <div class="type-dist">
+                <div class="type-cell"><div class="icx t-radio"><svg><use href="#i-toggle"/></svg></div><div class="nn">3</div><div class="lb">单选</div></div>
+                <div class="type-cell"><div class="icx t-blank"><svg><use href="#i-text"/></svg></div><div class="nn">2</div><div class="lb">填空</div></div>
+                <div class="type-cell"><div class="icx t-cblank"><svg><use href="#i-tcode"/></svg></div><div class="nn">1</div><div class="lb">代码填空</div></div>
+                <div class="type-cell"><div class="icx t-code"><svg><use href="#i-code"/></svg></div><div class="nn">2</div><div class="lb">编程</div></div>
+              </div>
+            </div>
+            <div class="bank-foot">
+              <div class="left">
+                <span>更新时间 <b>1 月前</b></span>
+                <span style="margin:0 6px">·</span>
+                <span>被引用 <b>6</b> 次</span>
+              </div>
+              <span class="enter">进入题库 <svg><use href="#i-arrow-r"/></svg></span>
+            </div>
+          </div>
+
+          <!-- 卡片 5 · 协管 · AI -->
+          <div class="bank-card" onclick="enterBank('B0005')">
+            <div class="bank-banner" style="--c1:#EC4899;--c2:#F472B6">
+              <div class="bank-banner-content">
+                <div class="ic-l"><svg><use href="#i-bank"/></svg></div>
+                <div class="tt">2024 春·人工智能</div>
+                <span class="cc">C0005 · 人工智能导论</span>
+              </div>
+            </div>
+            <div class="bank-menu" onclick="event.stopPropagation();toggleMenu(this)">
+              <button class="bank-menu-btn"><svg><use href="#i-dots"/></svg></button>
+              <div class="bank-menu-list">
+                <button onclick="editBank('B0005')"><svg><use href="#i-edit"/></svg>编辑题库信息</button>
+                <button onclick="enterBank('B0005')"><svg><use href="#i-list"/></svg>查看题目</button>
+                <button onclick="transferBank('B0005')"><svg><use href="#i-share"/></svg>转让所有权</button>
+                <div class="sep-line"></div>
+                <button class="danger" onclick="delBank('B0005')"><svg><use href="#i-trash"/></svg>退出题库</button>
+              </div>
+            </div>
+            <div class="bank-body">
+              <div class="bank-meta">
+                <span class="role-chip collab"><svg style="font-size:11px"><use href="#i-users"/></svg>协管</span>
+                <span class="meta-dot"></span>
+                <span>OWNER · 李教授</span>
+                <span class="meta-dot"></span>
+                <span style="color:var(--success)">公开</span>
+              </div>
+              <div class="type-dist">
+                <div class="type-cell"><div class="icx t-radio"><svg><use href="#i-toggle"/></svg></div><div class="nn">5</div><div class="lb">单选</div></div>
+                <div class="type-cell"><div class="icx t-blank"><svg><use href="#i-text"/></svg></div><div class="nn">3</div><div class="lb">填空</div></div>
+                <div class="type-cell"><div class="icx t-cblank"><svg><use href="#i-tcode"/></svg></div><div class="nn">2</div><div class="lb">代码填空</div></div>
+                <div class="type-cell"><div class="icx t-code"><svg><use href="#i-code"/></svg></div><div class="nn">4</div><div class="lb">编程</div></div>
+              </div>
+            </div>
+            <div class="bank-foot">
+              <div class="left">
+                <span>更新时间 <b>1 月前</b></span>
+                <span style="margin:0 6px">·</span>
+                <span>被引用 <b>37</b> 次</span>
+              </div>
+              <span class="enter">进入题库 <svg><use href="#i-arrow-r"/></svg></span>
+            </div>
+          </div>
+
+          <!-- 占位卡片：引导新建 -->
+          <div class="bank-card" onclick="createBank()" style="background:repeating-linear-gradient(45deg,transparent,transparent 14px,var(--surface) 14px,var(--surface) 15px);border-style:dashed;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;min-height:260px;color:var(--muted);transition:.22s">
+            <div style="padding:18px;border-radius:50%;background:var(--primary-subtle);color:var(--primary);font-size:24px;display:flex">
+              <svg><use href="#i-plus"/></svg>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:15px;font-weight:600;color:var(--fg)">新建题库</div>
+              <div style="font-size:12.5px;margin-top:4px">整理您的题目 · 与校内教师共享</div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+boot();
+
+// === 卡片菜单 ===
+function toggleMenu(el){
+  document.querySelectorAll('.bank-menu.open').forEach(function(m){ if(m!==el) m.classList.remove('open'); });
+  el.classList.toggle('open');
+}
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.bank-menu')) document.querySelectorAll('.bank-menu.open').forEach(function(m){m.classList.remove('open');});
+});
+
+// === 行操作 ===
+function enterBank(bid){ window.location.href = 'teacher-banks-detail.html?bid=' + bid; }
+function editBank(bid){
+  Modal.confirm({
+    title: '编辑题库信息',
+    body: '将跳转到 <b>' + bid + '</b> 的元信息编辑页面（名称、关联课程、可见性等）。',
+    confirmText: '前往编辑',
+    onConfirm: function(){ toast('跳转到编辑页（mockup 暂未实现）'); }
+  });
+}
+function transferBank(bid){
+  Modal.confirm({
+    title: '转让题库所有权？',
+    body: '将 <b>' + bid + '</b> 的所有权转让给另一位教师。转让后您将失去 OWNER 权限。',
+    confirmText: '继续转让',
+    onConfirm: function(){ toast('已发送转让邀请'); }
+  });
+}
+function delBank(bid){
+  Modal.confirm({
+    title: '删除题库？',
+    body: '将删除题库 <b>' + bid + '</b>。题库内的题目不会消失，仅解除与题库的关联。如该题库已被作业引用，引用关系将一并解除。此操作不可撤销。',
+    danger: true,
+    confirmText: '永久删除',
+    onConfirm: function(){ toast('已删除题库 ' + bid); }
+  });
+}
+
+// === 新建题库 ===
+function createBank(){
+  Modal.form({
+    title: '新建题库',
+    fields: [
+      { name: 'name', label: '题库名称', required: true, placeholder: '例如：Python 入门精选' },
+      { name: 'desc', label: '题库简介', type: 'textarea', placeholder: '一句话描述题库的用途、难度、覆盖范围…' },
+      { name: 'course', label: '关联课程', type: 'select', value: 'C0001', options: [
+        { value: 'C0001', label: 'Python 编程基础' },
+        { value: 'C0002', label: '数据结构' },
+        { value: 'C0003', label: '算法设计与分析' },
+        { value: 'C0004', label: 'Web 开发实战' },
+        { value: 'C0005', label: '人工智能导论' }
+      ]},
+      { name: 'vis', label: '可见性', type: 'select', value: 'private', options: [
+        { value: 'private', label: '仅本人可见' },
+        { value: 'school', label: '校内共享（其他教师可引用）' },
+        { value: 'public', label: '公开（任何教师可引用）' }
+      ]}
+    ],
+    submitText: '创建题库',
+    onSubmit: function(v){ toast('已创建题库：' + v.name); }
+  });
+}
+
+// === 导入题库 ===
+function importBank(){
+  toast('导入题库功能开发中…');
+}
+
+// === 筛选重置 ===
+function resetFilter(){
+  ['f-course','f-role','f-vis','f-sort'].forEach(function(id){ document.getElementById(id).selectedIndex = 0; });
+  document.getElementById('search-input').value = '';
+  toast('已清空筛选');
+}
+</script>
+
+</body>
+</html>

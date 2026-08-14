@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>验证用例 · P0001 两数之和 · PyLearn</title>
+<style>
+:root{
+  --primary:#0EA5E9; --primary-hover:#0284C7; --primary-fg:#fff; --primary-subtle:#E0F2FE;
+  --primary-muted:#BAE6FD;
+  --accent:#14B8A6; --accent-subtle:#CCFBF1;
+  --success:#10B981; --success-subtle:#D1FAE5;
+  --warning:#F59E0B; --warning-subtle:#FEF3C7;
+  --danger:#EF4444;  --danger-subtle:#FEE2E2;
+  --purple:#8B5CF6; --purple-subtle:#EDE9FE;
+  --bg:#fff; --surface:#F8FAFC; --card:#fff; --border:#E2E8F0;
+  --fg:#0F172A; --muted:#64748B; --subtle:#94A3B8;
+  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.08);
+  --add:#10B981; --add-bg:#D1FAE5;
+  --del:#EF4444; --del-bg:#FEE2E2;
+}
+html.dark{
+  --primary:#38BDF8; --primary-hover:#7DD3FC; --primary-fg:#0B1120; --primary-subtle:#0C334A;
+  --primary-muted:#0C4A6E;
+  --accent:#2DD4BF; --accent-subtle:#0A3D38;
+  --success:#34D399; --success-subtle:#063B2A;
+  --warning:#FBBF24; --warning-subtle:#422D06;
+  --danger:#F87171; --danger-subtle:#451414;
+  --purple:#A78BFA; --purple-subtle:#2A1B4D;
+  --bg:#0B1120; --surface:#0F172A; --card:#16202F; --border:#2A3548;
+  --fg:#F1F5F9; --muted:#94A3B8; --subtle:#64748B;
+  --shadow-md:0 4px 12px -2px rgba(15,23,42,.4);
+  --add-bg:#063B2A; --del-bg:#451414;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5;}
+.mono{font-family:"SF Mono",Menlo,Consolas,"Courier New",monospace}
+.num{font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+svg{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+::-webkit-scrollbar-track{background:transparent}
+.app{display:flex;min-height:100vh}
+
+.side{width:240px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);
+      display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.logo{display:flex;align-items:center;gap:10px;height:64px;padding:0 24px}
+.logo-mark{width:32px;height:32px;border-radius:8px;background:var(--primary);
+           display:flex;align-items:center;justify-content:center;color:var(--primary-fg);font-size:18px}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.role{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:999px;
+      background:var(--accent-subtle);color:var(--accent);font-weight:500}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--subtle)}
+.nav-label+.nav-label,.nav-item+.nav-label{padding-top:24px}
+.nav-item{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;
+          font-size:14px;color:var(--muted);transition:background .18s,color .18s;margin-bottom:2px}
+.nav-item svg{font-size:16px}
+.nav-item:hover{background:var(--surface);color:var(--fg)}
+.nav-item.active{background:var(--primary-subtle);color:var(--primary);font-weight:500}
+.nav-count{margin-left:auto;background:var(--warning-subtle);color:var(--warning);
+           border-radius:999px;padding:2px 7px;font-size:10px;font-weight:600}
+.userbox{margin:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;color:#fff;font-size:13px;font-weight:600;
+        background:linear-gradient(135deg,var(--warning),var(--danger));
+        display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.userbox .n{font-size:13px;font-weight:500;line-height:1.2}
+.userbox .s{font-size:11px;color:var(--subtle);line-height:1.2;margin-top:2px}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;gap:16px;
+        padding:0 32px;border-bottom:1px solid var(--border);background:var(--bg)}
+.crumb{font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumb b{color:var(--fg);font-weight:500}
+.crumb .pid{font-family:"SF Mono",Menlo,Consolas,monospace;color:var(--muted);font-size:12.5px;
+            background:var(--surface);padding:2px 7px;border-radius:5px;margin:0 4px}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.icon-btn{padding:8px;border-radius:8px;color:var(--muted);font-size:18px;display:flex;transition:background .18s,color .18s;position:relative}
+.icon-btn:hover{background:var(--surface);color:var(--fg)}
+.dot{position:absolute;top:7px;right:7px;width:8px;height:8px;border-radius:50%;
+     background:var(--danger);border:2px solid var(--bg)}
+
+.content{flex:1;padding:32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;
+     background:var(--primary);color:var(--primary-fg);font-size:14px;font-weight:500;
+     box-shadow:0 1px 2px rgba(0,0,0,.05);transition:background .18s,box-shadow .18s}
+.btn:hover{background:var(--primary-hover);box-shadow:var(--shadow-md)}
+.btn svg{font-size:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+           border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--muted);transition:.18s}
+.btn-ghost:hover{background:var(--surface);color:var(--fg)}
+.btn-ghost svg{font-size:14px}
+
+.txt-p{color:var(--primary)}
+.txt-s{color:var(--success)}
+.txt-w{color:var(--warning)}
+.txt-d{color:var(--danger)}
+
+/* 头部条 */
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.head .info{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.head .pid-chip{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:13px;font-weight:600;
+                padding:6px 12px;border-radius:8px;background:var(--surface);color:var(--muted);
+                border:1px solid var(--border)}
+.head h1{font-size:22px;font-weight:600;letter-spacing:-.02em}
+.head .stars{display:inline-flex;align-items:center;gap:1px;color:var(--warning);font-size:13px;margin-left:8px}
+.head .stars .off{color:var(--border)}
+.head .meta{margin-top:6px;font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.head .meta b{color:var(--fg);font-weight:500}
+.head .acts{display:flex;gap:8px;flex-wrap:wrap}
+
+/* 结果 hero */
+.hero{border:2px solid var(--success);border-radius:14px;background:linear-gradient(135deg,var(--success-subtle) 0%,var(--card) 60%);
+      padding:24px 28px;display:grid;grid-template-columns:1fr 1.2fr;gap:28px;align-items:center}
+.hero.has-fail{border-color:var(--warning);background:linear-gradient(135deg,var(--warning-subtle) 0%,var(--card) 60%)}
+.hero .lhs .num{font-size:48px;font-weight:700;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;
+                display:flex;align-items:baseline;gap:8px}
+.hero .lhs .num b{color:var(--success)}
+.hero.has-fail .lhs .num b{color:var(--warning)}
+.hero .lhs .num .total{font-size:22px;color:var(--muted);font-weight:600}
+.hero .lhs .total::before{content:"/"}
+.hero .lhs .lb{font-size:13px;color:var(--muted);margin-top:8px}
+.hero .lhs .lb b{color:var(--fg);font-weight:600}
+.hero .lhs .bar-wrap{margin-top:14px;height:8px;background:rgba(0,0,0,.06);border-radius:999px;overflow:hidden;max-width:340px}
+html.dark .hero .lhs .bar-wrap{background:rgba(255,255,255,.06)}
+.hero .lhs .bar-wrap span{display:block;height:100%;background:var(--success);border-radius:999px;transition:width .5s}
+.hero.has-fail .lhs .bar-wrap span{background:var(--warning)}
+.hero .rhs{padding:18px 22px;background:var(--card);border:1px solid var(--border);border-radius:10px}
+.hero .rhs .title{font-size:13px;font-weight:600;color:var(--fg);display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.hero .rhs .title svg{color:var(--success)}
+.hero.has-fail .rhs .title svg{color:var(--warning)}
+.hero .rhs .desc{font-size:12.5px;line-height:1.7;color:var(--muted)}
+.hero .rhs .desc b{color:var(--fg);font-weight:600}
+.hero .rhs .desc code{font-family:"SF Mono",Menlo,monospace;font-size:12px;padding:1px 6px;border-radius:4px;background:var(--surface);color:var(--fg)}
+@media(max-width:900px){ .hero{grid-template-columns:1fr} }
+
+/* 测试用例表 */
+.tc-panel{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.tc-panel-hd{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);
+              background:var(--surface);font-size:13px;font-weight:600}
+html.dark .tc-panel-hd{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.tc-panel-hd .total{margin-left:auto;font-size:12px;font-weight:400;color:var(--muted)}
+.tc-panel-hd .total b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+
+.tc-list{padding:0}
+.tc-row{position:relative;padding:14px 18px;border-bottom:1px solid var(--border);
+        transition:background .18s;cursor:pointer;display:grid;
+        grid-template-columns:54px 70px 110px 1fr 1fr 80px 80px 60px;gap:12px;align-items:center}
+.tc-list .tc-row:last-child{border-bottom:none}
+.tc-row:hover{background:var(--surface)}
+.tc-row .idx{font-family:"SF Mono",Menlo,monospace;font-size:12px;color:var(--muted);font-weight:600}
+.tc-row .kind{font-size:10.5px;padding:2px 8px;border-radius:999px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+.tc-row .kind.sample{background:var(--success-subtle);color:var(--success)}
+.tc-row .kind.hidden{background:var(--warning-subtle);color:var(--warning)}
+.tc-row .st{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:600}
+.tc-row .st i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.tc-row .st.ok{background:var(--success-subtle);color:var(--success)}
+.tc-row .st.err{background:var(--danger-subtle);color:var(--danger)}
+.tc-row .st.run{background:var(--primary-subtle);color:var(--primary)}
+.tc-row .input,.tc-row .expect{font-family:"SF Mono",Menlo,monospace;font-size:12px;color:var(--fg);
+                                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.tc-row .input{color:var(--muted)}
+.tc-row .dur,.tc-row .mem{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tc-row .dur b,.tc-row .mem b{color:var(--fg);font-weight:600}
+.tc-row .chev{justify-self:end;color:var(--subtle);transition:transform .2s;font-size:16px}
+.tc-row.open .chev{transform:rotate(90deg);color:var(--primary)}
+.tc-row.expanding{background:var(--surface)}
+
+/* 行展开详情 */
+.tc-detail{background:var(--surface);padding:18px 22px;border-bottom:1px solid var(--border);display:none}
+.tc-detail.open{display:block}
+.tc-detail .diff-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+@media(max-width:1100px){ .tc-detail .diff-grid{grid-template-columns:1fr;gap:14px} }
+.tc-detail .diff-cell{border:1px solid var(--border);border-radius:8px;background:var(--card);overflow:hidden}
+.tc-detail .diff-cell .lbl{display:flex;align-items:center;gap:6px;padding:8px 12px;font-size:11.5px;font-weight:600;
+                           color:var(--muted);background:var(--surface);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.04em}
+html.dark .tc-detail .diff-cell .lbl{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.tc-detail .diff-cell .lbl .copy{margin-left:auto;color:var(--subtle);font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;cursor:pointer}
+.tc-detail .diff-cell .lbl .copy:hover{color:var(--primary)}
+.tc-detail .diff-cell pre{margin:0;padding:12px 14px;font-family:"SF Mono",Menlo,monospace;font-size:12px;line-height:1.65;
+                           white-space:pre-wrap;word-break:break-all;color:var(--fg);max-height:220px;overflow-y:auto}
+.tc-detail .diff-cell.actual .lbl{color:var(--danger)}
+.tc-detail .diff-cell.actual pre{color:var(--danger)}
+.tc-detail .diff-cell.expected .lbl{color:var(--success)}
+.tc-detail .diff-cell.expected pre{color:var(--success)}
+
+/* 失败 detail 才有 stdout/stderr */
+.tc-detail .io-out{padding:10px 14px;border-top:1px solid var(--border);font-family:"SF Mono",Menlo,monospace;
+                   font-size:11.5px;line-height:1.6;color:var(--muted);background:color-mix(in srgb,var(--danger-subtle) 50%,var(--card))}
+.tc-detail .io-out b{color:var(--danger);font-weight:600;display:block;margin-bottom:4px;font-family:inherit}
+
+/* 用例资源柱 */
+.tc-detail .metrics{display:flex;align-items:center;gap:14px;padding:10px 14px;background:var(--card);
+                    border-top:1px solid var(--border);font-size:11.5px;color:var(--muted)}
+.tc-detail .metrics .m{display:flex;align-items:center;gap:6px}
+.tc-detail .metrics .m b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+.tc-detail .metrics .bars{flex:1;display:flex;gap:6px;align-items:center}
+.tc-detail .metrics .bars .b{height:5px;background:var(--success);border-radius:999px}
+.tc-detail .metrics .bars .b.warn{background:var(--warning)}
+.tc-detail .metrics .bars .b.err{background:var(--danger)}
+
+/* 右栏 */
+.test-grid{display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:flex-start}
+@media(max-width:1100px){ .test-grid{grid-template-columns:1fr} }
+
+.side2{display:flex;flex-direction:column;gap:14px;position:sticky;top:88px}
+.side2 .card-side{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.side2 .card-side .hd{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border);
+                      background:var(--surface);font-size:12px;font-weight:600;color:var(--muted);
+                      letter-spacing:.04em;text-transform:uppercase}
+html.dark .side2 .card-side .hd{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.side2 .card-side .bd{padding:14px 16px;font-size:12.5px;color:var(--muted)}
+.side2 .card-side .bd b{color:var(--fg);font-weight:600}
+
+/* 评测机状态 */
+.wk{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--surface);
+    border:1px solid var(--border);margin-bottom:6px}
+.wk:last-child{margin-bottom:0}
+.wk .dot{width:8px;height:8px;border-radius:50%}
+.wk.busy .dot{background:var(--success);box-shadow:0 0 0 3px color-mix(in srgb,var(--success) 25%,transparent)}
+.wk.idle .dot{background:var(--subtle)}
+.wk.off .dot{background:var(--danger)}
+.wk .name{font-size:12px;font-weight:500;color:var(--fg);font-family:"SF Mono",Menlo,monospace}
+.wk .stat{margin-left:auto;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.wk .stat b{color:var(--fg);font-weight:600}
+
+/* 历史验证 mini-list */
+.history{padding:0;display:flex;flex-direction:column}
+.history .h{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:12px}
+.history .h:last-child{border-bottom:none}
+.history .h .when{color:var(--muted);font-variant-numeric:tabular-nums;font-size:11.5px;min-width:64px}
+.history .h .pct{font-weight:600;font-variant-numeric:tabular-nums;margin-left:auto}
+.history .h .pct.ok{color:var(--success)}
+.history .h .pct.partial{color:var(--warning)}
+.history .h .pct.fail{color:var(--danger)}
+.history .h .who{font-size:11.5px;color:var(--subtle)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.anim{animation:fadeUp .3s ease-out both}
+
+@media(max-width:900px){
+  .tc-row{grid-template-columns:46px 60px 90px 1fr 80px 60px;gap:8px}
+  .tc-row .expect,.tc-row .mem{display:none}
+  .content{padding:24px 20px}
+}
+
+@media(max-width:1200px){ .side{display:none} }
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+<symbol id="i-cap" viewBox="0 0 24 24"><path d="M2 9 12 4l10 5-10 5z"/><path d="M6 11v5c0 1 3 3 6 3s6-2 6-3v-5"/></symbol>
+<symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+<symbol id="i-class" viewBox="0 0 24 24"><path d="M3 9 12 3l9 6"/><path d="M5 10v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9"/><path d="M9 22V12h6v10"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2 2 0 0 1 0-5H20"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6M16 6l6 6-6 6"/></symbol>
+<symbol id="i-bank" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11M9 8v11M15 8v11M19 8v11"/><path d="M3 22h18"/></symbol>
+<symbol id="i-grading" viewBox="0 0 24 24"><path d="M9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+<symbol id="i-monitoring" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.3 21a2 2 0 0 0 3.4 0"/><path d="M3.3 15.3A1 1 0 0 0 4 17h16a1 1 0 0 0 .7-1.7C19.4 14 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.4 6-2.7 7.3"/></symbol>
+<symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+<symbol id="i-chev-r" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3v6L4 19a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-10V3"/><path d="M8 3h8M7 14h10"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="m21.7 18-9-15.3a1 1 0 0 0-1.7 0L1.3 18a1 1 0 0 0 .9 1.5h18.6a1 1 0 0 0 .9-1.5z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+<symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></symbol>
+</svg>
+
+<div class="app">
+
+  <aside class="side">
+    <div class="logo">
+      <div class="logo-mark"><svg><use href="#i-cap"/></svg></div>
+      <span class="logo-text">PyLearn</span>
+      <span class="role">教师端</span>
+    </div>
+    <nav class="nav">
+      <p class="nav-label">教学</p>
+      <a class="nav-item" href="teacher-dashboard.html"><svg><use href="#i-dash"/></svg>工作台</a>
+      <a class="nav-item" href="teacher-classes.html"><svg><use href="#i-class"/></svg>我的班级</a>
+      <a class="nav-item" href="teacher-courses.html"><svg><use href="#i-book"/></svg>课程<span class="nav-count">5</span></a>
+      <p class="nav-label">考核</p>
+      <a class="nav-item" href="teacher-assignments.html?type=assignment"><svg><use href="#i-file"/></svg>作业<span class="nav-count">3</span></a>
+      <a class="nav-item active" id="nav-problems" href="teacher-problems.html"><svg><use href="#i-code"/></svg>题库</a>
+      <a class="nav-item" href="teacher-assignments.html?type=exam"><svg><use href="#i-bank"/></svg>试卷</a>
+      <a class="nav-item" href="teacher-assignments-grade.html?aid=A0024"><svg><use href="#i-grading"/></svg>批改<span class="nav-count">24</span></a>
+      <p class="nav-label">分析</p>
+      <a class="nav-item"><svg><use href="#i-monitoring"/></svg>考试监控</a>
+      <a class="nav-item"><svg><use href="#i-chart"/></svg>成绩分析</a>
+    </nav>
+    <div class="userbox">
+      <div class="avatar">王</div>
+      <div>
+        <div class="n">王建国</div>
+        <div class="s">信息技术 · 高一段</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <span class="crumb"><b>考核</b> / <a href="teacher-problems.html" style="color:var(--muted)">我的编程题</a> / <a href="teacher-problems-edit.html?pid=P0001" style="color:var(--muted)">P0001</a> / <span style="color:var(--primary)">验证用例</span></span>
+      <div class="top-actions">
+        <button class="icon-btn" onclick="tt()"><svg><use href="#i-sun" id="use-theme"/></svg></button>
+        <button class="icon-btn"><svg><use href="#i-bell"/></svg><span class="dot"></span></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="wrap">
+
+        <a class="anim" href="teacher-problems-edit.html?pid=P0001" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)">
+          <svg style="font-size:14px"><use href="#i-arrow-l"/></svg>返回编辑题目
+        </a>
+
+        <!-- 头部 -->
+        <div class="head anim" style="animation-delay:.04s">
+          <div>
+            <div class="info">
+              <span class="pid-chip">P0001</span>
+              <h1>两数之和 <span class="stars">★★<span class="off">★★★</span></span></h1>
+              <span class="st" style="background:var(--success-subtle);color:var(--success);font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:5px"><i style="width:6px;height:6px;border-radius:50%;background:currentColor"></i>已发布</span>
+            </div>
+            <p class="meta">
+              <span>Python 3.11</span>
+              <span>·</span>
+              <span>限制 <b>1000</b> ms · <b>256</b> MB</span>
+              <span>·</span>
+              <span>用例 <b>8</b> 条（<b>2</b> 样例 + <b>6</b> 隐藏）</span>
+              <span>·</span>
+              <span>上次验证 <b>2 小时前</b> · 王建国</span>
+            </p>
+          </div>
+          <div class="acts">
+            <button class="btn-ghost" id="rerun-btn" onclick="rerunAll()"><svg><use href="#i-refresh"/></svg>重跑全部</button>
+            <a class="btn" href="teacher-problems-edit.html?pid=P0001" style="text-decoration:none"><svg><use href="#i-edit"/></svg>编辑题目</a>
+          </div>
+        </div>
+
+        <div class="test-grid">
+
+          <!-- 左主区 -->
+          <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+
+            <!-- 结果 hero -->
+            <div class="hero has-fail anim" style="animation-delay:.08s" id="hero">
+              <div class="lhs">
+                <div class="num"><b id="hero-pass">7</b><span class="total" id="hero-total">8</span></div>
+                <div class="lb">用例通过 · 总耗时 <b id="hero-time">38</b> ms · 内存峰值 <b id="hero-mem">10</b> MB · 评测时间 <b>2024-09-15 14:28</b></div>
+                <div class="bar-wrap"><span id="hero-bar" style="width:87.5%"></span></div>
+              </div>
+              <div class="rhs">
+                <div class="title">
+                  <svg style="font-size:16px"><use href="#i-warn"/></svg>
+                  <span id="hero-action-title">用例 #4 失败 · 需要修正</span>
+                </div>
+                <div class="desc" id="hero-action-body">
+                  预期 <code>0 0</code> 实际输出 <code>1 0</code>。参考答案缺少「若找不到目标值，返回 <code>-1 -1</code>」分支。建议在 <code>return seen[...]</code> 后追加 <code>return [-1, -1]</code>，或调整用例 #4 让它走 else 分支。
+                </div>
+              </div>
+            </div>
+
+            <!-- 测试用例详情 -->
+            <div class="tc-panel anim" style="animation-delay:.12s">
+              <div class="tc-panel-hd">
+                <svg style="font-size:14px;color:var(--muted)"><use href="#i-list"/></svg>
+                测试用例详情
+                <span class="total">共 <b id="case-total">8</b> 条 · 通过 <b class="txt-s" id="case-pass">7</b> · 失败 <b class="txt-d" id="case-fail">1</b></span>
+              </div>
+              <div class="tc-list" id="case-list">
+
+                <!-- 样例 #1 PASS -->
+                <div class="tc-row" data-idx="1" onclick="toggleCase(this,1)">
+                  <div class="idx">#1</div>
+                  <div><span class="kind sample">样例</span></div>
+                  <div><span class="st ok"><i></i>通过</span></div>
+                  <div class="input">2 7\n11 15</div>
+                  <div class="expect">0 1</div>
+                  <div class="dur"><b>4</b> ms</div>
+                  <div class="mem"><b>8</b> MB</div>
+                  <div class="chev"><svg><use href="#i-chev-r"/></svg></div>
+                </div>
+                <div class="tc-detail" id="case-detail-1">
+                  <div class="diff-grid">
+                    <div class="diff-cell"><div class="lbl">输入<input class="copy" value="复制"/></div><pre>4 9
+2 7 11 15</pre></div>
+                    <div class="diff-cell expected"><div class="lbl">期望输出<input class="copy" value="复制"/></div><pre>0 1</pre></div>
+                    <div class="diff-cell expected"><div class="lbl">实际输出<input class="copy" value="复制"/></div><pre>0 1</pre></div>
+                  </div>
+                  <div class="metrics">
+                    <div class="m">用时 <b>4</b> ms</div>
+                    <div class="m">内存 <b>8</b> MB</div>
+                    <div class="m">CPU <b>3.2</b> ms</div>
+                    <div class="bars"><div class="b" style="width:8px"></div><div class="b" style="width:4px"></div></div>
+                  </div>
+                </div>
+
+                <!-- 样例 #2 PASS -->
+                <div class="tc-row" data-idx="2" onclick="toggleCase(this,2)">
+                  <div class="idx">#2</div>
+                  <div><span class="kind sample">样例</span></div>
+                  <div><span class="st ok"><i></i>通过</span></div>
+                  <div class="input">3 2\n3 4</div>
+                  <div class="expect">0 1</div>
+                  <div class="dur"><b>3</b> ms</div>
+                  <div class="mem"><b>8</b> MB</div>
+                  <div class="chev"><svg><use href="#i-chev-r"/></svg></div>
+                </div>
+                <div class="tc-detail" id="case-detail-2">
+                  <div class="diff-grid">
+                    <div class="diff-cell"><div class="lbl">输入<input class="copy" value="复制"/></div><pre>3 6
+3 2 4</pre></div>
+                    <div class="diff-cell expected"><div class="lbl">期望输出<input class="copy" value="复制"/></div><pre>1 2</pre></div>
+                    <div class="diff-cell expected"><div class="lbl">实际输出<input class="copy" value="复制"/></div><pre>1 2</pre></div>
+                  </div>
+                  <div class="metrics">
+                    <div class="m">用时 <b>3</b> ms</div><div class="m">内存 <b>8</b> MB</div><div class="m">CPU <b>2.5</b> ms</div>
+                    <div class="bars"><div class="b" style="width:6px"></div><div class="b" style="width:3px"></div></div>
+                  </div>
+                </div>
+
+                <!-- 隐藏 #3 PASS -->
+                <div class="tc-row" data-idx="3" onclick="toggleCase(this,3)">
+                  <div class="idx">#3</div>
+                  <div><span class="kind hidden">隐藏</span></div>
+                  <div><span class="st ok"><i></i>通过</span></div>
+                  <div class="input">2 6\n3 3</div>
+                  <div class="expect">0 1</div>
+                  <div class="dur"><b>6</b> ms</div>
+                  <div class="mem"><b>10</b> MB</div>
+                  <div class="chev"><svg><use href="#i-chev-r"/></svg></div>
+                </div>
+                <div class="tc-detail" id="case-detail-3">
+                  <div class="diff-grid">
+                    <div class="diff-cell"><div class="lbl">输入<input class="copy" value="复制"/></div><pre>2 6
+3 3</pre></div>
+                    <div class="diff-cell expected"><div class="lbl">期望输出<input class="copy" value="复制"/></div><pre>0 1</pre></div>
+                    <div class="diff-cell expected"><div class="lbl">实际输出<input class="copy" value="复制"/></div><pre>0 1</pre></div>
+                  </div>
+                  <div class="metrics">
+                    <div class="m">用时 <b>6</b> ms</div><div class="m">内存 <b>10</b> MB</div><div class="m">CPU <b>5.1</b> ms</div>
+                    <div class="bars"><div class="b" style="width:12px"></div><div class="b" style="width:5px"></div></div>
+                  </div>
+                </div>
+
+                <!-- 隐藏 #4 FAIL -->
+                <div class="tc-row open" data-idx="4" onclick="toggleCase(this,4)" style="background:var(--surface)">
+                  <div class="idx">#4</div>
+                  <div><span class="kind hidden">隐藏</span></div>
+                  <div><span class="st err"><i></i>失败</span></div>
+                  <div class="input">1 -1\n-1</div>
+                  <div class="expect" style="color:var(--danger)">0 0</div>
+                  <div class="dur"><b>5</b> ms</div>
+                  <div class="mem"><b>10</b> MB</div>
+                  <div class="chev"><svg><use href="#i-chev-r"/></svg></div>
+                </div>
+                <div class="tc-detail open" id="case-detail-4">
+                  <div class="diff-grid">
+                    <div class="diff-cell"><div class="lbl">输入<input class="copy" value="复制"/></div><pre>1 -1
+-1</pre></div>
+                    <div class="diff-cell expected"><div class="lbl">期望输出<input class="copy" value="复制"/></div><pre>0 0</pre></div>
+                    <div class="diff-cell actual"><div class="lbl">实际输出<input class="copy" value="复制"/></div><pre>1 0</pre></div>
+                  </div>
+                  <div class="io-out">
+                    <b>AssertionError · expected `0 0` got `1 0`</b>
+                    参考答案第 6 行返回了 <code>[seen[target - n], i]</code> = <code>[1, 0]</code>，但用例期望 <code>[0, 0]</code>（题目要求返回两数下标的「较小值在前」形式）。
+                  </div>
+                  <div class="metrics">
+                    <div class="m">用时 <b>5</b> ms</div><div class="m">内存 <b>10</b> MB</div><div class="m">CPU <b>4.0</b> ms</div>
+                    <div class="bars"><div class="b err" style="width:10px"></div><div class="b err" style="width:4px"></div></div>
+                  </div>
+                </div>
+
+                <!-- 隐藏 #5 PASS -->
+                <div class="tc-row" data-idx="5" onclick="toggleCase(this,5)">
+                  <div class="idx">#5</div>
+                  <div><span class="kind hidden">隐藏</span></div>
+                  <div><span class="st ok"><i></i>通过</span></div>
+                  <div class="input">5 8\n1 2 3 4 5</div>
+                  <div class="expect">2 4</div>
+                  <div class="dur"><b>4</b> ms</div>
+                  <div class="mem"><b>10</b> MB</div>
+                  <div class="chev"><svg><use href="#i-chev-r"/></svg></div>
+                </div>
+                <div class="tc-detail" id="case-detail-5">
+                  <div class="diff-grid">
+                    <div class="diff-cell"><div class="lbl">输入<input class="copy" value="复制"/></div><pre>5 8
+1 2 3 4 5</pre></div>
+                    <div class="diff-cell expected"><div class="lbl">期望输出<input class="copy" value="复制"/></div><pre>2 4</pre></div>
+                    <div class="diff-cell expected"><div class="lbl">实际输出<input class="copy" value="复制"/></div><pre>2 4</pre></div>
+                  </div>
+                  <div class="metrics">
+                    <div class="m">用时 <b>4</b> ms</div><div class="m">内存 <b>10</b> MB</div>
+                    <div class="bars"><div class="b" style="width:8px"></div><div class="b" style="width:4px"></div></div>
+                  </div>
+                </div>
+
+                <!-- 隐藏 #6 PASS -->
+                <div class="tc-row" data-idx="6" onclick="toggleCase(this,6)">
+                  <div class="idx">#6</div>
+                  <div><span class="kind hidden">隐藏</span></div>
+                  <div><span class="st ok"><i></i>通过</span></div>
+                  <div class="input">10 19\n1 2 3 4 5 6 7 8 9 10</div>
+                  <div class="expect">8 9</div>
+                  <div class="dur"><b>9</b> ms</div>
+                  <div class="mem"><b>12</b> MB</div>
+                  <div class="chev"><svg><use href="#i-chev-r"/></svg></div>
+                </div>
+                <div class="tc-detail" id="case-detail-6">
+                  <div class="diff-grid">
+                    <div class="diff-cell"><div class="lbl">输入<input class="copy" value="复制"/></div><pre>10 19
+1 2 3 4 5 6 7 8 9 10</pre></div>
+                    <div class="diff-cell expected"><div class="lbl">期望输出<input class="copy" value="复制"/></div><pre>8 9</pre></div>
+                    <div class="diff-cell expected"><div class="lbl">实际输出<input class="copy" value="复制"/></div><pre>8 9</pre></div>
+                  </div>
+                  <div class="metrics">
+                    <div class="m">用时 <b>9</b> ms</div><div class="m">内存 <b>12</b> MB</div>
+                    <div class="bars"><div class="b" style="width:18px"></div><div class="b" style="width:6px"></div></div>
+                  </div>
+                </div>
+
+                <!-- 隐藏 #7 PASS -->
+                <div class="tc-row" data-idx="7" onclick="toggleCase(this,7)">
+                  <div class="idx">#7</div>
+                  <div><span class="kind hidden">隐藏</span></div>
+                  <div><span class="st ok"><i></i>通过</span></div>
+                  <div class="input">4 100\n5 50 50 5</div>
+                  <div class="expect">1 2</div>
+                  <div class="dur"><b>5</b> ms</div>
+                  <div class="mem"><b>10</b> MB</div>
+                  <div class="chev"><svg><use href="#i-chev-r"/></svg></div>
+                </div>
+                <div class="tc-detail" id="case-detail-7">
+                  <div class="diff-grid">
+                    <div class="diff-cell"><div class="lbl">输入<input class="copy" value="复制"/></div><pre>4 100
+5 50 50 5</pre></div>
+                    <div class="diff-cell expected"><div class="lbl">期望输出<input class="copy" value="复制"/></div><pre>1 2</pre></div>
+                    <div class="diff-cell expected"><div class="lbl">实际输出<input class="copy" value="复制"/></div><pre>1 2</pre></div>
+                  </div>
+                  <div class="metrics">
+                    <div class="m">用时 <b>5</b> ms</div><div class="m">内存 <b>10</b> MB</div>
+                    <div class="bars"><div class="b" style="width:10px"></div><div class="b" style="width:4px"></div></div>
+                  </div>
+                </div>
+
+                <!-- 隐藏 #8 PASS -->
+                <div class="tc-row" data-idx="8" onclick="toggleCase(this,8)">
+                  <div class="idx">#8</div>
+                  <div><span class="kind hidden">隐藏</span></div>
+                  <div><span class="st ok"><i></i>通过</span></div>
+                  <div class="input">3 6\n-1 -2 -3</div>
+                  <div class="expect">-1 -1</div>
+                  <div class="dur"><b>4</b> ms</div>
+                  <div class="mem"><b>10</b> MB</div>
+                  <div class="chev"><svg><use href="#i-chev-r"/></svg></div>
+                </div>
+                <div class="tc-detail" id="case-detail-8">
+                  <div class="diff-grid">
+                    <div class="diff-cell"><div class="lbl">输入<input class="copy" value="复制"/></div><pre>3 6
+-1 -2 -3</pre></div>
+                    <div class="diff-cell expected"><div class="lbl">期望输出<input class="copy" value="复制"/></div><pre>-1 -1</pre></div>
+                    <div class="diff-cell expected"><div class="lbl">实际输出<input class="copy" value="复制"/></div><pre>-1 -1</pre></div>
+                  </div>
+                  <div class="metrics">
+                    <div class="m">用时 <b>4</b> ms</div><div class="m">内存 <b>10</b> MB</div>
+                    <div class="bars"><div class="b" style="width:8px"></div><div class="b" style="width:4px"></div></div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 右栏 -->
+          <aside class="side2 anim" style="animation-delay:.14s">
+
+            <!-- 评测机状态 -->
+            <div class="card-side">
+              <div class="hd">
+                <svg style="font-size:13px"><use href="#i-cpu"/></svg>
+                评测机状态
+              </div>
+              <div class="bd">
+                <div class="wk busy">
+                  <div class="dot"></div>
+                  <div class="name">worker-01</div>
+                  <div class="stat">空闲 <b>2</b> 秒</div>
+                </div>
+                <div class="wk busy">
+                  <div class="dot"></div>
+                  <div class="name">worker-02</div>
+                  <div class="stat">空闲 <b>5</b> 秒</div>
+                </div>
+                <div class="wk idle">
+                  <div class="dot"></div>
+                  <div class="name">worker-03</div>
+                  <div class="stat">空闲 <b>34</b> 秒</div>
+                </div>
+                <div class="wk idle">
+                  <div class="dot"></div>
+                  <div class="name">worker-04</div>
+                  <div class="stat">空闲 <b>1</b> 分</div>
+                </div>
+                <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);font-size:11.5px;color:var(--muted);line-height:1.6">
+                  4 台 worker · 当前负载 <b class="txt-s">空闲</b><br>
+                  平均响应 <b>120</b> ms
+                </div>
+              </div>
+            </div>
+
+            <!-- 本次验证 -->
+            <div class="card-side">
+              <div class="hd">
+                <svg style="font-size:13px"><use href="#i-info"/></svg>
+                本次验证
+              </div>
+              <div class="bd">
+                <div style="display:flex;flex-direction:column;gap:8px;font-size:12.5px">
+                  <div>开始时间 <b style="margin-left:6px">14:28:03</b></div>
+                  <div>结束时间 <b style="margin-left:6px">14:28:04</b></div>
+                  <div>总耗时 <b style="margin-left:6px">1.2</b> 秒</div>
+                  <div>通过率 <b style="margin-left:6px" class="txt-w">7/8 (87.5%)</b></div>
+                  <div>失败用例 <b style="margin-left:6px" class="txt-d">#4</b></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 最近验证 -->
+            <div class="card-side">
+              <div class="hd">
+                <svg style="font-size:13px"><use href="#i-clock"/></svg>
+                最近 5 次验证
+              </div>
+              <div class="history">
+                <div class="h"><div class="when">刚刚</div><div class="pct partial">7/8</div><div class="who">王建国</div></div>
+                <div class="h"><div class="when">2 小时前</div><div class="pct ok">8/8</div><div class="who">王建国</div></div>
+                <div class="h"><div class="when">昨天</div><div class="pct ok">8/8</div><div class="who">王建国</div></div>
+                <div class="h"><div class="when">3 天前</div><div class="pct partial">7/8</div><div class="who">王建国</div></div>
+                <div class="h"><div class="when">1 周前</div><div class="pct ok">8/8</div><div class="who">王建国</div></div>
+              </div>
+            </div>
+
+          </aside>
+
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="lib/admin-shared.js"></script>
+<script>
+boot();
+
+/* 展开/收起 */
+function toggleCase(row, idx){
+  var detail = document.getElementById('case-detail-' + idx);
+  var open = detail.classList.contains('open');
+  document.querySelectorAll('.tc-detail.open').forEach(function(d){ d.classList.remove('open'); });
+  document.querySelectorAll('.tc-row.open').forEach(function(r){ r.classList.remove('open'); r.style.background=''; });
+  if(!open){
+    detail.classList.add('open');
+    row.classList.add('open');
+    row.style.background = 'var(--surface)';
+  }
+}
+
+/* 重跑全部 */
+var rerunTimer = null;
+function rerunAll(){
+  if(rerunTimer){ toast('评测正在运行中…'); return; }
+  var btn = document.getElementById('rerun-btn');
+  btn.innerHTML = '<svg style="animation:spin 1s linear infinite"><use href="#i-refresh"/></svg>运行中…';
+  btn.disabled = true;
+  btn.style.opacity = '.65';
+
+  // 状态行变 run
+  document.querySelectorAll('.tc-row .st.ok, .tc-row .st.err').forEach(function(s){
+    s.className = 'st run'; s.innerHTML = '<i></i>运行中';
+  });
+  // hero 数字清零
+  document.getElementById('hero').classList.remove('has-fail');
+  document.getElementById('hero').classList.add('hero');
+  document.getElementById('hero-pass').textContent = '-';
+  document.getElementById('hero-action-title').textContent = '正在运行参考答案…';
+
+  rerunTimer = setTimeout(function(){
+    // 恢复演示数据
+    var rows = document.querySelectorAll('.tc-row[data-idx]');
+    rows.forEach(function(r, i){
+      var st = r.querySelector('.st');
+      if(i === 3){
+        st.className = 'st err'; st.innerHTML = '<i></i>失败';
+      } else {
+        st.className = 'st ok'; st.innerHTML = '<i></i>通过';
+      }
+    });
+    document.getElementById('hero-pass').textContent = '7';
+    document.getElementById('hero').classList.add('has-fail');
+    document.getElementById('hero-action-title').textContent = '用例 #4 失败 · 需要修正';
+    btn.innerHTML = '<svg><use href="#i-refresh"/></svg>重跑全部';
+    btn.disabled = false; btn.style.opacity = '';
+    rerunTimer = null;
+    toast('已完成 8 条用例 · 7 通过 / 1 失败');
+  }, 1500);
+}
+
+/* spin 动画 */
+(function(){
+  var s = document.createElement('style');
+  s.textContent = '@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}';
+  document.head.appendChild(s);
+})();
+</script>
+
+</body>
+</html>
