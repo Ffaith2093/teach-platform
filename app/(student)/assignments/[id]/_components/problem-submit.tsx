@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useActionState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,9 +15,11 @@ import {
   Code2,
   ChevronDown,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import type { Difficulty } from "@prisma/client";
 import { submitProblemAction } from "@/app/(student)/assignments/actions";
+import { usePollSubmission } from "@/hooks/use-poll-submission";
 
 const DIFFICULTY_LABELS: Record<Difficulty, { label: string; tone: "success" | "warning" | "danger" }> = {
   EASY: { label: "入门", tone: "success" },
@@ -97,19 +100,39 @@ export function ProblemSubmit({
 }) {
   const [code, setCode] = React.useState(lastCode ?? problem.starterCode ?? "");
   const [state, formAction, pending] = useActionState(submitProblemAction, undefined);
+  const router = useRouter();
 
-  // 提交结果：优先 state.judge（新结果），否则 lastResult（持久化结果）
-  const result: LastResult | null = state?.judge
+  // 异步评测：拿到 submissionId 后轮询 /api/submissions/[id]
+  const submissionId: string | null =
+    state && state.ok && state.submissionId ? state.submissionId : null;
+  const poll = usePollSubmission(submissionId);
+
+  const polled = poll.kind === "done" ? poll.submission : null;
+  const result: LastResult | null = polled
     ? {
-        status: state.judge.status,
-        passedCount: state.judge.passedCount,
-        totalCount: state.judge.totalCount,
-        autoScore: state.judge.autoScore,
-        cases: state.judge.cases,
+        status: polled.status,
+        passedCount: polled.passedCount,
+        totalCount: polled.totalCount,
+        autoScore: polled.score,
+        cases: polled.cases.map<JudgeCaseView>((c) => ({
+          order: c.order,
+          isSample: c.isSample,
+          status: c.status,
+          timeMs: c.timeMs,
+          actualOutput: c.actualOutput,
+          errorMsg: c.errorMsg,
+        })),
       }
     : lastResult;
 
+  // 拿到终态后刷新服务端数据（最新 myTotalScore + lastResult）
+  React.useEffect(() => {
+    if (poll.kind === "done") router.refresh();
+  }, [poll.kind, router]);
+
   const tone = result ? (STATUS_TONE[result.status] ?? "default") : "default";
+  const isPolling =
+    submissionId !== null && (poll.kind === "loading" || poll.kind === "polling");
 
   return (
     <Card>
@@ -201,9 +224,9 @@ export function ProblemSubmit({
             <p className="text-[11px] text-subtle-foreground">
               提交后将自动跑全部用例（含隐藏用例），隐藏用例的实际输出不会展示。
             </p>
-            <Button type="submit" disabled={pending || !code.trim()} size="sm">
+            <Button type="submit" disabled={pending || isPolling || !code.trim()} size="sm">
               <Send className="h-3.5 w-3.5" />
-              {pending ? "评测中…" : "提交评测"}
+              {pending || isPolling ? "评测中…" : "提交评测"}
             </Button>
           </div>
         </form>
@@ -232,6 +255,29 @@ export function ProblemSubmit({
                 {totalScore}
               </span>
             </div>
+
+            {isPolling && (
+              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>评测中（已轮询 {poll.kind === "polling" ? poll.attempt : 0} 次 / 最多 60 次）…</span>
+              </div>
+            )}
+
+            {poll.kind === "timeout" && (
+              <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-warning/30 bg-warning-subtle/40 px-3 py-2 text-xs text-warning">
+                <span>评测尚未完成（已轮询 {poll.attempts} 次），请稍后刷新页面查看结果。</span>
+                <Button size="sm" variant="outline" onClick={() => router.refresh()}>
+                  刷新
+                </Button>
+              </div>
+            )}
+
+            {poll.kind === "error" && (
+              <div className="mt-3 flex items-center gap-2 rounded-lg border border-danger/30 bg-danger-subtle/40 px-3 py-2 text-xs text-danger">
+                <AlertCircle className="h-3 w-3" />
+                <span>轮询失败：{poll.message}</span>
+              </div>
+            )}
 
             {/* 仅展示样例明细，不暴露隐藏用例的实际输出 */}
             {result.cases.some((c) => c.isSample) && (

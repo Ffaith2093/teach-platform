@@ -7,9 +7,13 @@
  *
  * 副作用只触碰数据库；不做 redirect / revalidatePath / 鉴权。
  * 鉴权由调用方负责（学生路径用 requireSession，cron 路径用 secret header）。
+ *
+ * PROGRAMMING 题异步判分：写入 PENDING Submission + 入队，Worker 跑完后回写
+ * Answer.autoScore + ExamAttempt.autoScore。客观题（SINGLE_CHOICE / FILL_BLANK /
+ * CODE_BLANK）仍同步判分。
  */
 import { prisma } from "@/lib/prisma";
-import { runJudge } from "@/lib/judge/local";
+import { addJudgeJob } from "@/lib/judge/queue";
 import type { AttemptStatus } from "@prisma/client";
 
 export type SubmitExamResult =
@@ -41,7 +45,7 @@ export async function submitExam(attemptId: string): Promise<SubmitExamResult> {
   });
   if (!attempt) return { ok: false, error: "尝试记录不存在" };
 
-  // 幂等：已交卷 / 批改中 / 已完成 → 直接返回，不再处理
+  // 幂等：已交卷 / 批改中 / 已完成 → 直接返回
   if (attempt.status !== "IN_PROGRESS") {
     return {
       ok: true,
@@ -61,23 +65,9 @@ export async function submitExam(attemptId: string): Promise<SubmitExamResult> {
   });
   const answerByQid = new Map(answers.map((a) => [a.questionId, a.content]));
 
-  // 一次性把 PROGRAMMING 题目对应的 Problem + TestCase 拉出来（避免 N+1）
-  const programmingProblemIds = attempt.exam.questions
-    .filter((eq) => eq.question.type === "PROGRAMMING" && eq.question.problemId)
-    .map((eq) => eq.question.problemId as string);
-  const problems =
-    programmingProblemIds.length > 0
-      ? await prisma.problem.findMany({
-          where: { id: { in: programmingProblemIds } },
-          include: {
-            testCases: { select: { input: true, expected: true, score: true } },
-          },
-        })
-      : [];
-  const problemById = new Map(problems.map((p) => [p.id, p]));
-
   let totalAuto = 0;
-  const updates: Array<{ questionId: string; autoScore: number }> = [];
+  const answerUpdates: Array<{ questionId: string; autoScore: number }> = [];
+  const programmingEnqueues: Array<{ submissionId: string }> = [];
 
   for (const eq of attempt.exam.questions) {
     const q = eq.question;
@@ -96,35 +86,43 @@ export async function submitExam(attemptId: string): Promise<SubmitExamResult> {
           s = allMatch ? eq.score : 0;
         }
       } else if (q.type === "PROGRAMMING") {
-        // PROGRAMMING 题：取关联 Problem，跑 runJudge，按测试用例通过率缩放到 ExamQuestion.score
+        // PROGRAMMING 题：异步判分（写 PENDING Submission + 入队）
         if (q.problemId) {
-          const problem = problemById.get(q.problemId);
           const code = typeof ans === "string" ? ans : "";
-          if (problem && code.trim()) {
-            const judge = await runJudge(
-              code,
-              problem.testCases.map((tc) => ({
-                input: tc.input,
-                expected: tc.expected,
-                score: tc.score,
-              })),
-              { timeLimitMs: problem.timeLimitMs, memoryLimitMb: problem.memoryLimitMb },
-            );
-            const problemTotal = problem.testCases.reduce((sum, tc) => sum + tc.score, 0);
-            const ratio = problemTotal > 0 ? judge.totalScore / problemTotal : 0;
-            s = Math.max(0, Math.min(eq.score, Math.round(eq.score * ratio)));
+          if (code.trim()) {
+            const sub = await prisma.submission.create({
+              data: {
+                problemId: q.problemId,
+                userId: attempt.studentId,
+                code,
+                status: "PENDING",
+                contextType: "EXAM",
+                contextId: attempt.id,
+              },
+              select: { id: true, totalCount: true },
+            });
+            // 取测试用例数量填到 totalCount（Worker 会更新）
+            const tcCount = await prisma.testCase.count({
+              where: { problemId: q.problemId },
+            });
+            await prisma.submission.update({
+              where: { id: sub.id },
+              data: { totalCount: tcCount },
+            });
+            programmingEnqueues.push({ submissionId: sub.id });
           }
         }
+        // PROGRAMMING 题 autoScore 由 Worker 异步写回，submitExam 时算 0
       }
     }
 
     if (s > 0) totalAuto += s;
-    updates.push({ questionId: q.id, autoScore: s });
+    answerUpdates.push({ questionId: q.id, autoScore: s });
   }
 
   // 持久化（一个事务）
   await prisma.$transaction(async (tx) => {
-    for (const u of updates) {
+    for (const u of answerUpdates) {
       const existing = await tx.answer.findUnique({
         where: {
           attemptId_questionId: { attemptId: attempt.id, questionId: u.questionId },
@@ -147,6 +145,15 @@ export async function submitExam(attemptId: string): Promise<SubmitExamResult> {
       },
     });
   });
+
+  // 入队 PROGRAMMING 题评测（失败不影响主流程）
+  for (const e of programmingEnqueues) {
+    try {
+      await addJudgeJob(e.submissionId);
+    } catch (err) {
+      console.error("[submitExam] addJudgeJob failed:", err);
+    }
+  }
 
   return { ok: true, attemptId: attempt.id, totalAuto, isAutoSubmit };
 }

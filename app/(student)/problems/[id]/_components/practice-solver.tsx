@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useActionState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,8 +14,10 @@ import {
   Clock,
   ChevronDown,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { submitForPracticeAction } from "@/app/(student)/problems/actions";
+import { usePollSubmission } from "@/hooks/use-poll-submission";
 
 const STATUS_TONE: Record<string, "success" | "warning" | "danger" | "default"> = {
   ACCEPTED: "success",
@@ -62,20 +65,41 @@ export function PracticeSolver({
 }) {
   const [code, setCode] = React.useState(lastCode ?? starterCode ?? "");
   const [state, formAction, pending] = useActionState(submitForPracticeAction, undefined);
+  const router = useRouter();
 
-  const result: JudgeResultSummary | null = state?.judge
+  // 异步评测：拿到 submissionId 后开始轮询 /api/submissions/[id]
+  const submissionId: string | null =
+    state && state.ok && state.submissionId ? state.submissionId : null;
+  const poll = usePollSubmission(submissionId);
+
+  const polled = poll.kind === "done" ? poll.submission : null;
+  const result: JudgeResultSummary | null = polled
     ? {
-        submissionId: state.judge.submissionId,
-        status: state.judge.status,
-        passedCount: state.judge.passedCount,
-        totalCount: state.judge.totalCount,
-        score: state.judge.autoScore,
-        timeMs: state.judge.timeMs,
-        cases: state.judge.cases,
+        submissionId: polled.id,
+        status: polled.status,
+        passedCount: polled.passedCount,
+        totalCount: polled.totalCount,
+        score: polled.score,
+        timeMs: polled.maxTimeMs ?? 0,
+        cases: polled.cases.map<JudgeCaseView>((c) => ({
+          order: c.order,
+          isSample: c.isSample,
+          status: c.status,
+          timeMs: c.timeMs,
+          actualOutput: c.actualOutput,
+          errorMsg: c.errorMsg,
+        })),
       }
     : lastResult;
 
+  // 终态拿到分数后刷新服务端数据（拿到最新 lastResult）
+  React.useEffect(() => {
+    if (poll.kind === "done") router.refresh();
+  }, [poll.kind, router]);
+
   const tone = result ? (STATUS_TONE[result.status] ?? "default") : "default";
+  const isPolling =
+    submissionId !== null && (poll.kind === "loading" || poll.kind === "polling");
 
   return (
     <Card>
@@ -108,9 +132,9 @@ export function PracticeSolver({
             <p className="text-[11px] text-subtle-foreground">
               提交后将跑全部用例。隐藏用例的实际输出不展示。
             </p>
-            <Button type="submit" disabled={pending || !code.trim()} size="sm">
+            <Button type="submit" disabled={pending || isPolling || !code.trim()} size="sm">
               <Send className="h-3.5 w-3.5" />
-              {pending ? "评测中…" : "提交评测"}
+              {pending || isPolling ? "评测中…" : "提交评测"}
             </Button>
           </div>
         </form>
@@ -139,6 +163,29 @@ export function PracticeSolver({
                 用时 {result.timeMs}ms
               </span>
             </div>
+
+            {isPolling && (
+              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>评测中（已轮询 {poll.kind === "polling" ? poll.attempt : 0} 次 / 最多 60 次）…</span>
+              </div>
+            )}
+
+            {poll.kind === "timeout" && (
+              <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-warning/30 bg-warning-subtle/40 px-3 py-2 text-xs text-warning">
+                <span>评测尚未完成（已轮询 {poll.attempts} 次），请稍后刷新页面查看结果。</span>
+                <Button size="sm" variant="outline" onClick={() => router.refresh()}>
+                  刷新
+                </Button>
+              </div>
+            )}
+
+            {poll.kind === "error" && (
+              <div className="mt-3 flex items-center gap-2 rounded-lg border border-danger/30 bg-danger-subtle/40 px-3 py-2 text-xs text-danger">
+                <AlertCircle className="h-3 w-3" />
+                <span>轮询失败：{poll.message}</span>
+              </div>
+            )}
 
             {result.cases.some((c) => c.isSample) && (
               <CaseDetails cases={result.cases} />

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/guard";
-import { runJudge } from "@/lib/judge/local";
+import { addJudgeJob } from "@/lib/judge/queue";
 
 async function requireStudent() {
   const session = await requireSession();
@@ -62,22 +62,8 @@ const submitSchema = z.object({
 export type PracticeSubmitState = {
   error?: string;
   ok?: boolean;
-  judge?: {
-    submissionId: string;
-    status: string;
-    passedCount: number;
-    totalCount: number;
-    autoScore: number; // 本次得分（满分 = 全部分值）
-    timeMs: number;
-    cases: Array<{
-      order: number;
-      isSample: boolean;
-      status: string;
-      timeMs: number;
-      actualOutput?: string;
-      errorMsg?: string;
-    }>;
-  };
+  /** PENDING submission id；前端拿这个 id 去 /api/submissions/[id] 轮询 */
+  submissionId?: string;
 };
 
 export async function submitForPracticeAction(
@@ -104,111 +90,36 @@ export async function submitForPracticeAction(
 
   const problemFull = await prisma.problem.findUnique({
     where: { id: parsed.data.problemId },
-    include: {
-      testCases: {
-        orderBy: { order: "asc" },
-        select: { id: true, input: true, expected: true, isSample: true, score: true },
-      },
-    },
+    select: { testCases: { select: { id: true } } },
   });
   if (!problemFull) return { error: "题目不存在" };
-
   if (problemFull.testCases.length === 0) {
     return { error: "该题尚未配置测试用例，无法评测" };
   }
 
-  // 跑评测
-  const judgeResult = await runJudge(
-    parsed.data.code,
-    problemFull.testCases.map((tc) => ({
-      input: tc.input,
-      expected: tc.expected,
-      isSample: tc.isSample,
-      score: tc.score,
-    })),
-    { timeLimitMs: problemFull.timeLimitMs, memoryLimitMb: problemFull.memoryLimitMb },
-  );
-
-  const totalScore = problemFull.testCases.reduce((s, tc) => s + tc.score, 0);
-
-  // 持久化
-  const submissionId = await prisma.$transaction(async (tx) => {
-    const sub = await tx.submission.create({
-      data: {
-        problemId: parsed.data.problemId,
-        userId: studentId,
-        code: parsed.data.code,
-        status: judgeResult.status as
-          | "PENDING"
-          | "JUDGING"
-          | "ACCEPTED"
-          | "WRONG_ANSWER"
-          | "TLE"
-          | "MLE"
-          | "RUNTIME_ERROR"
-          | "COMPILE_ERROR"
-          | "SYSTEM_ERROR",
-        score: judgeResult.totalScore,
-        passedCount: judgeResult.passedCount,
-        totalCount: judgeResult.totalCount,
-        maxTimeMs: Math.max(0, ...judgeResult.cases.map((c) => c.timeMs)),
-        errorMsg: judgeResult.cases.find((c) => c.errorMsg)?.errorMsg?.slice(0, 2000) ?? null,
-        contextType: "PRACTICE",
-        contextId: null,
-      },
-    });
-
-    if (judgeResult.cases.length > 0) {
-      await tx.judgeCase.createMany({
-        data: problemFull.testCases.map((tc, i) => {
-          const c = judgeResult.cases[i];
-          return {
-            submissionId: sub.id,
-            testCaseId: tc.id,
-            status: (c?.status ?? "SYSTEM_ERROR") as
-              | "PENDING"
-              | "JUDGING"
-              | "ACCEPTED"
-              | "WRONG_ANSWER"
-              | "TLE"
-              | "MLE"
-              | "RUNTIME_ERROR"
-              | "COMPILE_ERROR"
-              | "SYSTEM_ERROR",
-            timeMs: c?.timeMs ?? 0,
-            actualOutput: tc.isSample ? c?.actualOutput ?? null : null,
-          };
-        }),
-      });
-    }
-
-    return sub.id;
+  // 1) 创建 PENDING 提交
+  const submission = await prisma.submission.create({
+    data: {
+      problemId: parsed.data.problemId,
+      userId: studentId,
+      code: parsed.data.code,
+      status: "PENDING",
+      totalCount: problemFull.testCases.length,
+      contextType: "PRACTICE",
+      contextId: null,
+    },
+    select: { id: true },
   });
 
-  revalidatePath(`/problems/${parsed.data.problemId}`);
-  revalidatePath("/problems");
+  // 2) 入队（Worker 会拉 job 跑评测 + 写结果）
+  try {
+    await addJudgeJob(submission.id);
+  } catch (e) {
+    console.error("[submitForPracticeAction] addJudgeJob failed:", e);
+    return { error: "评测队列暂时不可用，请稍后再试" };
+  }
 
-  return {
-    ok: true,
-    judge: {
-      submissionId,
-      status: judgeResult.status,
-      passedCount: judgeResult.passedCount,
-      totalCount: judgeResult.totalCount,
-      autoScore: judgeResult.totalScore,
-      timeMs: Math.max(0, ...judgeResult.cases.map((c) => c.timeMs)),
-      cases: judgeResult.cases.map((c, i) => {
-        const tc = problemFull.testCases[i];
-        const isSample = tc?.isSample ?? false;
-        return {
-          order: i,
-          isSample,
-          status: c.status,
-          timeMs: c.timeMs,
-          actualOutput: isSample ? c.actualOutput : undefined,
-          errorMsg: c.errorMsg,
-        };
-      }),
-    },
-  };
+  revalidatePath(`/problems/${parsed.data.problemId}`);
+
+  return { ok: true, submissionId: submission.id };
 }
