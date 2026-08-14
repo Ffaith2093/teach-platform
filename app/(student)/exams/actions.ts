@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/guard";
-import type { AttemptStatus, QuestionType } from "@prisma/client";
+import { submitExam } from "@/lib/exams/submit";
 
 async function requireStudent() {
   const session = await requireSession();
@@ -193,98 +193,16 @@ export async function submitExamAction(
   });
   if (!parsed.success) return { error: "缺少 attemptId" };
 
+  // 鉴权：只有 attempt 的本人能提交
   const attempt = await prisma.examAttempt.findUnique({
     where: { id: parsed.data.attemptId },
-    include: {
-      exam: {
-        include: {
-          questions: {
-            include: {
-              question: { select: { id: true, type: true, answer: true } },
-            },
-          },
-        },
-      },
-    },
+    select: { id: true, studentId: true, examId: true },
   });
   if (!attempt) return { error: "尝试记录不存在" };
   if (attempt.studentId !== studentId) return { error: "无权访问" };
-  if (attempt.status !== "IN_PROGRESS") {
-    return { ok: true }; // 已交卷视作幂等
-  }
 
-  // 自动判分（编程题交 0 分，由 P5.3 教师人工判）
-  const scoreByQuestionId = new Map<string, number>();
-  const scoreByQuestionIdList = attempt.exam.questions.map((eq) => {
-    const correct = eq.question.answer;
-    if (correct == null) return { qid: eq.questionId, score: 0 };
-    if (eq.question.type === "SINGLE_CHOICE") {
-      scoreByQuestionId.set(eq.questionId, eq.score);
-      return { qid: eq.questionId, score: eq.score };
-    }
-    return { qid: eq.questionId, score: eq.score };
-  });
-
-  // 取已作答
-  const answers = await prisma.answer.findMany({
-    where: { attemptId: parsed.data.attemptId },
-    select: { questionId: true, content: true },
-  });
-  const answerByQid = new Map(answers.map((a) => [a.questionId, a.content]));
-
-  let totalAuto = 0;
-  const updates: Array<{ id?: string; questionId: string; autoScore: number }> = [];
-  for (const eq of attempt.exam.questions) {
-    const q = eq.question;
-    const eqQuestionId = q.id;
-    const ans = answerByQid.get(eqQuestionId);
-    let s = 0;
-    if (ans !== undefined && ans !== null) {
-      if (q.type === "SINGLE_CHOICE") {
-        s = ans === q.answer ? eq.score : 0;
-      } else if (q.type === "FILL_BLANK" || q.type === "CODE_BLANK") {
-        const expected = Array.isArray(q.answer) ? (q.answer as string[]) : [];
-        const given = Array.isArray(ans) ? (ans as string[]) : [];
-        if (expected.length > 0 && expected.length === given.length) {
-          // 字符串相等 + 去尾空白
-          const norm = (s: string) => s.replace(/\s+$/, "").trim();
-          const allMatch = expected.every((e, i) => norm(given[i] ?? "") === norm(e));
-          s = allMatch ? eq.score : 0;
-        }
-      } else if (q.type === "PROGRAMMING") {
-        // 编程题 P5.2 不评分，留 P5.3
-        s = 0;
-      }
-    }
-    if (s > 0) totalAuto += s;
-    updates.push({ questionId: eqQuestionId, autoScore: s });
-  }
-
-  // 写 autoScore 到 Answer
-  await prisma.$transaction(async (tx) => {
-    for (const u of updates) {
-      const existing = await tx.answer.findUnique({
-        where: { attemptId_questionId: { attemptId: parsed.data.attemptId, questionId: u.questionId } },
-      });
-      if (existing) {
-        await tx.answer.update({
-          where: { id: existing.id },
-          data: { autoScore: u.autoScore },
-        });
-      } else if (u.autoScore > 0) {
-        // 没有作答（理论不可能，因为没作答 = 0 分）
-      }
-    }
-    await tx.examAttempt.update({
-      where: { id: parsed.data.attemptId },
-      data: {
-        status: "SUBMITTED" as AttemptStatus,
-        submittedAt: new Date(),
-        autoScore: totalAuto,
-        isAutoSubmit: attempt.deadlineAt.getTime() < Date.now(),
-      },
-    });
-  });
+  const result = await submitExam(parsed.data.attemptId);
+  if (!result.ok) return { error: result.error };
 
   revalidatePath(`/exams/${attempt.examId}`);
   revalidatePath(`/exams/${attempt.examId}/attempt/${parsed.data.attemptId}`);
