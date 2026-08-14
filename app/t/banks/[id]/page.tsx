@@ -9,22 +9,23 @@ import { relativeTime } from "@/lib/utils";
 import {
   ChevronLeft,
   Library,
-  Code,
-  Plus,
 } from "lucide-react";
-import { AddProblemButton } from "./_components/add-problem-button";
 import { BankMetaEditor } from "./_components/bank-meta-editor";
-import { BankProblemList } from "./_components/bank-problem-list";
 import { BankActions } from "./_components/bank-actions";
+import { BankQuestionsPanel } from "./_components/bank-questions-panel";
+import type { Difficulty, QuestionType } from "@prisma/client";
 
 export const metadata = { title: "题库详情" };
 
 export default async function BankDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ type?: string }>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
   const session = await auth();
   const userId = session!.user.id;
 
@@ -33,7 +34,7 @@ export default async function BankDetailPage({
     include: {
       course: { select: { id: true, title: true } },
       questions: {
-        where: { type: "PROGRAMMING", problemId: { not: null } },
+        orderBy: { id: "asc" },
         include: {
           problem: {
             select: {
@@ -46,8 +47,8 @@ export default async function BankDetailPage({
               _count: { select: { testCases: true } },
             },
           },
+          _count: { select: { examQuestions: true } },
         },
-        orderBy: { id: "asc" },
       },
     },
   });
@@ -56,7 +57,9 @@ export default async function BankDetailPage({
 
   // 我可以加入题库的编程题（本人 or 公开，且不在本库中）
   const usedProblemIds = new Set(
-    bank.questions.map((q) => q.problemId).filter(Boolean) as string[],
+    bank.questions
+      .filter((q) => q.problemId)
+      .map((q) => q.problemId) as string[],
   );
   const availableProblems = await prisma.problem.findMany({
     where: {
@@ -78,6 +81,21 @@ export default async function BankDetailPage({
     include: { course: { select: { id: true, title: true } } },
     orderBy: { course: { title: "asc" } },
   });
+
+  // 组装给面板的数据
+  const questions = bank.questions.map((q) => ({
+    questionId: q.id,
+    type: q.type as QuestionType,
+    content: q.content,
+    difficulty: q.difficulty as Difficulty,
+    score: q.score,
+    options: (q.options as { key: string; text: string }[] | null) ?? undefined,
+    answer: (q.answer as string | string[] | null) ?? undefined,
+    explanation: q.explanation,
+    problemId: q.problemId ?? undefined,
+    problemTitle: q.problem?.title,
+    referencedByCount: q._count.examQuestions,
+  }));
 
   return (
     <>
@@ -116,56 +134,26 @@ export default async function BankDetailPage({
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
                   创建于 {relativeTime(bank.createdAt)} · 共{" "}
-                  <span className="num text-foreground">{bank.questions.length}</span> 题
+                  <span className="num text-foreground">{questions.length}</span> 题
                 </p>
               </div>
-              <BankActions bankId={bank.id} questionCount={bank.questions.length} />
+              <BankActions bankId={bank.id} questionCount={questions.length} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-base font-semibold">题库题目</h2>
-                    <AddProblemButton
-                      bankId={bank.id}
-                      problems={availableProblems.map((p) => ({
-                        id: p.id,
-                        title: p.title,
-                        difficulty: p.difficulty,
-                        isPublic: p.isPublic,
-                      }))}
-                    />
-                  </div>
-                  {bank.questions.length === 0 ? (
-                    <div className="mt-4 rounded-lg border border-dashed border-border bg-muted/30 px-6 py-12 text-center text-sm text-muted-foreground">
-                      <Code className="mx-auto h-8 w-8 text-subtle-foreground" />
-                      <p className="mt-3">题库还是空的</p>
-                      <p className="mt-1 text-xs text-subtle-foreground">
-                        点击右上角「添加编程题」开始收录
-                      </p>
-                    </div>
-                  ) : (
-                    <BankProblemList
-                      bankId={bank.id}
-                      questions={bank.questions
-                        .filter((q) => q.problem)
-                        .map((q) => ({
-                          questionId: q.id,
-                          problemId: q.problemId!,
-                          title: q.problem!.title,
-                          difficulty: q.problem!.difficulty,
-                          tags: q.problem!.tags,
-                          isPublic: q.problem!.isPublic,
-                          testCaseCount: q.problem!._count.testCases,
-                          score: q.score,
-                        }))}
-                    />
-                  )}
-                </CardContent>
-              </Card>
+              <BankQuestionsPanel
+                bankId={bank.id}
+                questions={questions}
+                availableProblems={availableProblems.map((p) => ({
+                  id: p.id,
+                  title: p.title,
+                  difficulty: p.difficulty,
+                  isPublic: p.isPublic,
+                }))}
+                searchParams={{ type: sp.type }}
+              />
             </div>
 
             <div className="space-y-6">
@@ -190,7 +178,7 @@ export default async function BankDetailPage({
                     <div>
                       <h3 className="text-sm font-medium text-foreground">题库用途</h3>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        题库用于把编程题归类。可关联到一门课程，便于后续布置作业时批量引用。
+                        题库用于按题型归类题目。可关联到一门课程，方便后续组卷时引用。
                       </p>
                     </div>
                   </div>

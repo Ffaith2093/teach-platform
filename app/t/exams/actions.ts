@@ -482,6 +482,163 @@ export async function removeQuestionFromExamAction(examId: string, questionId: s
   revalidatePath(`/t/exams/${examId}`);
 }
 
+// ========== 编辑试卷中的题目（沿用 buildQuestionByType 共享 helper） ==========
+
+export async function updateQuestionInExamAction(
+  examId: string,
+  _prev: AddQuestionState | undefined,
+  formData: FormData,
+): Promise<AddQuestionState> {
+  const { exam } = await requireExamAccess(examId);
+  if (exam.status !== "DRAFT") {
+    return { error: "已发布的试卷不可修改题目" };
+  }
+
+  const questionId = formData.get("questionId")?.toString();
+  if (!questionId) return { error: "缺少 questionId" };
+
+  const existing = await prisma.question.findUnique({
+    where: { id: questionId },
+    select: { id: true, examQuestions: { where: { examId }, select: { score: true } } },
+  });
+  if (!existing || existing.examQuestions.length === 0) {
+    return { error: "题目不在本试卷中" };
+  }
+
+  const rawType = formData.get("type")?.toString();
+  let input;
+
+  if (rawType === "SINGLE_CHOICE") {
+    const optionsRaw = formData.get("options")?.toString() ?? "[]";
+    let options: { key: string; text: string }[] = [];
+    try {
+      const parsed = JSON.parse(optionsRaw);
+      if (Array.isArray(parsed)) {
+        options = parsed.map((o: { key?: string; text?: string }, i: number) => ({
+          key: String(o?.key ?? String.fromCharCode(65 + i)).slice(0, 4),
+          text: String(o?.text ?? "").slice(0, 200),
+        }));
+      }
+    } catch {
+      /* ignore */
+    }
+    const parsed = addChoiceSchema.safeParse({
+      type: "SINGLE_CHOICE",
+      content: formData.get("content"),
+      options,
+      answer: formData.get("answer"),
+      score: formData.get("score"),
+      difficulty: formData.get("difficulty") || "EASY",
+      explanation: formData.get("explanation") || undefined,
+    });
+    if (!parsed.success) {
+      const fieldErrors: AddQuestionState["fieldErrors"] = {};
+      for (const issue of parsed.error.issues) {
+        fieldErrors[String(issue.path[0] ?? "_")] = issue.message;
+      }
+      return { error: "请检查输入", fieldErrors };
+    }
+    input = parsed.data;
+  } else if (rawType === "FILL_BLANK") {
+    const answerRaw = formData.get("answer")?.toString() ?? "[]";
+    let answers: string[] = [];
+    try {
+      const a = JSON.parse(answerRaw);
+      if (Array.isArray(a)) answers = a.map((s) => String(s).slice(0, 200));
+    } catch {
+      /* ignore */
+    }
+    const parsed = addFillBlankSchema.safeParse({
+      type: "FILL_BLANK",
+      content: formData.get("content"),
+      answer: answers,
+      score: formData.get("score"),
+      difficulty: formData.get("difficulty") || "EASY",
+      explanation: formData.get("explanation") || undefined,
+    });
+    if (!parsed.success) {
+      const fieldErrors: AddQuestionState["fieldErrors"] = {};
+      for (const issue of parsed.error.issues) {
+        fieldErrors[String(issue.path[0] ?? "_")] = issue.message;
+      }
+      return { error: "请检查输入", fieldErrors };
+    }
+    input = parsed.data;
+  } else if (rawType === "CODE_BLANK") {
+    const answerRaw = formData.get("answer")?.toString() ?? "[]";
+    let answers: string[] = [];
+    try {
+      const a = JSON.parse(answerRaw);
+      if (Array.isArray(a)) answers = a.map((s) => String(s).slice(0, 500));
+    } catch {
+      /* ignore */
+    }
+    const parsed = addCodeBlankSchema.safeParse({
+      type: "CODE_BLANK",
+      content: formData.get("content"),
+      answer: answers,
+      score: formData.get("score"),
+      difficulty: formData.get("difficulty") || "EASY",
+      explanation: formData.get("explanation") || undefined,
+    });
+    if (!parsed.success) {
+      const fieldErrors: AddQuestionState["fieldErrors"] = {};
+      for (const issue of parsed.error.issues) {
+        fieldErrors[String(issue.path[0] ?? "_")] = issue.message;
+      }
+      return { error: "请检查输入", fieldErrors };
+    }
+    input = parsed.data;
+  } else {
+    // PROGRAMMING：不允许在试卷编辑器里改 problemId（保留 wrapper 引用）
+    return { error: "编程题不支持在试卷中编辑，请删除后重新添加" };
+  }
+
+  // 单选额外校验
+  if (input.type === "SINGLE_CHOICE") {
+    if (!input.options.some((o) => o.key === input.answer)) {
+      return { fieldErrors: { answer: "答案键不在选项中" } };
+    }
+  }
+
+  const oldScore = existing.examQuestions[0].score;
+  const newScore = input.score;
+  const scoreDelta = newScore - oldScore;
+
+  // 按类型构造 update data
+  const updateData: Record<string, unknown> = {
+    content: input.content,
+    score: input.score,
+    difficulty: input.difficulty,
+    explanation: input.explanation || null,
+  };
+  if (input.type === "SINGLE_CHOICE") {
+    updateData.options = input.options;
+    updateData.answer = input.answer;
+  } else {
+    updateData.options = null;
+    updateData.answer = input.answer;
+  }
+
+  await prisma.$transaction([
+    prisma.question.update({
+      where: { id: questionId },
+      data: updateData,
+    }),
+    prisma.examQuestion.update({
+      where: { examId_questionId: { examId, questionId } },
+      data: { score: newScore },
+    }),
+    prisma.exam.update({
+      where: { id: examId },
+      data: { totalScore: { increment: scoreDelta } },
+    }),
+  ]);
+
+  revalidatePath(`/t/exams/${examId}`);
+  return { ok: true };
+}
+
 // ========== 发布 / 撤回 ==========
 
 export async function publishExamAction(examId: string) {
