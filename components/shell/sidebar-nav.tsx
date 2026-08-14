@@ -17,9 +17,11 @@ import {
   BarChart3,
   Settings,
   UserCog,
+  LogOut,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { signOutAction } from "@/app/(public)/login/actions";
 
 export interface NavItem {
   href: string;
@@ -34,28 +36,23 @@ export interface NavSection {
 }
 
 const studentNav: NavSection[] = [
-  {
-    items: [{ href: "/dashboard", label: "工作台", icon: LayoutDashboard }],
-  },
+  { items: [{ href: "/dashboard", label: "工作台", icon: LayoutDashboard }] },
   {
     label: "学习",
     items: [
-      { href: "/courses", label: "我的课程", icon: BookOpen, count: 5 },
+      { href: "/courses", label: "我的课程", icon: BookOpen },
       { href: "/my-class", label: "我的班级", icon: Users },
     ],
   },
   {
     label: "考核",
     items: [
-      { href: "/assignments", label: "作业", icon: FileText, count: 3 },
+      { href: "/assignments", label: "作业", icon: FileText },
       { href: "/exams", label: "考试", icon: GraduationCap },
       { href: "/grades", label: "成绩单", icon: ListChecks },
     ],
   },
-  {
-    label: "练习",
-    items: [{ href: "/problems", label: "题库练习", icon: Code }],
-  },
+  { label: "练习", items: [{ href: "/problems", label: "题库练习", icon: Code }] },
 ];
 
 const teacherNav: NavSection[] = [
@@ -64,16 +61,16 @@ const teacherNav: NavSection[] = [
     items: [
       { href: "/t/dashboard", label: "工作台", icon: LayoutDashboard },
       { href: "/t/classes", label: "我的班级", icon: Users },
-      { href: "/t/courses", label: "课程", icon: BookOpen, count: 5 },
+      { href: "/t/courses", label: "课程", icon: BookOpen },
     ],
   },
   {
     label: "考核",
     items: [
-      { href: "/t/assignments", label: "作业", icon: FileText, count: 3 },
+      { href: "/t/assignments", label: "作业", icon: FileText },
       { href: "/t/problems", label: "题库", icon: Code },
       { href: "/t/exams", label: "试卷", icon: Library },
-      { href: "/t/grading", label: "批改", icon: ClipboardCheck, count: 24 },
+      { href: "/t/grading", label: "批改", icon: ClipboardCheck },
     ],
   },
   {
@@ -86,10 +83,7 @@ const teacherNav: NavSection[] = [
 ];
 
 const adminNav: NavSection[] = [
-  {
-    label: "总览",
-    items: [{ href: "/admin", label: "工作台", icon: LayoutDashboard }],
-  },
+  { items: [{ href: "/admin", label: "工作台", icon: LayoutDashboard }] },
   {
     label: "组织",
     items: [
@@ -105,14 +99,11 @@ const adminNav: NavSection[] = [
       { href: "/admin/judge", label: "评测队列", icon: Server },
     ],
   },
-  {
-    label: "系统",
-    items: [{ href: "/admin/settings", label: "设置", icon: Settings }],
-  },
+  { label: "系统", items: [{ href: "/admin/settings", label: "设置", icon: Settings }] },
 ];
 
 interface SidebarShellProps {
-  role: "STUDENT" | "TEACHER" | "ADMIN";
+  role: "ADMIN" | "TEACHER" | "STUDENT";
   user: { name: string; subtitle: string; initial: string };
 }
 
@@ -156,11 +147,6 @@ export function SidebarShell({ role, user }: SidebarShellProps) {
                 >
                   <Icon className="h-4 w-4" />
                   <span>{item.label}</span>
-                  {item.count != null && (
-                    <span className="ml-auto rounded-full bg-warning-subtle px-1.5 py-0.5 text-[10px] font-semibold text-warning">
-                      {item.count}
-                    </span>
-                  )}
                 </Link>
               );
             })}
@@ -177,6 +163,15 @@ export function SidebarShell({ role, user }: SidebarShellProps) {
             {user.subtitle}
           </div>
         </div>
+        <form action={signOutAction}>
+          <button
+            type="submit"
+            aria-label="退出登录"
+            className="rounded-md p-1.5 text-subtle-foreground transition-colors hover:bg-card hover:text-danger"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </form>
       </div>
     </aside>
   );

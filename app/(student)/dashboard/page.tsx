@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Topbar } from "@/components/shell/topbar";
@@ -7,23 +9,38 @@ import { ArrowRight, Clock, FileText, GraduationCap } from "lucide-react";
 
 export const metadata: Metadata = { title: "学生工作台" };
 
-export default function StudentDashboardPage() {
+export default async function StudentDashboardPage() {
+  const session = await auth();
+  // 基础统计：从 DB 拉（其他作业/考试模块在 P5/P6 实现，此处占位）
+  const [assignmentCount, examCount] = await Promise.all([
+    prisma.assignmentSubmission.count({
+      where: { studentId: session!.user.id, status: { in: ["DRAFT", "SUBMITTED"] } },
+    }),
+    prisma.examAttempt.count({
+      where: { studentId: session!.user.id, status: "IN_PROGRESS" },
+    }),
+  ]);
+
   return (
     <>
       <Topbar crumbs={[{ label: "工作台" }]} />
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">欢迎回来，示例学生</h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">高一(1)班 · 信息学</p>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              欢迎回来，{session?.user.name}
+            </h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              <span className="num">{assignmentCount}</span> 项待办作业 ·{" "}
+              <span className="num">{examCount}</span> 场进行中考试
+            </p>
           </div>
 
-          {/* 占位骨架：P3 之后会接真实数据 */}
           <Card>
             <CardContent className="p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-base font-semibold">待办</h2>
-                <Badge variant="warning">3 项</Badge>
+                <Badge variant="warning">3 项占位</Badge>
               </div>
               <ul className="divide-y divide-border">
                 {[
@@ -59,7 +76,8 @@ export default function StudentDashboardPage() {
 
           <div className="rounded-xl border border-dashed border-border bg-muted/40 p-8 text-center text-sm text-muted-foreground">
             <p>
-              工作台完整版将在 <b className="text-foreground">P3 题目与练习</b> 切片中实现（接入真实待办、课程、最近成绩数据）。
+              待办 / 成绩 / 课程等模块将在 <b className="text-foreground">P3 题目与练习</b> ~{" "}
+              <b className="text-foreground">P5 作业</b> 切片中接入真实数据。
             </p>
             <Link href="/login" className="mt-2 inline-block text-xs text-primary hover:underline">
               ← 返回登录
