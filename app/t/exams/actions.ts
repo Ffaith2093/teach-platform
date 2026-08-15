@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/guard";
+import { notifyExamPublished } from "@/lib/notifications/actions";
 import type { ResultMode } from "@prisma/client";
 
 // ========== 权限工具 ==========
@@ -129,6 +130,22 @@ export async function createExamAction(
     }).then((e) => e.id);
   } catch (e) {
     throw e;
+  }
+
+  // 立即发布：发通知给受众
+  if (parsed.data.publish) {
+    try {
+      await notifyExamPublished({
+        examId,
+        examTitle: parsed.data.title,
+        courseId: parsed.data.courseId,
+        openAt,
+        durationMin: parsed.data.durationMin,
+        publisherId: session.user.id,
+      });
+    } catch {
+      // 通知失败不影响主流程
+    }
   }
 
   revalidatePath("/t/exams");
@@ -642,17 +659,17 @@ export async function updateQuestionInExamAction(
 // ========== 发布 / 撤回 ==========
 
 export async function publishExamAction(examId: string) {
-  const { exam } = await requireExamAccess(examId);
+  const { exam, session } = await requireExamAccess(examId);
   if (exam.status === "PUBLISHED") return;
 
   // 必须有题目
   const count = await prisma.examQuestion.count({ where: { examId } });
   if (count === 0) throw new Error("请先挂载至少一道题再发布");
 
-  // 时间校验
+  // 时间校验 + 取元数据（发通知用）
   const full = await prisma.exam.findUnique({
     where: { id: examId },
-    select: { openAt: true },
+    select: { openAt: true, title: true, courseId: true, durationMin: true },
   });
   if (!full || full.openAt.getTime() < Date.now()) {
     throw new Error("开考时间必须晚于当前时间");
@@ -662,6 +679,20 @@ export async function publishExamAction(examId: string) {
     where: { id: examId },
     data: { status: "PUBLISHED" },
   });
+
+  try {
+    await notifyExamPublished({
+      examId,
+      examTitle: full.title,
+      courseId: full.courseId,
+      openAt: full.openAt,
+      durationMin: full.durationMin,
+      publisherId: session.user.id,
+    });
+  } catch {
+    // 通知失败不影响主流程
+  }
+
   revalidatePath(`/t/exams/${examId}`);
   revalidatePath("/t/exams");
 }
