@@ -16,6 +16,8 @@ import {
   Megaphone,
   Users,
   ChevronRight,
+  Activity,
+  Flame,
 } from "lucide-react";
 import { formatDate, relativeTime } from "@/lib/utils";
 import type { CourseCategory } from "@prisma/client";
@@ -84,8 +86,8 @@ export default async function StudentDashboardPage() {
     select: { classId: true },
   });
 
-  // 并行：待批作业 / 进行中考试 / 最近成绩 / 未读通知 / 班级公告 widget
-  const [pendingAssignments, inProgressExams, recentGrades, unreadNotiCount, recentNotis] =
+  // 并行：待批作业 / 进行中考试 / 最近成绩 / 未读通知 / 班级公告 widget / 我的出勤
+  const [pendingAssignments, inProgressExams, recentGrades, unreadNotiCount, recentNotis, myAccessLogs] =
     await Promise.all([
       // 已发布、未被批阅完成（含已逾期未交的——逾期提醒学生）
       prisma.assignment.findMany({
@@ -148,6 +150,15 @@ export default async function StudentDashboardPage() {
           isRead: true,
           createdAt: true,
         },
+      }),
+      // 我的出勤：过去 30 天的所有访问日志
+      prisma.accessLog.findMany({
+        where: {
+          userId,
+          createdAt: { gte: new Date(now.getTime() - 30 * 86400_000) },
+        },
+        select: { createdAt: true, courseId: true },
+        orderBy: { createdAt: "desc" },
       }),
     ]);
 
@@ -248,6 +259,54 @@ export default async function StudentDashboardPage() {
   ).length;
 
   const todoCount = todos.length;
+
+  // ========== 我的出勤（基于 30 天内 AccessLog）==========
+  // 仅统计 courseId != null 的访问（学生在课程页打点）
+  const courseLogs = myAccessLogs.filter((l) => l.courseId != null);
+  const visitedDays = new Set<string>();
+  const todayKey = new Date(now).toISOString().slice(0, 10);
+  for (const log of courseLogs) {
+    visitedDays.add(new Date(log.createdAt).toISOString().slice(0, 10));
+  }
+  const todayVisited = visitedDays.has(todayKey);
+
+  // 7 天 daily（按时间正序，今天在最右）
+  const sevenDayGrid: { date: string; weekday: string; visited: boolean }[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(now.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    sevenDayGrid.push({
+      date: key,
+      weekday: ["日", "一", "二", "三", "四", "五", "六"][d.getDay()],
+      visited: visitedDays.has(key),
+    });
+  }
+
+  // 7 天活跃天数（不含今天只看过去 7 天内的去重日期）
+  const sevenDaysAgoKey = new Date(now.getTime() - 6 * 86400_000)
+    .toISOString()
+    .slice(0, 10);
+  const sevenDayActive = [...visitedDays].filter((d) => d >= sevenDaysAgoKey).length;
+  // 30 天活跃天数
+  const thirtyDaysAgoKey = new Date(now.getTime() - 29 * 86400_000)
+    .toISOString()
+    .slice(0, 10);
+  const thirtyDayActive = [...visitedDays].filter((d) => d >= thirtyDaysAgoKey).length;
+
+  // 连续天数（从今天向前数）
+  let streak = 0;
+  const cursor = new Date(now);
+  cursor.setHours(0, 0, 0, 0);
+  while (true) {
+    const key = cursor.toISOString().slice(0, 10);
+    if (visitedDays.has(key)) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    } else {
+      break;
+    }
+  }
 
   return (
     <>
@@ -499,6 +558,83 @@ export default async function StudentDashboardPage() {
             </div>
           </div>
 
+          {/* 我的出勤 */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-primary" />
+                  <h2 className="text-base font-semibold">我的出勤</h2>
+                  <span className="text-[11px] text-subtle-foreground">
+                    基于课程页访问打点
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {streak > 0 && (
+                    <Badge variant="warning" className="inline-flex items-center gap-1">
+                      <Flame className="h-3 w-3" />
+                      连续 <span className="num">{streak}</span> 天
+                    </Badge>
+                  )}
+                  {todayVisited ? (
+                    <Badge variant="success">今日已到课</Badge>
+                  ) : (
+                    <Badge variant="warning">今日未访问</Badge>
+                  )}
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <MiniAttendanceStat
+                  label="今日到课"
+                  value={todayVisited ? "已到" : "未到"}
+                  tone={todayVisited ? "success" : "warning"}
+                />
+                <MiniAttendanceStat
+                  label="7 天活跃"
+                  value={`${sevenDayActive}/7`}
+                  tone={sevenDayActive >= 5 ? "success" : sevenDayActive >= 3 ? "warning" : "danger"}
+                />
+                <MiniAttendanceStat
+                  label="30 天活跃"
+                  value={`${thirtyDayActive}/30`}
+                  tone={thirtyDayActive >= 20 ? "success" : thirtyDayActive >= 10 ? "warning" : "danger"}
+                />
+              </div>
+              <div className="mt-5">
+                <div className="mb-2 text-xs text-muted-foreground">过去 7 天访问课程页情况</div>
+                <div className="grid grid-cols-7 gap-2">
+                  {sevenDayGrid.map((c) => {
+                    const isToday = c.date === todayKey;
+                    return (
+                      <div
+                        key={c.date}
+                        className={`flex h-16 flex-col items-center justify-center rounded-lg border transition-colors ${
+                          c.visited
+                            ? isToday
+                              ? "border-primary/40 bg-primary-subtle"
+                              : "border-success/30 bg-success-subtle"
+                            : "border-border bg-muted/30"
+                        }`}
+                      >
+                        <span className="text-[10px] text-subtle-foreground">{c.weekday}</span>
+                        {c.visited ? (
+                          <Activity
+                            className={`mt-0.5 h-3.5 w-3.5 ${isToday ? "text-primary" : "text-success"}`}
+                          />
+                        ) : (
+                          <span className="mt-0.5 text-[10px] text-subtle-foreground">—</span>
+                        )}
+                        <span className="num text-[10px] text-subtle-foreground">
+                          {parseInt(c.date.slice(5, 7), 10)}/{parseInt(c.date.slice(8, 10), 10)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* 最近成绩 */}
           <Card>
             <CardContent className="p-6">
@@ -569,6 +705,28 @@ function SummaryCard({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function MiniAttendanceStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: "success" | "warning" | "danger";
+}) {
+  const toneClass = {
+    success: "text-success",
+    warning: "text-warning",
+    danger: "text-danger",
+  }[tone];
+  return (
+    <div className="rounded-xl border border-border bg-muted/30 p-3.5">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className={`num mt-1 text-xl font-semibold ${toneClass}`}>{value}</div>
+    </div>
   );
 }
 
