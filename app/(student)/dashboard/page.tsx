@@ -87,17 +87,16 @@ export default async function StudentDashboardPage() {
   // 并行：待批作业 / 进行中考试 / 最近成绩 / 未读通知 / 班级公告 widget
   const [pendingAssignments, inProgressExams, recentGrades, unreadNotiCount, recentNotis] =
     await Promise.all([
-      // 已发布、未到 dueAt、未被批阅完成
+      // 已发布、未被批阅完成（含已逾期未交的——逾期提醒学生）
       prisma.assignment.findMany({
         where: {
           publishedAt: { not: null },
-          dueAt: { gte: now },
           submissions: {
             none: { studentId: userId, status: { in: ["GRADED", "RETURNED"] } },
           },
         },
         orderBy: { dueAt: "asc" },
-        take: 5,
+        take: 10,
         select: {
           id: true,
           title: true,
@@ -211,7 +210,7 @@ export default async function StudentDashboardPage() {
     }
   }
 
-  // 合并成统一"待办"流，按时间升序
+  // 合并成统一"待办"流
   const todos: TodoRow[] = [
     ...pendingAssignments.map((a) => ({
       kind: "assignment" as const,
@@ -229,7 +228,24 @@ export default async function StudentDashboardPage() {
       deadlineAt: e.deadlineAt,
       attemptId: e.id,
     })),
-  ].sort((a, b) => (a.kind === "assignment" ? a.dueAt : a.deadlineAt).getTime() - (b.kind === "assignment" ? b.dueAt : b.deadlineAt).getTime());
+  ];
+  // 排序：逾期未交（最高优先级）> 其他按截止升序
+  todos.sort((a, b) => {
+    const aKey = a.kind === "assignment" ? a.dueAt : a.deadlineAt;
+    const bKey = b.kind === "assignment" ? b.dueAt : b.deadlineAt;
+    const aOverdueUnsubmitted =
+      a.kind === "assignment" && a.dueAt < now && !a.submitted;
+    const bOverdueUnsubmitted =
+      b.kind === "assignment" && b.dueAt < now && !b.submitted;
+    if (aOverdueUnsubmitted !== bOverdueUnsubmitted) {
+      return aOverdueUnsubmitted ? -1 : 1;
+    }
+    return aKey.getTime() - bKey.getTime();
+  });
+
+  const overdueCount = todos.filter(
+    (t) => t.kind === "assignment" && t.dueAt < now && !t.submitted,
+  ).length;
 
   const todoCount = todos.length;
 
@@ -282,11 +298,16 @@ export default async function StudentDashboardPage() {
             <CardContent className="p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-base font-semibold">待办</h2>
-                {todoCount > 0 ? (
-                  <Badge variant="warning">{todoCount} 项</Badge>
-                ) : (
-                  <Badge variant="success">已清空</Badge>
-                )}
+                <div className="flex items-center gap-2">
+                  {overdueCount > 0 && (
+                    <Badge variant="danger">{overdueCount} 项逾期</Badge>
+                  )}
+                  {todoCount > 0 ? (
+                    <Badge variant="warning">{todoCount} 项</Badge>
+                  ) : (
+                    <Badge variant="success">已清空</Badge>
+                  )}
+                </div>
               </div>
               {todoCount === 0 ? (
                 <div className="rounded-xl border border-dashed border-border bg-muted/40 p-10 text-center">
@@ -555,8 +576,17 @@ function TodoRowItem({ row }: { row: TodoRow }) {
   if (row.kind === "assignment") {
     const ms = row.dueAt.getTime() - Date.now();
     const overdue = ms < 0;
+    const overdueUnsubmitted = overdue && !row.submitted;
     const dueLabelText = dueLabel(row.dueAt);
-    const tone = overdue ? "danger" : row.submitted ? "muted" : ms < 86400_000 ? "warning" : "primary";
+    const tone = overdueUnsubmitted
+      ? "danger"
+      : overdue && row.submitted
+        ? "muted"
+        : row.submitted
+          ? "muted"
+          : ms < 86400_000
+            ? "warning"
+            : "primary";
     const toneClass = {
       warning: "bg-warning-subtle text-warning",
       primary: "bg-primary-subtle text-primary",
@@ -565,7 +595,12 @@ function TodoRowItem({ row }: { row: TodoRow }) {
     }[tone];
     return (
       <li>
-        <Link href={`/assignments/${row.id}`} className="flex items-center gap-4 py-3.5 hover:bg-muted/40 -mx-2 px-2 rounded-lg transition-colors">
+        <Link
+          href={`/assignments/${row.id}`}
+          className={`flex items-center gap-4 rounded-lg px-2 py-3.5 transition-colors hover:bg-muted/40 ${
+            overdueUnsubmitted ? "-mx-2 bg-danger-subtle/20" : "-mx-2"
+          }`}
+        >
           <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${toneClass}`}>
             <FileText className="h-4 w-4" />
           </div>
@@ -575,7 +610,11 @@ function TodoRowItem({ row }: { row: TodoRow }) {
             </div>
             <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
-              {dueLabelText}
+              {overdueUnsubmitted ? (
+                <span className="font-medium text-danger">已逾期 {relativeTime(row.dueAt)}</span>
+              ) : (
+                dueLabelText
+              )}
               {row.submitted && (
                 <Badge variant="success" className="ml-1.5 px-1.5 py-0">
                   已提交
@@ -583,7 +622,13 @@ function TodoRowItem({ row }: { row: TodoRow }) {
               )}
             </div>
           </div>
-          <ArrowRight className="h-4 w-4 text-subtle-foreground" />
+          {overdueUnsubmitted ? (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-danger px-2 py-0.5 text-[11px] font-medium text-white">
+              立即补交
+            </span>
+          ) : (
+            <ArrowRight className="h-4 w-4 text-subtle-foreground" />
+          )}
         </Link>
       </li>
     );
