@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/guard";
 import { addJudgeJob } from "@/lib/judge/queue";
+import { notifyMany } from "@/lib/notifications";
 
 // ========== 权限工具 ==========
 
@@ -26,7 +27,7 @@ async function requireAssignmentForStudent(assignmentId: string, problemId: stri
 
   const student = await prisma.user.findUnique({
     where: { id: studentId },
-    select: { classId: true },
+    select: { classId: true, name: true },
   });
   if (!student?.classId) throw new Error("您尚未分配班级，无法作答");
 
@@ -63,6 +64,7 @@ async function requireAssignmentForStudent(assignmentId: string, problemId: stri
 
   return {
     studentId,
+    studentName: student.name,
     studentClassId: student.classId,
     assignmentProblem,
     assignment: assignmentProblem.assignment,
@@ -134,16 +136,54 @@ export async function submitProblemAction(
   });
 
   // 2) 立即把 AssignmentSubmission 标 SUBMITTED（避免「交了但还没评测」时教师端看不到记录）
-  await prisma.assignmentSubmission.upsert({
-    where: { assignmentId_studentId: { assignmentId: parsed.data.assignmentId, studentId } },
-    update: { status: "SUBMITTED", submittedAt: now },
-    create: {
+  //    用 updateMany(where: RETURNED) 节流：多题作业多次提交时仅第一次 RETURNED→SUBMITTED 返回 count=1
+  const resubmitUpdate = await prisma.assignmentSubmission.updateMany({
+    where: {
       assignmentId: parsed.data.assignmentId,
       studentId,
-      status: "SUBMITTED",
-      submittedAt: now,
+      status: "RETURNED",
     },
+    data: { status: "SUBMITTED", submittedAt: now },
   });
+  const isResubmit = resubmitUpdate.count === 1;
+  if (!isResubmit) {
+    // DRAFT 或不存在 → 走原 upsert 路径
+    await prisma.assignmentSubmission.upsert({
+      where: { assignmentId_studentId: { assignmentId: parsed.data.assignmentId, studentId } },
+      update: { status: "SUBMITTED", submittedAt: now },
+      create: {
+        assignmentId: parsed.data.assignmentId,
+        studentId,
+        status: "SUBMITTED",
+        submittedAt: now,
+      },
+    });
+  }
+
+  // 3) 重新提交通知（仅 RETURNED → SUBMITTED 触发；多题作业通过节流只发一次）
+  if (isResubmit) {
+    try {
+      const teachers = await prisma.courseTeacher.findMany({
+        where: {
+          courseId: assignment.courseId,
+          role: { in: ["OWNER", "ASSISTANT"] },
+          teacher: { status: "ACTIVE" },
+        },
+        select: { teacherId: true },
+      });
+      if (teachers.length > 0) {
+        await notifyMany({
+          userIds: teachers.map((t) => t.teacherId),
+          title: `${ctx.studentName} 重新提交了《${assignment.title}》`,
+          body: "点击查看最新代码",
+          href: `/t/assignments/${parsed.data.assignmentId}/grade`,
+          courseId: assignment.courseId,
+        });
+      }
+    } catch (e) {
+      console.error("[submitProblemAction] resubmit notify failed:", e);
+    }
+  }
 
   // 3) 入队（Worker 跑评测 + 重算 AssignmentSubmission.autoScore）
   try {
