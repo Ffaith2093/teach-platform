@@ -95,13 +95,13 @@ async function CourseTabs({ courseId }: { courseId: string }) {
   const headerList = await headers();
   const pathname = headerList.get("x-pathname") ?? "";
   const tabs = [
-    { key: "overview", label: "概览", href: `/courses/${courseId}` },
+    { key: "announcements", label: "公告", href: `/courses/${courseId}` },
     { key: "resources", label: "资源", href: `/courses/${courseId}/resources` },
     { key: "assignments", label: "作业", href: `/assignments?course=${courseId}` },
     { key: "exams", label: "考试", href: `/exams?course=${courseId}` },
   ];
   const activeKey = tabs.find((t) =>
-    t.key === "overview"
+    t.key === "announcements"
       ? pathname === `/courses/${courseId}` || pathname === `/courses/${courseId}/`
       : t.key === "resources"
         ? pathname.startsWith(`/courses/${courseId}/resources`)
