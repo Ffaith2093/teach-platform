@@ -20,6 +20,7 @@ export default async function TeacherNotificationsPage() {
       href: true,
       isRead: true,
       courseId: true,
+      classId: true,
       createdAt: true,
     },
   });
@@ -35,15 +36,33 @@ export default async function TeacherNotificationsPage() {
     : [];
   const courseTitleMap = new Map(courses.map((c) => [c.id, c.title]));
 
+  const classIds = Array.from(
+    new Set(notifications.filter((n) => n.classId).map((n) => n.classId as string)),
+  );
+  const classes = classIds.length
+    ? await prisma.class.findMany({
+        where: { id: { in: classIds } },
+        select: { id: true, name: true, grade: { select: { name: true } } },
+      })
+    : [];
+  const classLabelMap = new Map(classes.map((c) => [c.id, `${c.grade.name} · ${c.name}`]));
+
   const groupMap = new Map<string, NotificationGroup>();
   for (const n of notifications) {
-    const key = n.courseId ?? "system";
+    let key: string;
+    let label: string;
+    if (n.courseId) {
+      key = `course:${n.courseId}`;
+      label = courseTitleMap.get(n.courseId) ?? "已删除课程";
+    } else if (n.classId) {
+      key = `class:${n.classId}`;
+      label = classLabelMap.get(n.classId) ?? "已删除班级";
+    } else {
+      key = "system";
+      label = "系统通知";
+    }
     if (!groupMap.has(key)) {
-      groupMap.set(key, {
-        key,
-        label: n.courseId ? courseTitleMap.get(n.courseId) ?? "已删除课程" : "系统通知",
-        items: [],
-      });
+      groupMap.set(key, { key, label, items: [] });
     }
     groupMap.get(key)!.items.push({
       id: n.id,
@@ -57,8 +76,10 @@ export default async function TeacherNotificationsPage() {
     });
   }
   const groups = Array.from(groupMap.values()).sort((a, b) => {
-    if (a.key === "system") return -1;
-    if (b.key === "system") return 1;
+    const rank = (k: string) => (k === "system" ? 0 : k.startsWith("class:") ? 1 : 2);
+    const ra = rank(a.key);
+    const rb = rank(b.key);
+    if (ra !== rb) return ra - rb;
     const at = new Date(a.items[0].createdAt).getTime();
     const bt = new Date(b.items[0].createdAt).getTime();
     return bt - at;

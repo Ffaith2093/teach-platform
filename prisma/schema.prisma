@@ -84,6 +84,7 @@ model Class {
   students      User[]
   teachers      ClassTeacher[]
   courseClasses CourseClass[]
+  notifications Notification[]
 
   @@unique([gradeId, name])
   @@index([gradeId, isActive])
@@ -524,12 +525,15 @@ model Notification {
   href      String?
   isRead    Boolean  @default(false)
   courseId  String? // 课程公告作用域（null = 其它类型通知）
+  classId   String? // 班级公告作用域（null = 其它类型通知）
   createdAt DateTime @default(now())
 
   course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  class  Class?  @relation(fields: [classId], references: [id], onDelete: SetNull)
 
   @@index([userId, isRead, createdAt])
   @@index([courseId, createdAt])
+  @@index([classId, createdAt])
 }
 
 // ============== 标签字典（管理员维护）==============

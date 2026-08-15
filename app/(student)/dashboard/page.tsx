@@ -78,14 +78,15 @@ export default async function StudentDashboardPage() {
   const userId = session!.user.id;
   const now = new Date();
 
-  // 并行：学生身份 / 待批作业 / 进行中考试 / 最近成绩 / 未读通知
-  const [me, pendingAssignments, inProgressExams, recentGrades, unreadNotiCount, recentNotis] =
+  // 学生所在班级（用于查我的课程 + 班级公告 widget 过滤）
+  const me = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { classId: true },
+  });
+
+  // 并行：待批作业 / 进行中考试 / 最近成绩 / 未读通知 / 班级公告 widget
+  const [pendingAssignments, inProgressExams, recentGrades, unreadNotiCount, recentNotis] =
     await Promise.all([
-      // 学生所在班级（用于查我的课程）
-      prisma.user.findUnique({
-        where: { id: userId },
-        select: { classId: true },
-      }),
       // 已发布、未到 dueAt、未被批阅完成
       prisma.assignment.findMany({
         where: {
@@ -134,8 +135,10 @@ export default async function StudentDashboardPage() {
         },
       }),
       prisma.notification.count({ where: { userId, isRead: false } }),
+      // 「班级公告」widget 只显示 classId 命中的通知（教师发的班级公告），
+      // 课程公告/系统通知走 /notifications 中心。
       prisma.notification.findMany({
-        where: { userId },
+        where: { userId, classId: me?.classId ?? "__none__" },
         orderBy: [{ createdAt: "desc" }],
         take: 5,
         select: {

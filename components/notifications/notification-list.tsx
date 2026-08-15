@@ -67,13 +67,16 @@ export function NotificationList({ groups }: { groups: NotificationGroup[] }) {
     }
   }
 
-  async function markGroup(courseKey: string) {
-    // 课程组：按 courseId 批量已读；系统组：所有 courseId=null 的
-    if (courseKey === "system") {
-      // 复用 read-all（不动已读通知），这里改用后端批量
+  async function markGroup(groupKey: string) {
+    if (groupKey === "system") {
+      // 系统通知 = courseId=null 且 classId=null
       await fetch("/api/notifications/read-all", { method: "POST" });
-    } else {
-      await fetch(`/api/notifications/course/${courseKey}/read`, { method: "POST" });
+    } else if (groupKey.startsWith("class:")) {
+      const classId = groupKey.slice("class:".length);
+      await fetch(`/api/notifications/class/${classId}/read`, { method: "POST" });
+    } else if (groupKey.startsWith("course:")) {
+      const courseId = groupKey.slice("course:".length);
+      await fetch(`/api/notifications/course/${courseId}/read`, { method: "POST" });
     }
     router.refresh();
   }

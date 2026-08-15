@@ -63,9 +63,12 @@ export async function announceClassAction(input: z.input<typeof announceSchema>)
     title: parsed.title,
     body: parsed.body,
     href: "/notifications",
+    classId: parsed.classId,
   });
 
   revalidatePath("/notifications");
+  revalidatePath("/dashboard");
+  revalidatePath(`/my-class`);
   return { sent, className: `${cls.grade.name} · ${cls.name}` };
 }
 
