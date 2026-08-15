@@ -18,9 +18,11 @@ import {
   ChevronRight,
   Activity,
   Flame,
+  TrendingUp,
 } from "lucide-react";
 import { formatDate, relativeTime } from "@/lib/utils";
 import type { CourseCategory } from "@prisma/client";
+import { GradeTrendChart, type StudentTrendPoint } from "./_components/grade-trend-chart";
 
 const CATEGORY_LABELS: Record<CourseCategory, string> = {
   DATA: "数据",
@@ -86,9 +88,17 @@ export default async function StudentDashboardPage() {
     select: { classId: true },
   });
 
-  // 并行：待批作业 / 进行中考试 / 最近成绩 / 未读通知 / 班级公告 widget / 我的出勤
-  const [pendingAssignments, inProgressExams, recentGrades, unreadNotiCount, recentNotis, myAccessLogs] =
-    await Promise.all([
+  // 并行：待批作业 / 进行中考试 / 最近成绩 / 未读通知 / 班级公告 widget / 我的出勤 / 成绩趋势
+  const [
+    pendingAssignments,
+    inProgressExams,
+    recentGrades,
+    unreadNotiCount,
+    recentNotis,
+    myAccessLogs,
+    gradedSubmissions,
+    gradedAttempts,
+  ] = await Promise.all([
       // 已发布、未被批阅完成（含已逾期未交的——逾期提醒学生）
       prisma.assignment.findMany({
         where: {
@@ -159,6 +169,37 @@ export default async function StudentDashboardPage() {
         },
         select: { createdAt: true, courseId: true },
         orderBy: { createdAt: "desc" },
+      }),
+      // 成绩趋势：已批改作业
+      prisma.assignmentSubmission.findMany({
+        where: { studentId: userId, status: "GRADED", finalScore: { not: null } },
+        orderBy: { gradedAt: "desc" },
+        take: 30,
+        select: {
+          finalScore: true,
+          gradedAt: true,
+          assignment: {
+            select: { title: true, totalScore: true, course: { select: { title: true } } },
+          },
+        },
+      }),
+      // 成绩趋势：已批改考试
+      prisma.examAttempt.findMany({
+        where: {
+          studentId: userId,
+          status: "GRADED",
+          finalScore: { not: null },
+          submittedAt: { not: null },
+        },
+        orderBy: { submittedAt: "desc" },
+        take: 30,
+        select: {
+          finalScore: true,
+          submittedAt: true,
+          exam: {
+            select: { title: true, totalScore: true, course: { select: { title: true } } },
+          },
+        },
       }),
     ]);
 
@@ -307,6 +348,79 @@ export default async function StudentDashboardPage() {
       break;
     }
   }
+
+  // ========== 成绩趋势 ==========
+  // 把已批改的作业 + 考试按时间排序，合并成单个时间线上的点。
+  // 同一时间点同时存在作业和考试成绩时合并为一个点（双线）。
+  const rawRows: Array<{
+    at: Date;
+    label: string;
+    course: string;
+    kind: "assignment" | "exam";
+    pct: number;
+  }> = [
+    ...gradedSubmissions
+      .filter((s) => s.gradedAt && s.finalScore != null)
+      .map((s) => {
+        const total = s.assignment.totalScore || 1;
+        return {
+          at: s.gradedAt as Date,
+          label: s.assignment.title,
+          course: s.assignment.course.title,
+          kind: "assignment" as const,
+          pct: Math.round(((s.finalScore as number) / total) * 100),
+        };
+      }),
+    ...gradedAttempts
+      .filter((a) => a.submittedAt && a.finalScore != null)
+      .map((a) => {
+        const total = a.exam.totalScore || 1;
+        return {
+          at: a.submittedAt as Date,
+          label: a.exam.title,
+          course: a.exam.course.title,
+          kind: "exam" as const,
+          pct: Math.round(((a.finalScore as number) / total) * 100),
+        };
+      }),
+  ];
+  rawRows.sort((a, b) => a.at.getTime() - b.at.getTime());
+
+  // 取最近 30 个点用于图表
+  const recentRows = rawRows.slice(-30);
+  // 按日期聚合同一点的两种成绩
+  type Agg = { x: string; label: string; course: string; assignmentPct: number | null; examPct: number | null };
+  const byDate = new Map<string, Agg>();
+  for (const r of recentRows) {
+    const date = r.at.toISOString().slice(0, 10);
+    const existing = byDate.get(date);
+    if (existing) {
+      if (r.kind === "assignment") existing.assignmentPct = r.pct;
+      else existing.examPct = r.pct;
+      // 同一日期内：取最新一条的 label/course 显示
+      existing.label = r.label;
+      existing.course = r.course;
+    } else {
+      byDate.set(date, {
+        x: `${r.at.getMonth() + 1}/${r.at.getDate()}`,
+        label: r.label,
+        course: r.course,
+        assignmentPct: r.kind === "assignment" ? r.pct : null,
+        examPct: r.kind === "exam" ? r.pct : null,
+      });
+    }
+  }
+  const trendPoints: StudentTrendPoint[] = Array.from(byDate.values());
+
+  // 趋势小卡：均分
+  const assignmentPctList = recentRows.filter((r) => r.kind === "assignment").map((r) => r.pct);
+  const examPctList = recentRows.filter((r) => r.kind === "exam").map((r) => r.pct);
+  const trendAssignAvg =
+    assignmentPctList.length > 0
+      ? Math.round(assignmentPctList.reduce((s, n) => s + n, 0) / assignmentPctList.length)
+      : null;
+  const trendExamAvg =
+    examPctList.length > 0 ? Math.round(examPctList.reduce((s, n) => s + n, 0) / examPctList.length) : null;
 
   return (
     <>
@@ -557,6 +671,44 @@ export default async function StudentDashboardPage() {
               </Card>
             </div>
           </div>
+
+          {/* 成绩趋势 */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  <h2 className="text-base font-semibold">成绩趋势</h2>
+                  <span className="text-[11px] text-subtle-foreground">
+                    基于已批改的作业 / 考试百分比
+                  </span>
+                </div>
+                {(trendAssignAvg != null || trendExamAvg != null) && (
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    {trendAssignAvg != null && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="inline-block h-2 w-2 rounded-full bg-primary" />
+                        作业均分{" "}
+                        <span className="num font-semibold text-foreground">
+                          {trendAssignAvg}%
+                        </span>
+                      </span>
+                    )}
+                    {trendExamAvg != null && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="inline-block h-2 w-2 rounded-full bg-accent" />
+                        考试均分{" "}
+                        <span className="num font-semibold text-foreground">
+                          {trendExamAvg}%
+                        </span>
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <GradeTrendChart data={trendPoints} />
+            </CardContent>
+          </Card>
 
           {/* 我的出勤 */}
           <Card>
