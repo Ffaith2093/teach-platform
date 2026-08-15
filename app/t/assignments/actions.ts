@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/guard";
+import { notify } from "@/lib/notifications";
 
 // ========== 教师课程权限工具 ==========
 
@@ -435,11 +436,13 @@ export async function gradeAssignmentAction(
       assignment: {
         select: {
           id: true,
+          title: true,
           totalScore: true,
           courseId: true,
           publishedAt: true,
         },
       },
+      student: { select: { id: true, name: true } },
     },
   });
   if (!sub) return { error: "提交记录不存在" };
@@ -472,10 +475,25 @@ export async function gradeAssignmentAction(
     },
   });
 
+  // 给学生发批阅通知：标题带作业名，正文带分数 + 评语摘要，跳转作业详情
+  const feedback = parsed.data.feedback?.trim() || "";
+  const body = feedback
+    ? `得分 ${finalScore} / ${sub.assignment.totalScore} · 评语：${feedback.length > 60 ? feedback.slice(0, 60) + "…" : feedback}`
+    : `得分 ${finalScore} / ${sub.assignment.totalScore}`;
+  await notify({
+    userId: sub.studentId,
+    title: `作业已批阅：《${sub.assignment.title}》`,
+    body,
+    href: `/assignments/${sub.assignment.id}`,
+    courseId: sub.assignment.courseId,
+  });
+
   revalidatePath(`/t/assignments/${sub.assignment.id}`);
   revalidatePath(`/t/assignments/${sub.assignment.id}/grade`);
   revalidatePath(`/t/grading`);
   revalidatePath(`/assignments/${sub.assignment.id}`);
+  revalidatePath(`/notifications`);
+  revalidatePath(`/dashboard`);
 
   return { ok: true };
 }
