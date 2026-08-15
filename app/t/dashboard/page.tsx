@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Topbar } from "@/components/shell/topbar";
-import { Users, FileText, ClipboardCheck, BookOpen, ChevronRight } from "lucide-react";
+import { Users, FileText, ClipboardCheck, BookOpen, ChevronRight, Activity } from "lucide-react";
 import { relativeTime } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "教师工作台" };
@@ -13,8 +13,10 @@ export const metadata: Metadata = { title: "教师工作台" };
 export default async function TeacherDashboardPage() {
   const session = await auth();
   const userId = session!.user.id;
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
 
-  const [classCount, courseCount, toGrade, recentSubs, taughtClasses, myCourses] =
+  const [classCount, courseCount, toGrade, recentSubs, taughtClasses, myCourses, attendanceCourses] =
     await Promise.all([
       prisma.classTeacher.count({ where: { teacherId: userId } }),
       prisma.courseTeacher.count({ where: { teacherId: userId } }),
@@ -56,7 +58,60 @@ export default async function TeacherDashboardPage() {
         take: 5,
         orderBy: { course: { updatedAt: "desc" } },
       }),
+      // 「今日到课总览」数据：教师教的全部未归档课程 + 应到 + 今日到课
+      prisma.courseTeacher.findMany({
+        where: { teacherId: userId, course: { isArchived: false } },
+        include: {
+          course: {
+            include: {
+              classes: {
+                include: {
+                  class: {
+                    select: {
+                      students: {
+                        where: { status: "ACTIVE" },
+                        select: { id: true },
+                      },
+                    },
+                  },
+                },
+              },
+              accessLogs: {
+                where: { createdAt: { gte: todayStart } },
+                select: { userId: true },
+              },
+            },
+          },
+        },
+      }),
     ]);
+
+  // 装配出勤率
+  const attendanceRows = attendanceCourses
+    .map((ct) => {
+      const expected = ct.course.classes.reduce(
+        (s, cc) => s + cc.class.students.length,
+        0,
+      );
+      const presentSet = new Set(ct.course.accessLogs.map((l) => l.userId));
+      const present = presentSet.size;
+      const rate = expected > 0 ? present / expected : 0;
+      return {
+        id: ct.course.id,
+        title: ct.course.title,
+        expected,
+        present,
+        rate,
+        role: ct.role,
+      };
+    })
+    .sort((a, b) => a.rate - b.rate); // 出勤率低的在前
+  const totalExpected = attendanceRows.reduce((s, r) => s + r.expected, 0);
+  const totalPresent = attendanceRows.reduce(
+    (s, r) => s + r.present,
+    0,
+  );
+  const overallRate = totalExpected > 0 ? totalPresent / totalExpected : 0;
 
   const stats = [
     { icon: Users, label: "我教的班级", num: classCount, suffix: "个" },
@@ -107,6 +162,114 @@ export default async function TeacherDashboardPage() {
               );
             })}
           </div>
+
+          {/* 今日到课总览 */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-primary" />
+                  <h2 className="text-base font-semibold">今日到课总览</h2>
+                  <span className="text-[11px] text-subtle-foreground">
+                    基于学生访问课程页打点
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    整体出勤率{" "}
+                    <span
+                      className={`num font-semibold ${
+                        overallRate >= 0.8
+                          ? "text-success"
+                          : overallRate >= 0.6
+                            ? "text-foreground"
+                            : "text-danger"
+                      }`}
+                    >
+                      {Math.round(overallRate * 100)}%
+                    </span>
+                  </span>
+                  <Badge variant="default" className="num">
+                    {totalPresent}/{totalExpected}
+                  </Badge>
+                </div>
+              </div>
+              {attendanceRows.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border bg-muted/30 px-6 py-10 text-center text-sm text-muted-foreground">
+                  <p>您还没有任何课程</p>
+                </div>
+              ) : (
+                <ul className="space-y-2.5">
+                  {attendanceRows.map((r) => {
+                    const tone =
+                      r.expected === 0
+                        ? "muted"
+                        : r.rate >= 0.8
+                          ? "success"
+                          : r.rate >= 0.6
+                            ? "warning"
+                            : "danger";
+                    const toneClass = {
+                      success: "bg-success",
+                      warning: "bg-warning",
+                      danger: "bg-danger",
+                      muted: "bg-muted",
+                    }[tone];
+                    return (
+                      <li key={r.id}>
+                        <Link
+                          href={`/t/courses/${r.id}/attendance`}
+                          className="flex items-center gap-4 rounded-lg border border-border bg-card p-3 transition-all hover:border-primary/40 hover:shadow-sm"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate text-sm font-medium text-foreground">
+                                {r.title}
+                              </span>
+                              {r.role === "OWNER" ? (
+                                <Badge variant="primary" className="shrink-0">主讲</Badge>
+                              ) : r.role === "ASSISTANT" ? (
+                                <Badge variant="accent" className="shrink-0">助教</Badge>
+                              ) : null}
+                            </div>
+                            <div className="mt-1.5 flex items-center gap-3">
+                              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                                <div
+                                  className={`h-full ${toneClass}`}
+                                  style={{
+                                    width: `${r.expected > 0 ? Math.max(2, r.rate * 100) : 0}%`,
+                                  }}
+                                />
+                              </div>
+                              <span className="shrink-0 text-xs text-muted-foreground num">
+                                <span
+                                  className={`font-semibold ${
+                                    tone === "success"
+                                      ? "text-success"
+                                      : tone === "warning"
+                                        ? "text-warning"
+                                        : tone === "danger"
+                                          ? "text-danger"
+                                          : "text-subtle-foreground"
+                                  }`}
+                                >
+                                  {r.expected === 0 ? "—" : `${Math.round(r.rate * 100)}%`}
+                                </span>
+                                <span className="ml-1.5 text-subtle-foreground">
+                                  {r.present}/{r.expected}
+                                </span>
+                              </span>
+                            </div>
+                          </div>
+                          <ChevronRight className="h-4 w-4 shrink-0 text-subtle-foreground" />
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="space-y-6 lg:col-span-2">
