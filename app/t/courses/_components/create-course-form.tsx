@@ -105,9 +105,9 @@ export function CreateCourseForm({
       </ol>
 
       <form action={formAction} className="p-6">
-        {/* 步骤 1：基本信息 */}
-        {step === 0 && (
-          <div className="space-y-4">
+        {/* 三步全部常驻 DOM（hidden 控制显示），保留 typed values */}
+        <div className="space-y-4" hidden={step !== 0}>
+          {/* 步骤 1：基本信息 */}
             <div className="space-y-1.5">
               <Label htmlFor="course-title">课程标题</Label>
               <Input
@@ -157,11 +157,9 @@ export function CreateCourseForm({
               </div>
             </div>
           </div>
-        )}
 
         {/* 步骤 2：授课班级 */}
-        {step === 1 && (
-          <div className="space-y-3">
+        <div className="space-y-3" hidden={step !== 1}>
             <p className="text-sm text-muted-foreground">
               勾选您要授课的班级（必须由您任教）。所选班级学生将自动成为课程成员。
             </p>
@@ -208,11 +206,9 @@ export function CreateCourseForm({
               <p className="text-xs text-danger">{state.fieldErrors.classIds}</p>
             )}
           </div>
-        )}
 
         {/* 步骤 3：协作者 */}
-        {step === 2 && (
-          <div className="space-y-3">
+        <div className="space-y-3" hidden={step !== 2}>
             <p className="text-sm text-muted-foreground">
               可选：邀请其他教师作为助教加入您的课程（可后续在课程详情调整）。
             </p>
@@ -259,7 +255,6 @@ export function CreateCourseForm({
               </div>
             )}
           </div>
-        )}
 
         {state.error && (
           <div className="mt-4 rounded-lg border border-danger/30 bg-danger-subtle/40 px-3 py-2 text-xs text-danger">
