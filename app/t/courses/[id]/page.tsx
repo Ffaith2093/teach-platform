@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { relativeTime } from "@/lib/utils";
 import {
   ChevronLeft,
+  ChevronRight,
   BookOpen,
   Users,
   FileText,
@@ -277,9 +278,18 @@ export default async function TeacherCourseDetailPage({
                     基于学生访问课程页的打点
                   </span>
                 </div>
-                {absentInWeek.length > 0 && (
-                  <Badge variant="danger">{absentInWeek.length} 人 7 天未到</Badge>
-                )}
+                <div className="flex items-center gap-2">
+                  {absentInWeek.length > 0 && (
+                    <Badge variant="danger">{absentInWeek.length} 人 7 天未到</Badge>
+                  )}
+                  <Link
+                    href={`/t/courses/${course.id}/attendance`}
+                    className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2.5 text-xs font-medium hover:bg-muted"
+                  >
+                    查看明细
+                    <ChevronRight className="h-3 w-3" />
+                  </Link>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
