@@ -10,6 +10,7 @@ import { ChevronLeft, BookOpen, Users, FileText, GraduationCap, Archive, Folder 
 import type { CourseCategory, CourseTeacherRole } from "@prisma/client";
 import { EditCourseButton } from "./_components/edit-course-button";
 import { ArchiveCourseButton } from "./_components/archive-course-button";
+import { AnnounceCourseButton } from "./_components/announce-course-button";
 import { ClassesPanel } from "./_components/classes-panel";
 import { CollaboratorsPanel } from "./_components/collaborators-panel";
 
@@ -108,6 +109,10 @@ export default async function TeacherCourseDetailPage({
   });
 
   const isOwner = myMembership.role === "OWNER";
+  // 课程公告收件人数：所有班级 ACTIVE 学生 + 同课程其他 CourseTeacher
+  const recipientCount =
+    course.classes.reduce((s, cc) => s + cc.class._count.students, 0) +
+    Math.max(0, course.teachers.length - 1);
 
   return (
     <>
@@ -145,6 +150,11 @@ export default async function TeacherCourseDetailPage({
                 </p>
               </div>
               <div className="flex gap-2">
+                <AnnounceCourseButton
+                  courseId={course.id}
+                  courseTitle={course.title}
+                  recipientCount={recipientCount}
+                />
                 <EditCourseButton
                   courseId={course.id}
                   initial={{

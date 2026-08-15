@@ -10,6 +10,7 @@ export async function notify(input: {
   title: string;
   body: string;
   href?: string;
+  courseId?: string;
 }) {
   await prisma.notification.create({
     data: {
@@ -17,6 +18,7 @@ export async function notify(input: {
       title: input.title,
       body: input.body,
       href: input.href,
+      courseId: input.courseId,
     },
   });
 }
@@ -26,6 +28,7 @@ export async function notifyMany(input: {
   title: string;
   body: string;
   href?: string;
+  courseId?: string;
 }) {
   const ids = Array.from(new Set(input.userIds)).filter(Boolean);
   if (ids.length === 0) return 0;
@@ -35,6 +38,7 @@ export async function notifyMany(input: {
       title: input.title,
       body: input.body,
       href: input.href,
+      courseId: input.courseId,
     })),
   });
   return result.count;

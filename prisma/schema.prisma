@@ -126,6 +126,7 @@ model Course {
   exams       Exam[]
   questions   Question[]
   questionBanks QuestionBank[]
+  notifications Notification[]
 
   @@index([category, isArchived])
 }
@@ -521,9 +522,13 @@ model Notification {
   body      String
   href      String?
   isRead    Boolean  @default(false)
+  courseId  String? // 课程公告作用域（null = 其它类型通知）
   createdAt DateTime @default(now())
 
+  course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
   @@index([userId, isRead, createdAt])
+  @@index([courseId, createdAt])
 }
 
 // ============== 标签字典（管理员维护）==============

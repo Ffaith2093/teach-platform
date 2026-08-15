@@ -15,6 +15,7 @@ import {
   BookOpen,
   Megaphone,
   ArrowRight,
+  Bell,
 } from "lucide-react";
 import { formatDate, relativeTime } from "@/lib/utils";
 
@@ -36,9 +37,16 @@ export default async function StudentCourseOverviewPage({
   });
   if (!me?.classId) notFound();
 
-  // 课程 + 教师 + 班级 + 我的进度 + 本课程动态（待办/进行中考试/最近出分）
-  const [course, mySubmissions, myAttempts, pendingAssignments, inProgressExams, recentGrades] =
-    await Promise.all([
+  // 课程 + 教师 + 班级 + 我的进度 + 本课程动态（待办/进行中考试/最近出分）+ 课程公告
+  const [
+    course,
+    mySubmissions,
+    myAttempts,
+    pendingAssignments,
+    inProgressExams,
+    recentGrades,
+    courseNotis,
+  ] = await Promise.all([
       prisma.course.findFirst({
         where: {
           id,
@@ -122,6 +130,20 @@ export default async function StudentCourseOverviewPage({
           assignment: { select: { id: true, title: true, totalScore: true } },
         },
       }),
+      // 课程公告：本课程作用域 + 当前学生
+      prisma.notification.findMany({
+        where: { userId, courseId: id },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        select: {
+          id: true,
+          title: true,
+          body: true,
+          href: true,
+          isRead: true,
+          createdAt: true,
+        },
+      }),
     ]);
   if (!course) notFound();
 
@@ -141,6 +163,79 @@ export default async function StudentCourseOverviewPage({
 
   return (
     <div className="space-y-6">
+      {/* 课程公告 */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Megaphone className="h-4 w-4 text-primary" />
+            <h2 className="text-base font-semibold">课程公告</h2>
+            {courseNotis.length > 0 && (
+              <span className="text-[11px] text-subtle-foreground num">
+                · {courseNotis.length} 条
+              </span>
+            )}
+          </div>
+          {courseNotis.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-muted/40 p-10 text-center">
+              <p className="text-sm text-muted-foreground">本课程暂无公告</p>
+              <p className="mt-1 text-xs text-subtle-foreground">
+                教师发布的课程公告会显示在这里。
+              </p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-border">
+              {courseNotis.map((n) => {
+                const inner = (
+                  <div className="flex items-start gap-3 py-3">
+                    <div
+                      className={`mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                        n.isRead
+                          ? "bg-muted text-muted-foreground"
+                          : "bg-primary-subtle text-primary"
+                      }`}
+                    >
+                      <Bell className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate text-sm font-medium text-foreground">
+                          {n.title}
+                        </span>
+                        {!n.isRead && (
+                          <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                        )}
+                      </div>
+                      <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                        {n.body}
+                      </p>
+                      <div className="mt-1 text-[11px] text-subtle-foreground">
+                        <span className="num">{relativeTime(n.createdAt)}</span>
+                        <span className="mx-1">·</span>
+                        <span className="num">{formatDate(n.createdAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+                return (
+                  <li key={n.id}>
+                    {n.href ? (
+                      <Link
+                        href={n.href}
+                        className="-mx-2 block rounded-lg px-2 transition-colors hover:bg-muted/40"
+                      >
+                        {inner}
+                      </Link>
+                    ) : (
+                      <div className="-mx-2 px-2">{inner}</div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
       {/* 进度三卡 */}
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
