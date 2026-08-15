@@ -22,6 +22,7 @@ import {
   FolderPlus,
   AlertCircle,
   Loader2,
+  Search,
 } from "lucide-react";
 import {
   createFolderAction,
@@ -61,6 +62,7 @@ export function ResourcesManager({
   const [uploading, setUploading] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [creating, setCreating] = React.useState(false);
+  const [query, setQuery] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   // 找当前 folder 下的子目录（不含当前自身）
@@ -83,6 +85,11 @@ export function ResourcesManager({
   }, [folders, currentFolder]);
 
   const itemsHere = resources.filter((r) => r.folder === currentFolder);
+  const filteredItems = React.useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return itemsHere;
+    return itemsHere.filter((r) => r.name.toLowerCase().includes(q));
+  }, [itemsHere, query]);
 
   /** 上传一个 File */
   async function uploadFiles(files: FileList | File[]) {
@@ -217,7 +224,7 @@ export function ResourcesManager({
         />
       </div>
 
-      {/* 面包屑 + 新建目录 */}
+      {/* 面包屑 + 搜索 + 新建目录 */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <nav className="flex flex-wrap items-center gap-1 text-sm">
           {crumbs.map((c, i) => (
@@ -236,7 +243,23 @@ export function ResourcesManager({
             </React.Fragment>
           ))}
         </nav>
-        {creating ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-subtle-foreground" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="按文件名搜索…"
+              className="h-9 w-56 rounded-md border border-border bg-background pl-8 pr-3 text-sm outline-none focus:border-primary"
+            />
+            {query && (
+              <span className="absolute -bottom-4 right-1 num text-[11px] text-muted-foreground">
+                {filteredItems.length} / {itemsHere.length}
+              </span>
+            )}
+          </div>
+          {creating ? (
           <form
             action={async (fd: FormData) => {
               fd.set("courseId", courseId);
@@ -270,6 +293,7 @@ export function ResourcesManager({
             新建子目录
           </Button>
         )}
+        </div>
       </div>
 
       {/* 子目录列表 */}
@@ -307,11 +331,25 @@ export function ResourcesManager({
             </div>
           </CardContent>
         </Card>
+      ) : filteredItems.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 px-6 py-12 text-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <Search className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">没有匹配的文件</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                本目录下没有文件名包含「{query}」的资源。
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <Card>
           <CardContent className="p-0">
             <div className="divide-y divide-border">
-              {itemsHere.map((r) => (
+              {filteredItems.map((r) => (
                 <ResourceRow
                   key={r.id}
                   r={r}

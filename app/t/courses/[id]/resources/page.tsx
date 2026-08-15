@@ -1,8 +1,16 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { Card, CardContent } from "@/components/ui/card";
 import { Topbar } from "@/components/shell/topbar";
 import { ResourcesManager } from "./_components/resources-manager";
+import { formatBytes } from "@/lib/storage/format";
+import {
+  FileText,
+  Folder,
+  HardDrive,
+  Download,
+} from "lucide-react";
 
 export const metadata = { title: "课程资源" };
 
@@ -54,6 +62,10 @@ export default async function TeacherCourseResourcesPage({
     uploaderName: r.uploader.name,
   }));
 
+  // 顶部 4 张统计卡
+  const totalBytes = resources.reduce((s, r) => s + r.sizeBytes, 0);
+  const totalDownloads = resources.reduce((s, r) => s + r.downloads, 0);
+
   return (
     <>
       <Topbar
@@ -70,6 +82,66 @@ export default async function TeacherCourseResourcesPage({
             <p className="mt-1.5 text-sm text-muted-foreground">
               课程内所有教师均可上传与删除。删除后无法恢复，请谨慎。
             </p>
+          </div>
+
+          {/* 顶部 4 张统计卡 */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <span className="text-sm text-muted-foreground">总文件数</span>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-subtle text-primary">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="mt-3 text-3xl font-bold tracking-tight num">
+                  {resources.length}
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">本课程所有目录</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <span className="text-sm text-muted-foreground">目录数</span>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-subtle text-accent">
+                    <Folder className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="mt-3 text-3xl font-bold tracking-tight num">
+                  {folders.length}
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">含根目录</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <span className="text-sm text-muted-foreground">总大小</span>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-warning-subtle text-warning">
+                    <HardDrive className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="mt-3 text-3xl font-bold tracking-tight num">
+                  {resources.length === 0 ? "—" : formatBytes(totalBytes)}
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">磁盘占用</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <span className="text-sm text-muted-foreground">总下载</span>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success-subtle text-success">
+                    <Download className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="mt-3 text-3xl font-bold tracking-tight num">
+                  {totalDownloads}
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">累计下载次数</div>
+              </CardContent>
+            </Card>
           </div>
 
           <ResourcesManager
