@@ -58,6 +58,7 @@ export default async function TeacherCourseResourcesPage({
     sizeBytes: r.sizeBytes,
     folder: r.folder,
     downloads: r.downloads,
+    isHidden: r.isHidden,
     createdAt: r.createdAt.toISOString(),
     uploaderName: r.uploader.name,
   }));

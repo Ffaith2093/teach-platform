@@ -40,9 +40,15 @@ export async function GET(
       storedName: true,
       mimeType: true,
       sizeBytes: true,
+      isHidden: true,
     },
   });
   if (!resource) return NextResponse.json({ message: "资源不存在" }, { status: 404 });
+
+  // 学生：被教师隐藏的资源不能下载（教师/管理员不受限）
+  if (session.user.role === "STUDENT" && resource.isHidden) {
+    return NextResponse.json({ message: "资源不可用" }, { status: 403 });
+  }
 
   const ok = await canDownload(session.user.id, session.user.role, resource.courseId);
   if (!ok) {

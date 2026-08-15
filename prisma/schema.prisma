@@ -187,6 +187,7 @@ model Resource {
   folder     String   @default("/")
   uploaderId String
   downloads  Int      @default(0)
+  isHidden   Boolean  @default(false) // 教师可设为隐藏（对学生不可见），用于「先上传后整理」
   createdAt  DateTime @default(now())
 
   course   Course @relation(fields: [courseId], references: [id])

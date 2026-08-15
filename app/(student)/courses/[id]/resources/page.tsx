@@ -54,7 +54,7 @@ export default async function StudentCourseResourcesPage({
   const currentFolder = folderParam && folderParam.startsWith("/") ? folderParam : "/";
 
   const rows = await prisma.resource.findMany({
-    where: { courseId: id },
+    where: { courseId: id, isHidden: false },
     orderBy: [{ folder: "asc" }, { createdAt: "desc" }],
     include: { uploader: { select: { name: true } } },
   });

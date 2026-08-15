@@ -116,3 +116,59 @@ export async function deleteResourceAction(
   revalidatePath(`/t/courses/${resource.courseId}/resources`);
   return { ok: true };
 }
+
+const updateResourceSchema = z.object({
+  resourceId: z.string().min(1),
+  name: z.string().min(1, "文件名不能为空").max(200).optional(),
+  isHidden: z.boolean().optional(),
+});
+
+export type UpdateResourceState = {
+  error?: string;
+  ok?: boolean;
+};
+
+/**
+ * 更新资源：仅允许重命名 / 切换 isHidden。CourseTeacher 任何角色都可调用。
+ */
+export async function updateResourceAction(
+  input: z.input<typeof updateResourceSchema>,
+): Promise<UpdateResourceState> {
+  const parsed = updateResourceSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "请检查输入" };
+  }
+
+  const resource = await prisma.resource.findUnique({
+    where: { id: parsed.data.resourceId },
+    select: { id: true, courseId: true },
+  });
+  if (!resource) return { error: "资源不存在" };
+
+  try {
+    await requireCourseTeacher(resource.courseId);
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+
+  const data: Record<string, unknown> = {};
+  if (parsed.data.name !== undefined) {
+    // 防御性 trim：去掉前后空白、路径分隔符
+    const name = parsed.data.name.trim();
+    if (!name) return { error: "文件名不能为空" };
+    if (name.includes("/")) return { error: "文件名不能包含 /" };
+    data.name = name;
+  }
+  if (parsed.data.isHidden !== undefined) {
+    data.isHidden = parsed.data.isHidden;
+  }
+  if (Object.keys(data).length === 0) return { ok: true };
+
+  await prisma.resource.update({
+    where: { id: parsed.data.resourceId },
+    data,
+  });
+  revalidatePath(`/t/courses/${resource.courseId}/resources`);
+  revalidatePath(`/courses/${resource.courseId}/resources`);
+  return { ok: true };
+}

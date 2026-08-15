@@ -23,10 +23,16 @@ import {
   AlertCircle,
   Loader2,
   Search,
+  Pencil,
+  EyeOff,
+  Eye,
+  Check,
+  X,
 } from "lucide-react";
 import {
   createFolderAction,
   deleteResourceAction,
+  updateResourceAction,
 } from "@/app/t/courses/[id]/resources/actions";
 import {
   EXT_WHITELIST,
@@ -41,6 +47,7 @@ type Resource = {
   sizeBytes: number;
   folder: string;
   downloads: number;
+  isHidden: boolean;
   createdAt: string;
   uploaderName: string;
 };
@@ -354,6 +361,7 @@ export function ResourcesManager({
                   key={r.id}
                   r={r}
                   onDelete={() => handleDelete(r.id, r.name)}
+                  onUpdated={() => router.refresh()}
                   canDelete
                 />
               ))}
@@ -369,11 +377,17 @@ function ResourceRow({
   r,
   onDelete,
   canDelete,
+  onUpdated,
 }: {
   r: Resource;
   onDelete?: () => void;
   canDelete?: boolean;
+  onUpdated: () => void;
 }) {
+  const [editing, setEditing] = React.useState(false);
+  const [draftName, setDraftName] = React.useState(r.name);
+  const [busy, setBusy] = React.useState(false);
+
   const ext = r.name.split(".").pop()?.toLowerCase() ?? "";
   const iconName = iconForExt(ext);
   const Icon =
@@ -390,26 +404,104 @@ function ResourceRow({
               : iconName === "Code2"
                 ? FileCode
                 : FileText;
+
+  async function commitRename() {
+    const next = draftName.trim();
+    if (!next || next === r.name) {
+      setDraftName(r.name);
+      setEditing(false);
+      return;
+    }
+    setBusy(true);
+    const res = await updateResourceAction({ resourceId: r.id, name: next });
+    setBusy(false);
+    if (res.error) {
+      alert(res.error);
+      setDraftName(r.name);
+      setEditing(false);
+      return;
+    }
+    setEditing(false);
+    onUpdated();
+  }
+
+  async function toggleHidden() {
+    setBusy(true);
+    const res = await updateResourceAction({ resourceId: r.id, isHidden: !r.isHidden });
+    setBusy(false);
+    if (res.error) {
+      alert(res.error);
+      return;
+    }
+    onUpdated();
+  }
+
   return (
-    <div className="flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-muted/40">
+    <div className={`flex items-center justify-between gap-3 px-5 py-3 transition-colors hover:bg-muted/40 ${r.isHidden ? "bg-muted/30" : ""}`}>
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-subtle text-primary">
+        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${r.isHidden ? "bg-muted text-muted-foreground" : "bg-primary-subtle text-primary"}`}>
           <Icon className="h-4 w-4" />
         </div>
-        <div className="min-w-0">
-          <a
-            href={`/api/resources/${r.id}/download`}
-            className="block truncate text-sm font-medium text-foreground hover:text-primary"
-            download={r.name}
-          >
-            {r.name}
-          </a>
+        <div className="min-w-0 flex-1">
+          {editing ? (
+            <div className="flex items-center gap-2">
+              <input
+                value={draftName}
+                onChange={(e) => setDraftName(e.target.value)}
+                autoFocus
+                disabled={busy}
+                className="h-8 flex-1 rounded-md border border-primary bg-background px-2 text-sm outline-none"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void commitRename();
+                  if (e.key === "Escape") {
+                    setDraftName(r.name);
+                    setEditing(false);
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => void commitRename()}
+                disabled={busy}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-success transition-colors hover:bg-success-subtle"
+                title="保存"
+              >
+                <Check className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDraftName(r.name);
+                  setEditing(false);
+                }}
+                disabled={busy}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted"
+                title="取消"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : (
+            <a
+              href={`/api/resources/${r.id}/download`}
+              className={`block truncate text-sm font-medium hover:text-primary ${r.isHidden ? "text-muted-foreground line-through decoration-1" : "text-foreground"}`}
+              download={r.name}
+            >
+              {r.name}
+            </a>
+          )}
           <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
             <span className="num">{formatBytes(r.sizeBytes)}</span>
             <span>·</span>
             <span>上传者 {r.uploaderName}</span>
             <span>·</span>
             <span className="num">{r.downloads} 次下载</span>
+            {r.isHidden && (
+              <>
+                <span>·</span>
+                <Badge variant="warning" className="text-[10px]">已隐藏</Badge>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -417,6 +509,32 @@ function ResourceRow({
         <Badge variant="default" className="font-normal">
           .{ext}
         </Badge>
+        {canDelete && !editing && (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            disabled={busy}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title="重命名"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        )}
+        {canDelete && (
+          <button
+            type="button"
+            onClick={() => void toggleHidden()}
+            disabled={busy}
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
+              r.isHidden
+                ? "text-warning hover:bg-warning-subtle"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+            title={r.isHidden ? "取消隐藏" : "对学生隐藏"}
+          >
+            {r.isHidden ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+          </button>
+        )}
         <a
           href={`/api/resources/${r.id}/download`}
           download={r.name}
@@ -429,6 +547,7 @@ function ResourceRow({
           <button
             type="button"
             onClick={onDelete}
+            disabled={busy}
             className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-danger-subtle hover:text-danger"
             title="删除"
           >
