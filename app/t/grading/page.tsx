@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Filter,
   FileText,
+  AlertTriangle,
 } from "lucide-react";
 import type { SubmissionStatus } from "@prisma/client";
 
@@ -116,18 +117,6 @@ export default async function TeacherGradingPage({
       }),
   ]);
 
-  const stats = [
-    { icon: Clock, label: "待批改", num: pending, warning: true },
-    { icon: CheckCircle2, label: "已批改", num: graded, success: true },
-    { icon: XCircle, label: "已退回", num: returned },
-    {
-      icon: ClipboardCheck,
-      label: "平均处理",
-      num: avgGradeHours == null ? "—" : `${avgGradeHours}h`,
-      muted: true,
-    },
-  ];
-
   // 拉所有相关作业（含统计）
   const assignments = await prisma.assignment.findMany({
     where: {
@@ -150,6 +139,7 @@ export default async function TeacherGradingPage({
     pendingCount: number;
     gradedCount: number;
     returnedCount: number;
+    overdueSubmissionCount: number; // 学生晚交数（submittedAt > dueAt）
     avgScore: number | null;
     lastSubmittedAt: Date | null;
   };
@@ -158,6 +148,7 @@ export default async function TeacherGradingPage({
     let pendingCount = 0;
     let gradedCount = 0;
     let returnedCount = 0;
+    let overdueSubmissionCount = 0;
     const finals: number[] = [];
     let lastSubmitted: Date | null = null;
     for (const s of a.submissions) {
@@ -168,6 +159,9 @@ export default async function TeacherGradingPage({
       } else if (s.status === "RETURNED") {
         returnedCount++;
       }
+      if (s.submittedAt && s.submittedAt > a.dueAt) {
+        overdueSubmissionCount++;
+      }
       if (s.submittedAt && (!lastSubmitted || s.submittedAt > lastSubmitted)) {
         lastSubmitted = s.submittedAt;
       }
@@ -177,11 +171,46 @@ export default async function TeacherGradingPage({
       pendingCount,
       gradedCount,
       returnedCount,
+      overdueSubmissionCount,
       avgScore:
         finals.length > 0 ? Math.round(finals.reduce((s, n) => s + n, 0) / finals.length) : null,
       lastSubmittedAt: lastSubmitted,
     };
   });
+
+  // 排序：逾期未批（优先级最高） > 仅逾期 > 有待批改 > 其他
+  // 同组内：待批数 desc
+  enriched.sort((a, b) => {
+    const aOverduePending = a.dueAt < now && a.pendingCount > 0;
+    const bOverduePending = b.dueAt < now && b.pendingCount > 0;
+    if (aOverduePending !== bOverduePending) return aOverduePending ? -1 : 1;
+    const aOverdue = a.dueAt < now;
+    const bOverdue = b.dueAt < now;
+    if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
+    if (a.pendingCount !== b.pendingCount) return b.pendingCount - a.pendingCount;
+    return b.dueAt.getTime() - a.dueAt.getTime();
+  });
+
+  // 「逾期未批」作业数（已截止 + 还有待批改的）
+  const overduePendingCount = enriched.filter((a) => a.dueAt < now && a.pendingCount > 0).length;
+
+  const stats = [
+    { icon: Clock, label: "待批改", num: pending, warning: true },
+    {
+      icon: AlertTriangle,
+      label: "逾期未批",
+      num: overduePendingCount,
+      danger: true,
+    },
+    { icon: CheckCircle2, label: "已批改", num: graded, success: true },
+    { icon: XCircle, label: "已退回", num: returned },
+    {
+      icon: ClipboardCheck,
+      label: "平均处理",
+      num: avgGradeHours == null ? "—" : `${avgGradeHours}h`,
+      muted: true,
+    },
+  ];
 
   // 过滤
   const filtered = enriched.filter((a) => {
@@ -214,7 +243,7 @@ export default async function TeacherGradingPage({
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
             {stats.map((s) => {
               const Icon = s.icon;
               return (
@@ -226,11 +255,13 @@ export default async function TeacherGradingPage({
                         className={`flex h-9 w-9 items-center justify-center rounded-lg ${
                           s.warning
                             ? "bg-warning-subtle text-warning"
-                            : s.success
-                              ? "bg-success-subtle text-success"
-                              : s.muted
-                                ? "bg-muted text-muted-foreground"
-                                : "bg-primary-subtle text-primary"
+                            : s.danger
+                              ? "bg-danger-subtle text-danger"
+                              : s.success
+                                ? "bg-success-subtle text-success"
+                                : s.muted
+                                  ? "bg-muted text-muted-foreground"
+                                  : "bg-primary-subtle text-primary"
                         }`}
                       >
                         <Icon className="h-4 w-4" />
@@ -295,6 +326,7 @@ export default async function TeacherGradingPage({
                       <th className="px-6 py-3">课程</th>
                       <th className="px-6 py-3">截止</th>
                       <th className="px-6 py-3 text-right">待批改</th>
+                      <th className="px-6 py-3 text-right">逾期提交</th>
                       <th className="px-6 py-3 text-right">已批改</th>
                       <th className="px-6 py-3 text-right">均分</th>
                       <th className="px-6 py-3">最近提交</th>
@@ -304,18 +336,26 @@ export default async function TeacherGradingPage({
                   <tbody className="divide-y divide-border">
                     {filtered.map((a) => {
                       const isOverdue = a.dueAt < now;
+                      const isOverduePending = isOverdue && a.pendingCount > 0;
                       return (
                         <tr
                           key={a.id}
-                          className="group transition-colors hover:bg-muted/30"
+                          className={`group transition-colors hover:bg-muted/30 ${
+                            isOverduePending ? "bg-danger-subtle/20" : ""
+                          }`}
                         >
                           <td className="px-6 py-3.5">
-                            <Link
-                              href={`/t/assignments/${a.id}/grade`}
-                              className="font-medium text-foreground hover:text-primary"
-                            >
-                              {a.title}
-                            </Link>
+                            <div className="flex items-center gap-2">
+                              {isOverduePending && (
+                                <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-danger" />
+                              )}
+                              <Link
+                                href={`/t/assignments/${a.id}/grade`}
+                                className="font-medium text-foreground hover:text-primary"
+                              >
+                                {a.title}
+                              </Link>
+                            </div>
                           </td>
                           <td className="px-6 py-3.5">
                             <Badge variant="primary" className="font-normal">
@@ -333,6 +373,15 @@ export default async function TeacherGradingPage({
                               <Badge variant="warning" className="font-normal">
                                 {a.pendingCount}
                               </Badge>
+                            ) : (
+                              <span className="text-subtle-foreground">0</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-3.5 text-right num">
+                            {a.overdueSubmissionCount > 0 ? (
+                              <span className="font-medium text-warning">
+                                {a.overdueSubmissionCount}
+                              </span>
                             ) : (
                               <span className="text-subtle-foreground">0</span>
                             )}
