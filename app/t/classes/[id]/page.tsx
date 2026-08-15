@@ -106,6 +106,8 @@ export default async function TeacherClassDetailPage({
 
   const submittedByAssignment = new Map<string, number>();
   const gradedScores: number[] = [];
+  // 每个学生「已交」作业 id 集合（用于算欠交数）
+  const submittedAssignmentByStudent = new Map<string, Set<string>>();
   for (const sub of submissions) {
     if (sub.status === "SUBMITTED" || sub.status === "GRADED") {
       submittedByAssignment.set(
@@ -114,6 +116,20 @@ export default async function TeacherClassDetailPage({
       );
     }
     if (sub.finalScore != null) gradedScores.push(sub.finalScore);
+    if (sub.status === "SUBMITTED" || sub.status === "GRADED" || sub.status === "RETURNED") {
+      if (!submittedAssignmentByStudent.has(sub.studentId)) {
+        submittedAssignmentByStudent.set(sub.studentId, new Set());
+      }
+      submittedAssignmentByStudent.get(sub.studentId)!.add(sub.assignmentId);
+    }
+  }
+
+  // 欠交数 = 总作业 - 已交（含已批/已退）。DRAFT / 没记录都算欠交。
+  const totalAssignments = allAssignments.length;
+  const missingByStudent = new Map<string, number>();
+  for (const stuId of studentIds) {
+    const submitted = submittedAssignmentByStudent.get(stuId)?.size ?? 0;
+    missingByStudent.set(stuId, Math.max(0, totalAssignments - submitted));
   }
 
   const avgScore =
@@ -216,7 +232,13 @@ export default async function TeacherClassDetailPage({
             })}
           </div>
 
-          {activeTab === "roster" && <RosterTab students={cls.students} />}
+          {activeTab === "roster" && (
+            <RosterTab
+              students={cls.students}
+              missingByStudent={missingByStudent}
+              totalAssignments={totalAssignments}
+            />
+          )}
 
           {activeTab === "performance" && (
             <PerformanceTab
@@ -243,6 +265,8 @@ export default async function TeacherClassDetailPage({
 
 function RosterTab({
   students,
+  missingByStudent,
+  totalAssignments,
 }: {
   students: Array<{
     id: string;
@@ -253,6 +277,8 @@ function RosterTab({
     mustChangePassword: boolean;
     lastLoginAt: Date | null;
   }>;
+  missingByStudent: Map<string, number>;
+  totalAssignments: number;
 }) {
   if (students.length === 0) {
     return (
@@ -265,9 +291,24 @@ function RosterTab({
     );
   }
 
+  // 仅 ACTIVE 学生参与欠交统计（停用学生不再统计）
+  const activeStudents = students.filter((s) => s.status === "ACTIVE");
+  const missingStudentCount = activeStudents.filter(
+    (s) => (missingByStudent.get(s.id) ?? 0) > 0,
+  ).length;
+
   return (
     <Card>
       <CardContent className="p-0">
+        <div className="flex items-center justify-between border-b border-border px-6 py-3">
+          <div className="text-sm text-muted-foreground">
+            共 <span className="num font-medium text-foreground">{students.length}</span> 名学生 ·
+            {" "}<span className="num">{totalAssignments}</span> 项作业
+          </div>
+          {missingStudentCount > 0 && (
+            <Badge variant="danger">{missingStudentCount} 人有欠交作业</Badge>
+          )}
+        </div>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/50 text-left text-xs font-medium text-muted-foreground">
@@ -275,39 +316,65 @@ function RosterTab({
               <th className="px-6 py-3">姓名</th>
               <th className="px-6 py-3">邮箱</th>
               <th className="px-6 py-3">状态</th>
+              <th className="px-6 py-3 text-right">欠交作业</th>
               <th className="px-6 py-3">最后登录</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {students.map((s) => (
-              <tr key={s.id} className="transition-colors hover:bg-muted/30">
-                <td className="px-6 py-3.5 num font-mono text-xs text-muted-foreground">
-                  {s.studentNo}
-                </td>
-                <td className="px-6 py-3.5 font-medium text-foreground">{s.name}</td>
-                <td className="px-6 py-3.5 text-muted-foreground">{s.email}</td>
-                <td className="px-6 py-3.5">
-                  {s.status === "ACTIVE" ? (
-                    <Badge variant="success">在读</Badge>
-                  ) : (
-                    <Badge variant="default">已停用</Badge>
-                  )}
-                  {s.mustChangePassword && s.status === "ACTIVE" && (
-                    <span className="ml-2 text-[11px] text-warning">· 未改密</span>
-                  )}
-                </td>
-                <td className="px-6 py-3.5 text-xs text-muted-foreground num">
-                  {s.lastLoginAt
-                    ? new Date(s.lastLoginAt).toLocaleString("zh-CN", {
-                        month: "2-digit",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : "从未登录"}
-                </td>
-              </tr>
-            ))}
+            {students.map((s) => {
+              const isActive = s.status === "ACTIVE";
+              const missing = isActive ? missingByStudent.get(s.id) ?? 0 : null;
+              const missingTone =
+                missing == null
+                  ? "muted"
+                  : missing === 0
+                    ? "success"
+                    : missing <= 3
+                      ? "warning"
+                      : "danger";
+              const missingLabel =
+                missing == null ? "—" : missing === 0 ? "已交齐" : `${missing} 项`;
+              return (
+                <tr key={s.id} className="transition-colors hover:bg-muted/30">
+                  <td className="px-6 py-3.5 num font-mono text-xs text-muted-foreground">
+                    {s.studentNo}
+                  </td>
+                  <td className="px-6 py-3.5 font-medium text-foreground">{s.name}</td>
+                  <td className="px-6 py-3.5 text-muted-foreground">{s.email}</td>
+                  <td className="px-6 py-3.5">
+                    {s.status === "ACTIVE" ? (
+                      <Badge variant="success">在读</Badge>
+                    ) : (
+                      <Badge variant="default">已停用</Badge>
+                    )}
+                    {s.mustChangePassword && s.status === "ACTIVE" && (
+                      <span className="ml-2 text-[11px] text-warning">· 未改密</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-3.5 text-right">
+                    {missingTone === "success" ? (
+                      <span className="text-xs text-success">{missingLabel}</span>
+                    ) : missingTone === "warning" || missingTone === "danger" ? (
+                      <Badge variant={missingTone}>
+                        <span className="num">{missingLabel}</span>
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-subtle-foreground">{missingLabel}</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-3.5 text-xs text-muted-foreground num">
+                    {s.lastLoginAt
+                      ? new Date(s.lastLoginAt).toLocaleString("zh-CN", {
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "从未登录"}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </CardContent>
