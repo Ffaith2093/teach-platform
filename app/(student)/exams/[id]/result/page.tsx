@@ -14,6 +14,7 @@ import {
   ListChecks,
   AlertCircle,
   Trophy,
+  BookOpen,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import type { ResultMode } from "@prisma/client";
@@ -438,6 +439,19 @@ export default async function ExamResultPage({
                           <div className="mt-3 rounded-lg border border-accent/30 bg-accent-subtle/40 p-3 text-xs">
                             <p className="font-medium text-accent">教师评语</p>
                             <p className="mt-1 text-foreground">{ans.comment}</p>
+                          </div>
+                        )}
+
+                        {/* 题目解析 */}
+                        {q.explanation && (
+                          <div className="mt-3 rounded-lg border border-primary/30 bg-primary-subtle/30 p-3 text-xs">
+                            <p className="flex items-center gap-1 font-medium text-primary">
+                              <BookOpen className="h-3.5 w-3.5" />
+                              题目解析
+                            </p>
+                            <p className="mt-1.5 whitespace-pre-line text-foreground">
+                              {q.explanation}
+                            </p>
                           </div>
                         )}
                       </div>
