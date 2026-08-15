@@ -367,7 +367,14 @@ export default async function CourseStudentsPage({
                               <td className="px-6 py-2.5 num font-mono text-xs text-muted-foreground">
                                 {s.studentNo}
                               </td>
-                              <td className="px-6 py-2.5 font-medium text-foreground">{s.name}</td>
+                              <td className="px-6 py-2.5 font-medium text-foreground">
+                                <Link
+                                  href={`/t/students/${s.id}`}
+                                  className="transition-colors hover:text-primary"
+                                >
+                                  {s.name}
+                                </Link>
+                              </td>
                               <td className="px-6 py-2.5 text-muted-foreground">{s.email}</td>
                               <td className="px-6 py-2.5">
                                 {s.mustChangePassword ? (
