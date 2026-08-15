@@ -15,6 +15,7 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getCourseAudience, notifyCourseAudience } from "@/lib/notifications/actions";
 import {
   EXT_WHITELIST,
   MAX_BYTES,
@@ -57,7 +58,7 @@ export async function POST(req: Request) {
   // 课程存在 + 教师是 CourseTeacher
   const course = await prisma.course.findUnique({
     where: { id: courseId },
-    select: { id: true, isArchived: true },
+    select: { id: true, title: true, isArchived: true },
   });
   if (!course) return NextResponse.json({ message: "课程不存在" }, { status: 404 });
   if (course.isArchived) {
@@ -123,6 +124,27 @@ export async function POST(req: Request) {
     },
     select: { id: true, name: true, folder: true, sizeBytes: true, mimeType: true, createdAt: true },
   });
+
+  // 通知课程受众（新资源）
+  try {
+    const [audience, uploader] = await Promise.all([
+      getCourseAudience(courseId, session.user.id),
+      prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true } }),
+    ]);
+    const typedAudience = audience as { id: string; role: "STUDENT" | "TEACHER" }[];
+    if (typedAudience.length > 0) {
+      await notifyCourseAudience({
+        audience: typedAudience,
+        title: `新资源：《${safeName}》`,
+        body: `课程《${course.title}》 · ${uploader?.name ?? "教师"} 上传`,
+        hrefStudent: `/courses/${courseId}/resources`,
+        hrefTeacher: `/t/courses/${courseId}/resources`,
+        courseId,
+      });
+    }
+  } catch {
+    // 通知失败不影响上传
+  }
 
   return NextResponse.json({ ok: true, resource });
 }
