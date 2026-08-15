@@ -1,15 +1,22 @@
 "use client";
 
 import * as React from "react";
-import { Bell, Search } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Search } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Input } from "@/components/ui/input";
+import { NotificationBell } from "./notification-bell";
 
 interface TopbarProps {
   crumbs: { label: string; href?: string }[];
 }
 
 export function Topbar({ crumbs }: TopbarProps) {
+  const pathname = usePathname() ?? "";
+  // 管理员端没有通知中心，对他们隐藏铃铛
+  const isAdmin = pathname.startsWith("/admin");
+  // 教师端路径以 /t 开头，通知中心在 /t/notifications
+  const notificationHref = pathname.startsWith("/t") ? "/t/notifications" : "/notifications";
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-border bg-background/95 px-8 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <nav aria-label="breadcrumb" className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -32,14 +39,7 @@ export function Topbar({ crumbs }: TopbarProps) {
       </div>
       <div className="ml-auto flex items-center gap-1.5 md:ml-0">
         <ThemeToggle />
-        <button
-          type="button"
-          aria-label="通知"
-          className="relative rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <Bell className="h-[18px] w-[18px]" />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-2 border-background bg-danger" />
-        </button>
+        {!isAdmin && <NotificationBell href={notificationHref} />}
       </div>
     </header>
   );
