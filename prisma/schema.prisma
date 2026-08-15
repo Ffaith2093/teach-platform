@@ -30,6 +30,7 @@ model User {
   // 通用
   phone              String?
   lastLoginAt        DateTime?
+  lastIp             String? // 最近一次登录 IP（用于出勤审计）
   mustChangePassword Boolean    @default(false)
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
@@ -45,6 +46,7 @@ model User {
   examAttempts          ExamAttempt[]
   gradedSubmissions     AssignmentSubmission[] @relation("SubmissionGrader")
   assignmentSubmissions AssignmentSubmission[]
+  accessLogs            AccessLog[]
 
   @@index([role, status])
   @@index([classId])
@@ -128,6 +130,7 @@ model Course {
   questions   Question[]
   questionBanks QuestionBank[]
   notifications Notification[]
+  accessLogs  AccessLog[]
 
   @@index([category, isArchived])
 }
@@ -174,6 +177,25 @@ enum CourseTeacherRole {
   OWNER
   ASSISTANT
   CONTRIBUTOR
+}
+
+// ============== 访问日志 ==============
+
+/// 学生访问日志。每次学生打开课程页（/courses/[id]）记录一条，用于教师统计出勤率。
+model AccessLog {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String?  // 可空：未来扩展支持登录等无课程访问记录
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([courseId, createdAt])
+  @@index([userId, courseId, createdAt])
 }
 
 // ============== 课程资源 ==============

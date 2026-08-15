@@ -41,6 +41,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const ok = await bcrypt.compare(password, user.passwordHash);
         if (!ok) return null;
 
+        // 记录登录时间（lastIp 由 events.signIn 写，那里能拿到 request）
+        try {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { lastLoginAt: new Date() },
+            });
+          } catch (e) {
+            console.error("[auth] update lastLoginAt failed:", e);
+          }
+
         return {
           id: user.id,
           email: user.email,
@@ -51,4 +61,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
+  events: {
+    async signIn({ user }) {
+      // 用 events hook 写 lastIp（authorize() 里拿不到 request headers）
+      if (!user.id) return;
+      try {
+        const { headers } = await import("next/headers");
+        const h = await headers();
+        const ip =
+          h.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+          h.get("x-real-ip") ??
+          null;
+        if (ip) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { lastIp: ip },
+          });
+        }
+      } catch (e) {
+        console.error("[auth] signIn event update lastIp failed:", e);
+      }
+    },
+  },
 });

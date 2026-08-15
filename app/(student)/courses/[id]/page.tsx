@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { recordAccess } from "@/lib/access-log";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -30,6 +31,9 @@ export default async function StudentCourseOverviewPage({
   const session = await auth();
   const userId = session!.user.id;
   const now = new Date();
+
+  // 打点：访问课程页 = 今天到课（失败兜底不影响页面）
+  void recordAccess({ userId, courseId: id });
 
   const me = await prisma.user.findUnique({
     where: { id: userId },
