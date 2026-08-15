@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, Users, GraduationCap, BookOpen, FileText, Mail, Hash, ChevronRight, TableProperties } from "lucide-react";
 import { GradebookTab } from "./_components/gradebook-tab";
 import { AnnounceForm } from "./_components/announce-form";
+import { MissingDetailDialog, type MissingItem } from "./_components/missing-detail-dialog";
 
 export const metadata = { title: "班级详情" };
 
@@ -132,6 +133,33 @@ export default async function TeacherClassDetailPage({
     missingByStudent.set(stuId, Math.max(0, totalAssignments - submitted));
   }
 
+  // 欠交明细：每个 ACTIVE 学生 → 欠的作业列表（按 dueAt 升序）
+  const missingDetailByStudent = new Map<string, MissingItem[]>();
+  for (const stuId of studentIds) {
+    const submitted = submittedAssignmentByStudent.get(stuId) ?? new Set();
+    const list: MissingItem[] = [];
+    for (const a of allAssignments) {
+      if (submitted.has(a.id)) continue;
+      list.push({
+        id: a.id,
+        title: a.title,
+        dueAt: a.dueAt.toISOString(),
+        courseId: a.courseId,
+        courseTitle: cls.courseClasses.find((cc) => cc.courseId === a.courseId)?.course.title ?? "",
+        totalScore: a.totalScore,
+      });
+    }
+    list.sort((x, y) => new Date(x.dueAt).getTime() - new Date(y.dueAt).getTime());
+    missingDetailByStudent.set(stuId, list);
+  }
+  const missingDetailJSON: Record<string, MissingItem[]> = Object.fromEntries(
+    missingDetailByStudent.entries(),
+  );
+  const studentSummaryJSON: Record<string, { name: string; studentNo: string | null }> = {};
+  for (const s of cls.students) {
+    studentSummaryJSON[s.id] = { name: s.name, studentNo: s.studentNo };
+  }
+
   const avgScore =
     gradedScores.length > 0
       ? Math.round(gradedScores.reduce((s, n) => s + n, 0) / gradedScores.length)
@@ -237,6 +265,8 @@ export default async function TeacherClassDetailPage({
               students={cls.students}
               missingByStudent={missingByStudent}
               totalAssignments={totalAssignments}
+              missingDetailJSON={missingDetailJSON}
+              studentSummaryJSON={studentSummaryJSON}
             />
           )}
 
@@ -267,6 +297,8 @@ function RosterTab({
   students,
   missingByStudent,
   totalAssignments,
+  missingDetailJSON,
+  studentSummaryJSON,
 }: {
   students: Array<{
     id: string;
@@ -279,6 +311,8 @@ function RosterTab({
   }>;
   missingByStudent: Map<string, number>;
   totalAssignments: number;
+  missingDetailJSON: Record<string, MissingItem[]>;
+  studentSummaryJSON: Record<string, { name: string; studentNo: string | null }>;
 }) {
   if (students.length === 0) {
     return (
@@ -324,16 +358,7 @@ function RosterTab({
             {students.map((s) => {
               const isActive = s.status === "ACTIVE";
               const missing = isActive ? missingByStudent.get(s.id) ?? 0 : null;
-              const missingTone =
-                missing == null
-                  ? "muted"
-                  : missing === 0
-                    ? "success"
-                    : missing <= 3
-                      ? "warning"
-                      : "danger";
-              const missingLabel =
-                missing == null ? "—" : missing === 0 ? "已交齐" : `${missing} 项`;
+              const detail = isActive ? missingDetailJSON[s.id] ?? [] : [];
               return (
                 <tr key={s.id} className="transition-colors hover:bg-muted/30">
                   <td className="px-6 py-3.5 num font-mono text-xs text-muted-foreground">
@@ -352,14 +377,16 @@ function RosterTab({
                     )}
                   </td>
                   <td className="px-6 py-3.5 text-right">
-                    {missingTone === "success" ? (
-                      <span className="text-xs text-success">{missingLabel}</span>
-                    ) : missingTone === "warning" || missingTone === "danger" ? (
-                      <Badge variant={missingTone}>
-                        <span className="num">{missingLabel}</span>
-                      </Badge>
+                    {missing == null ? (
+                      <span className="text-xs text-subtle-foreground">—</span>
+                    ) : missing === 0 ? (
+                      <span className="text-xs text-success">已交齐</span>
                     ) : (
-                      <span className="text-xs text-subtle-foreground">{missingLabel}</span>
+                      <MissingDetailDialog
+                        studentName={studentSummaryJSON[s.id]?.name ?? s.name}
+                        studentNo={studentSummaryJSON[s.id]?.studentNo ?? s.studentNo}
+                        items={detail}
+                      />
                     )}
                   </td>
                   <td className="px-6 py-3.5 text-xs text-muted-foreground num">
