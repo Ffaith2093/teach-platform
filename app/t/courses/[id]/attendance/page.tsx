@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Topbar } from "@/components/shell/topbar";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, Activity } from "lucide-react";
+import { AccessDetailDialog, type AccessEntry } from "./_components/access-detail-dialog";
 
 export const metadata = { title: "出勤明细" };
 
@@ -62,15 +63,24 @@ export default async function AttendanceDetailPage({
       createdAt: { gte: thirtyDaysAgo },
       userId: { in: expectedStudents.map((s) => s.id) },
     },
-    select: { userId: true, createdAt: true },
+    select: { userId: true, createdAt: true, ip: true, userAgent: true },
+    orderBy: { createdAt: "desc" },
   });
 
   // userId -> Set<date-string>
   const userDays = new Map<string, Set<string>>();
+  // userId -> 完整访问明细（按 createdAt desc 排序）
+  const userEntries = new Map<string, AccessEntry[]>();
   for (const log of logs) {
     const day = log.createdAt.toISOString().slice(0, 10);
     if (!userDays.has(log.userId)) userDays.set(log.userId, new Set());
     userDays.get(log.userId)!.add(day);
+    if (!userEntries.has(log.userId)) userEntries.set(log.userId, []);
+    userEntries.get(log.userId)!.push({
+      createdAt: log.createdAt.toISOString(),
+      ip: log.ip,
+      userAgent: log.userAgent,
+    });
   }
 
   // 30 天列（按时间正序，今天在最右）
@@ -203,15 +213,15 @@ export default async function AttendanceDetailPage({
                       expectedStudents.map((s) => {
                         const days = userDays.get(s.id) ?? new Set<string>();
                         const count = days.size;
+                        const entries = userEntries.get(s.id) ?? [];
                         return (
                           <tr key={s.id} className="hover:bg-muted/30">
                             <td className="sticky left-0 z-10 bg-card px-4 py-2.5 group-hover:bg-muted/30">
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono text-[11px] text-muted-foreground num">
-                                  {s.studentNo ?? "—"}
-                                </span>
-                                <span className="font-medium text-foreground">{s.name}</span>
-                              </div>
+                              <AccessDetailDialog
+                                studentName={s.name}
+                                studentNo={s.studentNo}
+                                entries={entries}
+                              />
                               {s.class?.name && (
                                 <div className="mt-0.5 text-[10px] text-subtle-foreground">
                                   {s.class.name}
