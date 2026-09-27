@@ -4,7 +4,11 @@ import * as React from "react";
 import { useActionState } from "react";
 import { Upload, FileCheck2, AlertCircle, Download, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { previewImportAction, confirmImportAction, type ImportState } from "@/app/admin/students/actions";
+import {
+  previewImportAction,
+  confirmImportAction,
+  type ImportState,
+} from "@/app/admin/students/actions";
 
 const initial: ImportState = { stage: "idle" };
 
@@ -15,8 +19,14 @@ interface CreatedRow {
 }
 
 export function ImportWizard({ classId, className }: { classId: string; className: string }) {
-  const [previewState, previewAction, previewPending] = useActionState(previewImportAction, initial);
-  const [confirmState, confirmAction, confirmPending] = useActionState(confirmImportAction, initial);
+  const [previewState, previewAction, previewPending] = useActionState(
+    previewImportAction,
+    initial,
+  );
+  const [confirmState, confirmAction, confirmPending] = useActionState(
+    confirmImportAction,
+    initial,
+  );
   const [created, setCreated] = React.useState<CreatedRow[]>([]);
 
   // confirm 成功 → 触发密码 CSV 下载
@@ -58,18 +68,14 @@ export function ImportWizard({ classId, className }: { classId: string; classNam
           >
             <Upload className="h-8 w-8 text-muted-foreground" />
             <div>
-              <p className="text-sm font-medium text-foreground">
-                点击选择文件 / 拖入 Excel / CSV
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                支持 .csv / .xlsx / .xls · 文件 ≤ 5MB
-              </p>
+              <p className="text-sm font-medium text-foreground">点击选择文件 / 拖入 Excel / CSV</p>
+              <p className="mt-1 text-xs text-muted-foreground">支持 .csv / .xlsx · 文件 ≤ 5MB</p>
             </div>
             <input
               id="import-file"
               name="file"
               type="file"
-              accept=".csv,.xlsx,.xls"
+              accept=".csv,.xlsx"
               className="hidden"
             />
           </label>
@@ -103,11 +109,7 @@ export function ImportWizard({ classId, className }: { classId: string; classNam
           }`}
         >
           <div className="flex items-center gap-2 font-medium">
-            {hasErrors ? (
-              <AlertCircle className="h-4 w-4" />
-            ) : (
-              <FileCheck2 className="h-4 w-4" />
-            )}
+            {hasErrors ? <AlertCircle className="h-4 w-4" /> : <FileCheck2 className="h-4 w-4" />}
             {hasErrors
               ? `解析完成，但发现 ${view.errors.length} 处错误，请修正后重新上传`
               : `解析完成，共 ${view.total} 条有效数据`}
@@ -127,7 +129,7 @@ export function ImportWizard({ classId, className }: { classId: string; classNam
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-muted/50 text-left text-xs font-medium text-muted-foreground">
-                  <th className="px-3 py-2 w-12">#</th>
+                  <th className="w-12 px-3 py-2">#</th>
                   <th className="px-3 py-2">姓名</th>
                   <th className="px-3 py-2">学号</th>
                   <th className="px-3 py-2">邮箱</th>
@@ -136,9 +138,9 @@ export function ImportWizard({ classId, className }: { classId: string; classNam
               <tbody className="divide-y divide-border">
                 {view.sample.map((row) => (
                   <tr key={row.rowNo}>
-                    <td className="px-3 py-2 num text-xs text-muted-foreground">{row.rowNo}</td>
+                    <td className="num px-3 py-2 text-xs text-muted-foreground">{row.rowNo}</td>
                     <td className="px-3 py-2">{row.name}</td>
-                    <td className="px-3 py-2 num font-mono text-xs">{row.studentNo}</td>
+                    <td className="num px-3 py-2 font-mono text-xs">{row.studentNo}</td>
                     <td className="px-3 py-2 text-muted-foreground">{row.email ?? "—"}</td>
                   </tr>
                 ))}
@@ -156,7 +158,7 @@ export function ImportWizard({ classId, className }: { classId: string; classNam
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-danger-subtle/30 text-left text-xs font-medium text-danger">
-                    <th className="px-3 py-2 w-12">行号</th>
+                    <th className="w-12 px-3 py-2">行号</th>
                     <th className="px-3 py-2">原始内容</th>
                     <th className="px-3 py-2">失败原因</th>
                   </tr>
@@ -164,10 +166,8 @@ export function ImportWizard({ classId, className }: { classId: string; classNam
                 <tbody className="divide-y divide-danger/20">
                   {view.errors.map((e) => (
                     <tr key={e.rowNo}>
-                      <td className="px-3 py-2 num text-xs">{e.rowNo}</td>
-                      <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
-                        {e.raw}
-                      </td>
+                      <td className="num px-3 py-2 text-xs">{e.rowNo}</td>
+                      <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{e.raw}</td>
                       <td className="px-3 py-2 text-danger">{e.reason}</td>
                     </tr>
                   ))}
@@ -184,11 +184,14 @@ export function ImportWizard({ classId, className }: { classId: string; classNam
             </Button>
           </div>
         ) : (
-          <form action={confirmAction} className="flex items-center justify-between gap-3 border-t border-border pt-4">
+          <form
+            action={confirmAction}
+            className="flex items-center justify-between gap-3 border-t border-border pt-4"
+          >
             <input type="hidden" name="classId" value={classId} />
             <input type="hidden" name="fileBase64" value={view.fileBase64 ?? ""} />
             <p className="text-xs text-muted-foreground">
-              将向「{className}」导入 <b className="text-foreground num">{view.total}</b> 名学生
+              将向「{className}」导入 <b className="num text-foreground">{view.total}</b> 名学生
             </p>
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={() => window.location.reload()}>

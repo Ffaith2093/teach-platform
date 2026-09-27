@@ -13,7 +13,7 @@
  * 返回结构与 lib/judge/local.ts 一致，调用方零修改。
  */
 import Docker from "dockerode";
-import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type {
@@ -23,6 +23,7 @@ import type {
   JudgeCaseResult,
   JudgeStatus,
 } from "./local";
+import { prepareJudgeInput } from "./input";
 
 /** 宽松比对：忽略行尾空白 + 末尾空行 */
 function looseEqual(actual: string, expected: string): boolean {
@@ -32,8 +33,8 @@ function looseEqual(actual: string, expected: string): boolean {
       .split("\n")
       .map((l) => l.replace(/\s+$/, ""))
       .join("\n")
-      .replace(/\n+$/, "\n")
-      .replace(/^\n+/, "");
+      .replace(/^\n+/, "")
+      .replace(/\n+$/, "");
   return norm(actual) === norm(expected);
 }
 
@@ -64,8 +65,16 @@ export async function runSandbox(
   testCases: JudgeCaseInput[],
   limits: JudgeLimits,
 ): Promise<JudgeRunResult> {
-  const stageDir = await mkdtemp(join(tmpdir(), "judge-"));
+  const tempRoot = process.env.JUDGE_TMP_DIR ?? tmpdir();
+  await mkdir(tempRoot, { recursive: true });
+  const stageDir = await mkdtemp(join(tempRoot, "judge-"));
   const createdContainers: import("dockerode").Container[] = [];
+  const totalTimeoutMs = Math.min(30_000, Math.max(1, Number(process.env.JUDGE_TOTAL_TIMEOUT_MS) || 30_000));
+  let totalTimedOut = false;
+  const totalTimer = setTimeout(() => {
+    totalTimedOut = true;
+    void Promise.all(createdContainers.map((c) => c.kill({ signal: "SIGKILL" }).catch(() => {})));
+  }, totalTimeoutMs);
   const cleanup = async () => {
     await Promise.all(
       createdContainers.map((c) => c.remove({ force: true }).catch(() => {})),
@@ -74,12 +83,21 @@ export async function runSandbox(
   };
 
   try {
+    // mkdtemp defaults to 0700; the unprivileged container user must be able to traverse it.
+    await chmod(stageDir, 0o755);
     await writeFile(join(stageDir, "main.py"), code, "utf8");
+    await chmod(join(stageDir, "main.py"), 0o644);
 
     const cases: JudgeCaseResult[] = [];
     for (const tc of testCases) {
       const caseScore = tc.score ?? 0;
-      const r = await runOneCase(stageDir, tc, limits, createdContainers);
+      const r = totalTimedOut
+        ? { status: "TLE" as JudgeStatus, timeMs: 0, score: 0, errorMsg: "评测总时长超限" }
+        : await runOneCase(stageDir, tc, limits, createdContainers);
+      if (totalTimedOut) {
+        cases.push({ status: "TLE", timeMs: r.timeMs, score: 0, errorMsg: "评测总时长超限" });
+        continue;
+      }
       // 输出比对（local.ts 的逻辑）
       if (r.status === "ACCEPTED") {
         const ok = looseEqual(r.actualOutput ?? "", tc.expected);
@@ -117,6 +135,7 @@ export async function runSandbox(
       })),
     };
   } finally {
+    clearTimeout(totalTimer);
     await cleanup();
   }
 }
@@ -132,7 +151,9 @@ async function runOneCase(
   const timeoutSec = Math.max(1, Math.ceil(limits.timeLimitMs / 1000) + 1);
 
   // 写 input.txt（容器启动前必须就位）
-  await writeFile(join(stageDir, "input.txt"), tc.input, "utf8");
+  const input = prepareJudgeInput(tc.input, limits.splitInputByWhitespace ?? false);
+  await writeFile(join(stageDir, "input.txt"), input, "utf8");
+  await chmod(join(stageDir, "input.txt"), 0o644);
 
   const container = await docker.createContainer({
     Image: DEFAULT_IMAGE,
@@ -157,7 +178,7 @@ async function runOneCase(
       CapDrop: ["ALL"],
       SecurityOpt: ["no-new-privileges"],
       // 仅挂载临时目录（CLAUDE.md 红线）
-      Binds: [`${stageDir}:/code`],
+      Binds: [`${stageDir}:/code:ro`],
       AutoRemove: false,
     },
   });
@@ -175,7 +196,9 @@ async function runOneCase(
   }
 
   // 等待退出（同时设 timer，超出限制就 kill）
+  let timedOut = false;
   const killTimer = setTimeout(async () => {
+    timedOut = true;
     try {
       await container.kill({ signal: "SIGKILL" });
     } catch {
@@ -200,6 +223,13 @@ async function runOneCase(
 
   const timeMs = Date.now() - startedAt;
 
+  let oomKilled = false;
+  try {
+    oomKilled = (await container.inspect()).State?.OOMKilled === true;
+  } catch {
+    // The container may already be gone; the exit code still gives a fallback.
+  }
+
   // 读 stdout + stderr
   let stdout = "";
   let stderr = "";
@@ -217,7 +247,10 @@ async function runOneCase(
   }
 
   // 状态判定（与 local.ts 一致）
-  if (exitCode === 137 || (exitCode !== 0 && timeMs >= limits.timeLimitMs)) {
+  if (oomKilled || stderr.includes("MemoryError") || stderr.includes("OOM")) {
+    return { status: "MLE", timeMs, score: 0, errorMsg: "内存超限" };
+  }
+  if (timedOut || exitCode === 124 || exitCode === 137 || (exitCode !== 0 && timeMs >= limits.timeLimitMs)) {
     return { status: "TLE", timeMs, score: 0, errorMsg: "执行超时" };
   }
   if (
@@ -231,9 +264,6 @@ async function runOneCase(
       score: 0,
       errorMsg: stderr.slice(0, 2000),
     };
-  }
-  if (stderr.includes("MemoryError") || stderr.includes("OOM")) {
-    return { status: "MLE", timeMs, score: 0, errorMsg: "内存超限" };
   }
   if (exitCode !== 0) {
     return {

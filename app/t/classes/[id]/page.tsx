@@ -9,7 +9,6 @@ import { ChevronLeft, Users, GraduationCap, BookOpen, FileText, Mail, Hash, Chev
 import { GradebookTab } from "./_components/gradebook-tab";
 import { AnnounceForm } from "./_components/announce-form";
 import { MissingDetailDialog, type MissingItem } from "./_components/missing-detail-dialog";
-import { ClassTrendChart, type ClassTrendPoint } from "./_components/class-trend-chart";
 
 export const metadata = { title: "班级详情" };
 
@@ -169,72 +168,16 @@ export default async function TeacherClassDetailPage({
 
   const recentAssignments = allAssignments.slice(0, 8).map((a) => {
     const submitted = submittedByAssignment.get(a.id) ?? 0;
-    const rate = studentIds.length > 0 ? Math.round((submitted / studentIds.length) * 100) : 0;
     return {
       id: a.id,
       title: a.title,
       totalScore: a.totalScore,
       submitted,
       total: studentIds.length,
-      rate,
     };
   });
 
-  // ========== 班级成绩趋势 ==========
-  // 每个作业：拿其所有班内 ACTIVE 学生提交，计算 (1) 提交率 (2) 平均得分率
-  // 一个作业一个点，X 轴按 dueAt 排序展示
-  const assignmentsById = new Map(allAssignments.map((a) => [a.id, a]));
-  type Agg = {
-    label: string;
-    course: string;
-    submitTotal: number;
-    submitMax: number;
-    scoreSum: number;
-    scoreCount: number;
-    count: number;
-  };
-  const trendByAssignment = new Map<string, Agg>();
-  for (const sub of submissions) {
-    const a = assignmentsById.get(sub.assignmentId);
-    if (!a) continue;
-    const exist = trendByAssignment.get(a.id);
-    const isCounted = sub.status !== "DRAFT";
-    if (exist) {
-      if (isCounted) {
-        exist.submitTotal += 1;
-        exist.count += 1;
-      }
-      if (sub.finalScore != null) {
-        exist.scoreSum += (sub.finalScore / (a.totalScore || 1)) * 100;
-        exist.scoreCount += 1;
-      }
-    } else {
-      trendByAssignment.set(a.id, {
-        label: a.title,
-        course: cls.courseClasses.find((cc) => cc.courseId === a.courseId)?.course.title ?? "",
-        submitTotal: isCounted ? 1 : 0,
-        submitMax: studentIds.length,
-        scoreSum: sub.finalScore != null ? (sub.finalScore / (a.totalScore || 1)) * 100 : 0,
-        scoreCount: sub.finalScore != null ? 1 : 0,
-        count: isCounted ? 1 : 0,
-      });
-    }
-  }
-  // 按 dueAt 升序，点 = 每个作业
-  const classTrend: ClassTrendPoint[] = allAssignments
-    .filter((a) => trendByAssignment.has(a.id))
-    .sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime())
-    .map((a) => {
-      const v = trendByAssignment.get(a.id)!;
-      return {
-        x: `${a.dueAt.getMonth() + 1}/${a.dueAt.getDate()}`,
-        label: v.label,
-        course: v.course,
-        submitRate: v.submitMax > 0 ? Math.round((v.submitTotal / v.submitMax) * 100) : null,
-        avgPct: v.scoreCount > 0 ? Math.round(v.scoreSum / v.scoreCount) : null,
-        count: v.count,
-      };
-    });
+  // ========== 班级成绩趋势（已移除折线图，相关计算不再需要） ==========
 
   const tabs: { key: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { key: "roster", label: "花名册", icon: Users },
@@ -334,7 +277,6 @@ export default async function TeacherClassDetailPage({
               gradedCount={gradedScores.length}
               recentAssignments={recentAssignments}
               totalStudents={studentIds.length}
-              classTrend={classTrend}
             />
           )}
 
@@ -473,13 +415,11 @@ function PerformanceTab({
   gradedCount,
   recentAssignments,
   totalStudents,
-  classTrend,
 }: {
   avgScore: number | null;
   gradedCount: number;
-  recentAssignments: Array<{ id: string; title: string; totalScore: number; submitted: number; total: number; rate: number }>;
+  recentAssignments: Array<{ id: string; title: string; totalScore: number; submitted: number; total: number }>;
   totalStudents: number;
-  classTrend: ClassTrendPoint[];
 }) {
   return (
     <div className="space-y-6">
@@ -522,19 +462,7 @@ function PerformanceTab({
 
       <Card>
         <CardContent className="p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold">成绩趋势</h2>
-            <span className="text-[11px] text-subtle-foreground">
-              按作业 dueAt 排序，一个作业一个点
-            </span>
-          </div>
-          <ClassTrendChart data={classTrend} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-6">
-          <h2 className="text-base font-semibold">近期作业提交率</h2>
+          <h2 className="text-base font-semibold">近期作业提交情况</h2>
           <p className="mt-1 text-xs text-muted-foreground">
             仅展示所属课程已发布作业的前 8 项。
           </p>
@@ -543,32 +471,23 @@ function PerformanceTab({
               暂无已发布的作业
             </div>
           ) : (
-            <ul className="mt-4 space-y-3">
+            <ul className="mt-4 divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
               {recentAssignments.map((a) => (
-                <li key={a.id} className="rounded-lg border border-border bg-card p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium text-foreground">{a.title}</div>
-                      <div className="mt-0.5 text-xs text-muted-foreground num">
-                        {a.submitted}/{a.total} 人提交 · 总分 {a.totalScore}
-                      </div>
+                <li
+                  key={a.id}
+                  className="flex items-center justify-between gap-2 px-4 py-3 text-sm"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate font-medium text-foreground">{a.title}</div>
+                    <div className="mt-0.5 text-xs text-muted-foreground num">
+                      总分 {a.totalScore}
                     </div>
-                    <span
-                      className={`num text-sm font-semibold ${
-                        a.rate >= 80 ? "text-success" : a.rate >= 50 ? "text-warning" : "text-danger"
-                      }`}
-                    >
-                      {a.rate}%
-                    </span>
                   </div>
-                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className={`h-full transition-all ${
-                        a.rate >= 80 ? "bg-success" : a.rate >= 50 ? "bg-warning" : "bg-danger"
-                      }`}
-                      style={{ width: `${a.rate}%` }}
-                    />
-                  </div>
+                  <span className="num shrink-0 text-muted-foreground">
+                    <span className="font-semibold text-foreground">{a.submitted}</span>
+                    <span className="mx-0.5 text-subtle-foreground">/</span>
+                    {a.total} 人提交
+                  </span>
                 </li>
               ))}
             </ul>

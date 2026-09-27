@@ -18,6 +18,7 @@ import {
   TrendingUp,
   XCircle,
 } from "lucide-react";
+import { RejudgeButton } from "./_components/rejudge-button";
 
 export const metadata = { title: "评测队列监控" };
 
@@ -244,7 +245,7 @@ export default async function AdminJudgePage() {
                               </span>
                               {sub && (
                                 <Link
-                                  href={`/api/submissions/${sub.id}`}
+                                  href={`/admin/judge/submissions/${sub.id}`}
                                   className="text-xs text-primary hover:underline"
                                 >
                                   Submission {sub.id.slice(0, 8)}
@@ -254,6 +255,7 @@ export default async function AdminJudgePage() {
                               <span className="ml-auto text-xs text-muted-foreground">
                                 {relativeTime(new Date(j.timestamp))}
                               </span>
+                              {sub && <RejudgeButton submissionId={sub.id} />}
                             </div>
                             {sub && (
                               <div className="mt-1 text-xs text-muted-foreground">
@@ -308,7 +310,7 @@ export default async function AdminJudgePage() {
                           Job {j.id!.slice(0, 10)}
                         </span>
                         <Link
-                          href={`/api/submissions/${submissionId}`}
+                          href={`/admin/judge/submissions/${submissionId}`}
                           className="text-xs text-primary hover:underline"
                         >
                           Submission {submissionId.slice(0, 8)}

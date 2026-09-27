@@ -32,6 +32,7 @@ import {
 import {
   createFolderAction,
   deleteResourceAction,
+  deleteFolderAction,
   updateResourceAction,
 } from "@/app/t/courses/[id]/resources/actions";
 import {
@@ -154,6 +155,29 @@ export function ResourcesManager({
     const res = await deleteResourceAction(id);
     if (res.error) {
       alert(res.error);
+      return;
+    }
+    router.refresh();
+  }
+
+  async function handleDeleteFolder(fullPath: string, name: string) {
+    if (
+      !confirm(
+        `确认删除目录「${name}」及其下所有文件？此操作不可恢复。`,
+      )
+    )
+      return;
+    const res = await deleteFolderAction({ courseId, folder: fullPath });
+    if (res.error) {
+      alert(res.error);
+      return;
+    }
+    // 如果当前就在该目录下，删完跳回上级
+    if (currentFolder === fullPath || currentFolder.startsWith(fullPath + "/")) {
+      const parent = fullPath.includes("/")
+        ? fullPath.slice(0, fullPath.lastIndexOf("/")) || "/"
+        : "/";
+      router.replace(`/t/courses/${courseId}/resources?folder=${encodeURIComponent(parent)}`);
       return;
     }
     router.refresh();
@@ -309,14 +333,26 @@ export function ResourcesManager({
           <CardContent className="p-3">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
               {subfolders.map((s) => (
-                <a
+                <div
                   key={s.full}
-                  href={`?folder=${encodeURIComponent(s.full)}`}
-                  className="flex items-center gap-2 rounded-lg border border-border bg-card p-3 text-sm transition-colors hover:bg-muted"
+                  className="group flex items-center gap-1 rounded-lg border border-border bg-card p-1.5 text-sm transition-colors hover:bg-muted"
                 >
-                  <Folder className="h-4 w-4 shrink-0 text-primary" />
-                  <span className="truncate">{s.name}</span>
-                </a>
+                  <a
+                    href={`?folder=${encodeURIComponent(s.full)}`}
+                    className="flex min-w-0 flex-1 items-center gap-2 rounded px-1.5 py-1"
+                  >
+                    <Folder className="h-4 w-4 shrink-0 text-primary" />
+                    <span className="truncate">{s.name}</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => void handleDeleteFolder(s.full, s.name)}
+                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-danger-subtle hover:text-danger"
+                    title="删除目录"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               ))}
             </div>
           </CardContent>

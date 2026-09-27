@@ -31,6 +31,8 @@ yarn-error.log*
 # env files
 .env*
 !.env.example
+# ECS production secrets (the tracked template is deploy/env.production.example)
+deploy/.env.production
 
 # vercel
 .vercel
@@ -51,3 +53,6 @@ prisma/migrations/dev.db*
 
 # Claude
 .claude/
+
+# Locally downloaded AI tooling (not part of the application)
+.matt-skills/

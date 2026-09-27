@@ -40,6 +40,7 @@ export async function AnalyticsTab({ examId }: { examId: string }) {
         finalScore: true,
         autoScore: true,
         manualScore: true,
+        questionIds: true,
         submittedAt: true,
         student: { select: { id: true, name: true, studentNo: true } },
         answers: {
@@ -84,6 +85,7 @@ export async function AnalyticsTab({ examId }: { examId: string }) {
     finalScore: a.finalScore,
     autoScore: a.autoScore,
     manualScore: a.manualScore,
+    questionIds: a.questionIds,
     answers: a.answers,
   }));
 

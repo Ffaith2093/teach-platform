@@ -18,6 +18,7 @@ import type { Difficulty, ExamStatus, QuestionType } from "@prisma/client";
 import { QuestionsPanel } from "./_components/questions-panel";
 import { ExamActions } from "./_components/exam-actions";
 import { AnalyticsTab } from "./_components/analytics-tab";
+import { drawRulesSchema } from "@/lib/exams/rules";
 
 export const metadata = { title: "试卷详情" };
 
@@ -81,6 +82,8 @@ export default async function TeacherExamDetailPage({
   }
   const isOwner = myRole === "OWNER";
   const isDraft = exam.status === "DRAFT";
+  const drawConfig = exam.drawRules ? drawRulesSchema.safeParse(exam.drawRules) : null;
+  const actualCount = drawConfig?.success ? drawConfig.data.rules.reduce((sum, rule) => sum + rule.count, 0) : exam.questions.length;
   const now = new Date();
 
   // 已发布的过期判断
@@ -109,7 +112,7 @@ export default async function TeacherExamDetailPage({
 
   const tabs: { key: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { key: "overview", label: "概览", icon: ListChecks },
-    { key: "questions", label: `题目（${exam.questions.length}）`, icon: Library },
+    { key: "questions", label: `题目（${actualCount}）`, icon: Library },
     { key: "analytics", label: "分析", icon: BarChart3 },
   ];
 
@@ -180,7 +183,7 @@ export default async function TeacherExamDetailPage({
                 status={exam.status}
                 isOwner={isOwner}
                 hasAttempts={totalAttempts > 0}
-                questionCount={exam.questions.length}
+                questionCount={actualCount}
                 pendingGradeCount={pendingGradeCount}
               />
             </div>
@@ -216,7 +219,7 @@ export default async function TeacherExamDetailPage({
                 shuffleQuestion: exam.shuffleQuestion,
                 shuffleOption: exam.shuffleOption,
                 totalScore: exam.totalScore,
-                questionCount: exam.questions.length,
+                questionCount: actualCount,
               }}
               totalAttempts={totalAttempts}
               inProgressCount={inProgressCount}
@@ -228,6 +231,9 @@ export default async function TeacherExamDetailPage({
             <QuestionsPanel
               examId={exam.id}
               isDraft={isDraft}
+              isDraw={!!exam.drawRules}
+              actualCount={actualCount}
+              examTotalScore={exam.totalScore}
               availableProblems={availableProblems}
               questions={exam.questions.map((eq) => ({
                 eqId: `${exam.id}:${eq.questionId}`,
@@ -353,4 +359,3 @@ function Setting({ label, children }: { label: string; children: React.ReactNode
     </div>
   );
 }
-

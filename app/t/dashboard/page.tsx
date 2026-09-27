@@ -41,7 +41,7 @@ export default async function TeacherDashboardPage() {
         include: {
           class: {
             include: {
-              grade: { select: { name: true } },
+              grade: { select: { name: true, joinYear: true } },
               _count: { select: { students: { where: { status: "ACTIVE" } } } },
             },
           },
@@ -86,7 +86,7 @@ export default async function TeacherDashboardPage() {
       }),
     ]);
 
-  // 装配出勤率
+  // 装配出勤（按 present/total 直接展示，不算率/不做对比）
   const attendanceRows = attendanceCourses
     .map((ct) => {
       const expected = ct.course.classes.reduce(
@@ -95,23 +95,15 @@ export default async function TeacherDashboardPage() {
       );
       const presentSet = new Set(ct.course.accessLogs.map((l) => l.userId));
       const present = presentSet.size;
-      const rate = expected > 0 ? present / expected : 0;
       return {
         id: ct.course.id,
         title: ct.course.title,
         expected,
         present,
-        rate,
         role: ct.role,
       };
     })
-    .sort((a, b) => a.rate - b.rate); // 出勤率低的在前
-  const totalExpected = attendanceRows.reduce((s, r) => s + r.expected, 0);
-  const totalPresent = attendanceRows.reduce(
-    (s, r) => s + r.present,
-    0,
-  );
-  const overallRate = totalExpected > 0 ? totalPresent / totalExpected : 0;
+    .sort((a, b) => b.expected - a.expected);
 
   const stats = [
     { icon: Users, label: "我教的班级", num: classCount, suffix: "个" },
@@ -125,12 +117,9 @@ export default async function TeacherDashboardPage() {
       <Topbar crumbs={[{ label: "工作台" }]} />
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {session?.user.name} 老师
-            </h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">欢迎回到 PyLearn 教师端</p>
-          </div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {session?.user.name} 老师
+          </h1>
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {stats.map((s) => {
@@ -163,109 +152,44 @@ export default async function TeacherDashboardPage() {
             })}
           </div>
 
-          {/* 今日到课总览 */}
+          {/* 今日到课总览（极简：不显示出勤率/进度条） */}
           <Card>
             <CardContent className="p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-primary" />
-                  <h2 className="text-base font-semibold">今日到课总览</h2>
-                  <span className="text-[11px] text-subtle-foreground">
-                    基于学生访问课程页打点
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">
-                    整体出勤率{" "}
-                    <span
-                      className={`num font-semibold ${
-                        overallRate >= 0.8
-                          ? "text-success"
-                          : overallRate >= 0.6
-                            ? "text-foreground"
-                            : "text-danger"
-                      }`}
-                    >
-                      {Math.round(overallRate * 100)}%
-                    </span>
-                  </span>
-                  <Badge variant="default" className="num">
-                    {totalPresent}/{totalExpected}
-                  </Badge>
-                </div>
+              <div className="mb-4 flex items-center gap-2">
+                <Activity className="h-4 w-4 text-primary" />
+                <h2 className="text-base font-semibold">今日到课</h2>
+                <span className="text-[11px] text-subtle-foreground">
+                  基于学生访问课程页打点
+                </span>
               </div>
               {attendanceRows.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-border bg-muted/30 px-6 py-10 text-center text-sm text-muted-foreground">
                   <p>您还没有任何课程</p>
                 </div>
               ) : (
-                <ul className="space-y-2.5">
-                  {attendanceRows.map((r) => {
-                    const tone =
-                      r.expected === 0
-                        ? "muted"
-                        : r.rate >= 0.8
-                          ? "success"
-                          : r.rate >= 0.6
-                            ? "warning"
-                            : "danger";
-                    const toneClass = {
-                      success: "bg-success",
-                      warning: "bg-warning",
-                      danger: "bg-danger",
-                      muted: "bg-muted",
-                    }[tone];
-                    return (
-                      <li key={r.id}>
-                        <Link
-                          href={`/t/courses/${r.id}/attendance`}
-                          className="flex items-center gap-4 rounded-lg border border-border bg-card p-3 transition-all hover:border-primary/40 hover:shadow-sm"
-                        >
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="truncate text-sm font-medium text-foreground">
-                                {r.title}
-                              </span>
-                              {r.role === "OWNER" ? (
-                                <Badge variant="primary" className="shrink-0">主讲</Badge>
-                              ) : r.role === "ASSISTANT" ? (
-                                <Badge variant="accent" className="shrink-0">助教</Badge>
-                              ) : null}
-                            </div>
-                            <div className="mt-1.5 flex items-center gap-3">
-                              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                                <div
-                                  className={`h-full ${toneClass}`}
-                                  style={{
-                                    width: `${r.expected > 0 ? Math.max(2, r.rate * 100) : 0}%`,
-                                  }}
-                                />
-                              </div>
-                              <span className="shrink-0 text-xs text-muted-foreground num">
-                                <span
-                                  className={`font-semibold ${
-                                    tone === "success"
-                                      ? "text-success"
-                                      : tone === "warning"
-                                        ? "text-warning"
-                                        : tone === "danger"
-                                          ? "text-danger"
-                                          : "text-subtle-foreground"
-                                  }`}
-                                >
-                                  {r.expected === 0 ? "—" : `${Math.round(r.rate * 100)}%`}
-                                </span>
-                                <span className="ml-1.5 text-subtle-foreground">
-                                  {r.present}/{r.expected}
-                                </span>
-                              </span>
-                            </div>
-                          </div>
-                          <ChevronRight className="h-4 w-4 shrink-0 text-subtle-foreground" />
-                        </Link>
-                      </li>
-                    );
-                  })}
+                <ul className="space-y-1.5">
+                  {attendanceRows.map((r) => (
+                    <li key={r.id}>
+                      <Link
+                        href={`/t/courses/${r.id}/attendance`}
+                        className="flex items-center justify-between gap-3 rounded-md px-2 py-2 text-sm transition-colors hover:bg-muted/40"
+                      >
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="truncate text-foreground">{r.title}</span>
+                          {r.role === "OWNER" ? (
+                            <Badge variant="primary" className="shrink-0">主讲</Badge>
+                          ) : r.role === "ASSISTANT" ? (
+                            <Badge variant="accent" className="shrink-0">助教</Badge>
+                          ) : null}
+                        </div>
+                        <span className="num shrink-0 text-muted-foreground">
+                          <span className="font-semibold text-foreground">{r.present}</span>
+                          <span className="mx-0.5 text-subtle-foreground">/</span>
+                          {r.expected} 人到课
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
                 </ul>
               )}
             </CardContent>
@@ -293,26 +217,27 @@ export default async function TeacherDashboardPage() {
                       </p>
                     </div>
                   ) : (
-                    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <ul className="mt-4 space-y-1">
                       {taughtClasses.slice(0, 6).map((ct) => (
-                        <Link
-                          key={ct.classId}
-                          href={`/t/classes/${ct.classId}`}
-                          className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-4 transition-all hover:border-primary hover:shadow-sm"
-                        >
-                          <div className="min-w-0">
-                            <div className="text-sm font-medium text-foreground">
-                              {ct.class.name}
+                        <li key={ct.classId}>
+                          <Link
+                            href={`/t/classes/${ct.classId}`}
+                            className="flex items-center justify-between gap-3 rounded-md px-2 py-2 transition-colors hover:bg-muted/40"
+                          >
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-foreground">
+                                {ct.class.name}
+                              </div>
+                              <div className="mt-0.5 text-xs text-muted-foreground">
+                                {ct.class.grade.name} · {ct.class.grade.joinYear}级 ·{" "}
+                                <span className="num">{ct.class._count.students}</span> 人
+                              </div>
                             </div>
-                            <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <Badge variant="primary">{ct.class.grade.name}</Badge>
-                              <span className="num">{ct.class._count.students} 名学生</span>
-                            </div>
-                          </div>
-                          <ChevronRight className="h-4 w-4 shrink-0 text-subtle-foreground" />
-                        </Link>
+                            <ChevronRight className="h-4 w-4 shrink-0 text-subtle-foreground" />
+                          </Link>
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   )}
                 </CardContent>
               </Card>
@@ -351,17 +276,12 @@ export default async function TeacherDashboardPage() {
                               <div className="text-sm font-medium text-foreground">
                                 {ct.course.title}
                               </div>
-                              <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                                 <Badge
                                   variant={ct.role === "OWNER" ? "primary" : "accent"}
                                 >
                                   {ct.role === "OWNER" ? "主讲" : ct.role === "ASSISTANT" ? "助教" : "外聘"}
                                 </Badge>
-                                <span className="num">{ct.course._count.classes} 班</span>
-                                <span>·</span>
-                                <span className="num">{ct.course._count.assignments} 作业</span>
-                                <span>·</span>
-                                <span>{ct.course.semester}</span>
                               </div>
                             </div>
                             <ChevronRight className="h-4 w-4 shrink-0 text-subtle-foreground" />
@@ -388,10 +308,7 @@ export default async function TeacherDashboardPage() {
                       href="/t/grading"
                       className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning-subtle/30 p-3 transition-colors hover:bg-warning-subtle/50"
                     >
-                      <div>
-                        <div className="text-2xl font-bold num text-warning">{toGrade}</div>
-                        <p className="mt-0.5 text-xs text-muted-foreground">份已提交未批改</p>
-                      </div>
+                      <div className="text-2xl font-bold num text-warning">{toGrade}</div>
                       <ChevronRight className="h-4 w-4 text-warning" />
                     </Link>
                   )}

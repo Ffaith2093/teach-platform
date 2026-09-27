@@ -27,6 +27,7 @@ export default async function EditProblemPage({
   const { id } = await params;
   const session = await auth();
   const userId = session!.user.id;
+  const isAdmin = session!.user.role === "ADMIN";
 
   const problem = await prisma.problem.findUnique({
     where: { id },
@@ -39,8 +40,8 @@ export default async function EditProblemPage({
   });
   if (!problem) notFound();
 
-  // 仅作者可编辑
-  if (problem.authorId !== userId) redirect("/t/problems?error=forbidden");
+  // 仅作者或管理员可编辑
+  if (problem.authorId !== userId && !isAdmin) redirect("/t/problems?error=forbidden");
 
   const refCount = problem._count.assignmentProblems + problem._count.questions;
   const diff = DIFFICULTY_LABELS[problem.difficulty];
@@ -102,6 +103,7 @@ export default async function EditProblemPage({
               difficulty: problem.difficulty,
               timeLimitMs: problem.timeLimitMs,
               memoryLimitMb: problem.memoryLimitMb,
+              splitInputByWhitespace: problem.splitInputByWhitespace,
               starterCode: problem.starterCode ?? "",
               referenceSolution: problem.referenceSolution ?? "",
               tags: problem.tags,

@@ -22,7 +22,10 @@ const gradeSchema = z.object({
 
 export type ActionState = { error?: string; ok?: boolean };
 
-export async function createGradeAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+export async function createGradeAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   await requireRole(["ADMIN"]);
   const parsed = gradeSchema.safeParse({
     name: formData.get("name"),
@@ -56,7 +59,10 @@ const classSchema = z.object({
   joinYear: z.coerce.number().int().min(2000).max(2100),
 });
 
-export async function createClassAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+export async function createClassAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   await requireRole(["ADMIN"]);
   const parsed = classSchema.safeParse({
     gradeId: formData.get("gradeId"),
@@ -95,7 +101,10 @@ const studentSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
 });
 
-export async function createStudentAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+export async function createStudentAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   await requireRole(["ADMIN"]);
   const parsed = studentSchema.safeParse({
     classId: formData.get("classId"),
@@ -134,7 +143,11 @@ export async function deleteStudentAction(gradeId: string, classId: string, stud
   revalidatePath(`/admin/students/${gradeId}/${classId}`);
 }
 
-export async function resetStudentPasswordAction(gradeId: string, classId: string, studentId: string) {
+export async function resetStudentPasswordAction(
+  gradeId: string,
+  classId: string,
+  studentId: string,
+) {
   await requireRole(["ADMIN"]);
   const u = await prisma.user.findUnique({ where: { id: studentId }, select: { studentNo: true } });
   if (!u?.studentNo) throw new Error("学生不存在");
@@ -211,7 +224,13 @@ export async function transferStudentsAction(input: z.input<typeof transferSchem
 
 export type ImportState =
   | { stage: "idle" }
-  | { stage: "preview"; total: number; sample: ImportRow[]; errors: { rowNo: number; raw: string; reason: string }[]; fileBase64?: string }
+  | {
+      stage: "preview";
+      total: number;
+      sample: ImportRow[];
+      errors: { rowNo: number; raw: string; reason: string }[];
+      fileBase64?: string;
+    }
   | { stage: "done"; created: number }
   | { stage: "error"; message: string };
 
@@ -220,14 +239,17 @@ export type ImportState =
  * 表单字段：file, classId
  * 校验后返回 fileBase64，confirm 时回传
  */
-export async function previewImportAction(_prev: ImportState, formData: FormData): Promise<ImportState> {
+export async function previewImportAction(
+  _prev: ImportState,
+  formData: FormData,
+): Promise<ImportState> {
   await requireRole(["ADMIN"]);
   const file = formData.get("file") as File | null;
   if (!file || file.size === 0) return { stage: "error", message: "请选择文件" };
   if (file.size > 5 * 1024 * 1024) return { stage: "error", message: "文件大小不能超过 5MB" };
   const ext = file.name.split(".").pop()?.toLowerCase();
-  if (!["csv", "xlsx", "xls"].includes(ext ?? "")) {
-    return { stage: "error", message: "仅支持 .csv / .xlsx / .xls 文件" };
+  if (!["csv", "xlsx"].includes(ext ?? "")) {
+    return { stage: "error", message: "仅支持 .csv / .xlsx 文件" };
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -283,7 +305,10 @@ export async function previewImportAction(_prev: ImportState, formData: FormData
  * 阶段 2：确认导入
  * 表单字段：classId, fileBase64
  */
-export async function confirmImportAction(_prev: ImportState, formData: FormData): Promise<ImportState> {
+export async function confirmImportAction(
+  _prev: ImportState,
+  formData: FormData,
+): Promise<ImportState> {
   await requireRole(["ADMIN"]);
   const classId = String(formData.get("classId") ?? "");
   const fileBase64 = String(formData.get("fileBase64") ?? "");

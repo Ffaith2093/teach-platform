@@ -14,7 +14,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { addClassToCourseAction, removeClassFromCourseAction } from "@/app/t/courses/actions";
-import { relativeTime } from "@/lib/utils";
 
 interface AssignedClass {
   id: string;
@@ -60,12 +59,7 @@ export function ClassesPanel({ courseId, isOwner, assigned, available }: Props) 
     <Card>
       <CardContent className="p-6">
         <div className="flex items-center justify-between gap-2">
-          <div>
-            <h2 className="text-base font-semibold">授课班级</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              班级一旦加入课程，该班学生自动成为课程成员。{!isOwner && "(助教仅可查看，不可增删)"}
-            </p>
-          </div>
+          <h2 className="text-base font-semibold">授课班级</h2>
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -131,13 +125,9 @@ export function ClassesPanel({ courseId, isOwner, assigned, available }: Props) 
                 >
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-foreground">{c.name}</div>
-                    <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                       <Badge variant="primary">{c.gradeName}</Badge>
-                      <span className="num">{c.gradeJoinYear} 级</span>
-                      <span>·</span>
-                      <span className="num">{c.studentCount} 学生</span>
-                      <span>·</span>
-                      <span>{relativeTime(c.addedAt)}</span>
+                      <span className="num">{c.studentCount}</span> 名学生
                     </div>
                   </div>
                   {isOwner ? (

@@ -58,25 +58,18 @@ export function GradeAttemptForm({
   const manualQuestions = questions.filter((q) => q.isManual);
 
   const totalPreview = useMemo(() => {
-    let auto = 0;
-    let manual = 0;
-    for (const q of questions) {
-      auto += q.autoScore ?? 0;
-      if (q.isManual) {
-        const v = Number(draft[q.questionId]?.manualScore);
-        manual += Number.isFinite(v) ? v : 0;
-      } else {
-        manual += q.manualScore ?? 0;
-      }
-    }
-    return Math.max(0, Math.min(auto + manual, totalScore));
+    return Math.max(0, Math.min(questions.reduce((sum, q) => {
+      const entered = q.isManual ? draft[q.questionId]?.manualScore : undefined;
+      const manual = entered !== undefined && entered !== "" ? Number(entered) : q.manualScore;
+      return sum + (manual ?? q.autoScore ?? 0);
+    }, 0), totalScore));
   }, [draft, questions, totalScore]);
 
   const autoPreview = useMemo(
     () => questions.reduce((s, q) => s + (q.autoScore ?? 0), 0),
     [questions],
   );
-  const manualPreview = totalPreview - autoPreview;
+  const manualPreview = questions.reduce((sum, q) => sum + (q.isManual ? Number(draft[q.questionId]?.manualScore || q.manualScore || 0) : q.manualScore ?? 0), 0);
 
   function setField(qid: string, key: "manualScore" | "comment", value: string) {
     setDraft((prev) => ({

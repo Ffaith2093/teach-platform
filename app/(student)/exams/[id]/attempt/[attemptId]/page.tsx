@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Topbar } from "@/components/shell/topbar";
 import { AttemptClient } from "./_components/attempt-client";
 import type { Difficulty, QuestionType } from "@prisma/client";
+import { shuffleOptions } from "@/lib/exams/shuffle";
 
 export const metadata = { title: "作答中" };
 
@@ -60,7 +61,9 @@ export default async function AttemptPage({
     content: eq.question.content,
     difficulty: eq.question.difficulty as Difficulty,
     score: eq.score,
-    options: (eq.question.options as { key: string; text: string }[] | null) ?? null,
+    options: attempt.exam.shuffleOption
+      ? shuffleOptions((eq.question.options as { key: string; text: string }[] | null) ?? [], `${attempt.id}:${eq.questionId}`)
+      : (eq.question.options as { key: string; text: string }[] | null) ?? null,
     problem: eq.question.problem
       ? {
           id: eq.question.problem.id,

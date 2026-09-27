@@ -15,11 +15,12 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
+import { scaledProblemScore } from "@/lib/exams/scoring";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
@@ -56,10 +57,27 @@ export async function GET(
     return NextResponse.json({ message: "无权访问该作业" }, { status: 403 });
   }
 
-  // 课程下所有学生（按班级）
+  // 按班级筛选：?classId=xxx,yyy — 多个用逗号分隔；空表示全部
+  const classIdParam = new URL(req.url).searchParams.get("classId") ?? "";
+  const requestedClassIds = Array.from(
+    new Set(
+      classIdParam
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    ),
+  );
+
+  // 课程下被选中的班级（自动忽略不属于本课程的 classId）
   const courseClasses = await prisma.courseClass.findMany({
-    where: { courseId: assignment.courseId },
+    where: {
+      courseId: assignment.courseId,
+      ...(requestedClassIds.length > 0
+        ? { classId: { in: requestedClassIds } }
+        : {}),
+    },
     select: {
+      classId: true,
       class: {
         select: {
           name: true,
@@ -72,6 +90,14 @@ export async function GET(
       },
     },
   });
+
+  if (requestedClassIds.length > 0 && courseClasses.length === 0) {
+    return NextResponse.json(
+      { message: "指定的班级不属于本课程" },
+      { status: 422 },
+    );
+  }
+
   const allStudents = courseClasses.flatMap((cc) =>
     cc.class.students.map((s) => ({
       id: s.id,
@@ -107,30 +133,34 @@ export async function GET(
         problemId: true,
         score: true,
         order: true,
-        problem: { select: { title: true } },
+        problem: { select: { title: true, testCases: { select: { score: true } } } },
       },
     }),
   ]);
 
   const subByStudent = new Map(submissions.map((s) => [s.studentId, s]));
-  const attemptSubIds = submissions.map((s) => s.id);
+  const studentIds = submissions.map((s) => s.studentId);
   const problemIds = problems.map((p) => p.problemId);
   const perProblemSubs =
-    attemptSubIds.length > 0 && problemIds.length > 0
+    studentIds.length > 0 && problemIds.length > 0
       ? await prisma.submission.findMany({
           where: {
             contextType: "ASSIGNMENT",
-            contextId: { in: attemptSubIds },
+            contextId: id,
+            userId: { in: studentIds },
             problemId: { in: problemIds },
           },
           orderBy: { createdAt: "desc" },
-          select: { contextId: true, problemId: true, score: true, status: true },
+          select: { userId: true, problemId: true, score: true, status: true },
         })
       : [];
   const scoreByKey = new Map<string, number>();
   for (const s of perProblemSubs) {
-    const k = `${s.contextId}:${s.problemId}`;
-    if (!scoreByKey.has(k)) scoreByKey.set(k, s.score);
+    const k = `${s.userId}:${s.problemId}`;
+    if (!scoreByKey.has(k)) {
+      const problem = problems.find((p) => p.problemId === s.problemId);
+      if (problem) scoreByKey.set(k, scaledProblemScore(s.score, problem.problem.testCases.reduce((sum, tc) => sum + tc.score, 0), problem.score));
+    }
   }
 
   // ===== CSV 构造 =====
@@ -162,7 +192,7 @@ export async function GET(
     const sub = subByStudent.get(s.id);
     const late = sub?.submittedAt ? sub.submittedAt > assignment.dueAt : false;
     const problemScores = problems.map((p) => {
-      const cell = sub ? scoreByKey.get(`${sub.id}:${p.problemId}`) : undefined;
+      const cell = sub ? scoreByKey.get(`${sub.studentId}:${p.problemId}`) : undefined;
       return cell == null ? "" : String(cell);
     });
     rows.push([
@@ -181,11 +211,15 @@ export async function GET(
 
   const csv = "\uFEFF" + rows.map((r) => r.map(escapeCell).join(",")).join("\r\n");
   const filenameSafe = assignment.title.replace(/[\\/:*?"<>|\s]+/g, "_").slice(0, 40);
+  const classTag =
+    courseClasses.length === 1
+      ? `_${courseClasses[0]!.class.name.replace(/[\\/:*?"<>|\s]+/g, "_").slice(0, 16)}`
+      : "";
   return new NextResponse(csv, {
     status: 200,
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${filenameSafe}_submissions.csv"`,
+      "Content-Disposition": `attachment; filename="${filenameSafe}${classTag}_submissions.csv"`,
       "Cache-Control": "no-store",
     },
   });

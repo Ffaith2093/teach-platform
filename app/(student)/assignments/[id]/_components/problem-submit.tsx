@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useActionState } from "react";
+import { useActionState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Play,
   Send,
   CheckCircle2,
   XCircle,
@@ -18,9 +19,13 @@ import {
   Loader2,
 } from "lucide-react";
 import type { Difficulty } from "@prisma/client";
-import { submitProblemAction } from "@/app/(student)/assignments/actions";
+import {
+  submitProblemAction,
+  runAssignmentSampleAction,
+} from "@/app/(student)/assignments/actions";
 import { usePollSubmission } from "@/hooks/use-poll-submission";
 import { CodeEditor } from "@/components/code-editor";
+import type { JudgeRunResult } from "@/lib/judge/local";
 
 const DIFFICULTY_LABELS: Record<Difficulty, { label: string; tone: "success" | "warning" | "danger" }> = {
   EASY: { label: "入门", tone: "success" },
@@ -102,6 +107,28 @@ export function ProblemSubmit({
   const [code, setCode] = React.useState(lastCode ?? problem.starterCode ?? "");
   const [state, formAction, pending] = useActionState(submitProblemAction, undefined);
   const router = useRouter();
+
+  // 运行样例：不进队列，不写 Submission
+  const [sampleRunning, startSampleTransition] = useTransition();
+  const [sampleResult, setSampleResult] = React.useState<JudgeRunResult | null>(null);
+  const [sampleError, setSampleError] = React.useState<string | null>(null);
+
+  function handleRunSample() {
+    setSampleError(null);
+    startSampleTransition(async () => {
+      const res = await runAssignmentSampleAction({
+        assignmentId,
+        problemId: problem.id,
+        code,
+      });
+      if (res.ok) {
+        setSampleResult(res.result);
+      } else {
+        setSampleError(res.error ?? "运行失败");
+        setSampleResult(null);
+      }
+    });
+  }
 
   // 异步评测：拿到 submissionId 后轮询 /api/submissions/[id]
   const submissionId: string | null =
@@ -224,12 +251,36 @@ export function ProblemSubmit({
             <p className="text-[11px] text-subtle-foreground">
               提交后将自动跑全部用例（含隐藏用例），隐藏用例的实际输出不会展示。
             </p>
-            <Button type="submit" disabled={pending || isPolling || !code.trim()} size="sm">
-              <Send className="h-3.5 w-3.5" />
-              {pending || isPolling ? "评测中…" : "提交评测"}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleRunSample}
+                disabled={sampleRunning || pending || isPolling || !code.trim()}
+              >
+                {sampleRunning ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Play className="h-3.5 w-3.5" />
+                )}
+                {sampleRunning ? "运行中…" : "运行样例"}
+              </Button>
+              <Button type="submit" disabled={pending || isPolling || !code.trim()} size="sm">
+                <Send className="h-3.5 w-3.5" />
+                {pending || isPolling ? "评测中…" : "提交评测"}
+              </Button>
+            </div>
           </div>
         </form>
+
+        {sampleError && (
+          <div className="mt-3 rounded-lg border border-danger/30 bg-danger-subtle/40 px-3 py-2 text-xs text-danger">
+            {sampleError}
+          </div>
+        )}
+
+        {sampleResult && <SampleResultPanel result={sampleResult} />}
 
         {result && (
           <div className="mt-4 rounded-lg border border-border bg-muted/20 p-4">
@@ -347,6 +398,70 @@ function CaseDetails({ cases }: { cases: JudgeCaseView[] }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function SampleResultPanel({ result }: { result: JudgeRunResult }) {
+  const tone = STATUS_TONE[result.status] ?? "default";
+  const label = STATUS_LABEL[result.status] ?? result.status;
+  return (
+    <div className="mt-4 rounded-lg border border-accent/30 bg-accent-subtle/30 p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        {tone === "success" ? (
+          <CheckCircle2 className="h-4 w-4 text-success" />
+        ) : tone === "warning" ? (
+          <XCircle className="h-4 w-4 text-warning" />
+        ) : (
+          <AlertCircle className="h-4 w-4 text-danger" />
+        )}
+        <span className="text-xs font-medium text-muted-foreground">样例运行</span>
+        <Badge variant={tone}>{label}</Badge>
+        <span className="num text-xs text-muted-foreground">
+          通过 <b className="text-foreground">{result.passedCount}</b> / {result.totalCount}{" "}
+          个样例
+        </span>
+      </div>
+      <details className="mt-3" open>
+        <summary className="cursor-pointer select-none text-xs text-muted-foreground hover:text-foreground">
+          查看样例运行详情
+        </summary>
+        <div className="mt-2 space-y-2">
+          {result.cases.map((c, i) => (
+            <div
+              key={i}
+              className={`rounded-md border p-3 text-xs ${
+                c.status === "ACCEPTED"
+                  ? "border-success/30 bg-success-subtle/30"
+                  : "border-danger/30 bg-danger-subtle/30"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="num font-mono text-[11px] text-muted-foreground">
+                    样例 #{i + 1}
+                  </span>
+                  <Badge variant={STATUS_TONE[c.status] ?? "default"}>
+                    {STATUS_LABEL[c.status] ?? c.status}
+                  </Badge>
+                  <span className="num text-muted-foreground">
+                    <Clock className="mr-0.5 inline h-3 w-3" />
+                    {c.timeMs}ms
+                  </span>
+                </div>
+              </div>
+              {c.errorMsg && (
+                <div className="mt-2 rounded bg-card/80 px-2 py-1.5 font-mono text-[11px] text-danger">
+                  {c.errorMsg}
+                </div>
+              )}
+              <pre className="mt-2 overflow-x-auto whitespace-pre rounded bg-card/80 px-2 py-1.5 font-mono text-[11px] text-foreground">
+                {c.actualOutput ?? "（无输出）"}
+              </pre>
+            </div>
+          ))}
+        </div>
+      </details>
     </div>
   );
 }

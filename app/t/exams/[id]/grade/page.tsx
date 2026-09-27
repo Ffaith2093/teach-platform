@@ -92,6 +92,7 @@ export default async function GradeExamPage({
           status: true,
           autoScore: true,
           manualScore: true,
+          answers: { select: { autoScore: true, manualScore: true } },
           finalScore: true,
           submittedAt: true,
           deadlineAt: true,
@@ -319,6 +320,7 @@ function Row({
         status: AttemptStatus;
         autoScore: number | null;
         manualScore: number | null;
+        answers: Array<{ autoScore: number | null; manualScore: number | null }>;
         finalScore: number | null;
         submittedAt: Date | null;
       }
@@ -349,7 +351,7 @@ function Row({
     attempt.finalScore ??
     (attempt.status === "SUBMITTED"
       ? attempt.autoScore
-      : (attempt.autoScore ?? 0) + (attempt.manualScore ?? 0));
+      : attempt.answers.reduce((sum, answer) => sum + (answer.manualScore ?? answer.autoScore ?? 0), 0));
 
   return (
     <tr className={attempt.status === "GRADED" ? "bg-success-subtle/10" : ""}>

@@ -49,11 +49,57 @@ export function AttemptClient({
   const [submitting, startSubmit] = useTransition();
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const submittedRef = useRef(false);
+  const dirty = useRef<Record<string, unknown>>({});
+  const inFlight = useRef<Promise<boolean> | null>(null);
+  const storageKey = `exam-pending:${attemptId}`;
+
+  const flush = useCallback(async (): Promise<boolean> => {
+    if (inFlight.current) return inFlight.current;
+    const run = async () => {
+      while (Object.keys(dirty.current).length) {
+        if (!navigator.onLine) { setSaveState("error"); setSaveError("网络已断开，答案暂存在本机"); return false; }
+        const [questionId, value] = Object.entries(dirty.current)[0];
+        setSaveState("saving");
+        const fd = new FormData();
+        fd.set("attemptId", attemptId);
+        fd.set("questionId", questionId);
+        fd.set("content", JSON.stringify(value));
+        try {
+          const res = await saveAnswerAction(undefined, fd);
+          if (!res.ok) { setSaveState("error"); setSaveError(res.error ?? "保存失败"); return false; }
+        } catch { setSaveState("error"); setSaveError("保存失败，答案暂存在本机"); return false; }
+        if (dirty.current[questionId] === value) delete dirty.current[questionId];
+        try { localStorage.setItem(storageKey, JSON.stringify(dirty.current)); } catch { /* storage unavailable */ }
+      }
+      setSaveState("saved"); setSaveError(null);
+      return true;
+    };
+    inFlight.current = run();
+    try { return await inFlight.current; } finally { inFlight.current = null; }
+  }, [attemptId, storageKey]);
+
+  useEffect(() => {
+    try {
+      const cached = JSON.parse(localStorage.getItem(storageKey) ?? "{}");
+      if (cached && typeof cached === "object" && !Array.isArray(cached)) {
+        const allowed = new Set(questions.map((q) => q.questionId));
+        for (const [id, value] of Object.entries(cached)) if (allowed.has(id)) dirty.current[id] = value;
+        setAnswers((prev) => ({ ...prev, ...dirty.current }));
+        if (Object.keys(dirty.current).length) void flush();
+      }
+    } catch { /* malformed or unavailable local storage */ }
+    const retry = setInterval(() => { if (Object.keys(dirty.current).length) void flush(); }, 15000);
+    const online = () => { void flush(); };
+    window.addEventListener("online", online);
+    return () => { clearInterval(retry); window.removeEventListener("online", online); };
+  }, [flush, questions, storageKey]);
 
   const doSubmit = useCallback(() => {
     if (submittedRef.current) return;
     submittedRef.current = true;
     startSubmit(async () => {
+      const saved = await flush();
+      if (!saved) { submittedRef.current = false; setConfirming(true); return; }
       const fd = new FormData();
       fd.set("attemptId", attemptId);
       const res = await submitExamAction(undefined, fd);
@@ -62,7 +108,7 @@ export function AttemptClient({
         setSaveError(res.error);
       }
     });
-  }, [attemptId]);
+  }, [attemptId, flush]);
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -76,23 +122,12 @@ export function AttemptClient({
   const save = useCallback(
     (questionId: string, value: unknown) => {
       clearTimeout(timers.current[questionId]);
-      timers.current[questionId] = setTimeout(async () => {
-        setSaveState("saving");
-        const fd = new FormData();
-        fd.set("attemptId", attemptId);
-        fd.set("questionId", questionId);
-        fd.set("content", JSON.stringify(value));
-        const res = await saveAnswerAction(undefined, fd);
-        if (res.ok) {
-          setSaveState("saved");
-          setSaveError(null);
-        } else {
-          setSaveState("error");
-          setSaveError(res.error ?? "保存失败");
-        }
-      }, 600);
+      dirty.current[questionId] = value;
+      try { localStorage.setItem(storageKey, JSON.stringify(dirty.current)); } catch { setSaveError("本地存储不可用，请保持网络连接"); }
+      setSaveState("saving");
+      timers.current[questionId] = setTimeout(() => { void flush(); }, 600);
     },
-    [attemptId],
+    [flush, storageKey],
   );
 
   const setAnswer = useCallback(
@@ -115,8 +150,38 @@ export function AttemptClient({
   const urgent = remain < 5 * 60 * 1000;
 
   return (
-    <main className="flex-1 p-8">
-      <div className="mx-auto flex max-w-[1180px] gap-6">
+    <main className="flex-1">
+      <div className="sticky top-16 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="mx-auto flex h-14 max-w-[1180px] items-center gap-4 px-8">
+          <div className="flex min-w-0 items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span
+              className={`num text-2xl font-bold tracking-tight ${
+                urgent ? "text-danger" : "text-foreground"
+              }`}
+              aria-live="polite"
+            >
+              {String(mm).padStart(2, "0")}:{String(ss).padStart(2, "0")}
+            </span>
+            {urgent && (
+              <span className="hidden text-xs text-danger sm:inline">不足 5 分钟</span>
+            )}
+          </div>
+          <span className="ml-auto hidden text-xs text-muted-foreground sm:inline">
+            已答 <span className="num text-foreground">{answeredCount}</span>
+            <span className="num"> / {questions.length}</span>
+          </span>
+          <Button
+            size="sm"
+            onClick={() => setConfirming(true)}
+            disabled={submitting}
+          >
+            交卷
+          </Button>
+        </div>
+      </div>
+
+      <div className="mx-auto flex max-w-[1180px] gap-6 p-8">
         <div className="flex min-w-0 flex-1 flex-col gap-6">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">{examTitle}</h1>
@@ -226,6 +291,38 @@ export function AttemptClient({
                     <p className="text-xs text-muted-foreground">
                       交卷后无法再修改答案，确认提交？
                     </p>
+                    {(() => {
+                      const unanswered = questions
+                        .filter((q) => {
+                          const v = answers[q.questionId];
+                          const done =
+                            Array.isArray(v)
+                              ? v.some((x) => String(x ?? "").trim() !== "")
+                              : v !== undefined && v !== null && v !== "";
+                          return !done;
+                        })
+                        .map((q) => q.index);
+                      if (unanswered.length === 0) return null;
+                      return (
+                        <div className="rounded-lg border border-warning/30 bg-warning-subtle/40 p-2 text-xs text-warning">
+                          <p className="mb-1 font-medium">
+                            有 <span className="num">{unanswered.length}</span> 题未作答：
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {unanswered.map((i) => (
+                              <a
+                                key={i}
+                                href={`#q-${i}`}
+                                onClick={() => setConfirming(false)}
+                                className="num inline-flex h-6 min-w-6 items-center justify-center rounded border border-warning/40 bg-card px-1.5 text-[11px] text-warning hover:bg-warning-subtle"
+                              >
+                                {i}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
                     <div className="flex gap-2">
                       <Button size="sm" onClick={doSubmit} disabled={submitting}>
                         {submitting ? "提交中…" : "确认交卷"}

@@ -6,17 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Topbar } from "@/components/shell/topbar";
 import { relativeTime } from "@/lib/utils";
-import {
-  ChevronLeft,
-  Code,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  History,
-} from "lucide-react";
+import { ChevronLeft, Code, Clock } from "lucide-react";
 import type { Difficulty, JudgeStatus } from "@prisma/client";
 import { PracticeSolver } from "./_components/practice-solver";
+import { SubmissionHistory } from "./_components/submission-history";
 
 export const metadata = { title: "编程题练习" };
 
@@ -24,28 +17,6 @@ const DIFFICULTY_LABELS: Record<Difficulty, { label: string; tone: "success" | "
   EASY: { label: "入门", tone: "success" },
   MEDIUM: { label: "中等", tone: "warning" },
   HARD: { label: "进阶", tone: "danger" },
-};
-
-const STATUS_TONE: Record<string, "success" | "warning" | "danger" | "default"> = {
-  ACCEPTED: "success",
-  WRONG_ANSWER: "warning",
-  TLE: "danger",
-  MLE: "danger",
-  RUNTIME_ERROR: "danger",
-  COMPILE_ERROR: "danger",
-  SYSTEM_ERROR: "danger",
-  PENDING: "default",
-  JUDGING: "default",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  ACCEPTED: "通过",
-  WRONG_ANSWER: "答案错误",
-  TLE: "运行超时",
-  MLE: "内存超限",
-  RUNTIME_ERROR: "运行错误",
-  COMPILE_ERROR: "编译错误",
-  SYSTEM_ERROR: "系统异常",
 };
 
 export default async function StudentProblemDetailPage({
@@ -307,53 +278,7 @@ export default async function StudentProblemDetailPage({
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardContent className="p-5">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-sm font-semibold">提交历史</span>
-                    <History className="h-3.5 w-3.5 text-muted-foreground" />
-                  </div>
-                  {history.length === 0 ? (
-                    <p className="py-6 text-center text-xs text-muted-foreground">还没有提交记录</p>
-                  ) : (
-                    <ul className="space-y-2">
-                      {history.map((h) => {
-                        const tone = STATUS_TONE[h.status] ?? "default";
-                        return (
-                          <li
-                            key={h.id}
-                            className={`flex items-center gap-2 rounded-md border p-2 text-xs ${
-                              h.status === "ACCEPTED"
-                                ? "border-success/30 bg-success-subtle/20"
-                                : "border-border bg-card"
-                            }`}
-                          >
-                            {tone === "success" ? (
-                              <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                            ) : tone === "warning" ? (
-                              <XCircle className="h-3.5 w-3.5 text-warning" />
-                            ) : (
-                              <AlertCircle className="h-3.5 w-3.5 text-danger" />
-                            )}
-                            <Badge variant={tone}>
-                              {STATUS_LABEL[h.status] ?? h.status}
-                            </Badge>
-                            <span className="num text-muted-foreground">
-                              {h.passedCount}/{h.totalCount}
-                            </span>
-                            {h.maxTimeMs != null && (
-                              <span className="num ml-auto text-muted-foreground">
-                                <Clock className="mr-0.5 inline h-3 w-3" />
-                                {h.maxTimeMs}ms
-                              </span>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
+              <SubmissionHistory history={history} />
 
               <Card>
                 <CardContent className="p-5">

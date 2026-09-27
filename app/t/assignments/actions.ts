@@ -42,6 +42,7 @@ async function requireAssignmentAccess(assignmentId: string, minRole: "OWNER" | 
 
 const createAssignmentSchema = z.object({
   courseId: z.string().min(1, "请选择课程"),
+  chapterId: z.string().optional().or(z.literal("")),
   title: z.string().min(1, "作业标题不能为空").max(100),
   description: z.string().max(2000).optional().or(z.literal("")),
   dueAt: z.string().min(1, "请选择截止时间"),
@@ -93,6 +94,7 @@ export async function createAssignmentAction(
 
   const parsed = createAssignmentSchema.safeParse({
     courseId: formData.get("courseId"),
+    chapterId: formData.get("chapterId") || undefined,
     title: formData.get("title"),
     description: formData.get("description") || undefined,
     dueAt: formData.get("dueAt"),
@@ -148,6 +150,7 @@ export async function createAssignmentAction(
       const a = await tx.assignment.create({
         data: {
           courseId: parsed.data.courseId,
+          chapterId: parsed.data.chapterId || null,
           creatorId: teacherId,
           title: parsed.data.title,
           description: parsed.data.description || "",
@@ -438,6 +441,9 @@ export async function gradeAssignmentAction(
           id: true,
           title: true,
           totalScore: true,
+          dueAt: true,
+          allowLate: true,
+          latePenalty: true,
           courseId: true,
           publishedAt: true,
         },
@@ -457,11 +463,11 @@ export async function gradeAssignmentAction(
     return { error: "您无权限批改此作业的学生" };
   }
 
-  // finalScore = min(autoScore + manualScore, totalScore)
-  // manualScore 在这里是教师最终给分（默认就是手动填写的总分）
-  // 公式：finalScore = min(parsed.data.manualScore, totalScore)
-  // autoScore 字段保留作参考
-  const finalScore = Math.min(parsed.data.manualScore, sub.assignment.totalScore);
+  const rawScore = Math.min(parsed.data.manualScore, sub.assignment.totalScore);
+  const late = !!sub.submittedAt && sub.submittedAt > sub.assignment.dueAt;
+  const finalScore = late && sub.assignment.allowLate
+    ? Math.round(rawScore * (100 - sub.assignment.latePenalty) / 100)
+    : rawScore;
 
   await prisma.assignmentSubmission.update({
     where: { id: parsed.data.submissionId },

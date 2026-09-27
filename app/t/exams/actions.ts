@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
+import { buildDrawPool, drawRulesSchema, drawTotalScore } from "@/lib/exams/rules";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/guard";
 import { notifyExamPublished } from "@/lib/notifications/actions";
@@ -31,7 +33,7 @@ export async function requireCourseTeacher(courseId: string, minRole: "OWNER" | 
 export async function requireExamAccess(examId: string, minRole: "OWNER" | "ASSISTANT" = "ASSISTANT") {
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
-    select: { id: true, courseId: true, status: true },
+    select: { id: true, courseId: true, status: true, drawRules: true },
   });
   if (!exam) throw new Error("试卷不存在");
   const ctx = await requireCourseTeacher(exam.courseId, minRole);
@@ -43,6 +45,7 @@ export async function requireExamAccess(examId: string, minRole: "OWNER" | "ASSI
 const createExamSchema = z
   .object({
     courseId: z.string().min(1, "请选择课程"),
+    chapterId: z.string().optional().or(z.literal("")),
     title: z.string().min(1, "试卷标题不能为空").max(100),
     instructions: z.string().max(2000).optional().or(z.literal("")),
     durationMin: z.coerce.number().int().min(5, "时长至少 5 分钟").max(360, "时长不超过 360 分钟"),
@@ -52,6 +55,8 @@ const createExamSchema = z
     shuffleOption: z.boolean().default(true),
     showResultMode: z.enum(["IMMEDIATELY", "AFTER_CLOSE", "AFTER_GRADED", "NEVER"]).default("AFTER_CLOSE"),
     publish: z.boolean().default(false),
+    mode: z.enum(["FIXED", "DRAW"]).default("FIXED"),
+    drawRules: drawRulesSchema.optional(),
   })
   .refine(
     (d) => new Date(d.openAt).getTime() < new Date(d.closeAt).getTime(),
@@ -74,8 +79,15 @@ export async function createExamAction(
     return { error: "仅教师可创建试卷" };
   }
 
+  let rawDrawRules: unknown;
+  try {
+    rawDrawRules = JSON.parse(String(formData.get("drawRules") ?? "null"));
+  } catch {
+    return { error: "抽题规则格式错误" };
+  }
   const parsed = createExamSchema.safeParse({
     courseId: formData.get("courseId"),
+    chapterId: formData.get("chapterId") || undefined,
     title: formData.get("title"),
     instructions: formData.get("instructions") || undefined,
     durationMin: formData.get("durationMin") || 60,
@@ -85,6 +97,8 @@ export async function createExamAction(
     shuffleOption: formData.get("shuffleOption") === "on",
     showResultMode: formData.get("showResultMode") || "AFTER_CLOSE",
     publish: formData.get("publish") === "1",
+    mode: formData.get("mode") || "FIXED",
+    drawRules: rawDrawRules ?? undefined,
   });
   if (!parsed.success) {
     const fieldErrors: NonNullable<CreateExamState["fieldErrors"]> = {};
@@ -93,6 +107,12 @@ export async function createExamAction(
       if (key) fieldErrors[key] = issue.message;
     }
     return { error: "请检查输入", fieldErrors };
+  }
+  if (parsed.data.mode === "FIXED" && parsed.data.publish) {
+    return { error: "固定组卷请先创建草稿并添加题目，再发布" };
+  }
+  if (parsed.data.mode === "DRAW" && !parsed.data.drawRules) {
+    return { error: "请配置抽题规则" };
   }
 
   // 课程权限
@@ -110,11 +130,26 @@ export async function createExamAction(
     return { fieldErrors: { openAt: "开考时间必须晚于当前时间" } };
   }
 
-  let examId: string;
-  try {
-    examId = await prisma.exam.create({
+  let pool: ReturnType<typeof buildDrawPool> | null = null;
+  if (parsed.data.mode === "DRAW") {
+    const config = parsed.data.drawRules!;
+    const bank = await prisma.questionBank.findUnique({
+      where: { id: config.bankId },
+      select: { ownerId: true, questions: { select: { id: true, type: true, difficulty: true, tags: true } } },
+    });
+    if (!bank || bank.ownerId !== session.user.id) return { error: "题库不可用" };
+    try {
+      pool = buildDrawPool(bank.questions, config);
+    } catch (error) {
+      return { error: (error as Error).message };
+    }
+  }
+
+  const examId = await prisma.$transaction(async (tx) => {
+    const exam = await tx.exam.create({
       data: {
         courseId: parsed.data.courseId,
+        chapterId: parsed.data.chapterId || null,
         title: parsed.data.title,
         instructions: parsed.data.instructions || null,
         durationMin: parsed.data.durationMin,
@@ -123,14 +158,24 @@ export async function createExamAction(
         shuffleQuestion: parsed.data.shuffleQuestion,
         shuffleOption: parsed.data.shuffleOption,
         showResultMode: parsed.data.showResultMode as ResultMode,
-        totalScore: 0,
+        totalScore: pool ? drawTotalScore(pool) : 0,
+        drawRules: pool ? (pool as Prisma.InputJsonValue) : undefined,
         status: parsed.data.publish ? "PUBLISHED" : "DRAFT",
       },
       select: { id: true },
-    }).then((e) => e.id);
-  } catch (e) {
-    throw e;
-  }
+    });
+    if (pool) {
+      await tx.examQuestion.createMany({
+        data: pool.rules.flatMap((rule, order) => rule.questionIds.map((questionId, index) => ({
+          examId: exam.id,
+          questionId,
+          score: rule.scorePerQuestion,
+          order: order * 10000 + index,
+        }))),
+      });
+    }
+    return exam.id;
+  });
 
   // 立即发布：发通知给受众
   if (parsed.data.publish) {
@@ -278,6 +323,7 @@ export async function addQuestionToExamAction(
   if (exam.status !== "DRAFT") {
     return { error: "已发布的试卷不可修改题目" };
   }
+  if (exam.drawRules) return { error: "抽题试卷的题池不可单独修改" };
 
   const rawType = formData.get("type")?.toString();
   const teacherId = (await requireSession()).user.id;
@@ -479,6 +525,7 @@ export async function addQuestionToExamAction(
 
 export async function removeQuestionFromExamAction(examId: string, questionId: string) {
   const { exam } = await requireExamAccess(examId);
+  if (exam.drawRules) throw new Error("抽题试卷的题池不可单独修改");
   if (exam.status !== "DRAFT") {
     throw new Error("已发布的试卷不可修改题目");
   }
@@ -507,6 +554,7 @@ export async function updateQuestionInExamAction(
   formData: FormData,
 ): Promise<AddQuestionState> {
   const { exam } = await requireExamAccess(examId);
+  if (exam.drawRules) return { error: "抽题试卷的题池不可单独修改" };
   if (exam.status !== "DRAFT") {
     return { error: "已发布的试卷不可修改题目" };
   }
@@ -665,6 +713,14 @@ export async function publishExamAction(examId: string) {
   // 必须有题目
   const count = await prisma.examQuestion.count({ where: { examId } });
   if (count === 0) throw new Error("请先挂载至少一道题再发布");
+  if (exam.drawRules) {
+    const parsed = drawRulesSchema.safeParse(exam.drawRules);
+    if (!parsed.success || parsed.data.rules.some((rule) => !rule.questionIds || rule.questionIds.length < rule.count)) {
+      throw new Error("抽题规则或题池不完整");
+    }
+    const ids = parsed.data.rules.flatMap((rule) => rule.questionIds ?? []);
+    if (new Set(ids).size !== ids.length || ids.length !== count) throw new Error("抽题池与规则不一致");
+  }
 
   // 时间校验 + 取元数据（发通知用）
   const full = await prisma.exam.findUnique({

@@ -172,3 +172,81 @@ export async function updateResourceAction(
   revalidatePath(`/courses/${resource.courseId}/resources`);
   return { ok: true };
 }
+
+// ========== 删除目录 ==========
+
+const deleteFolderSchema = z.object({
+  courseId: z.string().min(1),
+  folder: z.string().min(1),
+});
+
+export type DeleteFolderState = {
+  error?: string;
+  ok?: boolean;
+  deletedCount?: number;
+};
+
+/**
+ * 删除一个目录及其下所有文件（含子目录）。
+ * - folders 是虚拟的（Resource.folder 字符串），所以"删除目录"实际是删除 folder 匹配的所有 Resource
+ * - 根目录 "/" 不允许删（会清空课程下全部资源）
+ */
+export async function deleteFolderAction(
+  input: z.input<typeof deleteFolderSchema>,
+): Promise<DeleteFolderState> {
+  const parsed = deleteFolderSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "参数错误" };
+  }
+
+  try {
+    await requireCourseTeacher(parsed.data.courseId);
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+
+  // 校验 folder 路径（防 ../ 穿越）
+  let folder: string;
+  try {
+    folder = validateFolder(parsed.data.folder);
+  } catch (e) {
+    if (e instanceof StorageError) return { error: e.message };
+    throw e;
+  }
+  if (folder === "/") {
+    return { error: "不能删除根目录" };
+  }
+
+  // 找出该目录下（含子目录）所有资源
+  const resources = await prisma.resource.findMany({
+    where: {
+      courseId: parsed.data.courseId,
+      OR: [
+        { folder },
+        { folder: { startsWith: folder + "/" } },
+      ],
+    },
+    select: { id: true, courseId: true, storedName: true },
+  });
+
+  if (resources.length === 0) {
+    return { error: "该目录下没有可删除的资源" };
+  }
+
+  // 先删 DB（一致性优先），再删磁盘（失败仅警告）
+  await prisma.resource.deleteMany({
+    where: { id: { in: resources.map((r) => r.id) } },
+  });
+  for (const r of resources) {
+    try {
+      const absolutePath = resolveStoredPath(r.courseId, r.storedName);
+      await unlink(absolutePath);
+    } catch {
+      console.warn(`[deleteFolderAction] unlink failed for resource=${r.id}`);
+    }
+  }
+
+  revalidatePath(`/t/courses/${parsed.data.courseId}/resources`);
+  revalidatePath(`/courses/${parsed.data.courseId}/resources`);
+  return { ok: true, deletedCount: resources.length };
+}

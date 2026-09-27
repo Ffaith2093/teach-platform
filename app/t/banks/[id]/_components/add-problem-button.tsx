@@ -6,7 +6,7 @@ import { Plus, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Difficulty } from "@prisma/client";
-import { addProblemToBankAction } from "@/app/t/banks/actions";
+import { addProblemToBankAction } from "@/app/t/questions/actions";
 
 const DIFFICULTY_LABELS: Record<Difficulty, { label: string; tone: "success" | "warning" | "danger" }> = {
   EASY: { label: "入门", tone: "success" },

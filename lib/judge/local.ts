@@ -11,6 +11,7 @@ import { spawn } from "node:child_process";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { prepareJudgeInput } from "./input";
 
 export type JudgeStatus =
   | "ACCEPTED"
@@ -31,6 +32,7 @@ export interface JudgeCaseInput {
 export interface JudgeLimits {
   timeLimitMs: number;
   memoryLimitMb: number;
+  splitInputByWhitespace?: boolean;
 }
 
 export interface JudgeCaseResult {
@@ -58,8 +60,8 @@ function looseEqual(actual: string, expected: string): boolean {
       .split("\n")
       .map((l) => l.replace(/\s+$/, ""))
       .join("\n")
-      .replace(/\n+$/, "\n")
-      .replace(/^\n+/, "");
+      .replace(/^\n+/, "")
+      .replace(/\n+$/, "");
   return norm(actual) === norm(expected);
 }
 
@@ -161,7 +163,8 @@ export async function runJudge(
     const cases: JudgeCaseResult[] = [];
     for (const tc of testCases) {
       const caseScore = tc.score ?? 0;
-      const r = await runOneCase(mainPy, tc.input, limits.timeLimitMs, caseScore);
+      const input = prepareJudgeInput(tc.input, limits.splitInputByWhitespace ?? false);
+      const r = await runOneCase(mainPy, input, limits.timeLimitMs, caseScore);
       // 输出比对
       if (r.status === "ACCEPTED") {
         const ok = looseEqual(r.actualOutput ?? "", tc.expected);

@@ -8,7 +8,8 @@
 //   - 学号全校唯一
 // 任一行不合规 → errors[] 非空，整体拒绝导入
 
-import * as XLSX from "xlsx";
+import { Readable } from "node:stream";
+import ExcelJS, { type Worksheet } from "exceljs";
 
 export interface ImportRow {
   rowNo: number; // 1-based，含表头
@@ -35,24 +36,39 @@ const STUDENT_NO_RE = /^\d{8}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function parseImportFile(buffer: Buffer): Promise<ImportRow[]> {
-  const wb = XLSX.read(buffer, { type: "buffer" });
-  const sheet = wb.Sheets[wb.SheetNames[0]];
-  if (!sheet) throw new Error("文件为空或无法解析");
+  if (buffer.length === 0) throw new Error("文件为空或无法解析");
 
-  // 期望列：姓名 / 学号 / 邮箱（第三列可空）
-  const aoa = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1, defval: "" });
-  if (aoa.length < 2) throw new Error("文件至少需要 1 行数据（不含表头）");
+  const workbook = new ExcelJS.Workbook();
+  let sheet: Worksheet | undefined;
+
+  try {
+    if (isZipFile(buffer)) {
+      await workbook.xlsx.load(Uint8Array.from(buffer).buffer);
+      sheet = workbook.worksheets[0];
+    } else {
+      sheet = await workbook.csv.read(Readable.from([buffer]), {
+        // 学号必须按文本读取，避免带前导零的学号被转成数字。
+        map: (value) => value,
+      });
+    }
+  } catch {
+    throw new Error("文件为空或无法解析");
+  }
+
+  if (!sheet || sheet.rowCount < 2) {
+    throw new Error("文件至少需要 1 行数据（不含表头）");
+  }
 
   // 跳过表头
   const rows: ImportRow[] = [];
-  for (let i = 1; i < aoa.length; i++) {
-    const row = aoa[i] ?? [];
-    const name = String(row[0] ?? "").trim();
-    const studentNo = String(row[1] ?? "").trim();
-    const email = String(row[2] ?? "").trim();
+  for (let rowNo = 2; rowNo <= sheet.rowCount; rowNo++) {
+    const row = sheet.getRow(rowNo);
+    const name = row.getCell(1).text.trim();
+    const studentNo = row.getCell(2).text.trim();
+    const email = row.getCell(3).text.trim();
     if (!name && !studentNo && !email) continue; // 跳过空行
     rows.push({
-      rowNo: i + 1,
+      rowNo,
       name,
       studentNo,
       email: email || undefined,
@@ -60,6 +76,13 @@ export async function parseImportFile(buffer: Buffer): Promise<ImportRow[]> {
     });
   }
   return rows;
+}
+
+function isZipFile(buffer: Buffer): boolean {
+  if (buffer.length < 4 || buffer[0] !== 0x50 || buffer[1] !== 0x4b) return false;
+
+  const signature = buffer.readUInt16LE(2);
+  return signature === 0x0403 || signature === 0x0605 || signature === 0x0807;
 }
 
 /**

@@ -8,7 +8,15 @@ import { CreateAssignmentForm } from "../_components/create-assignment-form";
 
 export const metadata = { title: "新建作业" };
 
-export default async function NewAssignmentPage() {
+export default async function NewAssignmentPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ courseId?: string; chapterId?: string }>;
+}) {
+  const sp = await searchParams;
+  const presetCourseId = sp.courseId ?? null;
+  const presetChapterId = sp.chapterId ?? null;
+
   const session = await auth();
   const userId = session!.user.id;
 
@@ -24,6 +32,10 @@ export default async function NewAssignmentPage() {
         select: {
           id: true,
           title: true,
+          chapters: {
+            select: { id: true, title: true, order: true },
+            orderBy: { order: "asc" },
+          },
           _count: { select: { classes: true } },
         },
       },
@@ -33,6 +45,17 @@ export default async function NewAssignmentPage() {
 
   if (memberships.length === 0) {
     redirect("/t/courses?error=no-course");
+  }
+
+  // 校验预选的 chapterId 属于预选 courseId
+  let presetChapterValid = false;
+  if (presetCourseId && presetChapterId) {
+    const found = memberships.find(
+      (m) =>
+        m.course.id === presetCourseId &&
+        m.course.chapters.some((c) => c.id === presetChapterId),
+    );
+    presetChapterValid = !!found;
   }
 
   // 可挂载的编程题（本人创建 + 公开题库）
@@ -83,6 +106,7 @@ export default async function NewAssignmentPage() {
               title: m.course.title,
               classCount: m.course._count.classes,
               role: m.role,
+              chapters: m.course.chapters,
             }))}
             problems={problems.map((p) => ({
               id: p.id,
@@ -92,6 +116,8 @@ export default async function NewAssignmentPage() {
               isPublic: p.isPublic,
               isMine: p.authorId === userId,
             }))}
+            initialCourseId={presetCourseId}
+            initialChapterId={presetChapterValid ? presetChapterId : null}
           />
 
           <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 text-xs text-muted-foreground">

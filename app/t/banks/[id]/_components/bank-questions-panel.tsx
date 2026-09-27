@@ -12,7 +12,7 @@ import {
 } from "@/app/t/questions/_components/question-form-dialog";
 import {
   addQuestionToBankAction,
-} from "@/app/t/banks/actions";
+} from "@/app/t/questions/actions";
 import type { Difficulty, QuestionType } from "@prisma/client";
 import { useRouter } from "next/navigation";
 
@@ -188,7 +188,7 @@ import {
 import {
   updateQuestionAction,
   removeQuestionFromBankAction,
-} from "@/app/t/banks/actions";
+} from "@/app/t/questions/actions";
 
 function BankQuestionList({
   bankId,

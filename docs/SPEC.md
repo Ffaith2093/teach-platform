@@ -382,6 +382,33 @@ model Answer {
 }
 ```
 
+### 2.6 课程章节
+
+```prisma
+model Chapter {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String
+  description String?  @db.Text
+  order       Int                          // 章节序号（courseId 内单调）
+  createdAt   DateTime @default(now())
+
+  course      Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  assignments Assignment[]
+  exams       Exam[]
+
+  @@unique([courseId, order])
+  @@index([courseId])
+}
+```
+
+**章节归属**：`Assignment.chapterId String?` 与 `Exam.chapterId String?` 为可空外键，删除章节时 `SetNull`（作业/考试保留但 chapterId 清空）；新建时若不选章节则置空，列表中归入「未分组」。
+
+**章节管理**：
+- 教师（OWNER / ASSISTANT）可在 `/t/courses/[id]` 创建 / 编辑 / 删除章节
+- 章节顺序通过 `order` 字段递增；可在章节详情页用 ↑/↓ 调整（V1 实现）
+- 章节可挂载任意数量的作业与考试；学生可按章节查看课程内容
+
 **抽题规则 `drawRules` 结构**：
 ```json
 {
@@ -395,7 +422,36 @@ model Answer {
 ```
 学生首次进入考试时执行抽题，结果写入 `ExamAttempt.questionIds` 并固化，刷新页面不重新抽题。
 
-### 2.6 提交与评测
+### 2.7 出勤日志
+
+学生访问课程/作业/考试页时由服务端调用 `recordAccess()` 落点一条 `AccessLog`。**页面内按日去重计「出勤」**：同一学生同一课程同一天多次落点只算一次到课。
+
+```prisma
+model AccessLog {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String?               // 可空：未来扩展支持登录等无课程访问记录
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([courseId, createdAt])
+  @@index([userId, courseId, createdAt])
+}
+```
+
+**打点触发位点**（详见 §4.2 学生路由）：
+- 学生提交作业 → `submitProblemAction` 内 `recordAccess({ userId, courseId })`
+- 学生交卷考试 → `submitExamAction` 内 `recordAccess({ userId, courseId })`
+- 学生进入课程页 → `recordAccess`（每次 RSC 渲染打点；浏览器侧 dedupe 同 `(userId, courseId, 天)` 一日一条）
+
+**去重规则**：`/dashboard` 出勤 widget 按 `(userId, courseId, createdAt::date)` 去重生成 7 天网格；教师班级出勤页同样按日去重，与访问条数无关。
+
+### 2.8 提交与评测
 
 ```prisma
 model Submission {
@@ -571,7 +627,8 @@ exitCode ≠ 0                        → RUNTIME_ERROR（返回 stderr 前 2000
 | `/dashboard` | 待办卡片（未交作业、进行中考试）、近期成绩、我的课程、班级公告 |
 | `/my-class` | **我的班级**：班级名、年级、任课教师、花名册（仅显示头像）、班级整体成绩动态 |
 | `/courses` | 我的课程列表（自动按班级归属），不再有「输入邀请码加入」按钮 |
-| `/courses/[id]` | 课程首页：公告、作业、考试、资源 4 个 Tab |
+| `/courses/[id]` | 课程首页：公告、**章节**、作业、考试、资源 5 个 Tab |
+| `/courses/[id]/chapters/[chapterId]` | **章节详情**：章节基本信息 + 本章节作业（带状态/得分）+ 本章节考试（带状态/得分） |
 | `/courses/[id]/resources` | 资源树形浏览 + 下载 |
 | `/assignments` | 作业列表（按截止时间排序，含状态徽章） |
 | `/assignments/[id]` | 作业详情 + 作答区（文字/附件/内嵌编程题） |
@@ -582,7 +639,7 @@ exitCode ≠ 0                        → RUNTIME_ERROR（返回 stderr 前 2000
 | `/exams/[id]` | 考试须知页（时长、题量、注意事项）+ 「开始答题」 |
 | `/exams/[id]/take` | 答题页：顶部固定倒计时、左侧题号导航面板、右侧当前题、自动保存指示 |
 | `/exams/[id]/result` | 成绩详情、逐题得分、教师评语、解析 |
-| `/grades` | 我的成绩单：作业 + 考试汇总，含班级平均分对比 |
+| `/grades` | 我的成绩单：作业 + 考试汇总，含**班级平均分对比 + 班级排名**（按课程分组的「vs 班均」「第 N / 总人数」对比） |
 
 ### 4.3 教师端（`/t/*`）
 
@@ -593,18 +650,23 @@ exitCode ≠ 0                        → RUNTIME_ERROR（返回 stderr 前 2000
 | `/t/classes/[id]` | 单班管理：花名册、班级学生成绩单、班级公告、班级整体趋势 |
 | `/t/courses` | 我的课程列表（每个课程的协作教师缩略头像） + 新建 |
 | `/t/courses/new` | **创建课程**：填写基本信息 → **勾选授课班级**（多选，仅显示已分配的班级）→ 选择协作者 |
-| `/t/courses/[id]` | 课程详情：基本信息 + 班级列表 + 协作者列表 |
+| `/t/courses/[id]` | 课程详情：基本信息 + 班级列表 + 协作者列表 + **章节列表（章节 CRUD 入口）** + **成绩分析**（整体作业/考试均分与提交率，按评估列单列班级均分 + 提交数 + 跳详情） |
+| `/t/courses/[id]/chapters/[chapterId]` | **章节详情**：章节基本信息 + 本章节作业列表 + 本章节考试列表 + 「在此章节新建作业/考试」按钮 |
 | `/t/courses/[id]/students` | 选班学生名单（自动汇总），可按班级分组查看 |
-| `/t/courses/[id]/resources` | 资源上传（拖拽多文件）、目录管理、删除 |
+| `/t/courses/[id]/resources` | 资源上传（拖拽多文件）、目录管理（新建 / 删除空目录或含子文件目录）、单文件删除 |
 | `/t/assignments` | 作业列表 + 发布状态 |
 | `/t/assignments/new` | 创建作业：基本信息 → 挂载编程题 → 设置分值与截止 |
-| `/t/assignments/[id]/submissions` | 提交总览表（按班级分组的「谁交了/没交」）+ 批量导出 |
+| `/t/assignments/[id]/submissions` | 提交总览表（按班级分组的「谁交了/没交」）+ 批量导出 CSV（支持按班级筛选） |
 | `/t/assignments/[id]/grade` | **批改页**：左学生列表 / 右作答内容 + 打分框 + 评语，键盘上下切换 |
-| `/t/problems` | 我的编程题列表 |
 | `/t/problems/new` | 编辑器：题目 Markdown、限制、初始代码、参考答案、**测试用例增删（支持批量粘贴）** |
 | `/t/problems/[id]/test` | 用参考答案跑一遍全部用例，验证题目正确性（**发布前必须通过**） |
-| `/t/banks` | 题库管理 |
-| `/t/banks/[id]` | 题目列表 + 新增题目（按题型切换编辑器） |
+| `/t/problems` | （重定向到 `/t/banks/programming`） |
+| `/t/banks` | （重定向到 `/t/banks/programming`） |
+| `/t/banks/[id]` | 单个题库详情（教师私有视角，owner 校验；管理员放行可编辑所有题库） |
+| `/t/banks/preview/[id]` | **学生视角预览页**：根据 id 自动识别 Question 或 Problem，渲染学生作答界面；头部展示标题/类型/难度/分数/引用次数/所属题库（题）/作者（编程题）/tags/isPublic/时间戳，作者或管理员可见「编辑题目」入口 |
+| `/t/banks/choice` | **选择题公共库**：所有 `Question(type=SINGLE_CHOICE)` 共享 · 编号 + 题干预览 · 来源筛选（全部/我创建/他人）+ 难度筛选 · 操作列：预览图标 + 编辑图标（仅自己的） |
+| `/t/banks/fill` | **填空题公共库**：所有 `Question(type=FILL_BLANK)` 共享 · 编号 + 题干预览 + 答案 + 所属题库 + 引用数 · 来源/难度筛选 · 操作列：预览图标 + 编辑图标（仅自己的） |
+| `/t/banks/programming` | **编程题公共库**：所有 `Problem` 共享 · 编号 + 标题 + 难度 + 标签 + 作者 + 用例数 + 引用数 + 最后编辑 · 来源/难度筛选 · 操作列：预览图标 + 编辑图标（仅自己的） |
 | `/t/exams` | 试卷列表 |
 | `/t/exams/new` | 创建试卷：基本信息 → 选择「固定组卷 / 抽题规则」→ 预览 → 发布 |
 | `/t/exams/[id]/monitor` | 考试进行中：谁已进入、已提交、剩余时间（按班级分屏） |

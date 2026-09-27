@@ -28,6 +28,7 @@ export default async function BankDetailPage({
   const sp = await searchParams;
   const session = await auth();
   const userId = session!.user.id;
+  const isAdmin = session!.user.role === "ADMIN";
 
   const bank = await prisma.questionBank.findUnique({
     where: { id },
@@ -53,7 +54,7 @@ export default async function BankDetailPage({
     },
   });
   if (!bank) notFound();
-  if (bank.ownerId !== userId) redirect("/t/banks?error=forbidden");
+  if (bank.ownerId !== userId && !isAdmin) redirect("/t/banks?error=forbidden");
 
   // 我可以加入题库的编程题（本人 or 公开，且不在本库中）
   const usedProblemIds = new Set(

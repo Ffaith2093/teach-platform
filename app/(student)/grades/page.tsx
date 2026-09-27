@@ -27,43 +27,79 @@ export default async function StudentGradesPage() {
     orderBy: [{ category: "asc" }, { createdAt: "desc" }],
   });
 
-  // 每门课的成绩聚合
+  // 同班同学（含自己）— 用于班级排名 + 班级均分
+  const classmates = await prisma.user.findMany({
+    where: { classId: me.classId, role: "STUDENT", status: "ACTIVE" },
+    select: { id: true },
+  });
+  const classmateIds = classmates.map((x) => x.id);
+  const classSize = classmates.length;
+
+  // 每门课的成绩聚合（含班级对比）
   const perCourse = await Promise.all(
     courses.map(async (c) => {
-      const [assignmentSubs, examAttempts] = await Promise.all([
-        prisma.assignmentSubmission.findMany({
-          where: {
-            studentId: userId,
-            assignment: { courseId: c.id, publishedAt: { not: null } },
-          },
-          select: {
-            id: true,
-            status: true,
-            autoScore: true,
-            manualScore: true,
-            finalScore: true,
-            assignment: { select: { totalScore: true, title: true } },
-            gradedAt: true,
-          },
-          orderBy: { gradedAt: "desc" },
-        }),
-        prisma.examAttempt.findMany({
-          where: { studentId: userId, exam: { courseId: c.id } },
-          select: {
-            id: true,
-            status: true,
-            autoScore: true,
-            manualScore: true,
-            finalScore: true,
-            submittedAt: true,
-            exam: { select: { id: true, title: true, totalScore: true } },
-          },
-          orderBy: { submittedAt: "desc" },
-        }),
-      ]);
-      const gradedAssignments = assignmentSubs.filter((s) => s.status === "GRADED");
-      const gradedExams = examAttempts.filter((a) =>
-        a.status === "GRADED" || a.status === "SUBMITTED",
+      // 自己的提交 + 全班的提交（一次拉，便于排名计算）
+      const [myAssignSubs, myExamAttempts, classAssignSubs, classExamAttempts] =
+        await Promise.all([
+          prisma.assignmentSubmission.findMany({
+            where: {
+              studentId: userId,
+              assignment: { courseId: c.id, publishedAt: { not: null } },
+            },
+            select: {
+              id: true,
+              status: true,
+              autoScore: true,
+              manualScore: true,
+              finalScore: true,
+              assignment: { select: { totalScore: true, title: true } },
+              gradedAt: true,
+            },
+            orderBy: { gradedAt: "desc" },
+          }),
+          prisma.examAttempt.findMany({
+            where: { studentId: userId, exam: { courseId: c.id } },
+            select: {
+              id: true,
+              status: true,
+              autoScore: true,
+              manualScore: true,
+              finalScore: true,
+              submittedAt: true,
+              exam: { select: { id: true, title: true, totalScore: true } },
+            },
+            orderBy: { submittedAt: "desc" },
+          }),
+          prisma.assignmentSubmission.findMany({
+            where: {
+              assignment: { courseId: c.id, publishedAt: { not: null } },
+              studentId: { in: classmateIds },
+            },
+            select: {
+              studentId: true,
+              status: true,
+              autoScore: true,
+              manualScore: true,
+              finalScore: true,
+              assignment: { select: { totalScore: true } },
+            },
+          }),
+          prisma.examAttempt.findMany({
+            where: { exam: { courseId: c.id }, studentId: { in: classmateIds } },
+            select: {
+              studentId: true,
+              status: true,
+              autoScore: true,
+              manualScore: true,
+              finalScore: true,
+              exam: { select: { totalScore: true } },
+            },
+          }),
+        ]);
+
+      const gradedAssignments = myAssignSubs.filter((s) => s.status === "GRADED");
+      const gradedExams = myExamAttempts.filter(
+        (a) => a.status === "GRADED" || a.status === "SUBMITTED",
       );
       const avgAssign =
         gradedAssignments.length === 0
@@ -79,7 +115,89 @@ export default async function StudentGradesPage() {
               (acc, a) => acc + ((a.finalScore ?? a.autoScore ?? 0) / (a.exam.totalScore || 1)) * 100,
               0,
             ) / gradedExams.length;
-      return { course: c, assignmentSubs, examAttempts, gradedAssignments, gradedExams, avgAssign, avgExam };
+
+      // 班级作业 % 均分 + 个人排名（按已批改 finalScore 归一）
+      const assignScoreOf = (s: (typeof classAssignSubs)[number]): number | null => {
+        if (s.status !== "GRADED" && s.status !== "RETURNED") return null;
+        if (s.finalScore != null) return s.finalScore;
+        if (s.autoScore != null || s.manualScore != null)
+          return (s.autoScore ?? 0) + (s.manualScore ?? 0);
+        return null;
+      };
+      const assignByStudent = new Map<string, number[]>();
+      for (const s of classAssignSubs) {
+        const sc = assignScoreOf(s);
+        if (sc == null) continue;
+        const total = s.assignment.totalScore || 1;
+        const arr = assignByStudent.get(s.studentId) ?? [];
+        arr.push((sc / total) * 100);
+        assignByStudent.set(s.studentId, arr);
+      }
+      const assignAvgByStudent = new Map<string, number>();
+      for (const [sid, arr] of assignByStudent) {
+        const sum = arr.reduce((a, b) => a + b, 0);
+        assignAvgByStudent.set(sid, sum / arr.length);
+      }
+      // 班级总平均：所有学生的 % 平均再求平均（与 top stats 语义一致）
+      const classAssignAvg =
+        assignAvgByStudent.size === 0
+          ? null
+          : [...assignAvgByStudent.values()].reduce((a, b) => a + b, 0) /
+            assignAvgByStudent.size;
+      const myAssignAvg = assignAvgByStudent.get(userId) ?? null;
+      const assignRank =
+        myAssignAvg == null
+          ? null
+          : [...assignAvgByStudent.values()].filter((v) => v > myAssignAvg).length + 1;
+
+      // 班级考试 % 均分 + 个人排名（finalScore 优先；无 final 时 autoScore+manualScore）
+      const examScoreOf = (a: (typeof classExamAttempts)[number]): number | null => {
+        if (a.status === "IN_PROGRESS") return null;
+        if (a.finalScore != null) return a.finalScore;
+        if (a.autoScore != null || a.manualScore != null)
+          return Math.min((a.autoScore ?? 0) + (a.manualScore ?? 0), a.exam.totalScore || 1);
+        return null;
+      };
+      const examByStudent = new Map<string, number[]>();
+      for (const a of classExamAttempts) {
+        const sc = examScoreOf(a);
+        if (sc == null) continue;
+        const total = a.exam.totalScore || 1;
+        const arr = examByStudent.get(a.studentId) ?? [];
+        arr.push((sc / total) * 100);
+        examByStudent.set(a.studentId, arr);
+      }
+      const examAvgByStudent = new Map<string, number>();
+      for (const [sid, arr] of examByStudent) {
+        const sum = arr.reduce((a, b) => a + b, 0);
+        examAvgByStudent.set(sid, sum / arr.length);
+      }
+      const classExamAvg =
+        examAvgByStudent.size === 0
+          ? null
+          : [...examAvgByStudent.values()].reduce((a, b) => a + b, 0) /
+            examAvgByStudent.size;
+      const myExamAvg = examAvgByStudent.get(userId) ?? null;
+      const examRank =
+        myExamAvg == null
+          ? null
+          : [...examAvgByStudent.values()].filter((v) => v > myExamAvg).length + 1;
+
+      return {
+        course: c,
+        assignmentSubs: myAssignSubs,
+        examAttempts: myExamAttempts,
+        gradedAssignments,
+        gradedExams,
+        avgAssign,
+        avgExam,
+        classAssignAvg,
+        classExamAvg,
+        myAssignAvg,
+        myExamAvg,
+        assignRank,
+        examRank,
+      };
     }),
   );
 
@@ -189,8 +307,12 @@ export default async function StudentGradesPage() {
                       <th className="px-6 py-3">课程</th>
                       <th className="px-6 py-3">作业</th>
                       <th className="px-6 py-3">作业均分</th>
+                      <th className="px-6 py-3">vs 班级</th>
+                      <th className="px-6 py-3">班级排名</th>
                       <th className="px-6 py-3">考试</th>
                       <th className="px-6 py-3">考试均分</th>
+                      <th className="px-6 py-3">vs 班级</th>
+                      <th className="px-6 py-3">班级排名</th>
                       <th className="px-6 py-3">最近活动</th>
                       <th className="w-10"></th>
                     </tr>
@@ -226,6 +348,12 @@ export default async function StudentGradesPage() {
                               <ScoreBadge value={p.avgAssign} />
                             )}
                           </td>
+                          <td className="px-6 py-3.5">
+                            <ClassCompare mine={p.myAssignAvg} classAvg={p.classAssignAvg} />
+                          </td>
+                          <td className="px-6 py-3.5">
+                            <RankBadge rank={p.assignRank} total={classSize} />
+                          </td>
                           <td className="px-6 py-3.5 num text-muted-foreground">
                             {p.gradedExams.length} / {p.examAttempts.length}
                           </td>
@@ -235,6 +363,12 @@ export default async function StudentGradesPage() {
                             ) : (
                               <ScoreBadge value={p.avgExam} />
                             )}
+                          </td>
+                          <td className="px-6 py-3.5">
+                            <ClassCompare mine={p.myExamAvg} classAvg={p.classExamAvg} />
+                          </td>
+                          <td className="px-6 py-3.5">
+                            <RankBadge rank={p.examRank} total={classSize} />
                           </td>
                           <td className="px-6 py-3.5 text-xs text-muted-foreground">
                             {lastActivity ? (
@@ -269,6 +403,50 @@ function ScoreBadge({ value }: { value: number }) {
     <Badge variant={variant as "success" | "warning" | "danger"}>
       <span className="num">{Math.round(value)}</span>
       <span className="text-subtle-foreground">%</span>
+    </Badge>
+  );
+}
+
+/** 显示 "我 XX vs 班均 YY"，超出班均用 ▲/▼ 标记 */
+function ClassCompare({ mine, classAvg }: { mine: number | null; classAvg: number | null }) {
+  if (mine == null || classAvg == null) {
+    return <span className="text-subtle-foreground">—</span>;
+  }
+  const delta = mine - classAvg;
+  const sign = delta >= 0 ? "+" : "";
+  const tone =
+    Math.abs(delta) < 0.5
+      ? "text-muted-foreground"
+      : delta > 0
+        ? "text-success"
+        : "text-danger";
+  const arrow = Math.abs(delta) < 0.5 ? "≈" : delta > 0 ? "▲" : "▼";
+  return (
+    <div className="flex flex-col leading-tight">
+      <span className="num text-foreground">
+        {Math.round(mine)}
+        <span className="ml-0.5 text-subtle-foreground">%</span>
+      </span>
+      <span className={`num text-[11px] ${tone}`}>
+        {arrow} 班均 {Math.round(classAvg)}% ({sign}
+        {Math.round(delta)})
+      </span>
+    </div>
+  );
+}
+
+/** 班级排名：前 25% 绿，后 25% 红，中段 warning */
+function RankBadge({ rank, total }: { rank: number | null; total: number }) {
+  if (rank == null || total === 0) {
+    return <span className="text-subtle-foreground">—</span>;
+  }
+  const pct = (rank - 1) / total; // 0 = 第一名，1 = 最后
+  const variant =
+    pct <= 0.25 ? "success" : pct >= 0.75 ? "danger" : "warning";
+  return (
+    <Badge variant={variant as "success" | "warning" | "danger"}>
+      第 <span className="num">{rank}</span>
+      <span className="text-subtle-foreground"> / {total}</span>
     </Badge>
   );
 }

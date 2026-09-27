@@ -4,6 +4,8 @@
 
 @layer base {
   :root {
+    --font-sans: Inter, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    --font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
     /* 主色 · sky */
     --primary: 199 89% 48%;
     --primary-hover: 200 98% 39%;

@@ -5,13 +5,13 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/guard";
-import { runJudge } from "@/lib/judge/local";
+import { runSandbox } from "@/lib/judge/sandbox";
 
 // ========== 权限工具 ==========
 
 async function requireTeacher() {
   const session = await requireSession();
-  if (session.user.role !== "TEACHER") {
+  if (session.user.role !== "TEACHER" && session.user.role !== "ADMIN") {
     throw new Error("仅教师可执行此操作");
   }
   return session;
@@ -19,6 +19,15 @@ async function requireTeacher() {
 
 async function requireProblemOwner(problemId: string) {
   const session = await requireTeacher();
+  // 管理员可编辑所有题目
+  if (session.user.role === "ADMIN") {
+    const problem = await prisma.problem.findUnique({
+      where: { id: problemId },
+      select: { id: true, authorId: true },
+    });
+    if (!problem) throw new Error("题目不存在");
+    return { session, problem };
+  }
   const problem = await prisma.problem.findUnique({
     where: { id: problemId },
     select: { id: true, authorId: true },
@@ -36,6 +45,7 @@ const createProblemSchema = z.object({
   difficulty: z.enum(["EASY", "MEDIUM", "HARD"]),
   timeLimitMs: z.coerce.number().int().min(100).max(30000).default(3000),
   memoryLimitMb: z.coerce.number().int().min(16).max(1024).default(128),
+  splitInputByWhitespace: z.boolean().default(false),
   starterCode: z.string().optional().or(z.literal("")),
   referenceSolution: z.string().optional().or(z.literal("")),
   tags: z.array(z.string()).default([]),
@@ -70,6 +80,7 @@ export async function createProblemAction(
     difficulty: formData.get("difficulty"),
     timeLimitMs: formData.get("timeLimitMs") || 3000,
     memoryLimitMb: formData.get("memoryLimitMb") || 128,
+    splitInputByWhitespace: formData.get("splitInputByWhitespace") === "on",
     starterCode: formData.get("starterCode") || undefined,
     referenceSolution: formData.get("referenceSolution") || undefined,
     tags,
@@ -91,6 +102,7 @@ export async function createProblemAction(
       difficulty: parsed.data.difficulty,
       timeLimitMs: parsed.data.timeLimitMs,
       memoryLimitMb: parsed.data.memoryLimitMb,
+      splitInputByWhitespace: parsed.data.splitInputByWhitespace,
       starterCode: parsed.data.starterCode || null,
       referenceSolution: parsed.data.referenceSolution || null,
       tags: parsed.data.tags,
@@ -110,6 +122,7 @@ const updateProblemSchema = z.object({
   difficulty: z.enum(["EASY", "MEDIUM", "HARD"]),
   timeLimitMs: z.coerce.number().int().min(100).max(30000),
   memoryLimitMb: z.coerce.number().int().min(16).max(1024),
+  splitInputByWhitespace: z.boolean().default(false),
   starterCode: z.string().optional().or(z.literal("")),
   referenceSolution: z.string().optional().or(z.literal("")),
   tags: z.array(z.string()).default([]),
@@ -143,6 +156,7 @@ export async function updateProblemAction(
     difficulty: formData.get("difficulty"),
     timeLimitMs: formData.get("timeLimitMs"),
     memoryLimitMb: formData.get("memoryLimitMb"),
+    splitInputByWhitespace: formData.get("splitInputByWhitespace") === "on",
     starterCode: formData.get("starterCode") || undefined,
     referenceSolution: formData.get("referenceSolution") || undefined,
     tags,
@@ -165,6 +179,7 @@ export async function updateProblemAction(
       difficulty: parsed.data.difficulty,
       timeLimitMs: parsed.data.timeLimitMs,
       memoryLimitMb: parsed.data.memoryLimitMb,
+      splitInputByWhitespace: parsed.data.splitInputByWhitespace,
       starterCode: parsed.data.starterCode || null,
       referenceSolution: parsed.data.referenceSolution || null,
       tags: parsed.data.tags,
@@ -392,10 +407,14 @@ export async function runProblemTestsAction(problemId: string): Promise<RunResul
     };
   }
 
-  const result = await runJudge(
+  const result = await runSandbox(
     full.referenceSolution,
     full.testCases.map((tc) => ({ input: tc.input, expected: tc.expected })),
-    { timeLimitMs: full.timeLimitMs, memoryLimitMb: full.memoryLimitMb },
+    {
+      timeLimitMs: full.timeLimitMs,
+      memoryLimitMb: full.memoryLimitMb,
+      splitInputByWhitespace: full.splitInputByWhitespace,
+    },
   );
 
   return {

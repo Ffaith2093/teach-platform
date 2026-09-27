@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import type { Difficulty } from "@prisma/client";
-import { removeProblemFromBankAction } from "@/app/t/banks/actions";
+import { removeProblemFromBankAction } from "@/app/t/questions/actions";
 
 const DIFFICULTY_LABELS: Record<Difficulty, { label: string; tone: "success" | "warning" | "danger" }> = {
   EASY: { label: "入门", tone: "success" },

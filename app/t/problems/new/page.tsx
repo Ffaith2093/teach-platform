@@ -38,6 +38,7 @@ export default function NewProblemPage() {
               difficulty: "MEDIUM",
               timeLimitMs: 3000,
               memoryLimitMb: 128,
+              splitInputByWhitespace: false,
               starterCode: "",
               referenceSolution: "",
               tags: [],

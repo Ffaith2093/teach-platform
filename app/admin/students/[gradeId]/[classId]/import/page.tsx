@@ -78,25 +78,32 @@ function ImportRulesCard() {
             <span>
               文件第一列为<span className="font-medium text-foreground">姓名</span>，第二列为
               <span className="font-medium text-foreground">学号</span>（必须为 8 位数字），第三列为
-              <span className="font-medium text-foreground">邮箱</span>（可空）。支持 <code className="rounded bg-muted px-1 py-0.5">.csv</code> / <code className="rounded bg-muted px-1 py-0.5">.xlsx</code> / <code className="rounded bg-muted px-1 py-0.5">.xls</code>，文件大小不超过 5MB。
+              <span className="font-medium text-foreground">邮箱</span>（可空）。支持{" "}
+              <code className="rounded bg-muted px-1 py-0.5">.csv</code> /{" "}
+              <code className="rounded bg-muted px-1 py-0.5">.xlsx</code>，文件大小不超过 5MB。
             </span>
           </li>
           <li className="flex gap-2">
             <span className="text-primary">②</span>
             <span>
-              <span className="font-medium text-foreground">学号全校唯一</span>、邮箱若填写则全校唯一；<span className="font-medium text-foreground">任一行不合规即整体拒绝</span>，不提供「跳过 / 覆盖」策略。
+              <span className="font-medium text-foreground">学号全校唯一</span>
+              、邮箱若填写则全校唯一；
+              <span className="font-medium text-foreground">任一行不合规即整体拒绝</span>
+              ，不提供「跳过 / 覆盖」策略。
             </span>
           </li>
           <li className="flex gap-2">
             <span className="text-primary">③</span>
             <span>
-              邮箱留空将自动生成 <code className="rounded bg-muted px-1 py-0.5 num">学号@school.edu</code>。
+              邮箱留空将自动生成{" "}
+              <code className="num rounded bg-muted px-1 py-0.5">学号@school.edu</code>。
             </span>
           </li>
           <li className="flex gap-2">
             <span className="text-primary">④</span>
             <span>
-              初始密码 = 学号后 6 位；学生首次登录将被强制跳转修改密码页。导入成功后请下载「初始密码 CSV」分发给学生。
+              初始密码 = 学号后 6 位；学生首次登录将被强制跳转修改密码页。导入成功后请下载「初始密码
+              CSV」分发给学生。
             </span>
           </li>
         </ul>

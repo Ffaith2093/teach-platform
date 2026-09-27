@@ -5,6 +5,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/guard";
 import { addJudgeJob } from "@/lib/judge/queue";
+import { runSandbox } from "@/lib/judge/sandbox";
+import type { JudgeRunResult } from "@/lib/judge/local";
 
 async function requireStudent() {
   const session = await requireSession();
@@ -116,10 +118,82 @@ export async function submitForPracticeAction(
     await addJudgeJob(submission.id);
   } catch (e) {
     console.error("[submitForPracticeAction] addJudgeJob failed:", e);
+    await prisma.submission.update({
+      where: { id: submission.id },
+      data: { status: "SYSTEM_ERROR", errorMsg: "评测队列暂时不可用" },
+    });
     return { error: "评测队列暂时不可用，请稍后再试" };
   }
 
   revalidatePath(`/problems/${parsed.data.problemId}`);
 
   return { ok: true, submissionId: submission.id };
+}
+
+// ========== 运行样例（不进队列，不写 Submission）==========
+
+const runSampleSchema = z.object({
+  problemId: z.string().min(1),
+  code: z.string().min(1, "请输入代码").max(50000, "代码过长（>50KB）"),
+});
+
+export type RunSampleState =
+  | { ok: true; result: JudgeRunResult; error?: undefined }
+  | { ok?: false; error: string; result?: undefined };
+
+export async function runSamplePracticeAction(
+  input: { problemId: string; code: string },
+): Promise<RunSampleState> {
+  const parsed = runSampleSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "请检查输入" };
+  }
+
+  const session = await requireSession();
+  if (session.user.role !== "STUDENT") {
+    return { error: "仅学生可使用此功能" };
+  }
+  const studentId = session.user.id;
+
+  let ctx;
+  try {
+    ctx = await checkPracticeAccess(parsed.data.problemId, studentId);
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+
+  const problem = await prisma.problem.findUnique({
+    where: { id: parsed.data.problemId },
+    select: {
+      timeLimitMs: true,
+      memoryLimitMb: true,
+      splitInputByWhitespace: true,
+      testCases: {
+        where: { isSample: true },
+        orderBy: { order: "asc" },
+        select: { input: true, expected: true, score: true },
+      },
+    },
+  });
+  if (!problem) return { error: "题目不存在" };
+  if (problem.testCases.length === 0) {
+    return { error: "本题没有样例用例可运行" };
+  }
+
+  const result = await runSandbox(
+    parsed.data.code,
+    problem.testCases.map((tc) => ({
+      input: tc.input,
+      expected: tc.expected,
+      isSample: true,
+      score: tc.score,
+    })),
+    {
+      timeLimitMs: ctx.problem.timeLimitMs,
+      memoryLimitMb: ctx.problem.memoryLimitMb,
+      splitInputByWhitespace: problem.splitInputByWhitespace,
+    },
+  );
+
+  return { ok: true, result };
 }

@@ -8,6 +8,7 @@ export type ExamAttemptForAnalysis = {
   finalScore: number | null;
   autoScore: number | null;
   manualScore: number | null;
+  questionIds?: string[];
   answers: Array<{
     questionId: string;
     autoScore: number | null;
@@ -67,9 +68,7 @@ export type ExamAnalytics = {
 /** 取该 attempt 的有效分数（GRADED 用 finalScore；未发布用 auto+manual 预估） */
 function effectiveScore(a: ExamAttemptForAnalysis, totalScore: number): number {
   if (a.finalScore != null) return a.finalScore;
-  const auto = a.autoScore ?? 0;
-  const manual = a.manualScore ?? 0;
-  return Math.max(0, Math.min(auto + manual, totalScore));
+  return Math.max(0, Math.min(a.answers.reduce((sum, answer) => sum + (answer.manualScore ?? answer.autoScore ?? 0), 0), totalScore));
 }
 
 function percentileRate(score: number, totalScore: number): number {
@@ -85,12 +84,15 @@ function groupScoreRate(
 ): number {
   if (group.length === 0 || fullScore <= 0) return 0;
   let sum = 0;
+  let assigned = 0;
   for (const a of group) {
+    if (a.questionIds && !a.questionIds.includes(questionId)) continue;
+    assigned++;
     const ans = a.answers.find((x) => x.questionId === questionId);
-    if (ans) sum += (ans.autoScore ?? 0) + (ans.manualScore ?? 0);
+    if (ans) sum += ans.manualScore ?? ans.autoScore ?? 0;
     // 未作答计 0
   }
-  return sum / (group.length * fullScore);
+  return assigned ? sum / (assigned * fullScore) : 0;
 }
 
 export function analyzeExam(
@@ -153,13 +155,16 @@ export function analyzeExam(
   const perQuestion = questions.map((q) => {
     let sum = 0;
     let correctCount = 0;
+    let assigned = 0;
     for (const a of submitted) {
+      if (a.questionIds && !a.questionIds.includes(q.questionId)) continue;
+      assigned++;
       const ans = a.answers.find((x) => x.questionId === q.questionId);
-      const s = ans ? (ans.autoScore ?? 0) + (ans.manualScore ?? 0) : 0;
+      const s = ans ? (ans.manualScore ?? ans.autoScore ?? 0) : 0;
       sum += s;
       if (s >= q.score) correctCount++;
     }
-    const meanQ = submitted.length ? sum / submitted.length : 0;
+    const meanQ = assigned ? sum / assigned : 0;
     const scoreRate = q.score > 0 ? meanQ / q.score : 0;
 
     const discrimination =

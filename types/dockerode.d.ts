@@ -41,7 +41,7 @@ declare module "dockerode" {
   }
 
   export interface ContainerInspectInfo {
-    State?: { Running?: boolean; ExitCode?: number };
+    State?: { Running?: boolean; ExitCode?: number; OOMKilled?: boolean };
   }
 
   export interface Exec {

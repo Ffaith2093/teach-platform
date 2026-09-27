@@ -122,15 +122,16 @@ model Course {
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
-  classes     CourseClass[]
-  teachers    CourseTeacher[]
-  resources   Resource[]
-  assignments Assignment[]
-  exams       Exam[]
-  questions   Question[]
+  classes       CourseClass[]
+  teachers      CourseTeacher[]
+  resources     Resource[]
+  assignments   Assignment[]
+  exams         Exam[]
+  questions     Question[]
   questionBanks QuestionBank[]
+  chapters      Chapter[]
   notifications Notification[]
-  accessLogs  AccessLog[]
+  accessLogs    AccessLog[]
 
   @@index([category, isArchived])
 }
@@ -185,7 +186,7 @@ enum CourseTeacherRole {
 model AccessLog {
   id        String   @id @default(cuid())
   userId    String
-  courseId  String?  // 可空：未来扩展支持登录等无课程访问记录
+  courseId  String? // 可空：未来扩展支持登录等无课程访问记录
   ip        String?
   userAgent String?
   createdAt DateTime @default(now())
@@ -196,6 +197,24 @@ model AccessLog {
   @@index([userId, createdAt])
   @@index([courseId, createdAt])
   @@index([userId, courseId, createdAt])
+}
+
+// ============== 课程章节 ==============
+
+model Chapter {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String
+  description String?  @db.Text
+  order       Int // 章节序号（courseId 内单调）
+  createdAt   DateTime @default(now())
+
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  assignments Assignment[]
+  exams       Exam[]
+
+  @@unique([courseId, order])
+  @@index([courseId])
 }
 
 // ============== 课程资源 ==============
@@ -222,19 +241,20 @@ model Resource {
 // ============== 题库与编程题 ==============
 
 model Problem {
-  id                String     @id @default(cuid())
-  title             String
-  description       String // Markdown
-  difficulty        Difficulty
-  timeLimitMs       Int        @default(3000)
-  memoryLimitMb     Int        @default(128)
-  starterCode       String?
-  referenceSolution String?
-  tags              String[]
-  authorId          String
-  isPublic          Boolean    @default(false) // 是否共享到公共题库
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  id                     String     @id @default(cuid())
+  title                  String
+  description            String // Markdown
+  difficulty             Difficulty
+  timeLimitMs            Int        @default(3000)
+  memoryLimitMb          Int        @default(128)
+  splitInputByWhitespace Boolean    @default(false)
+  starterCode            String?
+  referenceSolution      String?
+  tags                   String[]
+  authorId               String
+  isPublic               Boolean    @default(false) // 是否共享到公共题库
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
 
   author             User                @relation("ProblemAuthor", fields: [authorId], references: [id])
   testCases          TestCase[]
@@ -306,7 +326,7 @@ model QuestionBank {
   createdAt DateTime @default(now())
 
   questions Question[]
-  course    Course?   @relation(fields: [courseId], references: [id])
+  course    Course?    @relation(fields: [courseId], references: [id])
 
   @@index([ownerId])
 }
@@ -323,16 +343,19 @@ model Assignment {
   latePenalty Int       @default(20)
   totalScore  Int
   publishedAt DateTime? // null = 草稿
+  chapterId   String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   course      Course                 @relation(fields: [courseId], references: [id])
   creator     User                   @relation(fields: [creatorId], references: [id])
   creatorId   String
+  chapter     Chapter?               @relation(fields: [chapterId], references: [id], onDelete: SetNull)
   problems    AssignmentProblem[]
   submissions AssignmentSubmission[]
 
   @@index([courseId, publishedAt, dueAt])
+  @@index([chapterId])
 }
 
 model AssignmentProblem {
@@ -395,14 +418,17 @@ model Exam {
   totalScore      Int
   status          ExamStatus @default(DRAFT)
   drawRules       Json? // { bankId, rules: [{type, difficulty|count|...}] }
+  chapterId       String?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
   course    Course         @relation(fields: [courseId], references: [id])
+  chapter   Chapter?       @relation(fields: [chapterId], references: [id], onDelete: SetNull)
   questions ExamQuestion[]
   attempts  ExamAttempt[]
 
   @@index([courseId, status, openAt])
+  @@index([chapterId])
 }
 
 enum ResultMode {

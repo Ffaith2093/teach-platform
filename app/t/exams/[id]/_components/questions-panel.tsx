@@ -48,6 +48,9 @@ export function QuestionsPanel({
   questions,
   availableProblems,
   isDraft,
+  isDraw = false,
+  actualCount,
+  examTotalScore,
 }: {
   examId: string;
   questions: QuestionRow[];
@@ -58,7 +61,11 @@ export function QuestionsPanel({
     isPublic: boolean;
   }>;
   isDraft: boolean;
+  isDraw?: boolean;
+  actualCount?: number;
+  examTotalScore?: number;
 }) {
+  const editable = isDraft && !isDraw;
   const router = useRouter();
   const [addOpen, setAddOpen] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<QuestionType>("SINGLE_CHOICE");
@@ -120,12 +127,11 @@ export function QuestionsPanel({
           <div>
             <h2 className="text-base font-semibold">试卷题目</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              <span className="num">{questions.length}</span> 道题 · 总分{" "}
-              <span className="num">{totalScore}</span>{" "}
-              {!isDraft && "· 已发布，不可再修改"}
+              {isDraw ? <>每份 <span className="num">{actualCount}</span> 题 · <span className="num">{examTotalScore}</span> 分 · 候选池 {questions.length} 题</> : <><span className="num">{questions.length}</span> 道题 · 总分 <span className="num">{totalScore}</span></>}{" "}
+              {!editable && "· 不可单独修改题目"}
             </p>
           </div>
-          {isDraft && (
+          {editable && (
             <Button size="sm" onClick={() => setAddOpen(true)}>
               <Plus />
               添加题目
@@ -137,7 +143,7 @@ export function QuestionsPanel({
           <div className="mt-4 rounded-lg border border-dashed border-border bg-muted/30 px-6 py-12 text-center text-sm text-muted-foreground">
             <ListChecks className="mx-auto h-8 w-8 text-subtle-foreground" />
             <p className="mt-3">还没有添加任何题目</p>
-            {isDraft && (
+            {editable && (
               <p className="mt-1 text-xs text-subtle-foreground">
                 点击右上角「添加题目」开始出卷
               </p>
@@ -161,7 +167,7 @@ export function QuestionsPanel({
                           key={q.questionId}
                           index={idx + 1}
                           row={q}
-                          isDraft={isDraft}
+                          isDraft={editable}
                           canEdit={q.type !== "PROGRAMMING"}
                           onEdit={() => setEditing(q)}
                           onRemove={() => handleRemove(q.questionId)}

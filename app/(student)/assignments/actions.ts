@@ -6,6 +6,9 @@ import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/guard";
 import { addJudgeJob } from "@/lib/judge/queue";
 import { notifyMany } from "@/lib/notifications";
+import { recordAccess } from "@/lib/access-log";
+import { runSandbox } from "@/lib/judge/sandbox";
+import type { JudgeRunResult } from "@/lib/judge/local";
 
 // ========== 权限工具 ==========
 
@@ -190,11 +193,87 @@ export async function submitProblemAction(
     await addJudgeJob(submission.id);
   } catch (e) {
     console.error("[submitProblemAction] addJudgeJob failed:", e);
+    await prisma.submission.update({
+      where: { id: submission.id },
+      data: { status: "SYSTEM_ERROR", errorMsg: "评测队列暂时不可用" },
+    });
     return { error: "评测队列暂时不可用，请稍后再试" };
   }
+
+  // 4) 出勤打点：每次提交算一次 AccessLog（出勤页按日去重，多题作业一天多条不影响「到课」判定）
+  void recordAccess({
+    userId: studentId,
+    courseId: assignment.courseId,
+  });
 
   revalidatePath(`/assignments/${parsed.data.assignmentId}`);
   revalidatePath(`/t/assignments/${parsed.data.assignmentId}`);
 
   return { ok: true, submissionId: submission.id };
+}
+
+// ========== 运行样例（不进队列，不写 Submission）==========
+
+const runAssignmentSampleSchema = z.object({
+  assignmentId: z.string().min(1),
+  problemId: z.string().min(1),
+  code: z.string().min(1, "请输入代码").max(50000, "代码过长（>50KB）"),
+});
+
+export type RunAssignmentSampleState =
+  | { ok: true; result: JudgeRunResult; error?: undefined }
+  | { ok?: false; error: string; result?: undefined };
+
+export async function runAssignmentSampleAction(
+  input: { assignmentId: string; problemId: string; code: string },
+): Promise<RunAssignmentSampleState> {
+  const parsed = runAssignmentSampleSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "请检查输入" };
+  }
+
+  let ctx;
+  try {
+    ctx = await requireAssignmentForStudent(
+      parsed.data.assignmentId,
+      parsed.data.problemId,
+    );
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+
+  const problem = await prisma.problem.findUnique({
+    where: { id: parsed.data.problemId },
+    select: {
+      timeLimitMs: true,
+      memoryLimitMb: true,
+      splitInputByWhitespace: true,
+      testCases: {
+        where: { isSample: true },
+        orderBy: { order: "asc" },
+        select: { input: true, expected: true, score: true },
+      },
+    },
+  });
+  if (!problem) return { error: "题目不存在" };
+  if (problem.testCases.length === 0) {
+    return { error: "本题没有样例用例可运行" };
+  }
+
+  const result = await runSandbox(
+    parsed.data.code,
+    problem.testCases.map((tc) => ({
+      input: tc.input,
+      expected: tc.expected,
+      isSample: true,
+      score: tc.score,
+    })),
+    {
+      timeLimitMs: problem.timeLimitMs,
+      memoryLimitMb: problem.memoryLimitMb,
+      splitInputByWhitespace: problem.splitInputByWhitespace,
+    },
+  );
+
+  return { ok: true, result };
 }

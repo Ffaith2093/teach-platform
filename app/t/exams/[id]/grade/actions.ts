@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireExamAccess } from "@/app/t/exams/actions";
-import type { AttemptStatus } from "@prisma/client";
+import { finalExamScore } from "@/lib/exams/scoring";
 
 const gradeItemSchema = z.object({
   questionId: z.string().min(1),
@@ -45,10 +45,10 @@ export async function gradeAttemptAction(
 
   const attempt = await prisma.examAttempt.findUnique({
     where: { id: attemptId },
-    select: { id: true, examId: true, status: true },
+    select: { id: true, examId: true, status: true, questionIds: true },
   });
   if (!attempt) return { error: "尝试记录不存在" };
-  if (attempt.status !== "SUBMITTED" && attempt.status !== "GRADING") {
+  if (attempt.status !== "GRADING") {
     return { error: "该尝试不在可批改状态" };
   }
 
@@ -61,14 +61,13 @@ export async function gradeAttemptAction(
   });
   const maxByQid = new Map(examQuestions.map((eq) => [eq.questionId, eq.score]));
   for (const g of parsed.data.grades) {
+    if (!attempt.questionIds.includes(g.questionId)) return { error: "题目不属于本次考试" };
     const max = maxByQid.get(g.questionId);
     if (max === undefined) return { error: "题目不属于本试卷" };
     if (g.manualScore > max) {
       return { error: `手动分不能超过满分 ${max}` };
     }
   }
-
-  const newStatus: AttemptStatus = attempt.status === "SUBMITTED" ? "GRADING" : attempt.status;
 
   await prisma.$transaction(async (tx) => {
     for (const g of parsed.data.grades) {
@@ -98,10 +97,11 @@ export async function gradeAttemptAction(
         });
       }
     }
-    const manualTotal = parsed.data.grades.reduce((s, g) => s + g.manualScore, 0);
+    const allAnswers = await tx.answer.findMany({ where: { attemptId }, select: { autoScore: true, manualScore: true } });
+    const manualTotal = allAnswers.reduce((s, a) => s + (a.manualScore ?? 0), 0);
     await tx.examAttempt.update({
       where: { id: attemptId },
-      data: { status: newStatus, manualScore: manualTotal },
+      data: { status: "GRADING", manualScore: manualTotal },
     });
   });
 
@@ -166,25 +166,9 @@ export async function publishAllGradedAction(
   });
   if (attempts.length === 0) return { ok: true, count: 0 };
 
-  await prisma.$transaction(
-    attempts.map((a) =>
-      prisma.examAttempt.update({
-        where: { id: a.id },
-        data: {
-          status: "GRADED",
-          finalScore: 0, // placeholder，下一步覆盖
-        },
-      }),
-    ),
-  );
-
-  // 重新计算 finalScore（事务后串行即可）
   for (const a of attempts) {
     const fs = await recomputeFinalScore(a.id, examMeta.totalScore);
-    await prisma.examAttempt.update({
-      where: { id: a.id },
-      data: { finalScore: fs },
-    });
+    await prisma.examAttempt.updateMany({ where: { id: a.id, status: "GRADING" }, data: { status: "GRADED", finalScore: fs } });
   }
 
   revalidatePath(`/t/exams/${parsed.data.examId}/grade`);
@@ -230,9 +214,5 @@ async function recomputeFinalScore(attemptId: string, totalScore: number): Promi
     where: { attemptId },
     select: { autoScore: true, manualScore: true },
   });
-  const sum = answers.reduce(
-    (s, a) => s + (a.autoScore ?? 0) + (a.manualScore ?? 0),
-    0,
-  );
-  return Math.max(0, Math.min(sum, totalScore));
+  return finalExamScore(answers, totalScore);
 }

@@ -16,10 +16,10 @@ import {
   ClipboardCheck,
   Clock,
   BarChart3,
-  Download,
 } from "lucide-react";
 import { ProblemsPanel } from "./_components/problems-panel";
 import { AssignmentActions } from "./_components/assignment-actions";
+import { CsvExportControl } from "./_components/csv-export-control";
 import type { Difficulty, SubmissionStatus } from "@prisma/client";
 
 export const metadata = { title: "作业详情" };
@@ -153,9 +153,17 @@ export default async function TeacherAssignmentDetailPage({
       name: s.name,
       studentNo: s.studentNo,
       className: cc.class.name,
+      classId: cc.classId,
       gradeName: cc.class.grade.name,
     })),
   );
+
+  // 给 CSV 导出按班级筛选的下拉用
+  const classesForFilter = courseClasses.map((cc) => ({
+    id: cc.classId,
+    name: cc.class.name,
+    count: cc.class.students.length,
+  }));
 
   const submissions = await prisma.assignmentSubmission.findMany({
     where: {
@@ -383,6 +391,7 @@ export default async function TeacherAssignmentDetailPage({
               totalScore={assignment.totalScore}
               isPublished={!isDraft}
               dueAt={assignment.dueAt}
+              classesForFilter={classesForFilter}
             />
           )}
         </div>
@@ -540,6 +549,7 @@ function SubmissionsTab({
   totalScore,
   isPublished,
   dueAt,
+  classesForFilter,
 }: {
   assignmentId: string;
   allStudents: Array<{ id: string; name: string; studentNo: string | null; className: string; gradeName: string }>;
@@ -549,6 +559,7 @@ function SubmissionsTab({
   totalScore: number;
   isPublished: boolean;
   dueAt: Date;
+  classesForFilter: Array<{ id: string; name: string; count: number }>;
 }) {
   // 按班级分组
   const byClass = new Map<string, typeof allStudents>();
@@ -583,14 +594,10 @@ function SubmissionsTab({
         <p className="text-xs text-muted-foreground">
           按班级展示所有学生的提交情况。带 <span className="font-mono text-warning">迟</span> 标记表示迟交。
         </p>
-        <a
-          href={`/api/assignments/${assignmentId}/submissions.csv`}
-          download
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
-        >
-          <Download className="h-3.5 w-3.5" />
-          导出 CSV
-        </a>
+        <CsvExportControl
+          assignmentId={assignmentId}
+          classes={classesForFilter}
+        />
       </div>
 
       {[...byClass.entries()].map(([className, students]) => {

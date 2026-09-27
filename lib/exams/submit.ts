@@ -15,6 +15,7 @@
 import { prisma } from "@/lib/prisma";
 import { addJudgeJob } from "@/lib/judge/queue";
 import type { AttemptStatus } from "@prisma/client";
+import { finalExamScore } from "@/lib/exams/scoring";
 
 export type SubmitExamResult =
   | { ok: true; attemptId: string; totalAuto: number; isAutoSubmit: boolean }
@@ -58,8 +59,17 @@ export async function submitExam(attemptId: string): Promise<SubmitExamResult> {
   const now = new Date();
   const isAutoSubmit = attempt.deadlineAt.getTime() < now.getTime();
 
-  // 加载学生作答
-  const answers = await prisma.answer.findMany({
+  const assigned = new Set(attempt.questionIds);
+  const actualQuestions = attempt.exam.questions.filter((eq) => assigned.has(eq.questionId));
+  if (actualQuestions.length !== assigned.size) return { ok: false, error: "试卷题目缺失，请联系教师" };
+
+  const graded = await prisma.$transaction(async (tx) => {
+    const claimed = await tx.examAttempt.updateMany({
+      where: { id: attempt.id, status: "IN_PROGRESS" },
+      data: { status: "SUBMITTED" },
+    });
+    if (!claimed.count) return null;
+    const answers = await tx.answer.findMany({
     where: { attemptId },
     select: { questionId: true, content: true },
   });
@@ -67,9 +77,9 @@ export async function submitExam(attemptId: string): Promise<SubmitExamResult> {
 
   let totalAuto = 0;
   const answerUpdates: Array<{ questionId: string; autoScore: number }> = [];
-  const programmingEnqueues: Array<{ submissionId: string }> = [];
+  const programmingAnswers: Array<{ problemId: string; code: string; totalCount: number }> = [];
 
-  for (const eq of attempt.exam.questions) {
+  for (const eq of actualQuestions) {
     const q = eq.question;
     const ans = answerByQid.get(q.id);
     let s = 0;
@@ -90,26 +100,10 @@ export async function submitExam(attemptId: string): Promise<SubmitExamResult> {
         if (q.problemId) {
           const code = typeof ans === "string" ? ans : "";
           if (code.trim()) {
-            const sub = await prisma.submission.create({
-              data: {
-                problemId: q.problemId,
-                userId: attempt.studentId,
-                code,
-                status: "PENDING",
-                contextType: "EXAM",
-                contextId: attempt.id,
-              },
-              select: { id: true, totalCount: true },
-            });
-            // 取测试用例数量填到 totalCount（Worker 会更新）
-            const tcCount = await prisma.testCase.count({
+            const tcCount = await tx.testCase.count({
               where: { problemId: q.problemId },
             });
-            await prisma.submission.update({
-              where: { id: sub.id },
-              data: { totalCount: tcCount },
-            });
-            programmingEnqueues.push({ submissionId: sub.id });
+            programmingAnswers.push({ problemId: q.problemId, code, totalCount: tcCount });
           }
         }
         // PROGRAMMING 题 autoScore 由 Worker 异步写回，submitExam 时算 0
@@ -120,8 +114,6 @@ export async function submitExam(attemptId: string): Promise<SubmitExamResult> {
     answerUpdates.push({ questionId: q.id, autoScore: s });
   }
 
-  // 持久化（一个事务）
-  await prisma.$transaction(async (tx) => {
     for (const u of answerUpdates) {
       const existing = await tx.answer.findUnique({
         where: {
@@ -135,16 +127,38 @@ export async function submitExam(attemptId: string): Promise<SubmitExamResult> {
         });
       }
     }
+    const submissions: Array<{ submissionId: string }> = [];
+    for (const answer of programmingAnswers) {
+      const submission = await tx.submission.create({
+        data: {
+          ...answer,
+          userId: attempt.studentId,
+          status: "PENDING",
+          contextType: "EXAM",
+          contextId: attempt.id,
+        },
+        select: { id: true },
+      });
+      submissions.push({ submissionId: submission.id });
+    }
     await tx.examAttempt.update({
       where: { id: attempt.id },
       data: {
-        status: "SUBMITTED" as AttemptStatus,
+        status: (submissions.length ? "SUBMITTED" : actualQuestions.some((eq) => eq.question.type === "PROGRAMMING") ? "GRADING" : "GRADED") as AttemptStatus,
         submittedAt: now,
         autoScore: totalAuto,
+        finalScore: submissions.length || actualQuestions.some((eq) => eq.question.type === "PROGRAMMING")
+          ? null : finalExamScore(answerUpdates.map((u) => ({ autoScore: u.autoScore, manualScore: null })), attempt.exam.totalScore),
         isAutoSubmit,
       },
     });
-  });
+    return { submissions, totalAuto };
+  }, { timeout: 30000 });
+  if (!graded) {
+    const current = await prisma.examAttempt.findUniqueOrThrow({ where: { id: attemptId }, select: { autoScore: true, isAutoSubmit: true } });
+    return { ok: true, attemptId, totalAuto: current.autoScore ?? 0, isAutoSubmit: current.isAutoSubmit };
+  }
+  const { submissions: programmingEnqueues, totalAuto } = graded;
 
   // 入队 PROGRAMMING 题评测（失败不影响主流程）
   for (const e of programmingEnqueues) {
@@ -152,7 +166,17 @@ export async function submitExam(attemptId: string): Promise<SubmitExamResult> {
       await addJudgeJob(e.submissionId);
     } catch (err) {
       console.error("[submitExam] addJudgeJob failed:", err);
+      await prisma.submission.update({
+        where: { id: e.submissionId },
+        data: { status: "SYSTEM_ERROR", errorMsg: "评测队列暂时不可用" },
+      });
     }
+  }
+  if (programmingEnqueues.length) {
+    const pending = await prisma.submission.count({
+      where: { id: { in: programmingEnqueues.map((e) => e.submissionId) }, status: { in: ["PENDING", "JUDGING"] } },
+    });
+    if (!pending) await prisma.examAttempt.updateMany({ where: { id: attemptId, status: "SUBMITTED" }, data: { status: "GRADING" } });
   }
 
   return { ok: true, attemptId: attempt.id, totalAuto, isAutoSubmit };

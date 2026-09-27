@@ -1,7 +1,5 @@
-# Python 教学平台 · 开发环境编排
-# 启动: docker compose up -d
-# 关闭: docker compose down
-# 重置数据: docker compose down -v
+# Python 教学平台 · 单机部署
+# 首次运行先初始化数据库；不要对已有数据执行 down -v。
 
 services:
   postgres:
@@ -37,6 +35,59 @@ services:
       timeout: 3s
       retries: 10
 
+  web:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://pylearn:pylearn_dev@postgres:5432/pylearn?schema=public
+      REDIS_URL: redis://redis:6379
+      UPLOAD_DIR: /app/uploads
+      JUDGE_BACKEND: docker
+      JUDGE_TMP_DIR: ${JUDGE_TMP_DIR:-/tmp/pylearn-judge}
+    ports:
+      - "3000:3000"
+    volumes:
+      - uploads-data:/app/uploads
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${JUDGE_TMP_DIR:-/tmp/pylearn-judge}:${JUDGE_TMP_DIR:-/tmp/pylearn-judge}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: .
+    command: ["./node_modules/.bin/tsx", "worker/index.ts"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://pylearn:pylearn_dev@postgres:5432/pylearn?schema=public
+      REDIS_URL: redis://redis:6379
+      JUDGE_BACKEND: docker
+      JUDGE_TMP_DIR: ${JUDGE_TMP_DIR:-/tmp/pylearn-judge}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${JUDGE_TMP_DIR:-/tmp/pylearn-judge}:${JUDGE_TMP_DIR:-/tmp/pylearn-judge}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  cron:
+    build: .
+    command: ["./node_modules/.bin/tsx", "worker/cron.ts"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://pylearn:pylearn_dev@postgres:5432/pylearn?schema=public
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   adminer:
     image: adminer:4.8.1
     container_name: pylearn-adminer
@@ -52,3 +103,4 @@ services:
 volumes:
   postgres-data:
   redis-data:
+  uploads-data:

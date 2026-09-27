@@ -15,11 +15,12 @@ import {
   ListChecks,
   Server,
   BarChart3,
-  Settings,
   UserCog,
   LogOut,
   Boxes,
   Bell,
+  CircleHelp,
+  SquarePen,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -75,8 +76,9 @@ const teacherNav: NavSection[] = [
   {
     label: "题库",
     items: [
-      { href: "/t/problems", label: "我的编程题", icon: Code },
-      { href: "/t/banks", label: "我的题库", icon: Boxes },
+      { href: "/t/banks/choice", label: "选择题", icon: CircleHelp },
+      { href: "/t/banks/fill", label: "填空题", icon: SquarePen },
+      { href: "/t/banks/programming", label: "编程题", icon: Code },
     ],
   },
   {
@@ -113,13 +115,11 @@ const adminNav: NavSection[] = [
     ],
   },
   {
-    label: "题库与评测",
+    label: "评测",
     items: [
-      { href: "/admin/banks", label: "题库", icon: Library },
       { href: "/admin/judge", label: "评测队列", icon: Server },
     ],
   },
-  { label: "系统", items: [{ href: "/admin/settings", label: "设置", icon: Settings }] },
 ];
 
 interface SidebarShellProps {

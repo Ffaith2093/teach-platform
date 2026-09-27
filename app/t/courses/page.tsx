@@ -64,13 +64,7 @@ export default async function TeacherCoursesPage({
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
           <div className="flex items-end justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">我的课程</h1>
-              <p className="mt-1.5 text-sm text-muted-foreground">
-                创建课程前，请先在「班级管理」确认您已被分配授课班级。
-                您只能将<b className="text-foreground">自己任教的班级</b>加入课程。
-              </p>
-            </div>
+            <h1 className="text-2xl font-semibold tracking-tight">我的课程</h1>
             <Link
               href="/t/courses/new"
               className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover"
@@ -172,17 +166,6 @@ export default async function TeacherCoursesPage({
                                 {c.description}
                               </div>
                             )}
-                            <div className="mt-1.5 flex items-center gap-3 text-[11px] text-subtle-foreground">
-                              <span>{c.semester}</span>
-                              {owner && ct.role !== "OWNER" && (
-                                <span>· 主讲：{owner.name}</span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="hidden shrink-0 items-center gap-4 text-xs text-muted-foreground md:flex">
-                            <span className="num">{c._count.classes} 班</span>
-                            <span className="num">{c._count.assignments} 作业</span>
-                            <span className="num">{c._count.exams} 试卷</span>
                           </div>
                         </Link>
                       </li>

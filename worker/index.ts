@@ -18,12 +18,16 @@
  */
 import { Worker, type Job } from "bullmq";
 import { prisma } from "@/lib/prisma";
+import { scaledProblemScore } from "@/lib/exams/scoring";
 import { JUDGE_QUEUE_NAME, type JudgeJobData, redisConnectionOptions } from "@/lib/judge/queue";
 import { runJudge, type JudgeRunResult } from "@/lib/judge/local";
 import { runSandbox } from "@/lib/judge/sandbox";
 
 const backend = process.env.JUDGE_BACKEND ?? "docker";
-const concurrency = parseInt(process.env.JUDGE_CONCURRENCY ?? "6", 10);
+const concurrency = Math.min(6, Math.max(1, parseInt(process.env.JUDGE_CONCURRENCY ?? "6", 10) || 6));
+if (backend !== "docker" && (backend !== "local" || process.env.NODE_ENV === "production")) {
+  throw new Error("Only the Docker judge is allowed in production");
+}
 
 console.log(`[judge-worker] starting backend=${backend} concurrency=${concurrency}`);
 
@@ -34,7 +38,21 @@ const worker = new Worker<JudgeJobData>(
   async (job: Job<JudgeJobData>) => {
     const { submissionId } = job.data;
     console.log(`[judge-worker] job ${job.id} submission=${submissionId}`);
-    await processSubmission(submissionId);
+    try {
+      await processSubmission(submissionId, job.attemptsMade > 0);
+    } catch (error) {
+      if (job.attemptsMade + 1 >= (job.opts.attempts ?? 1)) {
+        await prisma.submission.updateMany({
+          where: { id: submissionId, status: { in: ["PENDING", "JUDGING"] } },
+          data: {
+            status: "SYSTEM_ERROR",
+            errorMsg: (error as Error).message.slice(0, 2000),
+          },
+        });
+        await settleExamAttempt(submissionId);
+      }
+      throw error;
+    }
   },
   {
     connection: redisConnectionOptions(),
@@ -48,9 +66,17 @@ worker.on("completed", (job) => {
 });
 worker.on("failed", (job, err) => {
   console.error(`[judge-worker] job ${job?.id} ✗`, err);
+  if (!job) return;
+  void job.getState().then(async (state) => {
+    if (state !== "failed") return;
+    await prisma.submission.updateMany({
+      where: { id: job.data.submissionId, status: { in: ["PENDING", "JUDGING"] } },
+      data: { status: "SYSTEM_ERROR", errorMsg: err.message.slice(0, 2000) },
+    });
+  }).catch((error) => console.error("[judge-worker] failed to finalize job:", error));
 });
 
-async function processSubmission(submissionId: string): Promise<void> {
+async function processSubmission(submissionId: string, retry: boolean): Promise<void> {
   // 1. 加载 submission（带 problem + testCases）
   const submission = await prisma.submission.findUnique({
     where: { id: submissionId },
@@ -66,7 +92,11 @@ async function processSubmission(submissionId: string): Promise<void> {
     console.warn(`[judge-worker] submission ${submissionId} not found, skip`);
     return;
   }
-  if (submission.status !== "PENDING") {
+  if (retry && submission.status !== "PENDING" && submission.status !== "JUDGING" && submission.status !== "SYSTEM_ERROR") {
+    await propagateToParent(submissionId, submission.score);
+    return;
+  }
+  if (submission.status !== "PENDING" && !(retry && submission.status === "JUDGING")) {
     console.log(`[judge-worker] submission ${submissionId} status=${submission.status}, skip`);
     return;
   }
@@ -87,11 +117,19 @@ async function processSubmission(submissionId: string): Promise<void> {
       isSample: tc.isSample,
       score: tc.score,
     })),
-    { timeLimitMs: problem.timeLimitMs, memoryLimitMb: problem.memoryLimitMb },
+    {
+      timeLimitMs: problem.timeLimitMs,
+      memoryLimitMb: problem.memoryLimitMb,
+      splitInputByWhitespace: problem.splitInputByWhitespace,
+    },
   );
+  if (result.status === "SYSTEM_ERROR") {
+    throw new Error(result.cases.find((c) => c.errorMsg)?.errorMsg ?? "评测沙箱不可用");
+  }
 
   // 4. 写 Submission + JudgeCase
   await prisma.$transaction(async (tx) => {
+    await tx.judgeCase.deleteMany({ where: { submissionId } });
     await tx.submission.update({
       where: { id: submissionId },
       data: {
@@ -131,13 +169,13 @@ async function processSubmission(submissionId: string): Promise<void> {
   });
 
   // 5. 回写父上下文
-  await propagateToParent(submissionId, result);
+  await propagateToParent(submissionId, result.totalScore);
 }
 
 /**
  * 按 submission 的 contextType 把分数回写到父级聚合（AssignmentSubmission / ExamAttempt）
  */
-async function propagateToParent(submissionId: string, result: JudgeRunResult): Promise<void> {
+async function propagateToParent(submissionId: string, totalScore: number): Promise<void> {
   const sub = await prisma.submission.findUnique({
     where: { id: submissionId },
     select: { contextType: true, contextId: true, userId: true, problemId: true },
@@ -162,9 +200,10 @@ async function propagateToParent(submissionId: string, result: JudgeRunResult): 
           contextId: assignmentId,
         },
         orderBy: { createdAt: "desc" },
-        select: { score: true },
+        select: { score: true, problem: { select: { testCases: { select: { score: true } } } } },
       });
-      totalAutoScore += latest?.score ?? 0;
+      const possible = latest?.problem.testCases.reduce((sum, tc) => sum + tc.score, 0) ?? 0;
+      totalAutoScore += scaledProblemScore(latest?.score ?? 0, possible, p.score);
     }
     await prisma.assignmentSubmission.updateMany({
       where: { assignmentId, studentId },
@@ -192,7 +231,7 @@ async function propagateToParent(submissionId: string, result: JudgeRunResult): 
     const eq = attempt.exam.questions.find(
       (q) => q.question.problemId === sub.problemId,
     );
-    if (!eq) return;
+    if (!eq || !attempt.questionIds.includes(eq.questionId) || attempt.status === "GRADED") return;
 
     // 按比例缩放到 ExamQuestion.score
     const problem = await prisma.problem.findUnique({
@@ -201,11 +240,7 @@ async function propagateToParent(submissionId: string, result: JudgeRunResult): 
     });
     if (!problem) return;
     const problemTotal = problem.testCases.reduce((s, tc) => s + tc.score, 0);
-    const ratio = problemTotal > 0 ? result.totalScore / problemTotal : 0;
-    const autoScoreForQuestion = Math.max(
-      0,
-      Math.min(eq.score, Math.round(eq.score * ratio)),
-    );
+    const autoScoreForQuestion = scaledProblemScore(totalScore, problemTotal, eq.score);
 
     await prisma.$transaction(async (tx) => {
       // 写 Answer.autoScore
@@ -231,10 +266,18 @@ async function propagateToParent(submissionId: string, result: JudgeRunResult): 
         data: { autoScore: sum._sum.autoScore ?? 0 },
       });
     });
+    await settleExamAttempt(submissionId);
     return;
   }
 
   // PRACTICE: no parent to update
+}
+
+async function settleExamAttempt(submissionId: string): Promise<void> {
+  const sub = await prisma.submission.findUnique({ where: { id: submissionId }, select: { contextType: true, contextId: true } });
+  if (sub?.contextType !== "EXAM" || !sub.contextId) return;
+  const pending = await prisma.submission.count({ where: { contextType: "EXAM", contextId: sub.contextId, status: { in: ["PENDING", "JUDGING"] } } });
+  if (!pending) await prisma.examAttempt.updateMany({ where: { id: sub.contextId, status: "SUBMITTED" }, data: { status: "GRADING" } });
 }
 
 // 优雅退出

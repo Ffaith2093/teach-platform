@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Topbar } from "@/components/shell/topbar";
 import { Badge } from "@/components/ui/badge";
-import { relativeTime } from "@/lib/utils";
 import {
   ChevronLeft,
   ChevronRight,
@@ -16,6 +15,7 @@ import {
   Archive,
   Folder,
   Activity,
+  TrendingUp,
 } from "lucide-react";
 import type { CourseCategory, CourseTeacherRole } from "@prisma/client";
 import { EditCourseButton } from "./_components/edit-course-button";
@@ -23,6 +23,8 @@ import { ArchiveCourseButton } from "./_components/archive-course-button";
 import { AnnounceCourseButton } from "./_components/announce-course-button";
 import { ClassesPanel } from "./_components/classes-panel";
 import { CollaboratorsPanel } from "./_components/collaborators-panel";
+import { ChaptersCard } from "./_components/chapters-card";
+import { CourseAnalyticsCard } from "./_components/course-analytics-card";
 
 export const metadata = { title: "课程详情" };
 
@@ -77,6 +79,12 @@ export default async function TeacherCourseDetailPage({
         },
         orderBy: [{ role: "asc" }, { addedAt: "asc" }],
       },
+      chapters: {
+        orderBy: { order: "asc" },
+        include: {
+          _count: { select: { assignments: true, exams: true } },
+        },
+      },
       _count: { select: { assignments: true, exams: true, resources: true } },
     },
   });
@@ -123,6 +131,81 @@ export default async function TeacherCourseDetailPage({
   const recipientCount =
     course.classes.reduce((s, cc) => s + cc.class._count.students, 0) +
     Math.max(0, course.teachers.length - 1);
+
+  // ========== 成绩分析数据 ==========
+  // 学生（跨全部班级），作业 / 考试列表，全部提交 / attempts
+  const courseClassIds = course.classes.map((cc) => cc.classId);
+  const courseStudentList = await prisma.user.findMany({
+    where: {
+      status: "ACTIVE",
+      role: "STUDENT",
+      classId: { in: courseClassIds },
+    },
+    select: { id: true, name: true, studentNo: true },
+    orderBy: [{ studentNo: "asc" }],
+  });
+  const courseStudentIds = courseStudentList.map((s) => s.id);
+  const [
+    assignmentAnalyticsList,
+    examAnalyticsList,
+    assignmentAnalyticsSubs,
+    examAnalyticsAttempts,
+  ] = await Promise.all([
+    prisma.assignment.findMany({
+      where: { courseId: id },
+      select: {
+        id: true,
+        title: true,
+        totalScore: true,
+        dueAt: true,
+        publishedAt: true,
+      },
+      orderBy: { dueAt: "desc" },
+    }),
+    prisma.exam.findMany({
+      where: { courseId: id },
+      select: {
+        id: true,
+        title: true,
+        totalScore: true,
+        openAt: true,
+        status: true,
+      },
+      orderBy: { openAt: "desc" },
+    }),
+    courseStudentIds.length === 0
+      ? Promise.resolve([])
+      : prisma.assignmentSubmission.findMany({
+          where: {
+            studentId: { in: courseStudentIds },
+            assignment: { courseId: id },
+          },
+          select: {
+            assignmentId: true,
+            studentId: true,
+            finalScore: true,
+            autoScore: true,
+            manualScore: true,
+            status: true,
+          },
+        }),
+    courseStudentIds.length === 0
+      ? Promise.resolve([])
+      : prisma.examAttempt.findMany({
+          where: {
+            studentId: { in: courseStudentIds },
+            exam: { courseId: id },
+          },
+          select: {
+            examId: true,
+            studentId: true,
+            finalScore: true,
+            autoScore: true,
+            manualScore: true,
+            status: true,
+          },
+        }),
+  ]);
 
   // ========== 出勤统计（过去 7 天）==========
   const attendanceNow = new Date();
@@ -226,9 +309,6 @@ export default async function TeacherCourseDetailPage({
                 {course.description && (
                   <p className="mt-2 text-sm text-muted-foreground">{course.description}</p>
                 )}
-                <p className="mt-2 text-xs text-subtle-foreground">
-                  {course.semester} · 更新于 {relativeTime(course.updatedAt)}
-                </p>
               </div>
               <div className="flex gap-2">
                 <AnnounceCourseButton
@@ -274,9 +354,6 @@ export default async function TeacherCourseDetailPage({
                 <div className="flex items-center gap-2">
                   <Activity className="h-4 w-4 text-primary" />
                   <h2 className="text-base font-semibold">学生出勤</h2>
-                  <span className="text-[11px] text-subtle-foreground">
-                    基于学生访问课程页的打点
-                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   {absentInWeek.length > 0 && (
@@ -314,11 +391,8 @@ export default async function TeacherCourseDetailPage({
 
               {/* 7 天 daily grid */}
               <div className="mt-6">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">过去 7 天每日到课人数</span>
-                  <span className="text-[11px] text-subtle-foreground num">
-                    应到 {expectedTotal}
-                  </span>
+                <div className="mb-2 text-xs text-muted-foreground">
+                  过去 7 天每日到课人数（应到 <span className="num text-foreground">{expectedTotal}</span>）
                 </div>
                 <div className="grid grid-cols-7 gap-2">
                   {daily.map((d) => (
@@ -349,6 +423,27 @@ export default async function TeacherCourseDetailPage({
             </CardContent>
           </Card>
 
+          {/* 成绩分析 */}
+          <CourseAnalyticsCard
+            students={courseStudentList}
+            assignments={assignmentAnalyticsList.map((a) => ({
+              id: a.id,
+              title: a.title,
+              totalScore: a.totalScore,
+              dueAt: a.dueAt,
+              status: a.publishedAt ? "PUBLISHED" : "DRAFT",
+            }))}
+            examList={examAnalyticsList.map((e) => ({
+              id: e.id,
+              title: e.title,
+              totalScore: e.totalScore,
+              openAt: e.openAt,
+              status: e.status,
+            }))}
+            assignmentSubs={assignmentAnalyticsSubs}
+            examAttempts={examAnalyticsAttempts}
+          />
+
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <div className="space-y-6 lg:col-span-2">
               <ClassesPanel
@@ -365,29 +460,35 @@ export default async function TeacherCourseDetailPage({
                 available={availableClasses}
               />
 
+              <ChaptersCard
+                courseId={course.id}
+                chapters={course.chapters.map((c) => ({
+                  id: c.id,
+                  title: c.title,
+                  description: c.description,
+                  order: c.order,
+                  assignmentCount: c._count.assignments,
+                  examCount: c._count.exams,
+                }))}
+                canEdit={isOwner || myMembership.role === "ASSISTANT"}
+              />
+
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="text-base font-semibold">课程成员（按班级分组）</h2>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    学生通过班级归属自动加入本课程。共{" "}
-                    <b className="text-foreground num">
-                      {course.classes.reduce((s, cc) => s + cc.class._count.students, 0)}
-                    </b>{" "}
-                    名学生。
-                  </p>
+                  <h2 className="text-base font-semibold">课程成员</h2>
                   <div className="mt-4 flex flex-wrap gap-2">
                     <Link
                       href={`/t/courses/${course.id}/students`}
                       className="inline-flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-4 text-sm font-medium hover:bg-muted"
                     >
-                      查看完整学生名单 →
+                      学生名单
                     </Link>
                     <Link
                       href={`/t/courses/${course.id}/resources`}
                       className="inline-flex h-9 items-center gap-1 rounded-lg border border-border bg-card px-4 text-sm font-medium hover:bg-muted"
                     >
                       <Folder className="h-3.5 w-3.5 text-muted-foreground" />
-                      资源管理（{course._count.resources}）
+                      资源管理
                     </Link>
                   </div>
                 </CardContent>

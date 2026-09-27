@@ -96,6 +96,7 @@ async function CourseTabs({ courseId }: { courseId: string }) {
   const pathname = headerList.get("x-pathname") ?? "";
   const tabs = [
     { key: "announcements", label: "公告", href: `/courses/${courseId}` },
+    { key: "chapters", label: "章节", href: `/courses/${courseId}/chapters` },
     { key: "resources", label: "资源", href: `/courses/${courseId}/resources` },
     { key: "assignments", label: "作业", href: `/assignments?course=${courseId}` },
     { key: "exams", label: "考试", href: `/exams?course=${courseId}` },
@@ -103,11 +104,13 @@ async function CourseTabs({ courseId }: { courseId: string }) {
   const activeKey = tabs.find((t) =>
     t.key === "announcements"
       ? pathname === `/courses/${courseId}` || pathname === `/courses/${courseId}/`
-      : t.key === "resources"
-        ? pathname.startsWith(`/courses/${courseId}/resources`)
-        : t.key === "assignments"
-          ? pathname.startsWith("/assignments")
-          : pathname.startsWith("/exams"),
+      : t.key === "chapters"
+        ? pathname.startsWith(`/courses/${courseId}/chapters`)
+        : t.key === "resources"
+          ? pathname.startsWith(`/courses/${courseId}/resources`)
+          : t.key === "assignments"
+            ? pathname.startsWith("/assignments")
+            : pathname.startsWith("/exams"),
   )?.key;
 
   return (

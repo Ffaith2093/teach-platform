@@ -6,6 +6,9 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/guard";
 import { submitExam } from "@/lib/exams/submit";
+import { recordAccess } from "@/lib/access-log";
+import { drawQuestionIds, drawRulesSchema } from "@/lib/exams/rules";
+import { Prisma } from "@prisma/client";
 
 async function requireStudent() {
   const session = await requireSession();
@@ -66,16 +69,26 @@ export async function startExamAction(examId: string) {
 
   // 抽题 + 乱序
   let pickedIds: string[];
-  if (exam.questions.length > 0) {
+  if (exam.drawRules) {
+    const config = drawRulesSchema.safeParse(exam.drawRules);
+    if (!config.success) throw new Error("抽题规则无效，请联系教师");
+    const poolIds = new Set(exam.questions.map((eq) => eq.questionId));
+    pickedIds = drawQuestionIds(config.data);
+    if (pickedIds.some((id) => !poolIds.has(id))) throw new Error("抽题池不完整，请联系教师");
+    if (exam.shuffleQuestion) pickedIds = shuffle(pickedIds);
+  } else if (exam.questions.length > 0) {
     const allIds = exam.questions.map((eq) => eq.questionId);
     pickedIds = exam.shuffleQuestion ? shuffle(allIds) : allIds;
   } else {
     pickedIds = [];
   }
 
-  const deadlineAt = new Date(now.getTime() + exam.durationMin * 60 * 1000);
+  if (!pickedIds.length) throw new Error("试卷尚未配置题目");
+  const deadlineAt = new Date(Math.min(exam.closeAt.getTime(), now.getTime() + exam.durationMin * 60 * 1000));
 
-  const attempt = await prisma.examAttempt.create({
+  let attempt;
+  try {
+    attempt = await prisma.examAttempt.create({
     data: {
       examId,
       studentId,
@@ -84,7 +97,12 @@ export async function startExamAction(examId: string) {
       deadlineAt,
       status: "IN_PROGRESS",
     },
-  });
+    });
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") throw error;
+    attempt = await prisma.examAttempt.findUniqueOrThrow({ where: { examId_studentId: { examId, studentId } } });
+    if (attempt.status !== "IN_PROGRESS") throw new Error("您已交卷，无法再次参加");
+  }
 
   redirect(`/exams/${examId}/attempt/${attempt.id}`);
 }
@@ -103,7 +121,7 @@ function shuffle<T>(arr: T[]): T[] {
 const saveAnswerSchema = z.object({
   attemptId: z.string().min(1),
   questionId: z.string().min(1),
-  content: z.string().min(1, "答案为空"),
+  content: z.string().min(1).max(200000),
 });
 
 export type SaveAnswerState = {
@@ -129,43 +147,51 @@ export async function saveAnswerAction(
 
   const attempt = await prisma.examAttempt.findUnique({
     where: { id: parsed.data.attemptId },
-    select: { id: true, studentId: true, status: true, deadlineAt: true, examId: true },
+    select: { id: true, studentId: true, status: true, deadlineAt: true, examId: true, questionIds: true, exam: { select: { closeAt: true } } },
   });
   if (!attempt) return { error: "尝试记录不存在" };
   if (attempt.studentId !== studentId) return { error: "无权访问" };
   if (attempt.status !== "IN_PROGRESS") {
     return { error: "已交卷，无法保存" };
   }
-  if (attempt.deadlineAt.getTime() < Date.now()) {
+  if (Math.min(attempt.deadlineAt.getTime(), attempt.exam.closeAt.getTime()) < Date.now()) {
     return { error: "已超过截止时间，请提交" };
   }
+  if (!attempt.questionIds.includes(parsed.data.questionId)) return { error: "题目不属于本次考试" };
+  const question = await prisma.examQuestion.findUnique({
+    where: { examId_questionId: { examId: attempt.examId, questionId: parsed.data.questionId } },
+    select: { question: { select: { type: true, options: true } } },
+  });
+  if (!question) return { error: "题目不存在" };
 
   // content 是 JSON 字符串
   let jsonContent: unknown;
-  try {
-    jsonContent = JSON.parse(parsed.data.content);
-  } catch {
-    jsonContent = parsed.data.content;
+  try { jsonContent = JSON.parse(parsed.data.content); } catch { return { error: "答案格式错误" }; }
+  const { type, options } = question.question;
+  if (type === "SINGLE_CHOICE" && (typeof jsonContent !== "string" ||
+      (jsonContent !== "" && !(Array.isArray(options) && options.some((o) => typeof o === "object" && o !== null && "key" in o && o.key === jsonContent))))) {
+    return { error: "选项无效" };
   }
+  if ((type === "FILL_BLANK" || type === "CODE_BLANK") &&
+      (!Array.isArray(jsonContent) || jsonContent.length > 30 || jsonContent.some((v) => typeof v !== "string" || v.length > 2000))) {
+    return { error: "填空答案无效" };
+  }
+  if (type === "PROGRAMMING" && (typeof jsonContent !== "string" || jsonContent.length > 100000)) return { error: "代码内容无效" };
 
-  // upsert
-  const existing = await prisma.answer.findUnique({
-    where: { attemptId_questionId: { attemptId: parsed.data.attemptId, questionId: parsed.data.questionId } },
+  const saved = await prisma.$transaction(async (tx) => {
+    const claim = await tx.examAttempt.updateMany({
+      where: { id: attempt.id, status: "IN_PROGRESS", deadlineAt: { gte: new Date() } },
+      data: { status: "IN_PROGRESS" },
+    });
+    if (!claim.count) return false;
+    await tx.answer.upsert({
+      where: { attemptId_questionId: { attemptId: attempt.id, questionId: parsed.data.questionId } },
+      update: { content: jsonContent as never },
+      create: { attemptId: attempt.id, questionId: parsed.data.questionId, content: jsonContent as never },
+    });
+    return true;
   });
-  if (existing) {
-    await prisma.answer.update({
-      where: { id: existing.id },
-      data: { content: jsonContent as never },
-    });
-  } else {
-    await prisma.answer.create({
-      data: {
-        attemptId: parsed.data.attemptId,
-        questionId: parsed.data.questionId,
-        content: jsonContent as never,
-      },
-    });
-  }
+  if (!saved) return { error: "已交卷或已超过截止时间，无法保存" };
   revalidatePath(`/exams/${attempt.examId}/attempt/${parsed.data.attemptId}`);
   return { ok: true };
 }
@@ -196,13 +222,19 @@ export async function submitExamAction(
   // 鉴权：只有 attempt 的本人能提交
   const attempt = await prisma.examAttempt.findUnique({
     where: { id: parsed.data.attemptId },
-    select: { id: true, studentId: true, examId: true },
+    select: { id: true, studentId: true, examId: true, exam: { select: { courseId: true } } },
   });
   if (!attempt) return { error: "尝试记录不存在" };
   if (attempt.studentId !== studentId) return { error: "无权访问" };
 
   const result = await submitExam(parsed.data.attemptId);
   if (!result.ok) return { error: result.error };
+
+  // 出勤打点：交卷算一次 AccessLog
+  void recordAccess({
+    userId: studentId,
+    courseId: attempt.exam.courseId,
+  });
 
   revalidatePath(`/exams/${attempt.examId}`);
   revalidatePath(`/exams/${attempt.examId}/attempt/${parsed.data.attemptId}`);

@@ -24,6 +24,7 @@ import {
   GripVertical,
   ArrowUp,
   ArrowDown,
+  ListTree,
 } from "lucide-react";
 import type { Difficulty } from "@prisma/client";
 import {
@@ -61,6 +62,7 @@ interface ProblemEditorProps {
     difficulty: Difficulty;
     timeLimitMs: number;
     memoryLimitMb: number;
+    splitInputByWhitespace: boolean;
     starterCode: string;
     referenceSolution: string;
     tags: string[];
@@ -228,6 +230,24 @@ export function ProblemEditor({ mode, problemId, initial, testCases: initialTest
                 />
               </div>
             </div>
+
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-muted/40 p-3">
+              <input
+                type="checkbox"
+                name="splitInputByWhitespace"
+                defaultChecked={initial.splitInputByWhitespace}
+                className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <div>
+                <div className="text-sm font-medium text-foreground">
+                  <ListTree className="mr-1 inline h-3.5 w-3.5 text-primary" />
+                  按空白拆分输入
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  将空格、Tab 和换行分隔的数据转换为每项一行，学生可用连续的 input() 读取
+                </div>
+              </div>
+            </label>
 
             <div className="space-y-1.5">
               <Label htmlFor="prob-desc">题干（Markdown）</Label>

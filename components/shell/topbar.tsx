@@ -2,9 +2,7 @@
 
 import * as React from "react";
 import { usePathname } from "next/navigation";
-import { Search } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Input } from "@/components/ui/input";
 import { NotificationBell } from "./notification-bell";
 
 interface TopbarProps {
@@ -33,11 +31,7 @@ export function Topbar({ crumbs }: TopbarProps) {
           </React.Fragment>
         ))}
       </nav>
-      <div className="relative ml-auto hidden w-full max-w-sm md:block">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle-foreground" />
-        <Input placeholder="搜索…" className="pl-9" />
-      </div>
-      <div className="ml-auto flex items-center gap-1.5 md:ml-0">
+      <div className="ml-auto flex items-center gap-1.5">
         <ThemeToggle />
         {!isAdmin && <NotificationBell href={notificationHref} />}
       </div>

@@ -15,6 +15,7 @@ interface CourseOption {
   title: string;
   classCount: number;
   role: "OWNER" | "ASSISTANT" | "CONTRIBUTOR";
+  chapters: { id: string; title: string; order: number }[];
 }
 
 interface ProblemOption {
@@ -50,19 +51,39 @@ const initial: CreateAssignmentState = {};
 export function CreateAssignmentForm({
   courses,
   problems,
+  initialCourseId,
+  initialChapterId,
 }: {
   courses: CourseOption[];
   problems: ProblemOption[];
+  initialCourseId?: string | null;
+  initialChapterId?: string | null;
 }) {
   const [state, formAction, pending] = useActionState(createAssignmentAction, initial);
-  const [step, setStep] = React.useState(0);
-  const [courseId, setCourseId] = React.useState<string>(courses[0]?.id ?? "");
+  const [step, setStep] = React.useState(initialCourseId ? 1 : 0);
+  const [courseId, setCourseId] = React.useState<string>(
+    initialCourseId && courses.some((c) => c.id === initialCourseId)
+      ? initialCourseId
+      : courses[0]?.id ?? "",
+  );
+  const [chapterId, setChapterId] = React.useState<string>(initialChapterId ?? "");
   const [allowLate, setAllowLate] = React.useState(true);
   const [picked, setPicked] = React.useState<PickedProblem[]>([]);
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [pickerSearch, setPickerSearch] = React.useState("");
   const [publishMode, setPublishMode] = React.useState<"0" | "1">("0");
   const formRef = React.useRef<HTMLFormElement>(null);
+
+  const currentCourse = courses.find((c) => c.id === courseId);
+  const courseChapters = currentCourse?.chapters ?? [];
+
+  // 切课程时清掉 chapterId
+  React.useEffect(() => {
+    if (!courseChapters.some((c) => c.id === chapterId)) {
+      setChapterId("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId]);
 
   const canNext = step === 0 ? !!courseId : step === 1 ? true : picked.length > 0;
   const totalScore = picked.reduce((sum, p) => sum + p.score, 0);
@@ -155,6 +176,7 @@ export function CreateAssignmentForm({
 
       <form ref={formRef} action={formAction} className="p-6">
         <input type="hidden" name="courseId" value={courseId} />
+        <input type="hidden" name="chapterId" value={chapterId} />
         <input type="hidden" name="problems" value={JSON.stringify(picked)} />
 
         {/* 步骤 1：选择课程 */}
@@ -227,6 +249,29 @@ export function CreateAssignmentForm({
               />
               {state.fieldErrors?.description && (
                 <p className="text-xs text-danger">{state.fieldErrors.description}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="as-chapter">所属章节（可选）</Label>
+              {courseChapters.length === 0 ? (
+                <p className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                  所选课程暂无章节，可在课程详情页先创建章节
+                </p>
+              ) : (
+                <select
+                  id="as-chapter"
+                  value={chapterId}
+                  onChange={(e) => setChapterId(e.target.value)}
+                  className="flex h-9 w-full rounded-lg border border-border bg-muted px-3 text-sm focus-visible:border-primary focus-visible:bg-card focus-visible:outline-none"
+                >
+                  <option value="">未分组</option>
+                  {courseChapters.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      第 {c.order} 章 · {c.title}
+                    </option>
+                  ))}
+                </select>
               )}
             </div>
 
