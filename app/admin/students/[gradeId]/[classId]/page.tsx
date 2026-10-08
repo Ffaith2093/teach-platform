@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { formatGradeLabel } from "@/lib/grades";
 import { Card, CardContent } from "@/components/ui/card";
 import { Topbar } from "@/components/shell/topbar";
 import { Badge } from "@/components/ui/badge";
@@ -90,7 +91,7 @@ export default async function ClassStudentsPage({
               <h1 className="mt-2 text-2xl font-semibold tracking-tight">
                 {cls.name}{" "}
                 <span className="text-base font-normal text-muted-foreground">
-                  · {cls.grade.name} · {cls.joinYear} 级
+                  · {formatGradeLabel(cls.grade.name, cls.joinYear)}
                 </span>
               </h1>
               <p className="mt-1.5 text-sm text-muted-foreground">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { formatGradeLabel } from "@/lib/grades";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Topbar } from "@/components/shell/topbar";
@@ -229,7 +230,7 @@ export default async function TeacherDashboardPage() {
                                 {ct.class.name}
                               </div>
                               <div className="mt-0.5 text-xs text-muted-foreground">
-                                {ct.class.grade.name} · {ct.class.grade.joinYear}级 ·{" "}
+                                {formatGradeLabel(ct.class.grade.name, ct.class.grade.joinYear)} ·{" "}
                                 <span className="num">{ct.class._count.students}</span> 人
                               </div>
                             </div>

@@ -29,6 +29,7 @@ export default async function GradeAssignmentPage({
   const assignment = await prisma.assignment.findUnique({
     where: { id },
     include: {
+      questions: { include: { question: { select: { content: true } } }, orderBy: { order: "asc" } },
       course: {
         select: {
           id: true,
@@ -93,6 +94,9 @@ export default async function GradeAssignmentPage({
       feedback: true,
       submittedAt: true,
       gradedAt: true,
+      answers: true,
+      textContent: true,
+      fileName: true,
     },
   });
   const subByStudent = new Map(submissions.map((s) => [s.studentId, s]));
@@ -252,6 +256,7 @@ export default async function GradeAssignmentPage({
                       <th className="px-6 py-2.5">学号</th>
                       <th className="px-6 py-2.5">姓名</th>
                       <th className="px-6 py-2.5">班级</th>
+                      <th className="px-6 py-2.5">提交内容</th>
                       <th className="px-6 py-2.5">提交时间</th>
                       <th className="px-6 py-2.5">自动分</th>
                       <th className="px-6 py-2.5">手动分 + 反馈</th>
@@ -278,6 +283,9 @@ export default async function GradeAssignmentPage({
                                   feedback: sub.feedback,
                                   submittedAt: sub.submittedAt,
                                   gradedAt: sub.gradedAt,
+                                  answers: sub.answers,
+                                  textContent: sub.textContent,
+                                  fileName: sub.fileName,
                                 }
                               : {
                                   id: null,
@@ -288,8 +296,12 @@ export default async function GradeAssignmentPage({
                                   feedback: null,
                                   submittedAt: null,
                                   gradedAt: null,
+                                  answers: null,
+                                  textContent: null,
+                                  fileName: null,
                                 }
                           }
+                          questionContents={Object.fromEntries(assignment.questions.map((item) => [item.questionId, item.question.content]))}
                         />
                       );
                     })}

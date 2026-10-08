@@ -8,9 +8,11 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/guard";
 import {
   parseImportFile,
+  parseGradeImportFile,
   validateImport,
   initialPassword,
   type ImportRow,
+  type GradeImportRow,
 } from "@/lib/students/import";
 
 // ========== 年级 ==========
@@ -337,29 +339,131 @@ export async function confirmImportAction(
     return { stage: "preview", total: rows.length, sample: okRows.slice(0, 5), errors };
   }
 
-  // 批量创建
-  let created = 0;
-  await prisma.$transaction(async (tx) => {
-    for (const r of okRows) {
-      const pwd = initialPassword(r.studentNo);
-      await tx.user.create({
-        data: {
-          email: r.email || `${r.studentNo}@school.edu`,
-          passwordHash: await bcrypt.hash(pwd, 12),
-          name: r.name,
-          studentNo: r.studentNo,
-          classId,
-          role: "STUDENT",
-          status: "ACTIVE",
-          mustChangePassword: true,
-        },
-      });
-      created++;
-    }
-  });
+  // bcrypt 计算放在数据库事务外，避免大批量导入超过 Prisma 事务时限。
+  const users = await Promise.all(
+    okRows.map(async (r) => ({
+      email: r.email || `${r.studentNo}@school.edu`,
+      passwordHash: await bcrypt.hash(initialPassword(r.studentNo), 12),
+      name: r.name,
+      studentNo: r.studentNo,
+      classId,
+      role: "STUDENT" as const,
+      status: "ACTIVE" as const,
+      mustChangePassword: true,
+    })),
+  );
+  try {
+    await prisma.user.createMany({ data: users });
+  } catch (error) {
+    return { stage: "error", message: `导入失败：${(error as Error).message}` };
+  }
 
   const cls = await prisma.class.findUnique({ where: { id: classId } });
   if (cls) revalidatePath(`/admin/students/${cls.gradeId}/${classId}`);
 
-  return { stage: "done", created };
+  return { stage: "done", created: users.length };
+}
+
+export type GradeImportState =
+  | { stage: "idle" }
+  | {
+      stage: "preview";
+      total: number;
+      sample: GradeImportRow[];
+      errors: { rowNo: number; raw: string; reason: string }[];
+      fileBase64?: string;
+    }
+  | { stage: "done"; created: number }
+  | { stage: "error"; message: string };
+
+async function validateGradeRows(gradeId: string, rows: GradeImportRow[]) {
+  const classes = await prisma.class.findMany({
+    where: { gradeId },
+    select: { id: true, name: true },
+  });
+  const classByName = new Map(classes.map((item) => [item.name.trim(), item.id]));
+  const studentNos = rows.map((row) => row.studentNo).filter(Boolean);
+  const emails = rows.map((row) => row.email).filter((email): email is string => !!email);
+  const [existingByNo, existingByEmail] = await Promise.all([
+    prisma.user.findMany({ where: { studentNo: { in: studentNos } }, select: { studentNo: true } }),
+    prisma.user.findMany({ where: { email: { in: emails } }, select: { email: true } }),
+  ]);
+  const validated = validateImport(rows, {
+    studentNos: new Set(existingByNo.map((user) => user.studentNo!).filter(Boolean)),
+    emails: new Set(existingByEmail.map((user) => user.email!).filter(Boolean)),
+  });
+  const classErrors = rows
+    .filter((row) => !row.className || !classByName.has(row.className.trim()))
+    .map((row) => ({
+      rowNo: row.rowNo,
+      raw: row.raw,
+      reason: row.className ? `班级「${row.className}」不存在于当前年级` : "班级名为空",
+    }));
+  const errors = [...validated.errors, ...classErrors].sort((a, b) => a.rowNo - b.rowNo);
+  const errorRows = new Set(errors.map((error) => error.rowNo));
+  return { okRows: rows.filter((row) => !errorRows.has(row.rowNo)), errors, classByName };
+}
+
+export async function previewGradeImportAction(
+  _prev: GradeImportState,
+  formData: FormData,
+): Promise<GradeImportState> {
+  await requireRole(["ADMIN"]);
+  const gradeId = String(formData.get("gradeId") ?? "");
+  const file = formData.get("file") as File | null;
+  if (!gradeId) return { stage: "error", message: "缺少年级参数" };
+  if (!file || file.size === 0) return { stage: "error", message: "请选择文件" };
+  if (file.size > 5 * 1024 * 1024) return { stage: "error", message: "文件大小不能超过 5MB" };
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  if (!["csv", "xlsx"].includes(ext ?? "")) return { stage: "error", message: "仅支持 .csv / .xlsx 文件" };
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  try {
+    const rows = await parseGradeImportFile(buffer);
+    const { okRows, errors } = await validateGradeRows(gradeId, rows);
+    return {
+      stage: "preview",
+      total: rows.length,
+      sample: okRows.slice(0, 5),
+      errors,
+      fileBase64: buffer.toString("base64"),
+    };
+  } catch (error) {
+    return { stage: "error", message: (error as Error).message };
+  }
+}
+
+export async function confirmGradeImportAction(
+  _prev: GradeImportState,
+  formData: FormData,
+): Promise<GradeImportState> {
+  await requireRole(["ADMIN"]);
+  const gradeId = String(formData.get("gradeId") ?? "");
+  const fileBase64 = String(formData.get("fileBase64") ?? "");
+  if (!gradeId || !fileBase64) return { stage: "error", message: "缺少必要参数" };
+  try {
+    const rows = await parseGradeImportFile(Buffer.from(fileBase64, "base64"));
+    const { okRows, errors, classByName } = await validateGradeRows(gradeId, rows);
+    if (errors.length > 0) return { stage: "preview", total: rows.length, sample: okRows.slice(0, 5), errors };
+    const users = await Promise.all(
+      okRows.map(async (row) => ({
+        email: row.email || `${row.studentNo}@school.edu`,
+        passwordHash: await bcrypt.hash(initialPassword(row.studentNo), 12),
+        name: row.name,
+        studentNo: row.studentNo,
+        classId: classByName.get(row.className.trim())!,
+        role: "STUDENT" as const,
+        status: "ACTIVE" as const,
+        mustChangePassword: true,
+      })),
+    );
+    await prisma.user.createMany({ data: users });
+    revalidatePath(`/admin/students/${gradeId}`);
+    for (const classId of new Set(users.map((user) => user.classId))) {
+      revalidatePath(`/admin/students/${gradeId}/${classId}`);
+    }
+    return { stage: "done", created: users.length };
+  } catch (error) {
+    return { stage: "error", message: `导入失败：${(error as Error).message}` };
+  }
 }

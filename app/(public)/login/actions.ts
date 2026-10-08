@@ -13,6 +13,7 @@ const loginSchema = z.object({
 });
 
 export type LoginState = {
+  success?: boolean;
   error?: string;
   fieldErrors?: { identifier?: string; password?: string };
 };
@@ -38,7 +39,7 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
       password: parsed.data.password,
       redirect: false,
     });
-    return {}; // 成功由客户端 router.refresh + 跳转处理
+    return { success: true }; // 成功由客户端 router.refresh + 跳转处理
   } catch (e) {
     if (e instanceof AuthError) {
       if (e.type === "CredentialsSignin") {

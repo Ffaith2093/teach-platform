@@ -209,9 +209,6 @@ export default async function TeacherClassDetailPage({
                 <div className="flex items-center gap-3">
                   <h1 className="text-2xl font-semibold tracking-tight">{cls.name}</h1>
                   <Badge variant="primary">{cls.grade.name}</Badge>
-                  <span className="text-base font-normal text-muted-foreground num">
-                    · {cls.grade.joinYear} 级
-                  </span>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1">

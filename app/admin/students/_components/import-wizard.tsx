@@ -60,7 +60,7 @@ export function ImportWizard({ classId, className }: { classId: string; classNam
   if (view.stage === "idle" || view.stage === "error") {
     return (
       <div className="space-y-4">
-        <form action={previewAction} encType="multipart/form-data" className="space-y-4">
+        <form action={previewAction} className="space-y-4">
           <input type="hidden" name="classId" value={classId} />
           <label
             htmlFor="import-file"

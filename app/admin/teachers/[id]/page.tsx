@@ -74,7 +74,6 @@ export default async function TeacherDetailPage({
     id: ct.classId,
     name: ct.class.name,
     gradeName: ct.class.grade.name,
-    gradeJoinYear: ct.class.grade.joinYear,
     studentCount: ct.class._count.students,
   }));
 

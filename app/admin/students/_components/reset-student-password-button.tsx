@@ -12,6 +12,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { resetStudentPasswordAction } from "@/app/admin/students/actions";
+import { copyText } from "@/lib/client/copy-text";
 
 interface Props {
   gradeId: string;
@@ -43,7 +44,7 @@ export function ResetStudentPasswordButton({
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(password);
+      if (!(await copyText(password))) throw new Error("复制失败");
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {

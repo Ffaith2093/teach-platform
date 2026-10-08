@@ -245,8 +245,8 @@ model Problem {
   title                  String
   description            String // Markdown
   difficulty             Difficulty
-  timeLimitMs            Int        @default(3000)
-  memoryLimitMb          Int        @default(128)
+  timeLimitMs            Int        @default(1000)
+  memoryLimitMb          Int        @default(256)
   splitInputByWhitespace Boolean    @default(false)
   starterCode            String?
   referenceSolution      String?
@@ -300,12 +300,13 @@ model Question {
   tags        String[]
   explanation String?
 
-  bank          QuestionBank?  @relation(fields: [bankId], references: [id])
-  problem       Problem?       @relation(fields: [problemId], references: [id])
-  course        Course?        @relation(fields: [courseId], references: [id])
-  courseId      String?
-  examQuestions ExamQuestion[]
-  answers       Answer[]
+  bank                QuestionBank?        @relation(fields: [bankId], references: [id])
+  problem             Problem?             @relation(fields: [problemId], references: [id])
+  course              Course?              @relation(fields: [courseId], references: [id])
+  courseId            String?
+  examQuestions       ExamQuestion[]
+  assignmentQuestions AssignmentQuestion[]
+  answers             Answer[]
 
   @@index([bankId, type])
   @@index([courseId, type])
@@ -334,28 +335,49 @@ model QuestionBank {
 // ============== 作业 ==============
 
 model Assignment {
-  id          String    @id @default(cuid())
-  courseId    String
-  title       String
-  description String
-  dueAt       DateTime
-  allowLate   Boolean   @default(true)
-  latePenalty Int       @default(20)
-  totalScore  Int
-  publishedAt DateTime? // null = 草稿
-  chapterId   String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id                    String    @id @default(cuid())
+  courseId              String
+  title                 String
+  description           String
+  dueAt                 DateTime
+  allowLate             Boolean   @default(true)
+  latePenalty           Int       @default(20)
+  totalScore            Int
+  allowSurvey           Boolean   @default(false)
+  surveyPrompt          String?   @db.Text
+  surveyScore           Int       @default(0)
+  allowAttachment       Boolean   @default(false)
+  allowedFileExtensions String[]
+  maxFileSizeMb         Int       @default(10)
+  attachmentScore       Int       @default(0)
+  publishedAt           DateTime? // null = 草稿
+  chapterId             String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   course      Course                 @relation(fields: [courseId], references: [id])
   creator     User                   @relation(fields: [creatorId], references: [id])
   creatorId   String
   chapter     Chapter?               @relation(fields: [chapterId], references: [id], onDelete: SetNull)
   problems    AssignmentProblem[]
+  questions   AssignmentQuestion[]
   submissions AssignmentSubmission[]
 
   @@index([courseId, publishedAt, dueAt])
   @@index([chapterId])
+}
+
+model AssignmentQuestion {
+  assignmentId String
+  questionId   String
+  score        Int
+  order        Int
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  question   Question   @relation(fields: [questionId], references: [id])
+
+  @@id([assignmentId, questionId])
+  @@index([assignmentId, order])
 }
 
 model AssignmentProblem {
@@ -371,21 +393,25 @@ model AssignmentProblem {
 }
 
 model AssignmentSubmission {
-  id           String           @id @default(cuid())
-  assignmentId String
-  studentId    String
-  textContent  String?
-  fileUrl      String?
-  autoScore    Int?
-  manualScore  Int?
-  finalScore   Int?
-  feedback     String?
-  status       SubmissionStatus @default(DRAFT)
-  submittedAt  DateTime?
-  gradedById   String?
-  gradedAt     DateTime?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  id            String           @id @default(cuid())
+  assignmentId  String
+  studentId     String
+  textContent   String?
+  fileUrl       String?
+  fileName      String?
+  fileMimeType  String?
+  fileSizeBytes Int?
+  answers       Json?
+  autoScore     Int?
+  manualScore   Int?
+  finalScore    Int?
+  feedback      String?
+  status        SubmissionStatus @default(DRAFT)
+  submittedAt   DateTime?
+  gradedById    String?
+  gradedAt      DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
   assignment Assignment @relation(fields: [assignmentId], references: [id])
   student    User       @relation(fields: [studentId], references: [id])

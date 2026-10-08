@@ -6,7 +6,8 @@ import { Topbar } from "@/components/shell/topbar";
 import { CreateClassButton } from "../_components/create-class-button";
 import { DeleteClassButton } from "../_components/delete-class-button";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserCheck, GraduationCap, ChevronLeft } from "lucide-react";
+import { Users, UserCheck, GraduationCap, ChevronLeft, Upload } from "lucide-react";
+import { formatGradeLabel } from "@/lib/grades";
 
 export const metadata = { title: "学生管理 · 班级" };
 
@@ -64,19 +65,23 @@ export default async function ClassesPage({
                 <ChevronLeft className="h-3 w-3" />
                 返回年级列表
               </Link>
-              <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-                {grade.name}{" "}
-                <span className="text-base font-normal text-muted-foreground num">
-                  · {grade.joinYear} 级
-                </span>
-              </h1>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight">{formatGradeLabel(grade.name, grade.joinYear)}</h1>
               <p className="mt-1.5 text-sm text-muted-foreground">
                 {grade.isActive
                   ? "此年级当前启用。创建班级并向班级导入学生后，学生登录即可看到自己班级所属课程。"
                   : "此年级已停用，下属班级也无法被选入课程。"}
               </p>
             </div>
-            <CreateClassButton gradeId={grade.id} disabled={!grade.isActive} />
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/admin/students/${grade.id}/import`}
+                className={`inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-medium transition-colors hover:bg-muted ${!grade.isActive || grade.classes.length === 0 ? "pointer-events-none opacity-50" : ""}`}
+              >
+                <Upload className="h-4 w-4" />
+                批量导入全年级
+              </Link>
+              <CreateClassButton gradeId={grade.id} disabled={!grade.isActive} />
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4">

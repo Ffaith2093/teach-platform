@@ -59,7 +59,7 @@ export default async function NewAssignmentPage({
   }
 
   // 可挂载的编程题（本人创建 + 公开题库）
-  const problems = await prisma.problem.findMany({
+  const [problems, questions] = await Promise.all([prisma.problem.findMany({
     where: {
       OR: [{ authorId: userId }, { isPublic: true }],
     },
@@ -73,7 +73,18 @@ export default async function NewAssignmentPage({
     },
     orderBy: [{ updatedAt: "desc" }],
     take: 200,
-  });
+  }), prisma.question.findMany({
+    where: {
+      type: { in: ["SINGLE_CHOICE", "FILL_BLANK", "CODE_BLANK"] },
+      OR: [
+        { courseId: { in: memberships.map((membership) => membership.course.id) } },
+        { bank: { ownerId: userId } },
+      ],
+    },
+    select: { id: true, content: true, type: true, score: true },
+    orderBy: { content: "asc" },
+    take: 200,
+  })]);
 
   return (
     <>
@@ -95,7 +106,7 @@ export default async function NewAssignmentPage({
             </Link>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight">新建作业</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              一次完成：<b className="text-foreground">选课程 → 基本信息 → 挂载编程题</b>。
+              一次完成：<b className="text-foreground">选课程 → 基本信息 → 配置作业内容</b>。
               可保存为草稿继续编辑，也可直接发布。
             </p>
           </div>
@@ -116,6 +127,7 @@ export default async function NewAssignmentPage({
               isPublic: p.isPublic,
               isMine: p.authorId === userId,
             }))}
+            questions={questions}
             initialCourseId={presetCourseId}
             initialChapterId={presetChapterValid ? presetChapterId : null}
           />

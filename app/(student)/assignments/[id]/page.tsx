@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { SubmissionStatus } from "@prisma/client";
 import { ProblemSubmit } from "./_components/problem-submit";
+import { AssignmentContentSubmit } from "./_components/assignment-content-submit";
 
 export const metadata = { title: "作业详情" };
 
@@ -73,6 +74,10 @@ export default async function StudentAssignmentDetailPage({
           },
         },
       },
+      questions: {
+        orderBy: { order: "asc" },
+        include: { question: { select: { id: true, content: true, type: true, options: true, answer: true } } },
+      },
     },
   });
   if (!assignment) notFound();
@@ -98,6 +103,9 @@ export default async function StudentAssignmentDetailPage({
       feedback: true,
       submittedAt: true,
       gradedAt: true,
+      answers: true,
+      textContent: true,
+      fileName: true,
     },
   });
 
@@ -235,7 +243,7 @@ export default async function StudentAssignmentDetailPage({
                   </span>
                   <span>·</span>
                   <span className="num">
-                    已完成 {submittedProblemCount} / {problemCount} 题
+                    编程题已完成 {submittedProblemCount} / {problemCount}
                   </span>
                 </div>
               </div>
@@ -273,7 +281,7 @@ export default async function StudentAssignmentDetailPage({
               <CardContent className="p-5">
                 <div className="text-sm text-muted-foreground">题目数</div>
                 <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-3xl font-bold tracking-tight num">{problemCount}</span>
+                  <span className="text-3xl font-bold tracking-tight num">{problemCount + assignment.questions.length}</span>
                   <span className="text-sm text-muted-foreground">题</span>
                 </div>
               </CardContent>
@@ -334,7 +342,28 @@ export default async function StudentAssignmentDetailPage({
             </Card>
           )}
 
-          {assignment.problems.length === 0 ? (
+          {(assignment.questions.length > 0 || assignment.allowSurvey || assignment.allowAttachment) && (
+            <AssignmentContentSubmit
+              assignmentId={assignment.id}
+              questions={assignment.questions.map((item) => ({
+                id: item.questionId,
+                content: item.question.content,
+                type: item.question.type,
+                options: Array.isArray(item.question.options) ? item.question.options as Array<{ key: string; text: string }> : [],
+                blankCount: Array.isArray(item.question.answer) ? Math.max(1, item.question.answer.length) : 1,
+                score: item.score,
+              }))}
+              surveyPrompt={assignment.allowSurvey ? assignment.surveyPrompt : null}
+              allowAttachment={assignment.allowAttachment}
+              allowedExtensions={assignment.allowedFileExtensions}
+              maxFileSizeMb={assignment.maxFileSizeMb}
+              initialAnswers={mySub?.answers && typeof mySub.answers === "object" && !Array.isArray(mySub.answers) ? mySub.answers as Record<string, unknown> : {}}
+              initialSurvey={mySub?.textContent ?? ""}
+              existingFileName={mySub?.fileName ?? null}
+            />
+          )}
+
+          {assignment.problems.length === 0 && assignment.questions.length === 0 && !assignment.allowSurvey && !assignment.allowAttachment ? (
             <Card>
               <CardContent className="flex flex-col items-center gap-3 px-6 py-16 text-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">

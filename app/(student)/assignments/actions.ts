@@ -9,6 +9,11 @@ import { notifyMany } from "@/lib/notifications";
 import { recordAccess } from "@/lib/access-log";
 import { runSandbox } from "@/lib/judge/sandbox";
 import type { JudgeRunResult } from "@/lib/judge/local";
+import { writeFile, unlink } from "node:fs/promises";
+import { extname, join } from "node:path";
+import { ensureCourseDir, generateStoredName } from "@/lib/storage";
+import { scoreAssignmentAnswers } from "@/lib/assignments/scoring";
+import { scaledProblemScore } from "@/lib/exams/scoring";
 
 // ========== 权限工具 ==========
 
@@ -210,6 +215,111 @@ export async function submitProblemAction(
   revalidatePath(`/t/assignments/${parsed.data.assignmentId}`);
 
   return { ok: true, submissionId: submission.id };
+}
+
+export type SubmitAssignmentContentState = { ok?: true; error?: string };
+
+export async function submitAssignmentContentAction(
+  _prev: SubmitAssignmentContentState,
+  formData: FormData,
+): Promise<SubmitAssignmentContentState> {
+  const assignmentId = String(formData.get("assignmentId") ?? "");
+  const session = await requireStudent();
+  const student = await prisma.user.findUnique({ where: { id: session.user.id }, select: { classId: true } });
+  if (!assignmentId || !student?.classId) return { error: "作业或班级信息无效" };
+
+  const assignment = await prisma.assignment.findUnique({
+    where: { id: assignmentId },
+    include: {
+      questions: { include: { question: { select: { type: true, answer: true } } } },
+      problems: { select: { problemId: true, score: true } },
+    },
+  });
+  if (!assignment?.publishedAt) return { error: "作业不存在或尚未发布" };
+  const accessible = await prisma.courseClass.findFirst({ where: { courseId: assignment.courseId, classId: student.classId } });
+  if (!accessible) return { error: "您不在此作业关联的班级中" };
+  const now = new Date();
+  if (assignment.dueAt < now && !assignment.allowLate) return { error: "作业已截止且不允许迟交" };
+
+  let answers: Record<string, unknown> = {};
+  try {
+    answers = JSON.parse(String(formData.get("answers") ?? "{}"));
+  } catch {
+    return { error: "答题数据格式错误" };
+  }
+  for (const item of assignment.questions) {
+    const value = answers[item.questionId];
+    const missing = Array.isArray(value) ? value.some((part) => !String(part ?? "").trim()) : !String(value ?? "").trim();
+    if (missing) return { error: "请完成所有选择题和填空题" };
+  }
+
+  const surveyText = String(formData.get("surveyText") ?? "").trim();
+  if (assignment.allowSurvey && !surveyText) return { error: "请填写评价问卷" };
+  if (surveyText.length > 10000) return { error: "评价问卷内容不能超过 10000 字" };
+
+  const existing = await prisma.assignmentSubmission.findUnique({
+    where: { assignmentId_studentId: { assignmentId, studentId: session.user.id } },
+    select: { id: true, fileUrl: true },
+  });
+  const file = formData.get("attachment");
+  let fileData: { fileUrl: string; fileName: string; fileMimeType: string; fileSizeBytes: number } | null = null;
+  if (file instanceof File && file.size > 0) {
+    const ext = extname(file.name).slice(1).toLowerCase();
+    if (!assignment.allowAttachment) return { error: "此作业不接受附件" };
+    if (!assignment.allowedFileExtensions.includes(ext)) return { error: `附件仅支持：${assignment.allowedFileExtensions.map((item) => `.${item}`).join("、")}` };
+    if (file.size > assignment.maxFileSizeMb * 1024 * 1024) return { error: `附件不能超过 ${assignment.maxFileSizeMb}MB` };
+    const storedName = generateStoredName(ext);
+    const directory = await ensureCourseDir(assignment.courseId);
+    await writeFile(join(directory, storedName), Buffer.from(await file.arrayBuffer()));
+    fileData = { fileUrl: storedName, fileName: file.name, fileMimeType: file.type || "application/octet-stream", fileSizeBytes: file.size };
+  } else if (assignment.allowAttachment && !existing?.fileUrl) {
+    return { error: "请选择要提交的附件" };
+  }
+
+  const objectiveScore = scoreAssignmentAnswers(assignment.questions, answers);
+  let programmingScore = 0;
+  for (const problem of assignment.problems) {
+    const latest = await prisma.submission.findFirst({
+      where: { problemId: problem.problemId, userId: session.user.id, contextType: "ASSIGNMENT", contextId: assignmentId },
+      orderBy: { createdAt: "desc" },
+      select: { score: true, problem: { select: { testCases: { select: { score: true } } } } },
+    });
+    const possible = latest?.problem.testCases.reduce((sum, testCase) => sum + testCase.score, 0) ?? 0;
+    programmingScore += scaledProblemScore(latest?.score ?? 0, possible, problem.score);
+  }
+
+  await prisma.assignmentSubmission.upsert({
+    where: { assignmentId_studentId: { assignmentId, studentId: session.user.id } },
+    create: {
+      assignmentId,
+      studentId: session.user.id,
+      answers: answers as never,
+      textContent: assignment.allowSurvey ? surveyText : null,
+      ...fileData,
+      autoScore: objectiveScore + programmingScore,
+      status: "SUBMITTED",
+      submittedAt: now,
+    },
+    update: {
+      answers: answers as never,
+      textContent: assignment.allowSurvey ? surveyText : null,
+      ...(fileData ?? {}),
+      autoScore: objectiveScore + programmingScore,
+      status: "SUBMITTED",
+      submittedAt: now,
+      manualScore: null,
+      finalScore: null,
+      gradedAt: null,
+    },
+  });
+  if (fileData && existing?.fileUrl && existing.fileUrl !== fileData.fileUrl) {
+    const directory = await ensureCourseDir(assignment.courseId);
+    await unlink(join(directory, existing.fileUrl)).catch(() => undefined);
+  }
+  revalidatePath(`/assignments/${assignmentId}`);
+  revalidatePath(`/t/assignments/${assignmentId}`);
+  revalidatePath(`/t/assignments/${assignmentId}/grade`);
+  return { ok: true };
 }
 
 // ========== 运行样例（不进队列，不写 Submission）==========

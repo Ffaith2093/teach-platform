@@ -2,13 +2,13 @@
 
 import * as React from "react";
 import { useActionState } from "react";
-import { Check, ChevronRight, ChevronLeft, FileText, BookOpen, Code, Plus, X, Search } from "lucide-react";
+import { Check, ChevronRight, ChevronLeft, FileText, BookOpen, Code, Plus, X, Search, ListChecks, MessageSquareText, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { createAssignmentAction, type CreateAssignmentState } from "@/app/t/assignments/actions";
-import type { Difficulty } from "@prisma/client";
+import type { Difficulty, QuestionType } from "@prisma/client";
 
 interface CourseOption {
   id: string;
@@ -34,10 +34,21 @@ interface PickedProblem {
   score: number;
 }
 
+interface QuestionOption {
+  id: string;
+  content: string;
+  type: QuestionType;
+  score: number;
+}
+
+interface PickedQuestion extends QuestionOption {
+  assignedScore: number;
+}
+
 const STEPS = [
   { key: "course", label: "选择课程", icon: BookOpen },
   { key: "info", label: "基本信息", icon: FileText },
-  { key: "problems", label: "挂载编程题", icon: Code },
+  { key: "content", label: "作业内容", icon: ListChecks },
 ] as const;
 
 const DIFFICULTY_LABELS: Record<Difficulty, { label: string; tone: "success" | "warning" | "danger" }> = {
@@ -51,11 +62,13 @@ const initial: CreateAssignmentState = {};
 export function CreateAssignmentForm({
   courses,
   problems,
+  questions,
   initialCourseId,
   initialChapterId,
 }: {
   courses: CourseOption[];
   problems: ProblemOption[];
+  questions: QuestionOption[];
   initialCourseId?: string | null;
   initialChapterId?: string | null;
 }) {
@@ -69,9 +82,13 @@ export function CreateAssignmentForm({
   const [chapterId, setChapterId] = React.useState<string>(initialChapterId ?? "");
   const [allowLate, setAllowLate] = React.useState(true);
   const [picked, setPicked] = React.useState<PickedProblem[]>([]);
+  const [pickedQuestions, setPickedQuestions] = React.useState<PickedQuestion[]>([]);
+  const [allowSurvey, setAllowSurvey] = React.useState(false);
+  const [allowAttachment, setAllowAttachment] = React.useState(false);
+  const [surveyScore, setSurveyScore] = React.useState(0);
+  const [attachmentScore, setAttachmentScore] = React.useState(0);
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [pickerSearch, setPickerSearch] = React.useState("");
-  const [publishMode, setPublishMode] = React.useState<"0" | "1">("0");
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const currentCourse = courses.find((c) => c.id === courseId);
@@ -85,8 +102,12 @@ export function CreateAssignmentForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
-  const canNext = step === 0 ? !!courseId : step === 1 ? true : picked.length > 0;
-  const totalScore = picked.reduce((sum, p) => sum + p.score, 0);
+  const hasContent = picked.length > 0 || pickedQuestions.length > 0 || allowSurvey || allowAttachment;
+  const canNext = step === 0 ? !!courseId : step === 1 ? true : hasContent;
+  const totalScore = picked.reduce((sum, p) => sum + p.score, 0)
+    + pickedQuestions.reduce((sum, question) => sum + question.assignedScore, 0)
+    + (allowSurvey ? surveyScore : 0)
+    + (allowAttachment ? attachmentScore : 0);
 
   function addProblem(p: ProblemOption) {
     if (picked.find((x) => x.problemId === p.id)) return;
@@ -178,10 +199,10 @@ export function CreateAssignmentForm({
         <input type="hidden" name="courseId" value={courseId} />
         <input type="hidden" name="chapterId" value={chapterId} />
         <input type="hidden" name="problems" value={JSON.stringify(picked)} />
+        <input type="hidden" name="questions" value={JSON.stringify(pickedQuestions.map((question) => ({ questionId: question.id, score: question.assignedScore })))} />
 
         {/* 步骤 1：选择课程 */}
-        {step === 0 && (
-          <div className="space-y-3">
+        <div className={step === 0 ? "space-y-3" : "hidden"}>
             <p className="text-sm text-muted-foreground">
               选择要布置作业的课程（您必须为该课程的主讲或助教）。
             </p>
@@ -218,12 +239,10 @@ export function CreateAssignmentForm({
                 );
               })}
             </div>
-          </div>
-        )}
+        </div>
 
         {/* 步骤 2：基本信息 */}
-        {step === 1 && (
-          <div className="space-y-4">
+        <div className={step === 1 ? "space-y-4" : "hidden"}>
             <div className="space-y-1.5">
               <Label htmlFor="as-title">作业标题</Label>
               <Input
@@ -318,12 +337,11 @@ export function CreateAssignmentForm({
                 </div>
               </div>
             </label>
-          </div>
-        )}
+        </div>
 
-        {/* 步骤 3：挂载编程题 */}
-        {step === 2 && (
-          <div className="space-y-4">
+        {/* 步骤 3：配置作业内容 */}
+        <div className={step === 2 ? "space-y-6" : "hidden"}>
+          <section className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">
@@ -509,8 +527,34 @@ export function CreateAssignmentForm({
                 </div>
               </div>
             )}
-          </div>
-        )}
+          </section>
+
+          <section className="space-y-3 border-t border-border pt-5">
+            <div className="flex items-center justify-between gap-3">
+              <div><h3 className="flex items-center gap-2 text-sm font-semibold"><ListChecks className="h-4 w-4 text-primary" />选择题与填空题</h3><p className="mt-1 text-xs text-muted-foreground">从当前课程或您的题库中选择，提交后自动评分。</p></div>
+            </div>
+            {questions.length === 0 ? <p className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">暂无可用的选择题或填空题</p> : (
+              <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-border p-2">
+                {questions.map((question) => {
+                  const selected = pickedQuestions.find((item) => item.id === question.id);
+                  return <label key={question.id} className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 hover:bg-muted/50"><input type="checkbox" checked={!!selected} onChange={(event) => setPickedQuestions((current) => event.target.checked ? [...current, { ...question, assignedScore: question.score }] : current.filter((item) => item.id !== question.id))} /><span className="min-w-0 flex-1 truncate text-sm">{question.content}</span><Badge variant="default">{question.type === "SINGLE_CHOICE" ? "选择题" : question.type === "FILL_BLANK" ? "填空题" : "代码填空"}</Badge>{selected && <Input aria-label={`${question.content}分值`} type="number" min={1} max={1000} value={selected.assignedScore} onChange={(event) => setPickedQuestions((current) => current.map((item) => item.id === question.id ? { ...item, assignedScore: Number(event.target.value) || 1 } : item))} className="h-8 w-20 text-center num" />}</label>;
+                })}
+              </div>
+            )}
+          </section>
+
+          <section className="space-y-3 border-t border-border pt-5">
+            <label className="flex cursor-pointer items-start gap-3"><input type="checkbox" name="allowSurvey" checked={allowSurvey} onChange={(event) => setAllowSurvey(event.target.checked)} className="mt-1" /><span><span className="flex items-center gap-2 text-sm font-semibold"><MessageSquareText className="h-4 w-4 text-primary" />评价问卷</span><span className="text-xs text-muted-foreground">收集学生的文字反馈或学习反思。</span></span></label>
+            {allowSurvey && <div className="grid gap-3 pl-7 sm:grid-cols-[1fr_120px]"><textarea name="surveyPrompt" required={allowSurvey} rows={3} maxLength={2000} placeholder="例：请总结本章最难理解的内容，并说明原因。" className="rounded-lg border border-border bg-muted px-3 py-2 text-sm focus-visible:border-primary focus-visible:outline-none" /><div><Label htmlFor="survey-score">分值</Label><Input id="survey-score" name="surveyScore" type="number" min={0} max={1000} value={surveyScore} onChange={(event) => setSurveyScore(Number(event.target.value) || 0)} /></div></div>}
+          </section>
+
+          <section className="space-y-3 border-t border-border pt-5">
+            <label className="flex cursor-pointer items-start gap-3"><input type="checkbox" name="allowAttachment" checked={allowAttachment} onChange={(event) => setAllowAttachment(event.target.checked)} className="mt-1" /><span><span className="flex items-center gap-2 text-sm font-semibold"><Paperclip className="h-4 w-4 text-primary" />附件提交</span><span className="text-xs text-muted-foreground">允许学生上传一份文件，并限制格式和大小。</span></span></label>
+            {allowAttachment && <div className="grid gap-3 pl-7 sm:grid-cols-[1fr_130px_110px]"><div><Label htmlFor="allowed-ext">允许格式</Label><Input id="allowed-ext" name="allowedFileExtensions" required={allowAttachment} defaultValue="pdf,docx,zip" placeholder="pdf,docx,zip" /></div><div><Label htmlFor="max-file-size">上限 MB</Label><Input id="max-file-size" name="maxFileSizeMb" type="number" min={1} max={100} defaultValue={10} /></div><div><Label htmlFor="attachment-score">分值</Label><Input id="attachment-score" name="attachmentScore" type="number" min={0} max={1000} value={attachmentScore} onChange={(event) => setAttachmentScore(Number(event.target.value) || 0)} /></div></div>}
+          </section>
+
+          <p className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">当前已配置总分：<b className="num text-foreground">{totalScore}</b>（问卷和附件分值会在提交时一并计入作业总分）</p>
+        </div>
 
         {state.error && (
           <div className="mt-4 rounded-lg border border-danger/30 bg-danger-subtle/40 px-3 py-2 text-xs text-danger">
@@ -538,25 +582,26 @@ export function CreateAssignmentForm({
               <>
                 <Button
                   type="submit"
+                  name="publish"
+                  value="0"
                   variant="outline"
                   disabled={pending || !canNext}
-                  onClick={() => setPublishMode("0")}
                 >
-                  {pending && publishMode === "0" ? "保存中…" : "保存草稿"}
+                  {pending ? "保存中…" : "保存草稿"}
                 </Button>
                 <Button
                   type="submit"
+                  name="publish"
+                  value="1"
                   disabled={pending || !canNext}
-                  onClick={() => setPublishMode("1")}
                 >
-                  {pending && publishMode === "1" ? "发布中…" : "直接发布"}
+                  {pending ? "发布中…" : "直接发布"}
                 </Button>
               </>
             )}
           </div>
         </div>
 
-        <input type="hidden" name="publish" value={publishMode} />
       </form>
     </div>
   );

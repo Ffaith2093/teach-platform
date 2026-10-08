@@ -19,7 +19,6 @@ interface AssignedClass {
   id: string;
   name: string;
   gradeName: string;
-  gradeJoinYear: number;
   studentCount: number;
 }
 
@@ -139,7 +138,6 @@ export function AssignClassesPanel({ teacherId, assigned, available }: Props) {
                     <div className="text-sm font-medium text-foreground">{c.name}</div>
                     <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Badge variant="primary">{c.gradeName}</Badge>
-                      <span className="num">{c.gradeJoinYear} 级</span>
                       <span>·</span>
                       <span className="num">{c.studentCount} 名学生</span>
                     </div>

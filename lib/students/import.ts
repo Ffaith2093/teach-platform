@@ -19,6 +19,10 @@ export interface ImportRow {
   raw: string; // 原始行内容，用于错误展示
 }
 
+export interface GradeImportRow extends ImportRow {
+  className: string;
+}
+
 export interface ImportError {
   rowNo: number;
   raw: string;
@@ -73,6 +77,43 @@ export async function parseImportFile(buffer: Buffer): Promise<ImportRow[]> {
       studentNo,
       email: email || undefined,
       raw: [name, studentNo, email].filter(Boolean).join(" | "),
+    });
+  }
+  return rows;
+}
+
+export async function parseGradeImportFile(buffer: Buffer): Promise<GradeImportRow[]> {
+  if (buffer.length === 0) throw new Error("文件为空或无法解析");
+
+  const workbook = new ExcelJS.Workbook();
+  let sheet: Worksheet | undefined;
+  try {
+    if (isZipFile(buffer)) {
+      await workbook.xlsx.load(Uint8Array.from(buffer).buffer);
+      sheet = workbook.worksheets[0];
+    } else {
+      sheet = await workbook.csv.read(Readable.from([buffer]), { map: (value) => value });
+    }
+  } catch {
+    throw new Error("文件为空或无法解析");
+  }
+  if (!sheet || sheet.rowCount < 2) throw new Error("文件至少需要 1 行数据（不含表头）");
+
+  const rows: GradeImportRow[] = [];
+  for (let rowNo = 2; rowNo <= sheet.rowCount; rowNo++) {
+    const row = sheet.getRow(rowNo);
+    const className = row.getCell(1).text.trim();
+    const name = row.getCell(2).text.trim();
+    const studentNo = row.getCell(3).text.trim();
+    const email = row.getCell(4).text.trim();
+    if (!className && !name && !studentNo && !email) continue;
+    rows.push({
+      rowNo,
+      className,
+      name,
+      studentNo,
+      email: email || undefined,
+      raw: [className, name, studentNo, email].filter(Boolean).join(" | "),
     });
   }
   return rows;

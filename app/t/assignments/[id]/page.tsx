@@ -65,6 +65,7 @@ export default async function TeacherAssignmentDetailPage({
           },
         },
       },
+      _count: { select: { questions: true } },
     },
   });
   if (!assignment) notFound();
@@ -230,7 +231,7 @@ export default async function TeacherAssignmentDetailPage({
 
   const tabs: { key: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { key: "overview", label: "概览", icon: BarChart3 },
-    { key: "problems", label: `题目（${problems.length}）`, icon: Code },
+    { key: "problems", label: `编程题（${problems.length}）`, icon: Code },
     { key: "submissions", label: `提交（${submittedCount}）`, icon: Users },
   ];
 
@@ -335,8 +336,10 @@ export default async function TeacherAssignmentDetailPage({
                 totalScore: assignment.totalScore,
                 allowLate: assignment.allowLate,
                 latePenalty: assignment.latePenalty,
+                allowSurvey: assignment.allowSurvey,
+                allowAttachment: assignment.allowAttachment,
               }}
-              problemsCount={problems.length}
+              questionsCount={problems.length + assignment._count.questions}
               allStudents={allStudents}
               statusCounts={statusCounts}
               avgScore={avgScore}
@@ -402,14 +405,14 @@ export default async function TeacherAssignmentDetailPage({
 
 function OverviewTab({
   assignment,
-  problemsCount,
+  questionsCount,
   allStudents,
   statusCounts,
   avgScore,
   submittedCount,
 }: {
-  assignment: { totalScore: number; allowLate: boolean; latePenalty: number };
-  problemsCount: number;
+  assignment: { totalScore: number; allowLate: boolean; latePenalty: number; allowSurvey: boolean; allowAttachment: boolean };
+  questionsCount: number;
   allStudents: Array<{ className: string }>;
   statusCounts: Record<SubmissionStatus, number>;
   avgScore: number | null;
@@ -425,7 +428,7 @@ function OverviewTab({
           <CardContent className="p-5">
             <div className="text-sm text-muted-foreground">题目数</div>
             <div className="mt-3 flex items-baseline gap-1">
-              <span className="text-3xl font-bold tracking-tight num">{problemsCount}</span>
+              <span className="text-3xl font-bold tracking-tight num">{questionsCount}</span>
               <span className="text-sm text-muted-foreground">题</span>
             </div>
           </CardContent>
@@ -467,6 +470,13 @@ function OverviewTab({
           </CardContent>
         </Card>
       </div>
+
+      {(assignment.allowSurvey || assignment.allowAttachment) && (
+        <div className="flex flex-wrap gap-2 text-xs">
+          {assignment.allowSurvey && <Badge variant="primary">含评价问卷</Badge>}
+          {assignment.allowAttachment && <Badge variant="primary">含附件提交</Badge>}
+        </div>
+      )}
 
       <Card>
         <CardContent className="p-6">

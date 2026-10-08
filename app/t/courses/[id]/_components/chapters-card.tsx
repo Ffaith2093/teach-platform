@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, BookOpen, FileText, ClipboardCheck, ChevronRight } from "lucide-react";
+import { Plus, BookOpen, FileText, ClipboardCheck, ChevronRight, GripVertical, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useActionState } from "react";
-import { createChapterAction, type ChapterFormState } from "@/app/t/courses/[id]/chapters/actions";
+import {
+  createChapterAction,
+  reorderChaptersAction,
+  type ChapterFormState,
+} from "@/app/t/courses/[id]/chapters/actions";
 
 interface ChapterItem {
   id: string;
@@ -38,6 +42,12 @@ export function ChaptersCard({
   canEdit: boolean;
 }) {
   const [addOpen, setAddOpen] = React.useState(false);
+  const [ordered, setOrdered] = React.useState(chapters);
+  const orderedRef = React.useRef(chapters);
+  const droppedRef = React.useRef(false);
+  const [draggedId, setDraggedId] = React.useState<string | null>(null);
+  const [reorderError, setReorderError] = React.useState<string | null>(null);
+  const [reordering, startReorder] = React.useTransition();
   const initial: ChapterFormState = {};
   const [state, formAction, pending] = useActionState(createChapterAction, initial);
 
@@ -46,6 +56,39 @@ export function ChaptersCard({
       setAddOpen(false);
     }
   }, [state.ok]);
+
+  React.useEffect(() => {
+    setOrdered(chapters);
+    orderedRef.current = chapters;
+  }, [chapters]);
+
+  function moveDraggedBefore(targetId: string) {
+    if (!draggedId || draggedId === targetId) return;
+    setOrdered((current) => {
+      const from = current.findIndex((chapter) => chapter.id === draggedId);
+      const to = current.findIndex((chapter) => chapter.id === targetId);
+      if (from < 0 || to < 0) return current;
+      const next = [...current];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      orderedRef.current = next;
+      return next;
+    });
+  }
+
+  function persistOrder() {
+    setDraggedId(null);
+    setReorderError(null);
+    startReorder(async () => {
+      try {
+        await reorderChaptersAction({ courseId, orderedIds: orderedRef.current.map((chapter) => chapter.id) });
+      } catch (error) {
+        setOrdered(chapters);
+        orderedRef.current = chapters;
+        setReorderError((error as Error).message);
+      }
+    });
+  }
 
   return (
     <Card>
@@ -131,16 +174,47 @@ export function ChaptersCard({
             </div>
           ) : (
             <ul className="space-y-2">
-              {chapters.map((c) => (
-                <li key={c.id}>
+              {ordered.map((c, index) => (
+                <li
+                  key={c.id}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDragEnter={() => moveDraggedBefore(c.id)}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    droppedRef.current = true;
+                    persistOrder();
+                  }}
+                  className="flex items-center gap-2 rounded-lg border border-border bg-card px-2 py-1 transition-colors hover:bg-muted/40"
+                >
+                  {canEdit && (
+                    <button
+                      type="button"
+                      draggable
+                      onDragStart={(event) => {
+                        droppedRef.current = false;
+                        setDraggedId(c.id);
+                        event.dataTransfer.effectAllowed = "move";
+                        event.dataTransfer.setData("text/plain", c.id);
+                      }}
+                      onDragEnd={() => {
+                        if (!droppedRef.current) persistOrder();
+                        setDraggedId(null);
+                      }}
+                      className="cursor-grab rounded-md p-2 text-subtle-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing"
+                      aria-label={`拖动排序：${c.title}`}
+                      title="拖动调整章节顺序"
+                    >
+                      {reordering ? <Loader2 className="h-4 w-4 animate-spin" /> : <GripVertical className="h-4 w-4" />}
+                    </button>
+                  )}
                   <Link
                     href={`/t/courses/${courseId}/chapters/${c.id}`}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:bg-muted/40"
+                    className="flex min-w-0 flex-1 items-center justify-between gap-3 px-2 py-2"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <Badge variant="primary" className="num font-mono">
-                          第 {c.order} 章
+                          第 {index + 1} 章
                         </Badge>
                         <span className="truncate text-sm font-medium text-foreground">
                           {c.title}
@@ -168,6 +242,7 @@ export function ChaptersCard({
               ))}
             </ul>
           )}
+          {reorderError && <p className="mt-2 text-xs text-danger">{reorderError}</p>}
         </div>
       </CardContent>
     </Card>

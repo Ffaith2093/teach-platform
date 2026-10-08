@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Save, CheckCircle2, Undo2 } from "lucide-react";
+import { Loader2, Save, CheckCircle2, Undo2, Download } from "lucide-react";
 import { gradeAssignmentAction, returnAssignmentAction } from "@/app/t/assignments/actions";
 
 const STATUS_TONE: Record<string, "default" | "warning" | "success" | "accent" | "danger"> = {
@@ -30,16 +30,21 @@ interface GradeRowSubmission {
   feedback: string | null;
   submittedAt: Date | null;
   gradedAt: Date | null;
+  answers: unknown;
+  textContent: string | null;
+  fileName: string | null;
 }
 
 export function GradeRow({
   student,
   submission,
   totalScore,
+  questionContents,
 }: {
   student: GradeRowStudent;
   submission: GradeRowSubmission;
   totalScore: number;
+  questionContents: Record<string, string>;
 }) {
   const [state, formAction, pending] = useActionState(gradeAssignmentAction, undefined);
   const [returnState, returnFormAction, returnPending] = useActionState(
@@ -76,6 +81,7 @@ export function GradeRow({
         </td>
         <td className="px-6 py-3.5 font-medium">{student.name}</td>
         <td className="px-6 py-3.5 text-xs text-muted-foreground">{student.className}</td>
+        <td className="px-6 py-3.5 text-xs text-subtle-foreground">—</td>
         <td className="px-6 py-3.5">
           <span className="text-xs text-subtle-foreground">未提交</span>
         </td>
@@ -97,6 +103,19 @@ export function GradeRow({
       </td>
       <td className="px-6 py-3.5 font-medium text-foreground">{student.name}</td>
       <td className="px-6 py-3.5 text-xs text-muted-foreground">{student.className}</td>
+      <td className="max-w-[260px] px-6 py-3.5 text-xs">
+        <details>
+          <summary className="cursor-pointer text-primary">查看内容</summary>
+          <div className="mt-2 space-y-2 whitespace-pre-wrap text-muted-foreground">
+            {Boolean(submission.answers) && typeof submission.answers === "object" && !Array.isArray(submission.answers) && Object.entries(submission.answers as Record<string, unknown>).map(([questionId, answer]) => (
+              <p key={questionId}><b className="text-foreground">{questionContents[questionId] ?? "题目"}：</b>{Array.isArray(answer) ? answer.join("；") : String(answer)}</p>
+            ))}
+            {submission.textContent && <p><b className="text-foreground">问卷：</b>{submission.textContent}</p>}
+            {submission.fileName && <a href={`/api/assignment-submissions/${submission.id}/attachment`} className="inline-flex items-center gap-1 text-primary hover:underline"><Download className="h-3 w-3" />{submission.fileName}</a>}
+            {!submission.answers && !submission.textContent && !submission.fileName && <span>仅编程题提交</span>}
+          </div>
+        </details>
+      </td>
       <td className="px-6 py-3.5">
         <span className="num text-xs text-muted-foreground">
           {submission.submittedAt ? new Date(submission.submittedAt).toLocaleString("zh-CN") : "—"}

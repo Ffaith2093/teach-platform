@@ -22,6 +22,7 @@ import { scaledProblemScore } from "@/lib/exams/scoring";
 import { JUDGE_QUEUE_NAME, type JudgeJobData, redisConnectionOptions } from "@/lib/judge/queue";
 import { runJudge, type JudgeRunResult } from "@/lib/judge/local";
 import { runSandbox } from "@/lib/judge/sandbox";
+import { scoreAssignmentAnswers } from "@/lib/assignments/scoring";
 
 const backend = process.env.JUDGE_BACKEND ?? "docker";
 const concurrency = Math.min(6, Math.max(1, parseInt(process.env.JUDGE_CONCURRENCY ?? "6", 10) || 6));
@@ -205,6 +206,17 @@ async function propagateToParent(submissionId: string, totalScore: number): Prom
       const possible = latest?.problem.testCases.reduce((sum, tc) => sum + tc.score, 0) ?? 0;
       totalAutoScore += scaledProblemScore(latest?.score ?? 0, possible, p.score);
     }
+    const [parent, assignmentQuestions] = await Promise.all([
+      prisma.assignmentSubmission.findUnique({
+        where: { assignmentId_studentId: { assignmentId, studentId } },
+        select: { answers: true },
+      }),
+      prisma.assignmentQuestion.findMany({
+        where: { assignmentId },
+        include: { question: { select: { type: true, answer: true } } },
+      }),
+    ]);
+    totalAutoScore += scoreAssignmentAnswers(assignmentQuestions, parent?.answers);
     await prisma.assignmentSubmission.updateMany({
       where: { assignmentId, studentId },
       data: { autoScore: totalAutoScore },

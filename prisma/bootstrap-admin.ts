@@ -2,17 +2,17 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
-const credentials = z
-  .object({
-    email: z.string().email(),
-    password: z.string().min(12),
-  })
-  .parse({
-    email: process.env.BOOTSTRAP_ADMIN_EMAIL,
-    password: process.env.BOOTSTRAP_ADMIN_PASSWORD,
-  });
+async function main() {
+  const credentials = z
+    .object({
+      email: z.string().email(),
+      password: z.string().min(12),
+    })
+    .parse({
+      email: process.env.BOOTSTRAP_ADMIN_EMAIL,
+      password: process.env.BOOTSTRAP_ADMIN_PASSWORD,
+    });
 
-try {
   const admins = await prisma.user.count({ where: { role: "ADMIN" } });
   if (admins !== 0) throw new Error("管理员已存在，不会覆盖已有账号");
 
@@ -27,6 +27,13 @@ try {
     },
   });
   console.log("管理员已创建，首次登录须修改密码");
-} finally {
-  await prisma.$disconnect();
 }
+
+main()
+  .catch((error: unknown) => {
+    console.error(error);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

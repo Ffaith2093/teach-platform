@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { formatGradeLabel } from "@/lib/grades";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Topbar } from "@/components/shell/topbar";
@@ -238,10 +239,7 @@ export default async function TeacherStudentDetailPage({
                   {student.class && (
                     <span className="inline-flex items-center gap-1">
                       <GraduationCap className="h-3 w-3" />
-                      {student.class.grade.name} · {student.class.name}
-                      <span className="text-subtle-foreground num">
-                        · {student.class.grade.joinYear} 级
-                      </span>
+                      {formatGradeLabel(student.class.grade.name, student.class.grade.joinYear)} · {student.class.name}
                     </span>
                   )}
                   <span className="inline-flex items-center gap-1">

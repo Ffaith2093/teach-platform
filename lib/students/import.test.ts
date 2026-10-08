@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import ExcelJS from "exceljs";
-import { parseImportFile, validateImport } from "./import";
+import { parseGradeImportFile, parseImportFile, validateImport } from "./import";
 
 test("parses CSV rows, quoted fields, blank rows, and leading-zero student numbers", async () => {
   const csv = Buffer.from(
@@ -41,6 +41,17 @@ test("parses the first XLSX worksheet", async () => {
       email: "wang@example.com",
       raw: "王五 | 20240103 | wang@example.com",
     },
+  ]);
+});
+
+test("parses a grade-wide spreadsheet with class names", async () => {
+  const csv = Buffer.from(
+    "班级,姓名,学号,邮箱\n1班,张三,20260101,zhang@example.com\n2班,李四,20260201,\n",
+  );
+  const rows = await parseGradeImportFile(csv);
+  assert.deepEqual(rows.map((row) => [row.className, row.name, row.studentNo]), [
+    ["1班", "张三", "20260101"],
+    ["2班", "李四", "20260201"],
   ]);
 });
 

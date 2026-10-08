@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { formatGradeLabel } from "@/lib/grades";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Topbar } from "@/components/shell/topbar";
@@ -107,8 +108,7 @@ export default async function TeacherClassesPage() {
                       <div className="min-w-0">
                         <div className="text-sm font-medium text-foreground">{c.name}</div>
                         <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                          <Badge variant="primary">{c.grade.name}</Badge>
-                          <span className="num">{c.grade.joinYear}</span> 级
+                          <Badge variant="primary">{formatGradeLabel(c.grade.name, c.grade.joinYear)}</Badge>
                           <span className="num">{c._count.students}</span> 人
                         </div>
                       </div>

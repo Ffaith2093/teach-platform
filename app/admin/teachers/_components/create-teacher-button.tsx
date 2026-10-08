@@ -14,6 +14,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { createTeacherAction, type CreateTeacherState } from "@/app/admin/teachers/actions";
+import { copyText } from "@/lib/client/copy-text";
 
 const initial: CreateTeacherState = {};
 
@@ -45,7 +46,7 @@ export function CreateTeacherButton({ classes }: { classes?: ClassOption[] }) {
   async function copy() {
     if (!passwordToShow) return;
     try {
-      await navigator.clipboard.writeText(passwordToShow);
+      if (!(await copyText(passwordToShow))) throw new Error("复制失败");
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {

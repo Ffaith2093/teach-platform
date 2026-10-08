@@ -57,6 +57,17 @@ const createAssignmentSchema = z.object({
       }),
     )
     .default([]),
+  questions: z.array(z.object({
+    questionId: z.string().min(1),
+    score: z.coerce.number().int().min(1).max(1000),
+  })).default([]),
+  allowSurvey: z.boolean().default(false),
+  surveyPrompt: z.string().max(2000).optional().or(z.literal("")),
+  surveyScore: z.coerce.number().int().min(0).max(1000).default(0),
+  allowAttachment: z.boolean().default(false),
+  allowedFileExtensions: z.array(z.string().regex(/^[a-z0-9]+$/)).max(20).default([]),
+  maxFileSizeMb: z.coerce.number().int().min(1).max(100).default(10),
+  attachmentScore: z.coerce.number().int().min(0).max(1000).default(0),
   publish: z.boolean().default(false),
 });
 
@@ -85,9 +96,12 @@ export async function createAssignmentAction(
 
   // 解析 problems（JSON in hidden field）& publish checkbox
   const problemsRaw = formData.get("problems")?.toString() ?? "[]";
+  const questionsRaw = formData.get("questions")?.toString() ?? "[]";
   let problems: { problemId: string; score: number }[] = [];
+  let questions: { questionId: string; score: number }[] = [];
   try {
     problems = JSON.parse(problemsRaw);
+    questions = JSON.parse(questionsRaw);
   } catch {
     return { error: "题目数据格式错误" };
   }
@@ -101,6 +115,17 @@ export async function createAssignmentAction(
     allowLate: formData.get("allowLate") === "on",
     latePenalty: formData.get("latePenalty") || 20,
     problems,
+    questions,
+    allowSurvey: formData.get("allowSurvey") === "on",
+    surveyPrompt: formData.get("surveyPrompt") || undefined,
+    surveyScore: formData.get("surveyScore") || 0,
+    allowAttachment: formData.get("allowAttachment") === "on",
+    allowedFileExtensions: String(formData.get("allowedFileExtensions") ?? "")
+      .split(/[,，\s]+/)
+      .map((item) => item.trim().toLowerCase().replace(/^\./, ""))
+      .filter(Boolean),
+    maxFileSizeMb: formData.get("maxFileSizeMb") || 10,
+    attachmentScore: formData.get("attachmentScore") || 0,
     publish: formData.get("publish") === "1",
   });
   if (!parsed.success) {
@@ -125,7 +150,7 @@ export async function createAssignmentAction(
   if (Number.isNaN(dueAt.getTime())) {
     return { error: "截止时间格式无效" };
   }
-  if (!parsed.data.publish && dueAt.getTime() < Date.now()) {
+  if (dueAt.getTime() < Date.now()) {
     return { fieldErrors: { dueAt: "截止时间须晚于当前时间" } };
   }
 
@@ -143,7 +168,38 @@ export async function createAssignmentAction(
     }
   }
 
-  const totalScore = problems.reduce((s, p) => s + p.score, 0);
+  if (questions.length > 0) {
+    const valid = await prisma.question.findMany({
+      where: {
+        id: { in: questions.map((question) => question.questionId) },
+        type: { in: ["SINGLE_CHOICE", "FILL_BLANK", "CODE_BLANK"] },
+        OR: [
+          { courseId: parsed.data.courseId },
+          { bank: { ownerId: teacherId } },
+        ],
+      },
+      select: { id: true },
+    });
+    if (valid.length !== new Set(questions.map((question) => question.questionId)).size) {
+      return { error: "部分选择题或填空题不可用" };
+    }
+  }
+
+  if (parsed.data.allowSurvey && !parsed.data.surveyPrompt?.trim()) {
+    return { fieldErrors: { surveyPrompt: "请填写评价问卷内容" } };
+  }
+  if (parsed.data.allowAttachment && parsed.data.allowedFileExtensions.length === 0) {
+    return { fieldErrors: { allowedFileExtensions: "请填写至少一种允许的附件格式" } };
+  }
+  const hasContent = problems.length > 0 || questions.length > 0 || parsed.data.allowSurvey || parsed.data.allowAttachment;
+  if (parsed.data.publish && !hasContent) {
+    return { error: "请至少添加一种作业内容后再发布" };
+  }
+
+  const totalScore = problems.reduce((s, p) => s + p.score, 0)
+    + questions.reduce((s, question) => s + question.score, 0)
+    + (parsed.data.allowSurvey ? parsed.data.surveyScore : 0)
+    + (parsed.data.allowAttachment ? parsed.data.attachmentScore : 0);
 
   try {
     const assignmentId = await prisma.$transaction(async (tx) => {
@@ -158,6 +214,13 @@ export async function createAssignmentAction(
           allowLate: parsed.data.allowLate,
           latePenalty: parsed.data.latePenalty,
           totalScore,
+          allowSurvey: parsed.data.allowSurvey,
+          surveyPrompt: parsed.data.allowSurvey ? parsed.data.surveyPrompt?.trim() || null : null,
+          surveyScore: parsed.data.allowSurvey ? parsed.data.surveyScore : 0,
+          allowAttachment: parsed.data.allowAttachment,
+          allowedFileExtensions: parsed.data.allowAttachment ? parsed.data.allowedFileExtensions : [],
+          maxFileSizeMb: parsed.data.maxFileSizeMb,
+          attachmentScore: parsed.data.allowAttachment ? parsed.data.attachmentScore : 0,
           publishedAt: parsed.data.publish ? new Date() : null,
         },
       });
@@ -168,6 +231,16 @@ export async function createAssignmentAction(
             problemId: p.problemId,
             score: p.score,
             order: i,
+          })),
+        });
+      }
+      if (questions.length > 0) {
+        await tx.assignmentQuestion.createMany({
+          data: questions.map((question, index) => ({
+            assignmentId: a.id,
+            questionId: question.questionId,
+            score: question.score,
+            order: index,
           })),
         });
       }
@@ -335,9 +408,13 @@ export async function publishAssignmentAction(assignmentId: string) {
   const { assignment } = await requireAssignmentAccess(assignmentId);
   if (assignment.publishedAt) return; // 已是发布态
 
-  // 必须有题目
-  const count = await prisma.assignmentProblem.count({ where: { assignmentId } });
-  if (count === 0) throw new Error("请先挂载至少一道编程题再发布");
+  const content = await prisma.assignment.findUnique({
+    where: { id: assignmentId },
+    select: { allowSurvey: true, allowAttachment: true, _count: { select: { problems: true, questions: true } } },
+  });
+  if (!content || (content._count.problems === 0 && content._count.questions === 0 && !content.allowSurvey && !content.allowAttachment)) {
+    throw new Error("请至少添加一种作业内容后再发布");
+  }
 
   // dueAt 必须晚于 now
   const full = await prisma.assignment.findUnique({

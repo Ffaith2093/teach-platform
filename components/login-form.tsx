@@ -36,9 +36,9 @@ export function LoginForm() {
 
   // 在成功提交后跳转
   React.useEffect(() => {
-    if (state && !state.error) handleSuccess();
+    if (state.success) void handleSuccess();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state]);
+  }, [state.success]);
 
   return (
     <Card className="w-full max-w-md animate-fade-up">

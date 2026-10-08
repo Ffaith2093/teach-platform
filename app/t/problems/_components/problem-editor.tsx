@@ -80,7 +80,12 @@ export function ProblemEditor({ mode, problemId, initial, testCases: initialTest
 
   const [tags, setTags] = React.useState<string[]>(initial.tags);
   const [tagInput, setTagInput] = React.useState("");
+  const [difficulty, setDifficulty] = React.useState<Difficulty>(initial.difficulty);
   const [testCases, setTestCases] = React.useState<TestCase[]>(initialTestCases);
+
+  React.useEffect(() => {
+    setTestCases(initialTestCases);
+  }, [initialTestCases]);
 
   // 顶部表单 action
   const [createState, createAction, creating] = useActionState(createProblemAction, initialCreate);
@@ -145,7 +150,7 @@ export function ProblemEditor({ mode, problemId, initial, testCases: initialTest
               <Label>难度</Label>
               <div className="flex gap-2">
                 {DIFFICULTY_OPTIONS.map((opt) => {
-                  const checked = initial.difficulty === opt.value;
+                  const checked = difficulty === opt.value;
                   return (
                     <label
                       key={opt.value}
@@ -159,7 +164,8 @@ export function ProblemEditor({ mode, problemId, initial, testCases: initialTest
                         type="radio"
                         name="difficulty"
                         value={opt.value}
-                        defaultChecked={checked}
+                        checked={checked}
+                        onChange={() => setDifficulty(opt.value)}
                         className="sr-only"
                       />
                       <Badge variant={opt.tone} className="font-normal">
@@ -420,8 +426,7 @@ function TestCasesSection({
             <textarea
               name="input"
               rows={2}
-              required
-              placeholder="输入（stdin）"
+              placeholder="输入（stdin，可为空）"
               className="col-span-5 flex w-full rounded-lg border border-border bg-card px-3 py-2 font-mono text-xs focus-visible:border-primary focus-visible:outline-none"
             />
             <textarea

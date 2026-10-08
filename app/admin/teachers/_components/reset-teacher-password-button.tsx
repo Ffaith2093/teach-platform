@@ -11,6 +11,7 @@ import {
   DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { copyText } from "@/lib/client/copy-text";
 
 interface Props {
   teacherId: string;
@@ -56,7 +57,7 @@ export function ResetTeacherPasswordButton({ teacherId, teacherName, teacherNo }
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(password);
+      if (!(await copyText(password))) throw new Error("复制失败");
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
