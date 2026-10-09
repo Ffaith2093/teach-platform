@@ -14,6 +14,7 @@ import {
   type ImportRow,
   type GradeImportRow,
 } from "@/lib/students/import";
+import { hashInitialPasswords } from "@/lib/students/passwords";
 
 // ========== 年级 ==========
 
@@ -339,29 +340,28 @@ export async function confirmImportAction(
     return { stage: "preview", total: rows.length, sample: okRows.slice(0, 5), errors };
   }
 
-  // bcrypt 计算放在数据库事务外，避免大批量导入超过 Prisma 事务时限。
-  const users = await Promise.all(
-    okRows.map(async (r) => ({
+  try {
+    // 大批量 bcrypt 在独立线程顺序执行，避免阻塞 Web 事件循环。
+    const passwordHashes = await hashInitialPasswords(okRows.map((row) => row.studentNo));
+    const users = okRows.map((r, index) => ({
       email: r.email || `${r.studentNo}@school.edu`,
-      passwordHash: await bcrypt.hash(initialPassword(r.studentNo), 12),
+      passwordHash: passwordHashes[index]!,
       name: r.name,
       studentNo: r.studentNo,
       classId,
       role: "STUDENT" as const,
       status: "ACTIVE" as const,
       mustChangePassword: true,
-    })),
-  );
-  try {
+    }));
     await prisma.user.createMany({ data: users });
+
+    const cls = await prisma.class.findUnique({ where: { id: classId } });
+    if (cls) revalidatePath(`/admin/students/${cls.gradeId}/${classId}`);
+
+    return { stage: "done", created: users.length };
   } catch (error) {
     return { stage: "error", message: `导入失败：${(error as Error).message}` };
   }
-
-  const cls = await prisma.class.findUnique({ where: { id: classId } });
-  if (cls) revalidatePath(`/admin/students/${cls.gradeId}/${classId}`);
-
-  return { stage: "done", created: users.length };
 }
 
 export type GradeImportState =
@@ -415,7 +415,8 @@ export async function previewGradeImportAction(
   if (!file || file.size === 0) return { stage: "error", message: "请选择文件" };
   if (file.size > 5 * 1024 * 1024) return { stage: "error", message: "文件大小不能超过 5MB" };
   const ext = file.name.split(".").pop()?.toLowerCase();
-  if (!["csv", "xlsx"].includes(ext ?? "")) return { stage: "error", message: "仅支持 .csv / .xlsx 文件" };
+  if (!["csv", "xlsx"].includes(ext ?? ""))
+    return { stage: "error", message: "仅支持 .csv / .xlsx 文件" };
 
   const buffer = Buffer.from(await file.arrayBuffer());
   try {
@@ -444,19 +445,19 @@ export async function confirmGradeImportAction(
   try {
     const rows = await parseGradeImportFile(Buffer.from(fileBase64, "base64"));
     const { okRows, errors, classByName } = await validateGradeRows(gradeId, rows);
-    if (errors.length > 0) return { stage: "preview", total: rows.length, sample: okRows.slice(0, 5), errors };
-    const users = await Promise.all(
-      okRows.map(async (row) => ({
-        email: row.email || `${row.studentNo}@school.edu`,
-        passwordHash: await bcrypt.hash(initialPassword(row.studentNo), 12),
-        name: row.name,
-        studentNo: row.studentNo,
-        classId: classByName.get(row.className.trim())!,
-        role: "STUDENT" as const,
-        status: "ACTIVE" as const,
-        mustChangePassword: true,
-      })),
-    );
+    if (errors.length > 0)
+      return { stage: "preview", total: rows.length, sample: okRows.slice(0, 5), errors };
+    const passwordHashes = await hashInitialPasswords(okRows.map((row) => row.studentNo));
+    const users = okRows.map((row, index) => ({
+      email: row.email || `${row.studentNo}@school.edu`,
+      passwordHash: passwordHashes[index]!,
+      name: row.name,
+      studentNo: row.studentNo,
+      classId: classByName.get(row.className.trim())!,
+      role: "STUDENT" as const,
+      status: "ACTIVE" as const,
+      mustChangePassword: true,
+    }));
     await prisma.user.createMany({ data: users });
     revalidatePath(`/admin/students/${gradeId}`);
     for (const classId of new Set(users.map((user) => user.classId))) {

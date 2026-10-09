@@ -198,7 +198,7 @@ export function ImportWizard({ classId, className }: { classId: string; classNam
                 重新上传
               </Button>
               <Button type="submit" disabled={pending}>
-                {pending ? "导入中…" : "确认导入"}
+                {pending ? "正在生成密码并导入…" : "确认导入"}
               </Button>
             </div>
           </form>
