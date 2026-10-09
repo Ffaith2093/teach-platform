@@ -25,6 +25,9 @@ export default async function StudentProblemsPage({
 }: {
   searchParams: Promise<{ difficulty?: string; q?: string }>;
 }) {
+  // 学生独立题库暂时下线；保留实现，后续可直接恢复入口。
+  if (process.env.ENABLE_STUDENT_PROBLEM_LIBRARY !== "true") redirect("/dashboard");
+
   const session = await auth();
   const userId = session!.user.id;
   const sp = await searchParams;

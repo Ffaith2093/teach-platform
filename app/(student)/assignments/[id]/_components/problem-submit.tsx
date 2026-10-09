@@ -26,6 +26,7 @@ import {
 import { usePollSubmission } from "@/hooks/use-poll-submission";
 import { CodeEditor } from "@/components/code-editor";
 import type { JudgeRunResult } from "@/lib/judge/local";
+import { MarkdownContent } from "@/components/markdown-content";
 
 const DIFFICULTY_LABELS: Record<
   Difficulty,
@@ -195,9 +196,10 @@ export function ProblemSubmit({
         </div>
 
         {problem.description.trim() && (
-          <div className="mt-4 whitespace-pre-line rounded-lg border border-border bg-muted/40 p-4 text-base leading-7 text-foreground">
-            {problem.description}
-          </div>
+          <MarkdownContent
+            content={problem.description}
+            className="mt-4 rounded-lg border border-border bg-muted/40 p-4"
+          />
         )}
 
         {problem.samples.length > 0 && (

@@ -61,9 +61,6 @@ const createAssignmentSchema = z.object({
     questionId: z.string().min(1),
     score: z.coerce.number().int().min(1).max(1000),
   })).default([]),
-  allowSurvey: z.boolean().default(false),
-  surveyPrompt: z.string().max(2000).optional().or(z.literal("")),
-  surveyScore: z.coerce.number().int().min(0).max(1000).default(0),
   allowAttachment: z.boolean().default(false),
   allowedFileExtensions: z.array(z.string().regex(/^[a-z0-9]+$/)).max(20).default([]),
   maxFileSizeMb: z.coerce.number().int().min(1).max(100).default(10),
@@ -116,9 +113,6 @@ export async function createAssignmentAction(
     latePenalty: formData.get("latePenalty") || 20,
     problems,
     questions,
-    allowSurvey: formData.get("allowSurvey") === "on",
-    surveyPrompt: formData.get("surveyPrompt") || undefined,
-    surveyScore: formData.get("surveyScore") || 0,
     allowAttachment: formData.get("allowAttachment") === "on",
     allowedFileExtensions: String(formData.get("allowedFileExtensions") ?? "")
       .split(/[,，\s]+/)
@@ -185,20 +179,16 @@ export async function createAssignmentAction(
     }
   }
 
-  if (parsed.data.allowSurvey && !parsed.data.surveyPrompt?.trim()) {
-    return { fieldErrors: { surveyPrompt: "请填写评价问卷内容" } };
-  }
   if (parsed.data.allowAttachment && parsed.data.allowedFileExtensions.length === 0) {
     return { fieldErrors: { allowedFileExtensions: "请填写至少一种允许的附件格式" } };
   }
-  const hasContent = problems.length > 0 || questions.length > 0 || parsed.data.allowSurvey || parsed.data.allowAttachment;
+  const hasContent = problems.length > 0 || questions.length > 0 || parsed.data.allowAttachment;
   if (parsed.data.publish && !hasContent) {
     return { error: "请至少添加一种作业内容后再发布" };
   }
 
   const totalScore = problems.reduce((s, p) => s + p.score, 0)
     + questions.reduce((s, question) => s + question.score, 0)
-    + (parsed.data.allowSurvey ? parsed.data.surveyScore : 0)
     + (parsed.data.allowAttachment ? parsed.data.attachmentScore : 0);
 
   try {
@@ -214,9 +204,6 @@ export async function createAssignmentAction(
           allowLate: parsed.data.allowLate,
           latePenalty: parsed.data.latePenalty,
           totalScore,
-          allowSurvey: parsed.data.allowSurvey,
-          surveyPrompt: parsed.data.allowSurvey ? parsed.data.surveyPrompt?.trim() || null : null,
-          surveyScore: parsed.data.allowSurvey ? parsed.data.surveyScore : 0,
           allowAttachment: parsed.data.allowAttachment,
           allowedFileExtensions: parsed.data.allowAttachment ? parsed.data.allowedFileExtensions : [],
           maxFileSizeMb: parsed.data.maxFileSizeMb,
@@ -410,9 +397,9 @@ export async function publishAssignmentAction(assignmentId: string) {
 
   const content = await prisma.assignment.findUnique({
     where: { id: assignmentId },
-    select: { allowSurvey: true, allowAttachment: true, _count: { select: { problems: true, questions: true } } },
+    select: { allowAttachment: true, _count: { select: { problems: true, questions: true } } },
   });
-  if (!content || (content._count.problems === 0 && content._count.questions === 0 && !content.allowSurvey && !content.allowAttachment)) {
+  if (!content || (content._count.problems === 0 && content._count.questions === 0 && !content.allowAttachment)) {
     throw new Error("请至少添加一种作业内容后再发布");
   }
 

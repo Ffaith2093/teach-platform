@@ -459,7 +459,68 @@ model AccessLog {
 
 **去重规则**：`/dashboard` 出勤 widget 按 `(userId, courseId, createdAt::date)` 去重生成 7 天网格；教师班级出勤页同样按日去重，与访问条数无关。
 
-### 2.8 提交与评测
+### 2.8 课程问卷
+
+问卷是课程章节下独立的不计分内容，不属于作业，也不进入成绩单。教师可以在一份问卷中任意组合短文本、单选、多选和下拉选择题；发布后，课程覆盖班级中的学生每人可提交一次，并可在关闭前更新回答。教师按班级查看应收人数、已回收人数、回收率以及各题汇总。
+
+```prisma
+model Survey {
+  id          String       @id @default(cuid())
+  courseId    String
+  chapterId   String
+  creatorId   String
+  title       String
+  description String?      @db.Text
+  status      SurveyStatus @default(DRAFT)
+  dueAt       DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model SurveyQuestion {
+  id       String             @id @default(cuid())
+  surveyId String
+  type     SurveyQuestionType
+  title    String             @db.Text
+  required Boolean            @default(true)
+  options  Json?
+  order    Int
+}
+
+model SurveyResponse {
+  id          String   @id @default(cuid())
+  surveyId    String
+  studentId   String
+  answers     Json
+  submittedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([surveyId, studentId])
+}
+
+enum SurveyStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+enum SurveyQuestionType {
+  SHORT_TEXT
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  DROPDOWN
+}
+```
+
+**约束**：
+
+- 问卷必须同时关联课程和该课程下的章节。
+- 只有课程 `OWNER` / `ASSISTANT` 可新建、编辑、发布和关闭问卷；`CONTRIBUTOR` 只读。
+- 学生只能查看自己班级所属课程中状态为 `PUBLISHED` 的问卷。
+- 回答只用于回收统计，不计算分数，不生成成绩记录。
+- 作业不再提供“评价问卷”内容类型；只有开启附件提交的作业需要教师人工批改，其余作业在自动评测完成后直接标记为已批改。
+
+### 2.9 提交与评测
 
 ```prisma
 model Submission {

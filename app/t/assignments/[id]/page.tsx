@@ -336,7 +336,6 @@ export default async function TeacherAssignmentDetailPage({
                 totalScore: assignment.totalScore,
                 allowLate: assignment.allowLate,
                 latePenalty: assignment.latePenalty,
-                allowSurvey: assignment.allowSurvey,
                 allowAttachment: assignment.allowAttachment,
               }}
               questionsCount={problems.length + assignment._count.questions}
@@ -411,7 +410,7 @@ function OverviewTab({
   avgScore,
   submittedCount,
 }: {
-  assignment: { totalScore: number; allowLate: boolean; latePenalty: number; allowSurvey: boolean; allowAttachment: boolean };
+  assignment: { totalScore: number; allowLate: boolean; latePenalty: number; allowAttachment: boolean };
   questionsCount: number;
   allStudents: Array<{ className: string }>;
   statusCounts: Record<SubmissionStatus, number>;
@@ -471,9 +470,8 @@ function OverviewTab({
         </Card>
       </div>
 
-      {(assignment.allowSurvey || assignment.allowAttachment) && (
+      {assignment.allowAttachment && (
         <div className="flex flex-wrap gap-2 text-xs">
-          {assignment.allowSurvey && <Badge variant="primary">含评价问卷</Badge>}
           {assignment.allowAttachment && <Badge variant="primary">含附件提交</Badge>}
         </div>
       )}

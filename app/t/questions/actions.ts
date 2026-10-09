@@ -11,6 +11,7 @@ import {
   blankCountFromContent,
 } from "@/app/t/questions/_helpers";
 import { requireBankOwner } from "@/app/t/banks/actions";
+import { requireSession } from "@/lib/auth/guard";
 
 // ========== 添加题目到题库 ==========
 
@@ -154,8 +155,25 @@ export async function addLibraryQuestionAction(
   _prev: AddQuestionToBankState | undefined,
   formData: FormData,
 ): Promise<AddQuestionToBankState> {
-  const bankId = formData.get("bankId")?.toString() ?? "";
-  if (!bankId) return { fieldErrors: { bankId: "请选择保存到哪个题库" } };
+  let bankId = formData.get("bankId")?.toString() ?? "";
+  if (!bankId) {
+    const session = await requireSession();
+    if (session.user.role !== "TEACHER" && session.user.role !== "ADMIN") {
+      return { error: "仅教师可创建题目" };
+    }
+    const bank = await prisma.questionBank.upsert({
+      where: {
+        id: (await prisma.questionBank.findFirst({
+          where: { ownerId: session.user.id, name: "默认题库", courseId: null },
+          select: { id: true },
+        }))?.id ?? "__create_default_bank__",
+      },
+      update: {},
+      create: { name: "默认题库", ownerId: session.user.id },
+      select: { id: true },
+    });
+    bankId = bank.id;
+  }
   if (formData.get("type") !== expectedType) return { error: "题型与当前页面不一致" };
 
   const result = await createQuestionInBank(bankId, formData);

@@ -37,6 +37,7 @@ import {
   type CreateProblemState,
   type UpdateProblemState,
 } from "@/app/t/problems/actions";
+import { MarkdownContent } from "@/components/markdown-content";
 
 const DIFFICULTY_OPTIONS: Array<{ value: Difficulty; label: string; stars: number; tone: "success" | "warning" | "danger" }> = [
   { value: "EASY", label: "入门", stars: 1, tone: "success" },
@@ -81,6 +82,7 @@ export function ProblemEditor({ mode, problemId, initial, testCases: initialTest
   const [tags, setTags] = React.useState<string[]>(initial.tags);
   const [tagInput, setTagInput] = React.useState("");
   const [difficulty, setDifficulty] = React.useState<Difficulty>(initial.difficulty);
+  const [description, setDescription] = React.useState(initial.description);
   const [testCases, setTestCases] = React.useState<TestCase[]>(initialTestCases);
 
   React.useEffect(() => {
@@ -257,15 +259,29 @@ export function ProblemEditor({ mode, problemId, initial, testCases: initialTest
 
             <div className="space-y-1.5">
               <Label htmlFor="prob-desc">题干（Markdown）</Label>
-              <textarea
-                id="prob-desc"
-                name="description"
-                rows={6}
-                defaultValue={initial.description}
-                placeholder="## 题目描述&#10;&#10;给定两个整数 a 和 b，求它们的和。&#10;&#10;## 输入格式&#10;一行，两个整数。&#10;&#10;## 输出格式&#10;一个整数。"
-                required
-                className="flex w-full rounded-lg border border-border bg-muted px-3 py-2 font-mono text-sm focus-visible:border-primary focus-visible:bg-card focus-visible:outline-none"
-              />
+              <div className="grid gap-3 lg:grid-cols-2">
+                <div className="overflow-hidden rounded-lg border border-border bg-muted focus-within:border-primary focus-within:bg-card">
+                  <div className="border-b border-border px-3 py-2 text-xs font-medium text-muted-foreground">Markdown 编辑</div>
+                  <textarea
+                    id="prob-desc"
+                    name="description"
+                    rows={14}
+                    value={description}
+                    onChange={(event) => setDescription(event.target.value)}
+                    placeholder={'## 题目描述\n\n给定两个整数 a 和 b，求它们的和。\n\n## 输入格式\n一行，两个整数。\n\n## 输出格式\n一个整数。'}
+                    required
+                    className="flex min-h-[340px] w-full resize-y bg-transparent px-3 py-3 font-mono text-sm leading-6 outline-none"
+                  />
+                </div>
+                <div className="min-h-[340px] overflow-auto rounded-lg border border-border bg-card">
+                  <div className="sticky top-0 z-[1] border-b border-border bg-card px-3 py-2 text-xs font-medium text-muted-foreground">实时预览</div>
+                  <MarkdownContent
+                    content={description}
+                    emptyText="在左侧输入 Markdown 后，这里会实时显示学生看到的效果。"
+                    className="p-4"
+                  />
+                </div>
+              </div>
               {formState.fieldErrors?.description && (
                 <p className="text-xs text-danger">{formState.fieldErrors.description}</p>
               )}

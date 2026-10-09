@@ -12,8 +12,8 @@ import type { JudgeRunResult } from "@/lib/judge/local";
 import { writeFile, unlink } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { ensureCourseDir, generateStoredName } from "@/lib/storage";
-import { scoreAssignmentAnswers } from "@/lib/assignments/scoring";
-import { scaledProblemScore } from "@/lib/exams/scoring";
+import { scoreAssignmentAnswers, scoreAssignmentProblem } from "@/lib/assignments/scoring";
+import { finalizeAutomaticAssignment } from "@/lib/assignments/finalize";
 
 // ========== 权限工具 ==========
 
@@ -253,10 +253,6 @@ export async function submitAssignmentContentAction(
     if (missing) return { error: "请完成所有选择题和填空题" };
   }
 
-  const surveyText = String(formData.get("surveyText") ?? "").trim();
-  if (assignment.allowSurvey && !surveyText) return { error: "请填写评价问卷" };
-  if (surveyText.length > 10000) return { error: "评价问卷内容不能超过 10000 字" };
-
   const existing = await prisma.assignmentSubmission.findUnique({
     where: { assignmentId_studentId: { assignmentId, studentId: session.user.id } },
     select: { id: true, fileUrl: true },
@@ -282,10 +278,13 @@ export async function submitAssignmentContentAction(
     const latest = await prisma.submission.findFirst({
       where: { problemId: problem.problemId, userId: session.user.id, contextType: "ASSIGNMENT", contextId: assignmentId },
       orderBy: { createdAt: "desc" },
-      select: { score: true, problem: { select: { testCases: { select: { score: true } } } } },
+      select: { passedCount: true, totalCount: true },
     });
-    const possible = latest?.problem.testCases.reduce((sum, testCase) => sum + testCase.score, 0) ?? 0;
-    programmingScore += scaledProblemScore(latest?.score ?? 0, possible, problem.score);
+    programmingScore += scoreAssignmentProblem(
+      latest?.passedCount ?? 0,
+      latest?.totalCount ?? 0,
+      problem.score,
+    );
   }
 
   await prisma.assignmentSubmission.upsert({
@@ -294,7 +293,7 @@ export async function submitAssignmentContentAction(
       assignmentId,
       studentId: session.user.id,
       answers: answers as never,
-      textContent: assignment.allowSurvey ? surveyText : null,
+      textContent: null,
       ...fileData,
       autoScore: objectiveScore + programmingScore,
       status: "SUBMITTED",
@@ -302,7 +301,7 @@ export async function submitAssignmentContentAction(
     },
     update: {
       answers: answers as never,
-      textContent: assignment.allowSurvey ? surveyText : null,
+      textContent: null,
       ...(fileData ?? {}),
       autoScore: objectiveScore + programmingScore,
       status: "SUBMITTED",
@@ -316,6 +315,7 @@ export async function submitAssignmentContentAction(
     const directory = await ensureCourseDir(assignment.courseId);
     await unlink(join(directory, existing.fileUrl)).catch(() => undefined);
   }
+  await finalizeAutomaticAssignment(assignmentId, session.user.id);
   revalidatePath(`/assignments/${assignmentId}`);
   revalidatePath(`/t/assignments/${assignmentId}`);
   revalidatePath(`/t/assignments/${assignmentId}/grade`);

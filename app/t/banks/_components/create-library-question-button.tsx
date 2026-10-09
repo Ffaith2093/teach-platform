@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
@@ -33,17 +32,6 @@ export function CreateLibraryQuestionButton({
     }
   }, [router, state]);
 
-  if (banks.length === 0) {
-    return (
-      <Button asChild>
-        <Link href="/t/banks/programming">
-          <Plus />
-          先新建题库
-        </Link>
-      </Button>
-    );
-  }
-
   return (
     <>
       <Button onClick={() => setOpen(true)}>
@@ -58,7 +46,7 @@ export function CreateLibraryQuestionButton({
           formAction={formAction}
           pending={pending}
           state={state ?? null}
-          bankOptions={banks}
+          bankOptions={banks.length > 0 ? banks : undefined}
           onClose={() => setOpen(false)}
         />
       )}

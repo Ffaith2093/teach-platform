@@ -22,6 +22,7 @@ import {
   CircleHelp,
   SquarePen,
   History,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -53,10 +54,10 @@ const studentNav: NavSection[] = [
     items: [
       { href: "/assignments", label: "作业", icon: FileText },
       { href: "/exams", label: "考试", icon: GraduationCap },
+      { href: "/surveys", label: "问卷", icon: ClipboardList },
       { href: "/grades", label: "成绩单", icon: ListChecks },
     ],
   },
-  { label: "练习", items: [{ href: "/problems", label: "题库练习", icon: Code }] },
   {
     label: "消息",
     items: [
@@ -88,6 +89,7 @@ const teacherNav: NavSection[] = [
     items: [
       { href: "/t/assignments", label: "作业", icon: FileText },
       { href: "/t/exams", label: "试卷", icon: Library },
+      { href: "/t/surveys", label: "问卷", icon: ClipboardList },
       { href: "/t/grading", label: "批改", icon: ClipboardCheck },
     ],
   },

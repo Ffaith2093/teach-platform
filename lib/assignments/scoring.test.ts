@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { scoreAssignmentAnswers } from "./scoring";
+import { scoreAssignmentAnswers, scoreAssignmentProblem } from "./scoring";
 
 const questions = [
   { questionId: "choice", score: 5, question: { type: "SINGLE_CHOICE", answer: "B" } },
@@ -9,6 +9,14 @@ const questions = [
 
 test("scores choice and fill answers while ignoring case and surrounding whitespace", () => {
   assert.equal(scoreAssignmentAnswers(questions, { choice: "b", fill: [" python ", "解释器"] }), 15);
+});
+
+test("assignment programming score is evenly divided by test-case count", () => {
+  assert.equal(scoreAssignmentProblem(1, 3, 20), 7);
+  assert.equal(scoreAssignmentProblem(2, 3, 20), 13);
+  assert.equal(scoreAssignmentProblem(3, 3, 20), 20);
+  assert.equal(scoreAssignmentProblem(5, 3, 20), 20);
+  assert.equal(scoreAssignmentProblem(0, 0, 20), 0);
 });
 
 test("does not award partial credit when a multi-blank answer is incomplete", () => {

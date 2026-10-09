@@ -49,7 +49,7 @@ export default function NewProblemPage() {
 
           <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 text-xs text-muted-foreground">
             <Code className="mr-1.5 inline h-3.5 w-3.5" />
-            提示：题干支持 Markdown 语法（暂未启用实时预览，编辑时请参考 Markdown 语法）。
+            提示：题干支持 Markdown 语法，可在编辑框右侧实时预览学生看到的效果。
             测试用例至少要 1 组，发布前建议用参考答案跑全部用例。
           </div>
         </div>

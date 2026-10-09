@@ -14,6 +14,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { scoreAssignmentProblem } from "@/lib/assignments/scoring";
 
 export const dynamic = "force-dynamic";
 
@@ -62,10 +63,30 @@ export async function GET(
     return NextResponse.json({ message: "无权查看" }, { status: 403 });
   }
 
+  let displayScore = submission.score;
+  if (submission.contextType === "ASSIGNMENT" && submission.contextId) {
+    const allocated = await prisma.assignmentProblem.findUnique({
+      where: {
+        assignmentId_problemId: {
+          assignmentId: submission.contextId,
+          problemId: submission.problemId,
+        },
+      },
+      select: { score: true },
+    });
+    if (allocated) {
+      displayScore = scoreAssignmentProblem(
+        submission.passedCount,
+        submission.totalCount,
+        allocated.score,
+      );
+    }
+  }
+
   return NextResponse.json({
     id: submission.id,
     status: submission.status,
-    score: submission.score,
+    score: displayScore,
     passedCount: submission.passedCount,
     totalCount: submission.totalCount,
     errorMsg: submission.errorMsg,

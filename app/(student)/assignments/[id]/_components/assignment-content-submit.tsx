@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, FileUp, ListChecks, MessageSquareText } from "lucide-react";
+import { CheckCircle2, FileUp, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { submitAssignmentContentAction, type SubmitAssignmentContentState } from "@/app/(student)/assignments/actions";
@@ -22,22 +22,18 @@ const initial: SubmitAssignmentContentState = {};
 export function AssignmentContentSubmit({
   assignmentId,
   questions,
-  surveyPrompt,
   allowAttachment,
   allowedExtensions,
   maxFileSizeMb,
   initialAnswers,
-  initialSurvey,
   existingFileName,
 }: {
   assignmentId: string;
   questions: Question[];
-  surveyPrompt: string | null;
   allowAttachment: boolean;
   allowedExtensions: string[];
   maxFileSizeMb: number;
   initialAnswers: Record<string, unknown>;
-  initialSurvey: string;
   existingFileName: string | null;
 }) {
   const router = useRouter();
@@ -60,8 +56,6 @@ export function AssignmentContentSubmit({
       <input type="hidden" name="answers" value={JSON.stringify(answers)} />
 
       {questions.length > 0 && <section className="space-y-5"><h2 className="flex items-center gap-2 text-base font-semibold"><ListChecks className="h-4 w-4 text-primary" />选择题与填空题</h2>{questions.map((question, index) => <div key={question.id} className="space-y-2 border-t border-border pt-4 first:border-0 first:pt-0"><div className="flex items-start justify-between gap-3"><p className="text-sm font-medium"><span className="mr-2 text-muted-foreground num">{index + 1}.</span>{question.content}</p><span className="shrink-0 text-xs text-muted-foreground num">{question.score} 分</span></div>{question.type === "SINGLE_CHOICE" ? <div className="grid gap-2 sm:grid-cols-2">{question.options.map((option) => <label key={option.key} className="flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted/40"><input type="radio" name={`question-${question.id}`} checked={answers[question.id] === option.key} onChange={() => setAnswers((previous) => ({ ...previous, [question.id]: option.key }))} /><b>{option.key}</b><span>{option.text}</span></label>)}</div> : <div className="space-y-2">{Array.from({ length: question.blankCount }, (_, blankIndex) => <input key={blankIndex} value={Array.isArray(answers[question.id]) ? String((answers[question.id] as unknown[])[blankIndex] ?? "") : ""} onChange={(event) => setBlank(question.id, blankIndex, event.target.value)} placeholder={`第 ${blankIndex + 1} 个空`} className="flex h-9 w-full rounded-lg border border-border bg-muted px-3 text-sm focus-visible:border-primary focus-visible:outline-none" />)}</div>}</div>)}</section>}
-
-      {surveyPrompt && <section className="space-y-2 border-t border-border pt-5"><Label htmlFor="survey-text" className="flex items-center gap-2 text-base"><MessageSquareText className="h-4 w-4 text-primary" />评价问卷</Label><p className="text-sm text-foreground">{surveyPrompt}</p><textarea id="survey-text" name="surveyText" rows={5} required defaultValue={initialSurvey} maxLength={10000} className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus-visible:border-primary focus-visible:outline-none" /></section>}
 
       {allowAttachment && <section className="space-y-2 border-t border-border pt-5"><Label htmlFor="assignment-attachment" className="flex items-center gap-2 text-base"><FileUp className="h-4 w-4 text-primary" />附件提交</Label><input id="assignment-attachment" name="attachment" type="file" required={!existingFileName} accept={allowedExtensions.map((extension) => `.${extension}`).join(",")} className="block w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm file:mr-3 file:border-0 file:bg-transparent file:font-medium" /><p className="text-xs text-muted-foreground">支持 {allowedExtensions.map((extension) => `.${extension}`).join("、")}，不超过 {maxFileSizeMb}MB{existingFileName ? `；当前文件：${existingFileName}，不选择新文件将保留原文件` : ""}</p></section>}
 

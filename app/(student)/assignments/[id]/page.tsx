@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { SubmissionStatus } from "@prisma/client";
 import { ProblemSubmit } from "./_components/problem-submit";
+import { scoreAssignmentProblem } from "@/lib/assignments/scoring";
 import { AssignmentContentSubmit } from "./_components/assignment-content-submit";
 
 export const metadata = { title: "作业详情" };
@@ -342,7 +343,7 @@ export default async function StudentAssignmentDetailPage({
             </Card>
           )}
 
-          {(assignment.questions.length > 0 || assignment.allowSurvey || assignment.allowAttachment) && (
+          {(assignment.questions.length > 0 || assignment.allowAttachment) && (
             <AssignmentContentSubmit
               assignmentId={assignment.id}
               questions={assignment.questions.map((item) => ({
@@ -353,17 +354,15 @@ export default async function StudentAssignmentDetailPage({
                 blankCount: Array.isArray(item.question.answer) ? Math.max(1, item.question.answer.length) : 1,
                 score: item.score,
               }))}
-              surveyPrompt={assignment.allowSurvey ? assignment.surveyPrompt : null}
               allowAttachment={assignment.allowAttachment}
               allowedExtensions={assignment.allowedFileExtensions}
               maxFileSizeMb={assignment.maxFileSizeMb}
               initialAnswers={mySub?.answers && typeof mySub.answers === "object" && !Array.isArray(mySub.answers) ? mySub.answers as Record<string, unknown> : {}}
-              initialSurvey={mySub?.textContent ?? ""}
               existingFileName={mySub?.fileName ?? null}
             />
           )}
 
-          {assignment.problems.length === 0 && assignment.questions.length === 0 && !assignment.allowSurvey && !assignment.allowAttachment ? (
+          {assignment.problems.length === 0 && assignment.questions.length === 0 && !assignment.allowAttachment ? (
             <Card>
               <CardContent className="flex flex-col items-center gap-3 px-6 py-16 text-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
@@ -409,7 +408,11 @@ export default async function StudentAssignmentDetailPage({
                             status: lr.status,
                             passedCount: lr.passedCount,
                             totalCount: lr.totalCount,
-                            autoScore: lr.score,
+                            autoScore: scoreAssignmentProblem(
+                              lr.passedCount,
+                              lr.totalCount,
+                              ap.score,
+                            ),
                             cases: lr.cases,
                           }
                         : null

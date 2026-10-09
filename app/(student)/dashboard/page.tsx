@@ -485,13 +485,7 @@ export default async function StudentDashboardPage() {
               {todoCount === 0 ? (
                 <div className="rounded-xl border border-dashed border-border bg-muted/40 p-10 text-center">
                   <p className="text-sm text-muted-foreground">暂无待办作业或进行中考试 ✨</p>
-                  <p className="mt-1 text-xs text-subtle-foreground">
-                    可以去{" "}
-                    <Link href="/problems" className="text-primary hover:underline">
-                      练习
-                    </Link>{" "}
-                    或者看看感兴趣的课程
-                  </p>
+                  <p className="mt-1 text-xs text-subtle-foreground">可以查看课程资料，预习下一章节。</p>
                 </div>
               ) : (
                 <ul className="divide-y divide-border">

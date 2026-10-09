@@ -14,6 +14,7 @@ import {
   Plus,
   Archive,
   Calendar,
+  ClipboardList,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { ChapterSettingsDialog } from "../../_components/chapter-settings-dialog";
@@ -39,13 +40,13 @@ export default async function TeacherChapterDetailPage({
     where: { id: chapterId },
     include: {
       course: { select: { id: true, title: true, isArchived: true } },
-      _count: { select: { assignments: true, exams: true } },
+      _count: { select: { assignments: true, exams: true, surveys: true } },
     },
   });
   if (!chapter || chapter.courseId !== courseId) notFound();
 
   // 列出本章节的作业与考试
-  const [assignments, exams] = await Promise.all([
+  const [assignments, exams, surveys] = await Promise.all([
     prisma.assignment.findMany({
       where: { chapterId },
       orderBy: { dueAt: "asc" },
@@ -70,6 +71,17 @@ export default async function TeacherChapterDetailPage({
         totalScore: true,
         durationMin: true,
         _count: { select: { attempts: true } },
+      },
+    }),
+    prisma.survey.findMany({
+      where: { chapterId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        dueAt: true,
+        _count: { select: { questions: true, responses: true } },
       },
     }),
   ]);
@@ -143,7 +155,11 @@ export default async function TeacherChapterDetailPage({
                 <span className="text-sm text-muted-foreground">场</span>
               </div>
             </div>
-            <div className="rounded-xl border border-border bg-card p-5 md:col-span-2">
+            <div className="rounded-xl border border-border bg-card p-5">
+              <div className="text-sm text-muted-foreground">章节问卷</div>
+              <div className="mt-3 flex items-baseline gap-1"><span className="num text-3xl font-bold tracking-tight">{chapter._count.surveys}</span><span className="text-sm text-muted-foreground">份</span></div>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-5 md:col-span-1">
               <div className="text-sm text-muted-foreground">快捷操作</div>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Link
@@ -159,6 +175,9 @@ export default async function TeacherChapterDetailPage({
                     <Plus />
                     在此章节新建考试
                   </Button>
+                </Link>
+                <Link href={`/t/surveys/new?courseId=${courseId}&chapterId=${chapter.id}`}>
+                  <Button size="sm" variant="outline"><Plus />在此章节新建问卷</Button>
                 </Link>
               </div>
             </div>
@@ -218,6 +237,13 @@ export default async function TeacherChapterDetailPage({
                   ))}
                 </ul>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-0">
+              <div className="flex items-center justify-between border-b border-border px-6 py-3"><div className="flex items-center gap-2 text-sm font-medium"><ClipboardList className="h-4 w-4 text-primary" />章节问卷</div><span className="num text-xs text-muted-foreground">{surveys.length} 份</span></div>
+              {surveys.length === 0 ? <div className="px-6 py-12 text-center"><ClipboardList className="mx-auto h-8 w-8 text-subtle-foreground" /><p className="mt-3 text-sm text-muted-foreground">本章节暂无问卷</p>{canEdit && <Link href={`/t/surveys/new?courseId=${courseId}&chapterId=${chapter.id}`} className="mt-3 inline-block text-xs text-primary hover:underline">在此章节新建问卷 →</Link>}</div> : <ul className="divide-y divide-border">{surveys.map((survey) => <li key={survey.id}><Link href={`/t/surveys/${survey.id}`} className="flex items-center justify-between gap-3 px-6 py-4 transition-colors hover:bg-muted/30"><div><div className="flex items-center gap-2 text-sm font-medium">{survey.title}<Badge variant={survey.status === "PUBLISHED" ? "success" : survey.status === "CLOSED" ? "warning" : "default"}>{survey.status === "PUBLISHED" ? "回收中" : survey.status === "CLOSED" ? "已关闭" : "草稿"}</Badge></div><div className="mt-1 flex gap-3 text-xs text-muted-foreground"><span className="num">{survey._count.questions} 题</span><span className="num">{survey._count.responses} 份回收</span>{survey.dueAt && <span className="num">{formatDate(survey.dueAt)} 截止</span>}</div></div></Link></li>)}</ul>}
             </CardContent>
           </Card>
 
@@ -288,11 +314,11 @@ export default async function TeacherChapterDetailPage({
             </CardContent>
           </Card>
 
-          {chapter._count.assignments + chapter._count.exams === 0 && (
+          {chapter._count.assignments + chapter._count.exams + chapter._count.surveys === 0 && (
             <div className="rounded-xl border border-dashed border-border bg-muted/30 px-6 py-10 text-center text-sm text-muted-foreground">
               <BookOpen className="mx-auto h-6 w-6 text-subtle-foreground" />
               <p className="mt-2">本章节还没有内容</p>
-              <p className="mt-1 text-xs">在上方「快捷操作」中创建本章节的作业或考试</p>
+              <p className="mt-1 text-xs">在上方「快捷操作」中创建本章节的作业、考试或问卷</p>
             </div>
           )}
         </div>

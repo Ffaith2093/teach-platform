@@ -23,3 +23,14 @@ export function scoreAssignmentAnswers(questions: ScorableQuestion[], rawAnswers
     return total + (correct ? item.score : 0);
   }, 0);
 }
+
+export function scoreAssignmentProblem(
+  passedCount: number,
+  totalCount: number,
+  allocatedScore: number,
+): number {
+  if (totalCount <= 0 || allocatedScore <= 0) return 0;
+  const passed = Math.max(0, Math.min(totalCount, passedCount));
+  if (passed === totalCount) return allocatedScore;
+  return Math.max(0, Math.min(allocatedScore, Math.round(allocatedScore * passed / totalCount)));
+}

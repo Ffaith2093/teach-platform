@@ -10,6 +10,7 @@ import { ChevronLeft, Code, Clock } from "lucide-react";
 import type { Difficulty, JudgeStatus } from "@prisma/client";
 import { PracticeSolver } from "./_components/practice-solver";
 import { SubmissionHistory } from "./_components/submission-history";
+import { MarkdownContent } from "@/components/markdown-content";
 
 export const metadata = { title: "编程题练习" };
 
@@ -27,6 +28,9 @@ export default async function StudentProblemDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  // 学生独立题库暂时下线；作业与考试中的编程题不受影响。
+  if (process.env.ENABLE_STUDENT_PROBLEM_LIBRARY !== "true") redirect("/dashboard");
+
   const { id } = await params;
   const session = await auth();
   const userId = session!.user.id;
@@ -187,9 +191,7 @@ export default async function StudentProblemDetailPage({
                       <Code className="h-4 w-4 text-primary" />
                       题目描述
                     </div>
-                    <div className="whitespace-pre-line text-base leading-7 text-foreground">
-                      {problem.description}
-                    </div>
+                    <MarkdownContent content={problem.description} />
                   </CardContent>
                 </Card>
               )}

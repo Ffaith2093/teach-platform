@@ -15,7 +15,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
-import { scaledProblemScore } from "@/lib/exams/scoring";
+import { scoreAssignmentProblem } from "@/lib/assignments/scoring";
 
 export const dynamic = "force-dynamic";
 
@@ -151,7 +151,13 @@ export async function GET(
             problemId: { in: problemIds },
           },
           orderBy: { createdAt: "desc" },
-          select: { userId: true, problemId: true, score: true, status: true },
+          select: {
+            userId: true,
+            problemId: true,
+            passedCount: true,
+            totalCount: true,
+            status: true,
+          },
         })
       : [];
   const scoreByKey = new Map<string, number>();
@@ -159,7 +165,12 @@ export async function GET(
     const k = `${s.userId}:${s.problemId}`;
     if (!scoreByKey.has(k)) {
       const problem = problems.find((p) => p.problemId === s.problemId);
-      if (problem) scoreByKey.set(k, scaledProblemScore(s.score, problem.problem.testCases.reduce((sum, tc) => sum + tc.score, 0), problem.score));
+      if (problem) {
+        scoreByKey.set(
+          k,
+          scoreAssignmentProblem(s.passedCount, s.totalCount, problem.score),
+        );
+      }
     }
   }
 

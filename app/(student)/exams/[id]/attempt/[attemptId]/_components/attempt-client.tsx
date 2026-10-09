@@ -8,6 +8,7 @@ import { AlertCircle, Check, Clock, Loader2 } from "lucide-react";
 import { saveAnswerAction, submitExamAction } from "@/app/(student)/exams/actions";
 import type { Difficulty, QuestionType } from "@prisma/client";
 import { CodeEditor } from "@/components/code-editor";
+import { MarkdownContent } from "@/components/markdown-content";
 
 type Q = {
   index: number;
@@ -411,14 +412,16 @@ function QuestionCard({
           <span className="num shrink-0 text-xs text-muted-foreground">{q.score} 分</span>
         </div>
 
-        <p className="mt-3 whitespace-pre-line text-base leading-7 text-foreground">
-          {q.type === "PROGRAMMING" && q.problem ? q.problem.title : q.content}
-        </p>
+        <MarkdownContent
+          content={q.type === "PROGRAMMING" && q.problem ? q.problem.title : q.content}
+          className="mt-3"
+        />
 
         {q.type === "PROGRAMMING" && q.problem && (
-          <p className="mt-2 whitespace-pre-line rounded-lg border border-border bg-muted/40 p-4 text-base leading-7 text-foreground">
-            {q.problem.description}
-          </p>
+          <MarkdownContent
+            content={q.problem.description}
+            className="mt-2 rounded-lg border border-border bg-muted/40 p-4"
+          />
         )}
 
         <div className="mt-4">

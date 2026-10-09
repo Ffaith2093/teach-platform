@@ -253,7 +253,7 @@ export default async function StudentGradesPage() {
   return (
     <>
       <Topbar crumbs={[{ label: "成绩单" }]} />
-      <main className="flex-1 p-8">
+      <main className="min-w-0 flex-1 p-4 md:p-8">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">成绩单</h1>
@@ -299,21 +299,21 @@ export default async function StudentGradesPage() {
               </CardContent>
             </Card>
           ) : (
-            <Card>
-              <CardContent className="p-0">
-                <table className="w-full text-sm">
+            <Card className="min-w-0 overflow-hidden">
+              <CardContent className="overflow-x-auto p-0">
+                <table className="min-w-[1120px] w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/50 text-left text-xs font-medium text-muted-foreground">
-                      <th className="px-6 py-3">课程</th>
-                      <th className="px-6 py-3">作业</th>
-                      <th className="px-6 py-3">作业均分</th>
-                      <th className="px-6 py-3">vs 班级</th>
-                      <th className="px-6 py-3">班级排名</th>
-                      <th className="px-6 py-3">考试</th>
-                      <th className="px-6 py-3">考试均分</th>
-                      <th className="px-6 py-3">vs 班级</th>
-                      <th className="px-6 py-3">班级排名</th>
-                      <th className="px-6 py-3">最近活动</th>
+                      <th className="whitespace-nowrap px-6 py-3">课程</th>
+                      <th className="whitespace-nowrap px-6 py-3">作业</th>
+                      <th className="whitespace-nowrap px-6 py-3">作业均分</th>
+                      <th className="whitespace-nowrap px-6 py-3">vs 班级</th>
+                      <th className="whitespace-nowrap px-6 py-3">班级排名</th>
+                      <th className="whitespace-nowrap px-6 py-3">考试</th>
+                      <th className="whitespace-nowrap px-6 py-3">考试均分</th>
+                      <th className="whitespace-nowrap px-6 py-3">vs 班级</th>
+                      <th className="whitespace-nowrap px-6 py-3">班级排名</th>
+                      <th className="whitespace-nowrap px-6 py-3">最近活动</th>
                       <th className="w-10"></th>
                     </tr>
                   </thead>
@@ -422,7 +422,7 @@ function ClassCompare({ mine, classAvg }: { mine: number | null; classAvg: numbe
         : "text-danger";
   const arrow = Math.abs(delta) < 0.5 ? "≈" : delta > 0 ? "▲" : "▼";
   return (
-    <div className="flex flex-col leading-tight">
+    <div className="flex min-w-[150px] flex-col whitespace-nowrap leading-tight">
       <span className="num text-foreground">
         {Math.round(mine)}
         <span className="ml-0.5 text-subtle-foreground">%</span>
@@ -444,7 +444,7 @@ function RankBadge({ rank, total }: { rank: number | null; total: number }) {
   const variant =
     pct <= 0.25 ? "success" : pct >= 0.75 ? "danger" : "warning";
   return (
-    <Badge variant={variant as "success" | "warning" | "danger"}>
+    <Badge className="whitespace-nowrap" variant={variant as "success" | "warning" | "danger"}>
       第 <span className="num">{rank}</span>
       <span className="text-subtle-foreground"> / {total}</span>
     </Badge>

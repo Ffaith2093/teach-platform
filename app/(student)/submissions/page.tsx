@@ -204,13 +204,8 @@ export default async function StudentSubmissionsPage({
                             <td className="px-6 py-3.5">
                               <TypeBadge kind="practice" />
                             </td>
-                            <td className="px-6 py-3.5">
-                              <Link
-                                href={`/problems/${s.problem.id}`}
-                                className="font-medium text-foreground hover:text-primary"
-                              >
-                                {s.problem.title}
-                              </Link>
+                            <td className="px-6 py-3.5 font-medium text-foreground">
+                              {s.problem.title}
                             </td>
                             <td className="px-6 py-3.5 text-subtle-foreground">—</td>
                             <td className="px-6 py-3.5">

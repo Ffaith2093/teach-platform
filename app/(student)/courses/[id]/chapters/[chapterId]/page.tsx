@@ -13,6 +13,7 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
+  ClipboardList,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import type { SubmissionStatus, ExamStatus, AttemptStatus } from "@prisma/client";
@@ -115,6 +116,29 @@ export default async function StudentChapterDetailPage({
     },
   });
 
+  const surveys = await prisma.survey.findMany({
+    where: {
+      chapterId,
+      OR: [
+        { status: "PUBLISHED" },
+        { status: "CLOSED", responses: { some: { studentId: userId } } },
+      ],
+    },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      dueAt: true,
+      _count: { select: { questions: true } },
+      responses: {
+        where: { studentId: userId },
+        select: { submittedAt: true },
+        take: 1,
+      },
+    },
+  });
+
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-border bg-card p-6">
@@ -137,6 +161,10 @@ export default async function StudentChapterDetailPage({
           <span className="inline-flex items-center gap-1 num">
             <ClipboardCheck className="h-3 w-3" />
             {exams.length} 考试
+          </span>
+          <span className="inline-flex items-center gap-1 num">
+            <ClipboardList className="h-3 w-3" />
+            {surveys.length} 问卷
           </span>
         </div>
       </div>
@@ -198,6 +226,20 @@ export default async function StudentChapterDetailPage({
               })}
             </ul>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-0">
+          <div className="flex items-center justify-between border-b border-border px-6 py-3">
+            <div className="flex items-center gap-2 text-sm font-medium"><ClipboardList className="h-4 w-4 text-primary" />章节问卷</div>
+            <span className="num text-xs text-muted-foreground">{surveys.length} 份</span>
+          </div>
+          {surveys.length === 0 ? <div className="px-6 py-12 text-center text-sm text-muted-foreground">本章节暂无问卷</div> : <ul className="divide-y divide-border">{surveys.map((survey) => {
+            const response = survey.responses[0];
+            const expired = !!survey.dueAt && survey.dueAt < now;
+            return <li key={survey.id}><Link href={`/surveys/${survey.id}`} className="flex items-center justify-between gap-3 px-6 py-4 transition-colors hover:bg-muted/30"><div className="min-w-0 flex-1"><div className="flex items-center gap-2 text-sm font-medium">{survey.title}{response ? <Badge variant="success">已提交</Badge> : survey.status === "PUBLISHED" && !expired ? <Badge variant="warning">待填写</Badge> : <Badge variant="default">已结束</Badge>}</div><div className="mt-1 flex gap-3 text-xs text-muted-foreground"><span className="num">{survey._count.questions} 题</span>{survey.dueAt && <span className="num">{formatDate(survey.dueAt)} 截止</span>}</div></div><ChevronRight className="h-4 w-4 text-subtle-foreground" /></Link></li>;
+          })}</ul>}
         </CardContent>
       </Card>
 

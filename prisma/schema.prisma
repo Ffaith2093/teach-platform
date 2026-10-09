@@ -47,6 +47,8 @@ model User {
   gradedSubmissions     AssignmentSubmission[] @relation("SubmissionGrader")
   assignmentSubmissions AssignmentSubmission[]
   accessLogs            AccessLog[]
+  createdSurveys        Survey[]               @relation("SurveyCreator")
+  surveyResponses       SurveyResponse[]
 
   @@index([role, status])
   @@index([classId])
@@ -132,6 +134,7 @@ model Course {
   chapters      Chapter[]
   notifications Notification[]
   accessLogs    AccessLog[]
+  surveys       Survey[]
 
   @@index([category, isArchived])
 }
@@ -212,6 +215,7 @@ model Chapter {
   course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
   assignments Assignment[]
   exams       Exam[]
+  surveys     Survey[]
 
   @@unique([courseId, order])
   @@index([courseId])
@@ -419,6 +423,72 @@ model AssignmentSubmission {
 
   @@unique([assignmentId, studentId])
   @@index([studentId, status])
+}
+
+// ============== 课程问卷 ==============
+
+model Survey {
+  id          String       @id @default(cuid())
+  courseId    String
+  chapterId   String
+  creatorId   String
+  title       String
+  description String?      @db.Text
+  status      SurveyStatus @default(DRAFT)
+  dueAt       DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  chapter   Chapter          @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  creator   User             @relation("SurveyCreator", fields: [creatorId], references: [id])
+  questions SurveyQuestion[]
+  responses SurveyResponse[]
+
+  @@index([courseId, status, createdAt])
+  @@index([chapterId])
+}
+
+model SurveyQuestion {
+  id       String             @id @default(cuid())
+  surveyId String
+  type     SurveyQuestionType
+  title    String             @db.Text
+  required Boolean            @default(true)
+  options  Json?
+  order    Int
+
+  survey Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+
+  @@unique([surveyId, order])
+}
+
+model SurveyResponse {
+  id          String   @id @default(cuid())
+  surveyId    String
+  studentId   String
+  answers     Json
+  submittedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  survey  Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([surveyId, studentId])
+  @@index([studentId, updatedAt])
+}
+
+enum SurveyStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+enum SurveyQuestionType {
+  SHORT_TEXT
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  DROPDOWN
 }
 
 enum SubmissionStatus {

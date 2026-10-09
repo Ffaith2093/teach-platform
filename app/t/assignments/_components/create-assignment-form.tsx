@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useActionState } from "react";
-import { Check, ChevronRight, ChevronLeft, FileText, BookOpen, Code, Plus, X, Search, ListChecks, MessageSquareText, Paperclip } from "lucide-react";
+import { Check, ChevronRight, ChevronLeft, FileText, BookOpen, Code, Plus, X, Search, ListChecks, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -83,9 +83,7 @@ export function CreateAssignmentForm({
   const [allowLate, setAllowLate] = React.useState(true);
   const [picked, setPicked] = React.useState<PickedProblem[]>([]);
   const [pickedQuestions, setPickedQuestions] = React.useState<PickedQuestion[]>([]);
-  const [allowSurvey, setAllowSurvey] = React.useState(false);
   const [allowAttachment, setAllowAttachment] = React.useState(false);
-  const [surveyScore, setSurveyScore] = React.useState(0);
   const [attachmentScore, setAttachmentScore] = React.useState(0);
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [pickerSearch, setPickerSearch] = React.useState("");
@@ -102,11 +100,10 @@ export function CreateAssignmentForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
-  const hasContent = picked.length > 0 || pickedQuestions.length > 0 || allowSurvey || allowAttachment;
+  const hasContent = picked.length > 0 || pickedQuestions.length > 0 || allowAttachment;
   const canNext = step === 0 ? !!courseId : step === 1 ? true : hasContent;
   const totalScore = picked.reduce((sum, p) => sum + p.score, 0)
     + pickedQuestions.reduce((sum, question) => sum + question.assignedScore, 0)
-    + (allowSurvey ? surveyScore : 0)
     + (allowAttachment ? attachmentScore : 0);
 
   function addProblem(p: ProblemOption) {
@@ -544,16 +541,11 @@ export function CreateAssignmentForm({
           </section>
 
           <section className="space-y-3 border-t border-border pt-5">
-            <label className="flex cursor-pointer items-start gap-3"><input type="checkbox" name="allowSurvey" checked={allowSurvey} onChange={(event) => setAllowSurvey(event.target.checked)} className="mt-1" /><span><span className="flex items-center gap-2 text-sm font-semibold"><MessageSquareText className="h-4 w-4 text-primary" />评价问卷</span><span className="text-xs text-muted-foreground">收集学生的文字反馈或学习反思。</span></span></label>
-            {allowSurvey && <div className="grid gap-3 pl-7 sm:grid-cols-[1fr_120px]"><textarea name="surveyPrompt" required={allowSurvey} rows={3} maxLength={2000} placeholder="例：请总结本章最难理解的内容，并说明原因。" className="rounded-lg border border-border bg-muted px-3 py-2 text-sm focus-visible:border-primary focus-visible:outline-none" /><div><Label htmlFor="survey-score">分值</Label><Input id="survey-score" name="surveyScore" type="number" min={0} max={1000} value={surveyScore} onChange={(event) => setSurveyScore(Number(event.target.value) || 0)} /></div></div>}
-          </section>
-
-          <section className="space-y-3 border-t border-border pt-5">
             <label className="flex cursor-pointer items-start gap-3"><input type="checkbox" name="allowAttachment" checked={allowAttachment} onChange={(event) => setAllowAttachment(event.target.checked)} className="mt-1" /><span><span className="flex items-center gap-2 text-sm font-semibold"><Paperclip className="h-4 w-4 text-primary" />附件提交</span><span className="text-xs text-muted-foreground">允许学生上传一份文件，并限制格式和大小。</span></span></label>
             {allowAttachment && <div className="grid gap-3 pl-7 sm:grid-cols-[1fr_130px_110px]"><div><Label htmlFor="allowed-ext">允许格式</Label><Input id="allowed-ext" name="allowedFileExtensions" required={allowAttachment} defaultValue="pdf,docx,zip" placeholder="pdf,docx,zip" /></div><div><Label htmlFor="max-file-size">上限 MB</Label><Input id="max-file-size" name="maxFileSizeMb" type="number" min={1} max={100} defaultValue={10} /></div><div><Label htmlFor="attachment-score">分值</Label><Input id="attachment-score" name="attachmentScore" type="number" min={0} max={1000} value={attachmentScore} onChange={(event) => setAttachmentScore(Number(event.target.value) || 0)} /></div></div>}
           </section>
 
-          <p className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">当前已配置总分：<b className="num text-foreground">{totalScore}</b>（问卷和附件分值会在提交时一并计入作业总分）</p>
+          <p className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">当前已配置总分：<b className="num text-foreground">{totalScore}</b>（附件分值会在提交时一并计入作业总分）</p>
         </div>
 
         {state.error && (
