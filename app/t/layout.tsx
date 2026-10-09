@@ -16,10 +16,8 @@ export default async function TeacherLayout({ children }: { children: React.Reac
       select: {
         name: true,
         subjects: true,
+        email: true,
         mustChangePassword: true,
-        classTeachers: {
-          select: { class: { select: { grade: { select: { name: true } } } } },
-        },
       },
     }),
     prisma.notification.count({
@@ -29,10 +27,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   // 用 DB 真值，不用 JWT 里登录时的值（改密后 JWT 不会自动更新）
   if (user?.mustChangePassword) redirect("/change-password");
 
-  const grades = new Set(user?.classTeachers.map((t) => t.class.grade.name) ?? []);
-  const subtitle = user?.subjects.length
-    ? `${user.subjects.join(" · ")} · ${[...grades].join("/") || "未分配"}`
-    : session.user.email;
+  const subtitle = user?.subjects.length ? user.subjects.join(" · ") : (user?.email ?? "教师账号");
 
   return (
     <div className="flex min-h-screen">

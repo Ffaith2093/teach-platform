@@ -53,8 +53,16 @@ const features = [
 
 const workflow = [
   { step: "01", title: "管理员初始化", body: "创建年级、班级、教师账号，分配教师授课班级。" },
-  { step: "02", title: "教师建设课程", body: "选择所教班级 → 上传资源 → 出题（编程题可挂自动评测）。" },
-  { step: "03", title: "学生学习与提交", body: "进入课程 → 完成作业 → 编程题提交即时得到 AC/WA/TLE 反馈。" },
+  {
+    step: "02",
+    title: "教师建设课程",
+    body: "选择所教班级 → 上传资源 → 出题（编程题可挂自动评测）。",
+  },
+  {
+    step: "03",
+    title: "学生学习与提交",
+    body: "进入课程 → 完成作业 → 编程题提交即时得到 AC/WA/TLE 反馈。",
+  },
   { step: "04", title: "教师批改与反馈", body: "客观题自动判分，主观题人工批改，评语逐题反馈。" },
 ];
 
@@ -121,7 +129,7 @@ export default function HomePage() {
           <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-4">
             {stats.map((s) => (
               <div key={s.label} className="bg-card p-6 text-center">
-                <div className="text-3xl font-bold tracking-tight text-primary num">{s.num}</div>
+                <div className="num text-3xl font-bold tracking-tight text-primary">{s.num}</div>
                 <div className="mt-1 text-sm text-muted-foreground">{s.label}</div>
               </div>
             ))}
@@ -134,7 +142,9 @@ export default function HomePage() {
         <div className="container">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight">核心功能</h2>
-            <p className="mt-3 text-muted-foreground">教学场景中真正会用到的功能，每个模块都做到可上线。</p>
+            <p className="mt-3 text-muted-foreground">
+              教学场景中真正会用到的功能，每个模块都做到可上线。
+            </p>
           </div>
           <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-2 lg:grid-cols-3">
             {features.map((f) => {
@@ -163,7 +173,7 @@ export default function HomePage() {
           <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {workflow.map((w) => (
               <div key={w.step} className="relative rounded-2xl border border-border bg-card p-6">
-                <div className="text-3xl font-bold text-primary/30 num">{w.step}</div>
+                <div className="num text-3xl font-bold text-primary/30">{w.step}</div>
                 <h3 className="mt-3 text-base font-semibold">{w.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{w.body}</p>
               </div>
@@ -207,7 +217,9 @@ export default function HomePage() {
         <div className="container">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight">开始使用 PyLearn</h2>
-            <p className="mt-3 text-muted-foreground">教师与学生账号由管理员统一创建，请联系学校信息中心获取。</p>
+            <p className="mt-3 text-muted-foreground">
+              教师与学生账号由管理员统一创建，请联系学校信息中心获取。
+            </p>
             <Link
               href="/login"
               className="mt-8 inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-6 text-sm font-medium text-primary-foreground shadow-md transition-all hover:bg-primary-hover"
@@ -222,7 +234,7 @@ export default function HomePage() {
         <div className="container flex flex-col items-center justify-between gap-3 text-xs text-muted-foreground md:flex-row">
           <div>© 2026 PyLearn · 高中 Python 编程教学平台</div>
           <div className="flex items-center gap-5">
-            <span>单校部署</span>
+            <span>福建省厦门双十中学</span>
             <span>·</span>
             <span>技术栈：Next.js + Prisma + PostgreSQL + Docker</span>
           </div>

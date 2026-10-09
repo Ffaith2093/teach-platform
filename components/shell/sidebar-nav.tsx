@@ -21,6 +21,7 @@ import {
   Bell,
   CircleHelp,
   SquarePen,
+  History,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -60,6 +61,7 @@ const studentNav: NavSection[] = [
     label: "消息",
     items: [
       { href: "/notifications", label: "通知中心", icon: Bell },
+      { href: "/updates", label: "版本更新", icon: History },
     ],
   },
 ];
@@ -100,6 +102,7 @@ const teacherNav: NavSection[] = [
     label: "消息",
     items: [
       { href: "/t/notifications", label: "通知中心", icon: Bell },
+      { href: "/t/updates", label: "版本更新", icon: History },
     ],
   },
 ];
@@ -116,9 +119,11 @@ const adminNav: NavSection[] = [
   },
   {
     label: "评测",
-    items: [
-      { href: "/admin/judge", label: "评测队列", icon: Server },
-    ],
+    items: [{ href: "/admin/judge", label: "评测队列", icon: Server }],
+  },
+  {
+    label: "系统",
+    items: [{ href: "/admin/updates", label: "版本更新", icon: History }],
   },
 ];
 
@@ -155,7 +160,8 @@ export function SidebarShell({ role, user, unreadNotifications = 0 }: SidebarShe
               const active =
                 pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
               const Icon = item.icon;
-              const isNotifications = item.href === "/notifications" || item.href === "/t/notifications";
+              const isNotifications =
+                item.href === "/notifications" || item.href === "/t/notifications";
               const badge = isNotifications ? unreadNotifications : 0;
               return (
                 <Link
@@ -171,7 +177,7 @@ export function SidebarShell({ role, user, unreadNotifications = 0 }: SidebarShe
                   <Icon className="h-4 w-4" />
                   <span className="flex-1">{item.label}</span>
                   {badge > 0 && (
-                    <span className="num inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-medium text-danger-foreground">
+                    <span className="num text-danger-foreground inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-medium">
                       {badge > 99 ? "99+" : badge}
                     </span>
                   )}

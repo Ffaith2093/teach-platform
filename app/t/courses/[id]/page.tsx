@@ -25,6 +25,7 @@ import { ClassesPanel } from "./_components/classes-panel";
 import { CollaboratorsPanel } from "./_components/collaborators-panel";
 import { ChaptersCard } from "./_components/chapters-card";
 import { CourseAnalyticsCard } from "./_components/course-analytics-card";
+import { compareClassNames } from "@/lib/grades";
 
 export const metadata = { title: "课程详情" };
 
@@ -36,7 +37,10 @@ const CATEGORY_LABELS: Record<CourseCategory, string> = {
   INTERDISCIPLINARY: "多学科交叉",
 };
 
-const ROLE_LABELS: Record<CourseTeacherRole, { label: string; tone: "primary" | "accent" | "default" }> = {
+const ROLE_LABELS: Record<
+  CourseTeacherRole,
+  { label: string; tone: "primary" | "accent" | "default" }
+> = {
   OWNER: { label: "主讲", tone: "primary" },
   ASSISTANT: { label: "助教", tone: "accent" },
   CONTRIBUTOR: { label: "外聘", tone: "default" },
@@ -75,7 +79,9 @@ export default async function TeacherCourseDetailPage({
       },
       teachers: {
         include: {
-          teacher: { select: { id: true, name: true, teacherNo: true, subjects: true, status: true } },
+          teacher: {
+            select: { id: true, name: true, teacherNo: true, subjects: true, status: true },
+          },
         },
         orderBy: [{ role: "asc" }, { addedAt: "asc" }],
       },
@@ -207,85 +213,13 @@ export default async function TeacherCourseDetailPage({
         }),
   ]);
 
-  // ========== 出勤统计（过去 7 天）==========
-  const attendanceNow = new Date();
-  const dayStart = new Date(attendanceNow);
-  dayStart.setHours(0, 0, 0, 0);
-  const sevenDaysAgo = new Date(attendanceNow);
-  sevenDaysAgo.setDate(attendanceNow.getDate() - 6);
-  sevenDaysAgo.setHours(0, 0, 0, 0);
-
-  // 课程下所有 ACTIVE 学生（应到）
-  const expectedStudents = await prisma.user.findMany({
-    where: {
-      status: "ACTIVE",
-      role: "STUDENT",
-      classId: { in: course.classes.map((cc) => cc.classId) },
-    },
-    select: { id: true, name: true, studentNo: true },
-    orderBy: [{ studentNo: "asc" }],
-  });
-  const expectedSet = new Set(expectedStudents.map((s) => s.id));
-  const expectedTotal = expectedStudents.length;
-
-  // 7 天内本课程所有访问日志
-  const weekLogs = await prisma.accessLog.findMany({
-    where: {
-      courseId: id,
-      createdAt: { gte: sevenDaysAgo },
-    },
-    select: { userId: true, createdAt: true },
-  });
-
-  // 按天分组（yyyy-mm-dd → Set<userId>）
-  const dailyByDate = new Map<string, Set<string>>();
-  const weeklyUsers = new Set<string>();
-  const todayUsers = new Set<string>();
-  for (const log of weekLogs) {
-    const day = log.createdAt.toISOString().slice(0, 10);
-    if (!dailyByDate.has(day)) dailyByDate.set(day, new Set());
-    dailyByDate.get(day)!.add(log.userId);
-    weeklyUsers.add(log.userId);
-    if (log.createdAt >= dayStart) todayUsers.add(log.userId);
-  }
-
-  // 7 天 daily grid（按时间正序，今天在最右）
-  const daily: { date: string; label: string; weekday: string; count: number; rate: number }[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(attendanceNow);
-    d.setDate(attendanceNow.getDate() - i);
-    d.setHours(0, 0, 0, 0);
-    const key = d.toISOString().slice(0, 10);
-    const users = dailyByDate.get(key) ?? new Set();
-    daily.push({
-      date: key,
-      label: `${d.getMonth() + 1}/${d.getDate()}`,
-      weekday: ["日", "一", "二", "三", "四", "五", "六"][d.getDay()],
-      count: users.size,
-      rate: expectedTotal > 0 ? users.size / expectedTotal : 0,
-    });
-  }
-
-  // 「今日到课」仅计本课程应到的学生
-  const presentTodayCount = [...todayUsers].filter((uid) => expectedSet.has(uid)).length;
-  // 7 天总到课人次（去重）
-  const weeklyDistinctUsers = [...weeklyUsers].filter((uid) => expectedSet.has(uid)).length;
-  // 7 天从未到过的本课程学生
-  const absentInWeek = expectedStudents.filter((s) => !weeklyUsers.has(s.id));
-  // 7 天平均出勤率（按天算，每天的到课学生数 / 应到）
-  const avgRate =
-    daily.length > 0
-      ? daily.reduce((s, d) => s + d.rate, 0) / daily.length
-      : 0;
+  const attendanceClasses = [...course.classes].sort((a, b) =>
+    compareClassNames(a.class.name, b.class.name),
+  );
 
   return (
     <>
-      <Topbar
-        crumbs={[
-          { label: "我的课程", href: "/t/courses" },
-          { label: course.title },
-        ]}
-      />
+      <Topbar crumbs={[{ label: "我的课程", href: "/t/courses" }, { label: course.title }]} />
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
           <div>
@@ -350,74 +284,36 @@ export default async function TeacherCourseDetailPage({
           {/* 学生出勤 */}
           <Card>
             <CardContent className="p-6">
-              <div className="mb-5 flex items-center justify-between">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Activity className="h-4 w-4 text-primary" />
                   <h2 className="text-base font-semibold">学生出勤</h2>
                 </div>
-                <div className="flex items-center gap-2">
-                  {absentInWeek.length > 0 && (
-                    <Badge variant="danger">{absentInWeek.length} 人 7 天未到</Badge>
-                  )}
-                  <Link
-                    href={`/t/courses/${course.id}/attendance`}
-                    className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-card px-2.5 text-xs font-medium hover:bg-muted"
-                  >
-                    查看明细
-                    <ChevronRight className="h-3 w-3" />
-                  </Link>
-                </div>
+                <span className="text-xs text-muted-foreground">选择班级后查看独立出勤数据</span>
               </div>
-
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <MiniStat label="今日到课" value={presentTodayCount} total={expectedTotal} tone="primary" />
-                <MiniStat
-                  label="7 天到课人次"
-                  value={weeklyDistinctUsers}
-                  total={expectedTotal}
-                  tone="accent"
-                />
-                <MiniStat
-                  label="7 天平均出勤率"
-                  value={`${Math.round(avgRate * 100)}%`}
-                  tone={avgRate >= 0.8 ? "success" : avgRate >= 0.6 ? "warning" : "danger"}
-                />
-                <MiniStat
-                  label="缺勤学生（7 天）"
-                  value={absentInWeek.length}
-                  tone={absentInWeek.length === 0 ? "success" : "danger"}
-                />
-              </div>
-
-              {/* 7 天 daily grid */}
-              <div className="mt-6">
-                <div className="mb-2 text-xs text-muted-foreground">
-                  过去 7 天每日到课人数（应到 <span className="num text-foreground">{expectedTotal}</span>）
+              {attendanceClasses.length === 0 ? (
+                <div className="mt-5 rounded-lg border border-dashed border-border bg-muted/30 px-6 py-10 text-center text-sm text-muted-foreground">
+                  本课程尚未绑定班级
                 </div>
-                <div className="grid grid-cols-7 gap-2">
-                  {daily.map((d) => (
-                    <DailyBar key={d.date} cell={d} />
+              ) : (
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {attendanceClasses.map((membership) => (
+                    <Link
+                      key={membership.classId}
+                      href={`/t/courses/${course.id}/attendance?classId=${membership.classId}`}
+                      className="group flex items-center justify-between rounded-lg border border-border px-4 py-3 transition-colors hover:border-primary/40 hover:bg-primary-subtle/30"
+                    >
+                      <div>
+                        <div className="text-sm font-medium text-foreground">
+                          {membership.class.name}
+                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {membership.class.grade.name} · {membership.class._count.students} 人
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-subtle-foreground transition-colors group-hover:text-primary" />
+                    </Link>
                   ))}
-                </div>
-              </div>
-
-              {/* 缺勤名单 */}
-              {absentInWeek.length > 0 && (
-                <div className="mt-6">
-                  <div className="mb-2 text-xs text-muted-foreground">7 天未到过的学生</div>
-                  <div className="flex flex-wrap gap-2">
-                    {absentInWeek.map((s) => (
-                      <span
-                        key={s.id}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-danger/30 bg-danger-subtle/40 px-2 py-1 text-xs"
-                      >
-                        <span className="font-mono text-[10px] text-muted-foreground num">
-                          {s.studentNo ?? "—"}
-                        </span>
-                        <span className="font-medium text-foreground">{s.name}</span>
-                      </span>
-                    ))}
-                  </div>
                 </div>
               )}
             </CardContent>
@@ -552,81 +448,8 @@ function StatCard({
             <Icon className="h-4 w-4" />
           </div>
         </div>
-        <div className="mt-3 text-3xl font-bold tracking-tight num">{value}</div>
+        <div className="num mt-3 text-3xl font-bold tracking-tight">{value}</div>
       </CardContent>
     </Card>
-  );
-}
-
-function MiniStat({
-  label,
-  value,
-  total,
-  tone = "muted",
-}: {
-  label: string;
-  value: number | string;
-  total?: number;
-  tone?: "primary" | "accent" | "success" | "warning" | "danger" | "muted";
-}) {
-  const toneClass = {
-    primary: "bg-primary-subtle text-primary",
-    accent: "bg-accent-subtle text-accent",
-    success: "bg-success-subtle text-success",
-    warning: "bg-warning-subtle text-warning",
-    danger: "bg-danger-subtle text-danger",
-    muted: "bg-muted text-muted-foreground",
-  }[tone];
-  return (
-    <div className="rounded-xl border border-border bg-muted/30 p-3.5">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="mt-1 flex items-baseline gap-1">
-        <span className={`inline-block h-2 w-2 rounded-full ${toneClass.split(" ")[0]}`} />
-        <span className="text-xl font-semibold tracking-tight num text-foreground">
-          {value}
-        </span>
-        {typeof total === "number" && (
-          <span className="text-xs text-subtle-foreground num">/ {total}</span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function DailyBar({
-  cell,
-}: {
-  cell: { date: string; label: string; weekday: string; count: number; rate: number };
-}) {
-  const heightPct = Math.max(8, Math.round(cell.rate * 100)); // 最低 8% 让无数据也有形
-  const tone =
-    cell.rate >= 0.8
-      ? "bg-success/85"
-      : cell.rate >= 0.6
-        ? "bg-primary/80"
-        : cell.rate >= 0.3
-          ? "bg-warning/80"
-          : cell.rate > 0
-            ? "bg-danger/80"
-            : "bg-muted-foreground/20";
-  const isToday = cell.date === new Date().toISOString().slice(0, 10);
-  return (
-    <div className="flex flex-col items-center gap-1.5">
-      <div className="relative flex h-20 w-full items-end justify-center overflow-hidden rounded-md bg-muted/40">
-        <div
-          className={`w-full ${tone} transition-all`}
-          style={{ height: `${heightPct}%` }}
-          title={`${cell.label}：${cell.count} 人到课`}
-        />
-      </div>
-      <div className="flex flex-col items-center">
-        <span className={`num text-sm font-semibold ${isToday ? "text-primary" : "text-foreground"}`}>
-          {cell.count}
-        </span>
-        <span className="text-[10px] text-subtle-foreground num">
-          {cell.weekday}
-        </span>
-      </div>
-    </div>
   );
 }

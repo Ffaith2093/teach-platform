@@ -7,15 +7,11 @@ import { CreateClassButton } from "../_components/create-class-button";
 import { DeleteClassButton } from "../_components/delete-class-button";
 import { Badge } from "@/components/ui/badge";
 import { Users, UserCheck, GraduationCap, ChevronLeft, Upload } from "lucide-react";
-import { formatGradeLabel } from "@/lib/grades";
+import { compareClassNames, formatGradeLabel } from "@/lib/grades";
 
 export const metadata = { title: "学生管理 · 班级" };
 
-export default async function ClassesPage({
-  params,
-}: {
-  params: Promise<{ gradeId: string }>;
-}) {
+export default async function ClassesPage({ params }: { params: Promise<{ gradeId: string }> }) {
   const { gradeId } = await params;
 
   const grade = await prisma.grade.findUnique({
@@ -37,6 +33,8 @@ export default async function ClassesPage({
 
   if (!grade) notFound();
 
+  grade.classes.sort((a, b) => compareClassNames(a.name, b.name));
+
   const totalStudents = grade.classes.reduce((sum, c) => sum + c._count.students, 0);
   const classesWithTeacher = grade.classes.filter((c) => c.teachers.length > 0).length;
 
@@ -48,12 +46,7 @@ export default async function ClassesPage({
 
   return (
     <>
-      <Topbar
-        crumbs={[
-          { label: "学生管理", href: "/admin/students" },
-          { label: grade.name },
-        ]}
-      />
+      <Topbar crumbs={[{ label: "学生管理", href: "/admin/students" }, { label: grade.name }]} />
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
           <div className="flex items-end justify-between gap-4">
@@ -65,7 +58,9 @@ export default async function ClassesPage({
                 <ChevronLeft className="h-3 w-3" />
                 返回年级列表
               </Link>
-              <h1 className="mt-2 text-2xl font-semibold tracking-tight">{formatGradeLabel(grade.name, grade.joinYear)}</h1>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+                {formatGradeLabel(grade.name, grade.joinYear)}
+              </h1>
               <p className="mt-1.5 text-sm text-muted-foreground">
                 {grade.isActive
                   ? "此年级当前启用。创建班级并向班级导入学生后，学生登录即可看到自己班级所属课程。"
@@ -97,7 +92,7 @@ export default async function ClassesPage({
                       </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-1">
-                      <span className="text-3xl font-bold tracking-tight num">{s.num}</span>
+                      <span className="num text-3xl font-bold tracking-tight">{s.num}</span>
                       {s.suffix && (
                         <span className="text-sm text-muted-foreground">{s.suffix}</span>
                       )}
@@ -149,7 +144,7 @@ export default async function ClassesPage({
                               {c.name}
                             </Link>
                           </td>
-                          <td className="px-6 py-3.5 num text-muted-foreground">{c.joinYear}</td>
+                          <td className="num px-6 py-3.5 text-muted-foreground">{c.joinYear}</td>
                           <td className="px-6 py-3.5 text-muted-foreground">
                             {teacher ? (
                               <span className="inline-flex items-center gap-1.5">
@@ -161,7 +156,7 @@ export default async function ClassesPage({
                               <span className="text-xs text-subtle-foreground">未分配</span>
                             )}
                           </td>
-                          <td className="px-6 py-3.5 num text-muted-foreground">
+                          <td className="num px-6 py-3.5 text-muted-foreground">
                             {c._count.students}
                           </td>
                           <td className="px-6 py-3.5">

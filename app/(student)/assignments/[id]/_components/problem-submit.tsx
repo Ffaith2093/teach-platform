@@ -27,7 +27,10 @@ import { usePollSubmission } from "@/hooks/use-poll-submission";
 import { CodeEditor } from "@/components/code-editor";
 import type { JudgeRunResult } from "@/lib/judge/local";
 
-const DIFFICULTY_LABELS: Record<Difficulty, { label: string; tone: "success" | "warning" | "danger" }> = {
+const DIFFICULTY_LABELS: Record<
+  Difficulty,
+  { label: string; tone: "success" | "warning" | "danger" }
+> = {
   EASY: { label: "入门", tone: "success" },
   MEDIUM: { label: "中等", tone: "warning" },
   HARD: { label: "进阶", tone: "danger" },
@@ -159,8 +162,7 @@ export function ProblemSubmit({
   }, [poll.kind, router]);
 
   const tone = result ? (STATUS_TONE[result.status] ?? "default") : "default";
-  const isPolling =
-    submissionId !== null && (poll.kind === "loading" || poll.kind === "polling");
+  const isPolling = submissionId !== null && (poll.kind === "loading" || poll.kind === "polling");
 
   return (
     <Card>
@@ -193,7 +195,7 @@ export function ProblemSubmit({
         </div>
 
         {problem.description.trim() && (
-          <div className="mt-4 whitespace-pre-line rounded-lg border border-border bg-muted/40 p-4 text-sm leading-relaxed text-foreground">
+          <div className="mt-4 whitespace-pre-line rounded-lg border border-border bg-muted/40 p-4 text-base leading-7 text-foreground">
             {problem.description}
           </div>
         )}
@@ -202,7 +204,10 @@ export function ProblemSubmit({
           <div className="mt-4 space-y-3">
             <p className="text-xs font-medium text-muted-foreground">样例输入输出</p>
             {problem.samples.map((s, i) => (
-              <div key={i} className="grid grid-cols-1 gap-3 rounded-lg border border-border bg-card p-3 sm:grid-cols-2">
+              <div
+                key={i}
+                className="grid grid-cols-1 gap-3 rounded-lg border border-border bg-card p-3 sm:grid-cols-2"
+              >
                 <div>
                   <div className="mb-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                     输入 #{i + 1}
@@ -295,7 +300,8 @@ export function ProblemSubmit({
                 )}
                 <Badge variant={tone}>{STATUS_LABEL[result.status] ?? result.status}</Badge>
                 <span className="num text-xs text-muted-foreground">
-                  通过 <b className="text-foreground">{result.passedCount}</b> / {result.totalCount} 个用例
+                  通过 <b className="text-foreground">{result.passedCount}</b> / {result.totalCount}{" "}
+                  个用例
                 </span>
                 <span className="num text-xs text-muted-foreground">
                   · 本题得分 <b className="text-foreground">{result.autoScore}</b> / {problem.score}
@@ -310,7 +316,9 @@ export function ProblemSubmit({
             {isPolling && (
               <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                <span>评测中（已轮询 {poll.kind === "polling" ? poll.attempt : 0} 次 / 最多 60 次）…</span>
+                <span>
+                  评测中（已轮询 {poll.kind === "polling" ? poll.attempt : 0} 次 / 最多 60 次）…
+                </span>
               </div>
             )}
 
@@ -331,9 +339,7 @@ export function ProblemSubmit({
             )}
 
             {/* 仅展示样例明细，不暴露隐藏用例的实际输出 */}
-            {result.cases.some((c) => c.isSample) && (
-              <CaseDetails cases={result.cases} />
-            )}
+            {result.cases.some((c) => c.isSample) && <CaseDetails cases={result.cases} />}
 
             {/* 隐藏用例摘要：仅数量 + 通过率，不暴露细节 */}
             <div className="mt-3 rounded-lg border border-dashed border-border bg-card/60 p-3 text-xs text-muted-foreground">
@@ -418,8 +424,7 @@ function SampleResultPanel({ result }: { result: JudgeRunResult }) {
         <span className="text-xs font-medium text-muted-foreground">样例运行</span>
         <Badge variant={tone}>{label}</Badge>
         <span className="num text-xs text-muted-foreground">
-          通过 <b className="text-foreground">{result.passedCount}</b> / {result.totalCount}{" "}
-          个样例
+          通过 <b className="text-foreground">{result.passedCount}</b> / {result.totalCount} 个样例
         </span>
       </div>
       <details className="mt-3" open>

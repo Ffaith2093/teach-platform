@@ -54,6 +54,20 @@ export async function setGradeActiveAction(gradeId: string, isActive: boolean) {
   revalidatePath("/admin/students");
 }
 
+export async function deleteGradeAction(gradeId: string) {
+  await requireRole(["ADMIN"]);
+  const grade = await prisma.grade.findUnique({
+    where: { id: gradeId },
+    select: { id: true, classes: { select: { id: true }, take: 1 } },
+  });
+  if (!grade) throw new Error("年级不存在或已被删除");
+  if (grade.classes.length > 0) {
+    throw new Error("该年级下仍有班级，请先清空并删除班级");
+  }
+  await prisma.grade.delete({ where: { id: gradeId } });
+  revalidatePath("/admin/students");
+}
+
 // ========== 班级 ==========
 
 const classSchema = z.object({
@@ -89,9 +103,11 @@ export async function deleteClassAction(gradeId: string, classId: string) {
   if (studentCount > 0) {
     throw new Error(`班级内仍有 ${studentCount} 名学生，请先转出或删除`);
   }
-  // 删除前清空 ClassTeacher 占用（释放班级）
-  await prisma.classTeacher.deleteMany({ where: { classId } });
-  await prisma.class.delete({ where: { id: classId } });
+  await prisma.$transaction([
+    prisma.courseClass.deleteMany({ where: { classId } }),
+    prisma.classTeacher.deleteMany({ where: { classId } }),
+    prisma.class.delete({ where: { id: classId } }),
+  ]);
   revalidatePath(`/admin/students/${gradeId}`);
 }
 
@@ -142,7 +158,21 @@ export async function createStudentAction(
 
 export async function deleteStudentAction(gradeId: string, classId: string, studentId: string) {
   await requireRole(["ADMIN"]);
-  await prisma.user.delete({ where: { id: studentId } });
+  const student = await prisma.user.findFirst({
+    where: { id: studentId, classId, role: "STUDENT" },
+    select: { id: true },
+  });
+  if (!student) throw new Error("学生不存在、已被删除或不属于当前班级");
+
+  // 学生提交记录带有限制性外键，必须先清理；评测明细和答题明细由级联关系删除。
+  await prisma.$transaction([
+    prisma.notification.deleteMany({ where: { userId: studentId } }),
+    prisma.assignmentSubmission.deleteMany({ where: { studentId } }),
+    prisma.examAttempt.deleteMany({ where: { studentId } }),
+    prisma.submission.deleteMany({ where: { userId: studentId } }),
+    prisma.accessLog.deleteMany({ where: { userId: studentId } }),
+    prisma.user.delete({ where: { id: studentId } }),
+  ]);
   revalidatePath(`/admin/students/${gradeId}/${classId}`);
 }
 

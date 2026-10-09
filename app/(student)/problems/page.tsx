@@ -6,19 +6,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Topbar } from "@/components/shell/topbar";
 import { relativeTime } from "@/lib/utils";
-import {
-  Code,
-  CheckCircle2,
-  Clock,
-  ChevronRight,
-  Filter,
-  Search,
-} from "lucide-react";
+import { Code, CheckCircle2, Clock, ChevronRight, Filter, Search } from "lucide-react";
 import type { Difficulty, JudgeStatus } from "@prisma/client";
 
 export const metadata = { title: "题库练习" };
 
-const DIFFICULTY_LABELS: Record<Difficulty, { label: string; tone: "success" | "warning" | "danger" }> = {
+const DIFFICULTY_LABELS: Record<
+  Difficulty,
+  { label: string; tone: "success" | "warning" | "danger" }
+> = {
   EASY: { label: "入门", tone: "success" },
   MEDIUM: { label: "中等", tone: "warning" },
   HARD: { label: "进阶", tone: "danger" },
@@ -68,7 +64,6 @@ export default async function StudentProblemsPage({
     },
     orderBy: [{ updatedAt: "desc" }],
     include: {
-      author: { select: { id: true, name: true } },
       _count: { select: { testCases: true } },
     },
     take: 200,
@@ -149,7 +144,7 @@ export default async function StudentProblemsPage({
                     <Code className="h-4 w-4" />
                   </div>
                 </div>
-                <div className="mt-3 text-3xl font-bold tracking-tight num">{totalAccessible}</div>
+                <div className="num mt-3 text-3xl font-bold tracking-tight">{totalAccessible}</div>
               </CardContent>
             </Card>
             <Card>
@@ -160,7 +155,7 @@ export default async function StudentProblemsPage({
                     <CheckCircle2 className="h-4 w-4" />
                   </div>
                 </div>
-                <div className="mt-3 text-3xl font-bold tracking-tight num">{acceptedCount}</div>
+                <div className="num mt-3 text-3xl font-bold tracking-tight">{acceptedCount}</div>
               </CardContent>
             </Card>
             <Card>
@@ -171,7 +166,7 @@ export default async function StudentProblemsPage({
                     <Clock className="h-4 w-4" />
                   </div>
                 </div>
-                <div className="mt-3 text-3xl font-bold tracking-tight num">{attemptedCount}</div>
+                <div className="num mt-3 text-3xl font-bold tracking-tight">{attemptedCount}</div>
               </CardContent>
             </Card>
           </div>
@@ -264,10 +259,7 @@ export default async function StudentProblemsPage({
                       const diff = DIFFICULTY_LABELS[p.difficulty];
                       const myStat = myStatByProblem.get(p.id);
                       return (
-                        <tr
-                          key={p.id}
-                          className="group transition-colors hover:bg-muted/30"
-                        >
+                        <tr key={p.id} className="group transition-colors hover:bg-muted/30">
                           <td className="px-6 py-3.5">
                             <Link
                               href={`/problems/${p.id}`}
@@ -284,7 +276,7 @@ export default async function StudentProblemsPage({
                           <td className="px-6 py-3.5 text-xs text-muted-foreground">
                             {p.tags.length > 0 ? p.tags.slice(0, 4).join(" · ") : "—"}
                           </td>
-                          <td className="px-6 py-3.5 num text-xs text-muted-foreground">
+                          <td className="num px-6 py-3.5 text-xs text-muted-foreground">
                             {p._count.testCases}
                           </td>
                           <td className="px-6 py-3.5">
@@ -311,7 +303,7 @@ export default async function StudentProblemsPage({
                               </Badge>
                             )}
                           </td>
-                          <td className="px-6 py-3.5 text-xs text-muted-foreground num">
+                          <td className="num px-6 py-3.5 text-xs text-muted-foreground">
                             {myStat ? relativeTime(myStat.lastAt) : "—"}
                           </td>
                           <td className="px-2 py-3.5">

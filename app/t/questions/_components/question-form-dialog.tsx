@@ -21,6 +21,8 @@ export type QuestionFormState = {
 export type QuestionFormDialogProps = {
   mode: "add" | "edit";
   initialType?: QuestionType;
+  /** 固定题型时隐藏题型切换（用于选择题/填空题公共库的新建入口）。 */
+  fixedType?: QuestionType;
   /** 表单提交（父级 useActionState 暴露的 formAction） */
   formAction: (payload: FormData) => void;
   /** 父级 useActionState 的 pending 状态 */
@@ -46,6 +48,7 @@ export type QuestionFormDialogProps = {
     difficulty: Difficulty;
     isPublic: boolean;
   }>;
+  bankOptions?: Array<{ id: string; name: string }>;
   onClose: () => void;
 };
 
@@ -63,14 +66,16 @@ const TYPE_TABS: {
 export function QuestionFormDialog({
   mode,
   initialType,
+  fixedType,
   formAction,
   pending = false,
   state = null,
   defaultValue,
   availableProblems = [],
+  bankOptions,
   onClose,
 }: QuestionFormDialogProps) {
-  const startType = initialType ?? defaultValue?.type ?? "SINGLE_CHOICE";
+  const startType = fixedType ?? initialType ?? defaultValue?.type ?? "SINGLE_CHOICE";
   const [activeTab, setActiveTab] = React.useState<QuestionType>(startType);
   const fieldErrors = state?.fieldErrors;
 
@@ -84,9 +89,7 @@ export function QuestionFormDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold">
-            {mode === "add" ? "添加题目" : "编辑题目"}
-          </h3>
+          <h3 className="text-base font-semibold">{mode === "add" ? "添加题目" : "编辑题目"}</h3>
           <button
             type="button"
             aria-label="关闭"
@@ -97,7 +100,7 @@ export function QuestionFormDialog({
           </button>
         </div>
 
-        {mode === "add" && (
+        {mode === "add" && !fixedType && (
           <div className="mt-4 flex items-center gap-1 border-b border-border">
             {TYPE_TABS.map((t) => {
               const Icon = t.icon;
@@ -127,6 +130,31 @@ export function QuestionFormDialog({
             <input type="hidden" name="questionId" value={defaultValue.questionId} />
           )}
 
+          {bankOptions && (
+            <div className="space-y-1.5">
+              <label htmlFor="question-bank" className="text-xs font-medium text-foreground">
+                保存到题库 <span className="text-danger">*</span>
+              </label>
+              <select
+                id="question-bank"
+                name="bankId"
+                required
+                defaultValue=""
+                className="h-9 w-full rounded-md border border-border bg-card px-3 text-sm focus-visible:border-primary focus-visible:outline-none"
+              >
+                <option value="" disabled>
+                  请选择题库
+                </option>
+                {bankOptions.map((bank) => (
+                  <option key={bank.id} value={bank.id}>
+                    {bank.name}
+                  </option>
+                ))}
+              </select>
+              {fieldErrors?.bankId && <p className="text-xs text-danger">{fieldErrors.bankId}</p>}
+            </div>
+          )}
+
           {activeTab === "SINGLE_CHOICE" && (
             <SingleChoiceFields
               defaultValue={
@@ -134,7 +162,8 @@ export function QuestionFormDialog({
                   ? {
                       content: defaultValue.content,
                       options: defaultValue.options,
-                      answer: typeof defaultValue.answer === "string" ? defaultValue.answer : undefined,
+                      answer:
+                        typeof defaultValue.answer === "string" ? defaultValue.answer : undefined,
                       score: defaultValue.score,
                       difficulty: defaultValue.difficulty,
                       explanation: defaultValue.explanation,
@@ -195,9 +224,7 @@ export function QuestionFormDialog({
           )}
 
           <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
-            <span className="text-xs text-muted-foreground">
-              题型：{TYPE_LABEL[activeTab]}
-            </span>
+            <span className="text-xs text-muted-foreground">题型：{TYPE_LABEL[activeTab]}</span>
             <div className="flex gap-2">
               <Button type="button" variant="outline" size="sm" onClick={onClose}>
                 取消

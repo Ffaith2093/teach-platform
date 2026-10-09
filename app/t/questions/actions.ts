@@ -80,9 +80,8 @@ async function parseQuestionFormData(formData: FormData) {
   return null;
 }
 
-export async function addQuestionToBankAction(
+async function createQuestionInBank(
   bankId: string,
-  _prev: AddQuestionToBankState | undefined,
   formData: FormData,
 ): Promise<AddQuestionToBankState> {
   const { session, bank } = await requireBankOwner(bankId);
@@ -137,8 +136,34 @@ export async function addQuestionToBankAction(
 
   await prisma.question.create({ data });
 
-  revalidatePath(`/t/banks/${bankId}`);
   return { ok: true };
+}
+
+export async function addQuestionToBankAction(
+  bankId: string,
+  _prev: AddQuestionToBankState | undefined,
+  formData: FormData,
+): Promise<AddQuestionToBankState> {
+  const result = await createQuestionInBank(bankId, formData);
+  if (result.ok) revalidatePath(`/t/banks/${bankId}`);
+  return result;
+}
+
+export async function addLibraryQuestionAction(
+  expectedType: "SINGLE_CHOICE" | "FILL_BLANK",
+  _prev: AddQuestionToBankState | undefined,
+  formData: FormData,
+): Promise<AddQuestionToBankState> {
+  const bankId = formData.get("bankId")?.toString() ?? "";
+  if (!bankId) return { fieldErrors: { bankId: "请选择保存到哪个题库" } };
+  if (formData.get("type") !== expectedType) return { error: "题型与当前页面不一致" };
+
+  const result = await createQuestionInBank(bankId, formData);
+  if (result.ok) {
+    revalidatePath(`/t/banks/${bankId}`);
+    revalidatePath(expectedType === "SINGLE_CHOICE" ? "/t/banks/choice" : "/t/banks/fill");
+  }
+  return result;
 }
 
 // ========== 编辑题目 ==========

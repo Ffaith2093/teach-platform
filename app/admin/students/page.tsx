@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Topbar } from "@/components/shell/topbar";
 import { CreateGradeButton } from "./_components/create-grade-button";
 import { ToggleGradeActiveButton } from "./_components/toggle-grade-active-button";
+import { DeleteGradeButton } from "./_components/delete-grade-button";
 import { GraduationCap, Users, UserCheck, UserX } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -52,7 +53,8 @@ export default async function GradesPage() {
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">学生管理</h1>
               <p className="mt-1.5 text-sm text-muted-foreground">
-                组织结构：<b className="text-foreground">年级 → 班级 → 学生</b>。先维护年级，再为每个年级创建班级，最后向班级导入学生。
+                组织结构：<b className="text-foreground">年级 → 班级 → 学生</b>
+                。先维护年级，再为每个年级创建班级，最后向班级导入学生。
               </p>
             </div>
             <CreateGradeButton />
@@ -71,7 +73,7 @@ export default async function GradesPage() {
                       </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-1">
-                      <span className="text-3xl font-bold tracking-tight num">{s.num}</span>
+                      <span className="num text-3xl font-bold tracking-tight">{s.num}</span>
                       {s.suffix && (
                         <span className="text-sm text-muted-foreground">{s.suffix}</span>
                       )}
@@ -110,10 +112,7 @@ export default async function GradesPage() {
                   </thead>
                   <tbody className="divide-y divide-border">
                     {grades.map((g) => {
-                      const studentCount = g.classes.reduce(
-                        (sum, c) => sum + c._count.students,
-                        0,
-                      );
+                      const studentCount = g.classes.reduce((sum, c) => sum + c._count.students, 0);
                       return (
                         <tr key={g.id} className="transition-colors hover:bg-muted/30">
                           <td className="px-6 py-3.5">
@@ -124,13 +123,11 @@ export default async function GradesPage() {
                               {g.name}
                             </Link>
                           </td>
-                          <td className="px-6 py-3.5 num text-muted-foreground">{g.joinYear}</td>
-                          <td className="px-6 py-3.5 num text-muted-foreground">
+                          <td className="num px-6 py-3.5 text-muted-foreground">{g.joinYear}</td>
+                          <td className="num px-6 py-3.5 text-muted-foreground">
                             {g._count.classes}
                           </td>
-                          <td className="px-6 py-3.5 num text-muted-foreground">
-                            {studentCount}
-                          </td>
+                          <td className="num px-6 py-3.5 text-muted-foreground">{studentCount}</td>
                           <td className="px-6 py-3.5">
                             {g.isActive ? (
                               <Badge variant="success">启用</Badge>
@@ -144,6 +141,11 @@ export default async function GradesPage() {
                                 gradeId={g.id}
                                 isActive={g.isActive}
                                 gradeName={g.name}
+                              />
+                              <DeleteGradeButton
+                                gradeId={g.id}
+                                gradeName={g.name}
+                                classCount={g._count.classes}
                               />
                               <Link
                                 href={`/admin/students/${g.id}`}

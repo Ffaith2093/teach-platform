@@ -40,7 +40,8 @@ export function AttemptClient({
   const [remain, setRemain] = useState(() => Math.max(0, deadline - Date.now()));
   const [answers, setAnswers] = useState<Record<string, unknown>>(() => {
     const m: Record<string, unknown> = {};
-    for (const q of questions) if (q.saved !== null && q.saved !== undefined) m[q.questionId] = q.saved;
+    for (const q of questions)
+      if (q.saved !== null && q.saved !== undefined) m[q.questionId] = q.saved;
     return m;
   });
   const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -57,7 +58,11 @@ export function AttemptClient({
     if (inFlight.current) return inFlight.current;
     const run = async () => {
       while (Object.keys(dirty.current).length) {
-        if (!navigator.onLine) { setSaveState("error"); setSaveError("网络已断开，答案暂存在本机"); return false; }
+        if (!navigator.onLine) {
+          setSaveState("error");
+          setSaveError("网络已断开，答案暂存在本机");
+          return false;
+        }
         const [questionId, value] = Object.entries(dirty.current)[0];
         setSaveState("saving");
         const fd = new FormData();
@@ -66,16 +71,33 @@ export function AttemptClient({
         fd.set("content", JSON.stringify(value));
         try {
           const res = await saveAnswerAction(undefined, fd);
-          if (!res.ok) { setSaveState("error"); setSaveError(res.error ?? "保存失败"); return false; }
-        } catch { setSaveState("error"); setSaveError("保存失败，答案暂存在本机"); return false; }
+          if (!res.ok) {
+            setSaveState("error");
+            setSaveError(res.error ?? "保存失败");
+            return false;
+          }
+        } catch {
+          setSaveState("error");
+          setSaveError("保存失败，答案暂存在本机");
+          return false;
+        }
         if (dirty.current[questionId] === value) delete dirty.current[questionId];
-        try { localStorage.setItem(storageKey, JSON.stringify(dirty.current)); } catch { /* storage unavailable */ }
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(dirty.current));
+        } catch {
+          /* storage unavailable */
+        }
       }
-      setSaveState("saved"); setSaveError(null);
+      setSaveState("saved");
+      setSaveError(null);
       return true;
     };
     inFlight.current = run();
-    try { return await inFlight.current; } finally { inFlight.current = null; }
+    try {
+      return await inFlight.current;
+    } finally {
+      inFlight.current = null;
+    }
   }, [attemptId, storageKey]);
 
   useEffect(() => {
@@ -83,15 +105,25 @@ export function AttemptClient({
       const cached = JSON.parse(localStorage.getItem(storageKey) ?? "{}");
       if (cached && typeof cached === "object" && !Array.isArray(cached)) {
         const allowed = new Set(questions.map((q) => q.questionId));
-        for (const [id, value] of Object.entries(cached)) if (allowed.has(id)) dirty.current[id] = value;
+        for (const [id, value] of Object.entries(cached))
+          if (allowed.has(id)) dirty.current[id] = value;
         setAnswers((prev) => ({ ...prev, ...dirty.current }));
         if (Object.keys(dirty.current).length) void flush();
       }
-    } catch { /* malformed or unavailable local storage */ }
-    const retry = setInterval(() => { if (Object.keys(dirty.current).length) void flush(); }, 15000);
-    const online = () => { void flush(); };
+    } catch {
+      /* malformed or unavailable local storage */
+    }
+    const retry = setInterval(() => {
+      if (Object.keys(dirty.current).length) void flush();
+    }, 15000);
+    const online = () => {
+      void flush();
+    };
     window.addEventListener("online", online);
-    return () => { clearInterval(retry); window.removeEventListener("online", online); };
+    return () => {
+      clearInterval(retry);
+      window.removeEventListener("online", online);
+    };
   }, [flush, questions, storageKey]);
 
   const doSubmit = useCallback(() => {
@@ -99,7 +131,11 @@ export function AttemptClient({
     submittedRef.current = true;
     startSubmit(async () => {
       const saved = await flush();
-      if (!saved) { submittedRef.current = false; setConfirming(true); return; }
+      if (!saved) {
+        submittedRef.current = false;
+        setConfirming(true);
+        return;
+      }
       const fd = new FormData();
       fd.set("attemptId", attemptId);
       const res = await submitExamAction(undefined, fd);
@@ -123,9 +159,15 @@ export function AttemptClient({
     (questionId: string, value: unknown) => {
       clearTimeout(timers.current[questionId]);
       dirty.current[questionId] = value;
-      try { localStorage.setItem(storageKey, JSON.stringify(dirty.current)); } catch { setSaveError("本地存储不可用，请保持网络连接"); }
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(dirty.current));
+      } catch {
+        setSaveError("本地存储不可用，请保持网络连接");
+      }
       setSaveState("saving");
-      timers.current[questionId] = setTimeout(() => { void flush(); }, 600);
+      timers.current[questionId] = setTimeout(() => {
+        void flush();
+      }, 600);
     },
     [flush, storageKey],
   );
@@ -163,19 +205,13 @@ export function AttemptClient({
             >
               {String(mm).padStart(2, "0")}:{String(ss).padStart(2, "0")}
             </span>
-            {urgent && (
-              <span className="hidden text-xs text-danger sm:inline">不足 5 分钟</span>
-            )}
+            {urgent && <span className="hidden text-xs text-danger sm:inline">不足 5 分钟</span>}
           </div>
           <span className="ml-auto hidden text-xs text-muted-foreground sm:inline">
             已答 <span className="num text-foreground">{answeredCount}</span>
             <span className="num"> / {questions.length}</span>
           </span>
-          <Button
-            size="sm"
-            onClick={() => setConfirming(true)}
-            disabled={submitting}
-          >
+          <Button size="sm" onClick={() => setConfirming(true)} disabled={submitting}>
             交卷
           </Button>
         </div>
@@ -220,7 +256,7 @@ export function AttemptClient({
                   剩余时间
                 </div>
                 <div
-                  className={`mt-2 num text-4xl font-bold tracking-tight ${
+                  className={`num mt-2 text-4xl font-bold tracking-tight ${
                     urgent ? "text-danger" : "text-foreground"
                   }`}
                 >
@@ -295,10 +331,9 @@ export function AttemptClient({
                       const unanswered = questions
                         .filter((q) => {
                           const v = answers[q.questionId];
-                          const done =
-                            Array.isArray(v)
-                              ? v.some((x) => String(x ?? "").trim() !== "")
-                              : v !== undefined && v !== null && v !== "";
+                          const done = Array.isArray(v)
+                            ? v.some((x) => String(x ?? "").trim() !== "")
+                            : v !== undefined && v !== null && v !== "";
                           return !done;
                         })
                         .map((q) => q.index);
@@ -376,12 +411,12 @@ function QuestionCard({
           <span className="num shrink-0 text-xs text-muted-foreground">{q.score} 分</span>
         </div>
 
-        <p className="mt-3 whitespace-pre-line text-sm text-foreground">
+        <p className="mt-3 whitespace-pre-line text-base leading-7 text-foreground">
           {q.type === "PROGRAMMING" && q.problem ? q.problem.title : q.content}
         </p>
 
         {q.type === "PROGRAMMING" && q.problem && (
-          <p className="mt-2 whitespace-pre-line rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+          <p className="mt-2 whitespace-pre-line rounded-lg border border-border bg-muted/40 p-4 text-base leading-7 text-foreground">
             {q.problem.description}
           </p>
         )}

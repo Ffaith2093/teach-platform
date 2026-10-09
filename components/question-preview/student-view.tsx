@@ -49,29 +49,27 @@ export function StudentQuestionView({ q }: { q: PreviewQuestion }) {
   const [fillValues, setFillValues] = React.useState<string[]>([]);
   const [code, setCode] = React.useState<string>(q.problem?.starterCode ?? "");
 
-  const blanks = q.blankCount ?? (q.type === "FILL_BLANK" || q.type === "CODE_BLANK" ? blankCountFromContent(q.content) : 0);
+  const blanks =
+    q.blankCount ??
+    (q.type === "FILL_BLANK" || q.type === "CODE_BLANK" ? blankCountFromContent(q.content) : 0);
 
   return (
     <Card>
       <CardContent className="p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="num text-sm font-semibold text-primary">
-              第 {q.index} 题
-            </span>
+            <span className="num text-sm font-semibold text-primary">第 {q.index} 题</span>
             <Badge variant="default">{TYPE_LABEL[q.type]}</Badge>
           </div>
-          <span className="num shrink-0 text-xs text-muted-foreground">
-            {q.score} 分
-          </span>
+          <span className="num shrink-0 text-xs text-muted-foreground">{q.score} 分</span>
         </div>
 
-        <p className="mt-3 whitespace-pre-line text-sm text-foreground">
+        <p className="mt-3 whitespace-pre-line text-base leading-7 text-foreground">
           {q.type === "PROGRAMMING" && q.problem ? q.problem.title : q.content}
         </p>
 
         {q.type === "PROGRAMMING" && q.problem && (
-          <p className="mt-2 whitespace-pre-line rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+          <p className="mt-2 whitespace-pre-line rounded-lg border border-border bg-muted/40 p-4 text-base leading-7 text-foreground">
             {q.problem.description}
           </p>
         )}

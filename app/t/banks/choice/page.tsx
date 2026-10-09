@@ -8,10 +8,14 @@ import { relativeTime } from "@/lib/utils";
 import { CircleHelp, Sparkles, FileText } from "lucide-react";
 import { PreviewLink, EditLink } from "@/components/question-preview";
 import type { Difficulty, QuestionType } from "@prisma/client";
+import { CreateLibraryQuestionButton } from "../_components/create-library-question-button";
 
 export const metadata = { title: "选择题公共库" };
 
-const DIFFICULTY_LABELS: Record<Difficulty, { label: string; tone: "success" | "warning" | "danger" }> = {
+const DIFFICULTY_LABELS: Record<
+  Difficulty,
+  { label: string; tone: "success" | "warning" | "danger" }
+> = {
   EASY: { label: "入门", tone: "success" },
   MEDIUM: { label: "中等", tone: "warning" },
   HARD: { label: "进阶", tone: "danger" },
@@ -36,8 +40,7 @@ export default async function PublicChoicePage({
   const isAdmin = session!.user.role === "ADMIN";
   const sp = await searchParams;
 
-  const source: SourceFilter =
-    sp.source === "mine" || sp.source === "others" ? sp.source : "all";
+  const source: SourceFilter = sp.source === "mine" || sp.source === "others" ? sp.source : "all";
   const difficultyFilter =
     sp.difficulty === "EASY" || sp.difficulty === "MEDIUM" || sp.difficulty === "HARD"
       ? sp.difficulty
@@ -84,6 +87,11 @@ export default async function PublicChoicePage({
       where: { question: { type: "SINGLE_CHOICE" } },
     }),
   ]);
+  const ownedBanks = await prisma.questionBank.findMany({
+    where: { ownerId: userId },
+    select: { id: true, name: true },
+    orderBy: { createdAt: "desc" },
+  });
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const baseNo = (page - 1) * PAGE_SIZE;
@@ -124,11 +132,14 @@ export default async function PublicChoicePage({
       <Topbar crumbs={[{ label: "题库", href: "/t/banks/choice" }, { label: "选择题" }]} />
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">选择题公共库</h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              所有选择题共享。你只能编辑自己创建的（进入所属题库编辑）；管理员可编辑全部。
-            </p>
+          <div className="flex items-end justify-between gap-4 border-b border-border pb-5">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">选择题公共库</h1>
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                所有选择题共享。你只能编辑自己创建的（进入所属题库编辑）；管理员可编辑全部。
+              </p>
+            </div>
+            <CreateLibraryQuestionButton type="SINGLE_CHOICE" banks={ownedBanks} />
           </div>
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
@@ -149,7 +160,7 @@ export default async function PublicChoicePage({
                         <Icon className="h-4 w-4" />
                       </div>
                     </div>
-                    <div className="mt-3 text-3xl font-bold tracking-tight num">{s.num}</div>
+                    <div className="num mt-3 text-3xl font-bold tracking-tight">{s.num}</div>
                   </CardContent>
                 </Card>
               );
@@ -250,7 +261,7 @@ export default async function PublicChoicePage({
                       const preview = stripMarkdown(q.content).slice(0, 80);
                       return (
                         <tr key={q.id} className="group transition-colors hover:bg-muted/30">
-                          <td className="px-6 py-3.5 text-right num font-mono text-xs text-subtle-foreground">
+                          <td className="num px-6 py-3.5 text-right font-mono text-xs text-subtle-foreground">
                             #{(baseNo + i + 1).toString().padStart(3, "0")}
                           </td>
                           <td className="px-6 py-3.5">
@@ -280,10 +291,7 @@ export default async function PublicChoicePage({
                             <div className="inline-flex items-center gap-0.5">
                               <PreviewLink id={q.id} />
                               {(isMine || isAdmin) && q.bank && (
-                                <EditLink
-                                  href={`/t/banks/${q.bank.id}`}
-                                  title="进入所属题库编辑"
-                                />
+                                <EditLink href={`/t/banks/${q.bank.id}`} title="进入所属题库编辑" />
                               )}
                             </div>
                           </td>
@@ -298,7 +306,7 @@ export default async function PublicChoicePage({
 
           {totalPages > 1 && (
             <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-xs">
-              <span className="text-muted-foreground num">
+              <span className="num text-muted-foreground">
                 第 {page} / {totalPages} 页 · 共 {total} 题
               </span>
               <div className="flex items-center gap-1">

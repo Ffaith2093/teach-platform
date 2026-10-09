@@ -7,22 +7,19 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Monaco 在浏览器里加载 worker，不能 SSR
-const MonacoEditor = dynamic(
-  () => import("@monaco-editor/react").then((m) => m.Editor),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        role="status"
-        aria-label="编辑器加载中"
-        className="flex h-[320px] w-full items-center justify-center rounded-lg border border-border bg-muted/30 text-xs text-muted-foreground"
-      >
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        正在加载编辑器…
-      </div>
-    ),
-  },
-);
+const MonacoEditor = dynamic(() => import("@monaco-editor/react").then((m) => m.Editor), {
+  ssr: false,
+  loading: () => (
+    <div
+      role="status"
+      aria-label="编辑器加载中"
+      className="flex h-[320px] w-full items-center justify-center rounded-lg border border-border bg-muted/30 text-xs text-muted-foreground"
+    >
+      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      正在加载编辑器…
+    </div>
+  ),
+});
 
 export interface CodeEditorProps {
   /** 当前代码 */
@@ -65,16 +62,10 @@ export function CodeEditor({
   React.useEffect(() => setMounted(true), []);
 
   // mounted 前用 light 主题，避免 hydration 时主题闪烁
-  const editorTheme =
-    mounted && resolvedTheme === "dark" ? "vs-dark" : "vs";
+  const editorTheme = mounted && resolvedTheme === "dark" ? "vs-dark" : "vs";
 
   return (
-    <div
-      className={cn(
-        "overflow-hidden rounded-lg border border-border",
-        className,
-      )}
-    >
+    <div className={cn("overflow-hidden rounded-lg border border-border", className)}>
       <MonacoEditor
         height={height}
         language={language}
@@ -83,7 +74,8 @@ export function CodeEditor({
         onChange={(v) => onChange(v ?? "")}
         options={{
           readOnly,
-          fontSize: 13,
+          fontSize: 15,
+          lineHeight: 23,
           fontFamily:
             'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
           minimap: { enabled: false },

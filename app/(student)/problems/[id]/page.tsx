@@ -13,7 +13,10 @@ import { SubmissionHistory } from "./_components/submission-history";
 
 export const metadata = { title: "编程题练习" };
 
-const DIFFICULTY_LABELS: Record<Difficulty, { label: string; tone: "success" | "warning" | "danger" }> = {
+const DIFFICULTY_LABELS: Record<
+  Difficulty,
+  { label: string; tone: "success" | "warning" | "danger" }
+> = {
   EASY: { label: "入门", tone: "success" },
   MEDIUM: { label: "中等", tone: "warning" },
   HARD: { label: "进阶", tone: "danger" },
@@ -37,7 +40,6 @@ export default async function StudentProblemDetailPage({
   const problem = await prisma.problem.findUnique({
     where: { id },
     include: {
-      author: { select: { id: true, name: true } },
       testCases: {
         orderBy: { order: "asc" },
         select: { id: true, input: true, expected: true, isSample: true },
@@ -127,12 +129,7 @@ export default async function StudentProblemDetailPage({
 
   return (
     <>
-      <Topbar
-        crumbs={[
-          { label: "题库练习", href: "/problems" },
-          { label: problem.title },
-        ]}
-      />
+      <Topbar crumbs={[{ label: "题库练习", href: "/problems" }, { label: problem.title }]} />
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-[1200px] flex-col gap-6">
           <div>
@@ -175,8 +172,6 @@ export default async function StudentProblemDetailPage({
                       <span>{problem.tags.slice(0, 4).join(" · ")}</span>
                     </>
                   )}
-                  <span>·</span>
-                  <span>作者：{problem.author.name}</span>
                 </div>
               </div>
             </div>
@@ -192,7 +187,7 @@ export default async function StudentProblemDetailPage({
                       <Code className="h-4 w-4 text-primary" />
                       题目描述
                     </div>
-                    <div className="whitespace-pre-line text-sm leading-relaxed text-foreground">
+                    <div className="whitespace-pre-line text-base leading-7 text-foreground">
                       {problem.description}
                     </div>
                   </CardContent>
@@ -247,11 +242,7 @@ export default async function StudentProblemDetailPage({
                 <CardContent className="p-5">
                   <div className="mb-3 text-sm font-semibold">我的统计</div>
                   <div className="space-y-2.5">
-                    <StatRow
-                      label="总尝试次数"
-                      value={attemptsCount.toString()}
-                      tone="default"
-                    />
+                    <StatRow label="总尝试次数" value={attemptsCount.toString()} tone="default" />
                     <StatRow
                       label="通过次数"
                       value={acceptCount.toString()}
@@ -266,13 +257,7 @@ export default async function StudentProblemDetailPage({
                             ? `未通过`
                             : "未尝试"
                       }
-                      tone={
-                        acceptCount > 0
-                          ? "success"
-                          : attemptsCount > 0
-                            ? "warning"
-                            : "muted"
-                      }
+                      tone={acceptCount > 0 ? "success" : attemptsCount > 0 ? "warning" : "muted"}
                     />
                   </div>
                 </CardContent>
