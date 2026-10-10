@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 const loginSchema = z.object({
   identifier: z.string().min(1, "请输入邮箱 / 学号 / 工号"),
   password: z.string().min(1, "请输入密码"),
+  role: z.enum(["STUDENT", "TEACHER", "ADMIN"]),
 });
 
 export type LoginState = {
@@ -22,6 +23,7 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   const parsed = loginSchema.safeParse({
     identifier: formData.get("identifier"),
     password: formData.get("password"),
+    role: formData.get("role"),
   });
 
   if (!parsed.success) {
@@ -37,13 +39,14 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
     await signIn("credentials", {
       identifier: parsed.data.identifier,
       password: parsed.data.password,
+      role: parsed.data.role,
       redirect: false,
     });
     return { success: true }; // 成功由客户端 router.refresh + 跳转处理
   } catch (e) {
     if (e instanceof AuthError) {
       if (e.type === "CredentialsSignin") {
-        return { error: "账号或密码错误" };
+        return { error: "账号、密码或所选角色错误" };
       }
       return { error: e.message };
     }

@@ -144,11 +144,12 @@ export async function submitExam(attemptId: string): Promise<SubmitExamResult> {
     await tx.examAttempt.update({
       where: { id: attempt.id },
       data: {
-        status: (submissions.length ? "SUBMITTED" : actualQuestions.some((eq) => eq.question.type === "PROGRAMMING") ? "GRADING" : "GRADED") as AttemptStatus,
+        status: (submissions.length ? "SUBMITTED" : "GRADED") as AttemptStatus,
         submittedAt: now,
         autoScore: totalAuto,
-        finalScore: submissions.length || actualQuestions.some((eq) => eq.question.type === "PROGRAMMING")
-          ? null : finalExamScore(answerUpdates.map((u) => ({ autoScore: u.autoScore, manualScore: null })), attempt.exam.totalScore),
+        finalScore: submissions.length
+          ? null
+          : finalExamScore(answerUpdates.map((u) => ({ autoScore: u.autoScore, manualScore: null })), attempt.exam.totalScore),
         isAutoSubmit,
       },
     });

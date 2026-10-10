@@ -20,7 +20,6 @@ export default async function StudentExamDetailPage({
   const { id } = await params;
   const session = await auth();
   const userId = session!.user.id;
-  const now = new Date();
 
   const me = await prisma.user.findUnique({
     where: { id: userId },
@@ -32,6 +31,11 @@ export default async function StudentExamDetailPage({
     where: { id },
     include: {
       course: { select: { id: true, title: true } },
+      classSessions: {
+        where: { classId: me.classId },
+        select: { status: true, openedAt: true, closedAt: true },
+        take: 1,
+      },
       _count: { select: { questions: true } },
     },
   });
@@ -55,16 +59,14 @@ export default async function StudentExamDetailPage({
     },
   });
 
-  const isOpen = exam.status === "PUBLISHED" && exam.openAt <= now && exam.closeAt >= now;
-  const notYet = exam.status === "PUBLISHED" && exam.openAt > now;
-  const isOver = exam.status === "CLOSED" || (exam.status === "PUBLISHED" && exam.closeAt < now);
+  const classSession = exam.classSessions[0];
+  const isOpen = exam.status === "PUBLISHED" && classSession?.status === "OPEN";
+  const notYet = exam.status === "PUBLISHED" && (classSession?.status ?? "PENDING") === "PENDING";
+  const isOver = exam.status === "CLOSED" || classSession?.status === "CLOSED";
 
   // 是否可看成绩
   const showScore =
-    attempt &&
-    (attempt.status === "GRADED" ||
-      (exam.showResultMode === "IMMEDIATELY" && attempt.status !== "IN_PROGRESS") ||
-      (exam.showResultMode === "AFTER_CLOSE" && isOver));
+    attempt && isOver && attempt.status !== "IN_PROGRESS";
 
   return (
     <>
@@ -101,11 +103,11 @@ export default async function StudentExamDetailPage({
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                开考 <span className="num">{formatDate(exam.openAt)}</span>
+                本班开考 <span className="num">{classSession?.openedAt ? formatDate(classSession.openedAt) : "等待教师开放"}</span>
               </span>
               <span>·</span>
               <span>
-                截止 <span className="num">{formatDate(exam.closeAt)}</span>
+                本班结束 <span className="num">{classSession?.closedAt ? formatDate(classSession.closedAt) : "由教师统一结束"}</span>
               </span>
               <span>·</span>
               <span className="num">{exam.durationMin} 分钟</span>
@@ -130,7 +132,7 @@ export default async function StudentExamDetailPage({
 
           <Card>
             <CardContent className="flex flex-col items-center gap-4 px-6 py-12 text-center">
-              {attempt?.status === "IN_PROGRESS" ? (
+              {attempt?.status === "IN_PROGRESS" && isOpen ? (
                 <>
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-warning-subtle text-warning">
                     <AlertCircle className="h-5 w-5" />
@@ -145,6 +147,14 @@ export default async function StudentExamDetailPage({
                   <Button asChild>
                     <Link href={`/exams/${exam.id}/attempt/${attempt.id}`}>继续作答</Link>
                   </Button>
+                </>
+              ) : attempt?.status === "IN_PROGRESS" ? (
+                <>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-warning-subtle text-warning">
+                    <Clock className="h-5 w-5" />
+                  </div>
+                  <p className="text-sm font-medium text-foreground">教师已结束本班考试</p>
+                  <p className="text-xs text-muted-foreground">系统正在收卷并自动批改，请稍后刷新。</p>
                 </>
               ) : attempt ? (
                 <>
@@ -163,7 +173,7 @@ export default async function StudentExamDetailPage({
                   {showScore ? (
                     <div className="rounded-xl border border-border bg-muted/40 px-8 py-4">
                       <div className="text-xs text-muted-foreground">
-                        {attempt.status === "GRADED" ? "最终得分" : "客观题得分"}
+                        {attempt.status === "GRADED" ? "最终得分" : "自动评分"}
                       </div>
                       <div className="mt-1 num text-3xl font-bold tracking-tight">
                         {attempt.finalScore ?? attempt.autoScore ?? 0}
@@ -173,7 +183,7 @@ export default async function StudentExamDetailPage({
                       </div>
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground">成绩尚未公布，请等待教师批改。</p>
+                    <p className="text-xs text-muted-foreground">本班考试结束后自动公布成绩。</p>
                   )}
                 </>
               ) : isOpen ? (
@@ -202,10 +212,7 @@ export default async function StudentExamDetailPage({
                     <Clock className="h-5 w-5" />
                   </div>
                   <p className="text-sm font-medium text-foreground">考试尚未开始</p>
-                  <p className="text-xs text-muted-foreground">
-                    将于 <span className="num">{formatDate(exam.openAt)}</span> 开考（
-                    {relativeTime(exam.openAt)}）
-                  </p>
+                  <p className="text-xs text-muted-foreground">请等待教师为本班统一开放考试。</p>
                 </>
               ) : (
                 <>

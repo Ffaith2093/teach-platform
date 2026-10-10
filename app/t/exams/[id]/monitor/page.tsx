@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Topbar } from "@/components/shell/topbar";
 import { formatDate } from "@/lib/utils";
 import {
@@ -30,10 +31,13 @@ const STATUS_LABELS: Record<AttemptStatus, { label: string; tone: "default" | "w
 
 export default async function ExamMonitorPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ classId?: string }>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
   const session = await auth();
   const userId = session!.user.id;
   if (session!.user.role !== "TEACHER") redirect("/login?error=forbidden");
@@ -44,11 +48,11 @@ export default async function ExamMonitorPage({
       id: true,
       title: true,
       durationMin: true,
-      openAt: true,
-      closeAt: true,
       totalScore: true,
       status: true,
-      showResultMode: true,
+      classSessions: {
+        select: { classId: true, status: true, openedAt: true, closedAt: true },
+      },
       course: {
         select: {
           id: true,
@@ -75,7 +79,16 @@ export default async function ExamMonitorPage({
     redirect("/t/exams?error=forbidden");
   }
 
-  const classIds = exam.course.classes.map((cc) => cc.class.id);
+  const classOptions = exam.course.classes
+    .map((item) => item.class)
+    .sort((a, b) => `${a.grade.name}${a.name}`.localeCompare(`${b.grade.name}${b.name}`, "zh-CN", { numeric: true }));
+  const selectedClassId = classOptions.some((item) => item.id === sp.classId)
+    ? sp.classId!
+    : (classOptions[0]?.id ?? "");
+  const selectedClass = classOptions.find((item) => item.id === selectedClassId);
+  const classSession = exam.classSessions.find((item) => item.classId === selectedClassId);
+  const classSessionStatus = classSession?.status ?? "PENDING";
+  const classIds = selectedClassId ? [selectedClassId] : [];
   const totalQuestions = await prisma.examQuestion.count({ where: { examId: id } });
 
   // 拉所有学生 + attempt + 已答题数
@@ -134,10 +147,6 @@ export default async function ExamMonitorPage({
   const notStarted = students.filter((s) => !attemptByStudent.has(s.id)).length;
   const inProgress = attempts.filter((a) => a.status === "IN_PROGRESS").length;
   const submitted = attempts.filter((a) => a.status === "SUBMITTED" || a.status === "GRADING" || a.status === "GRADED").length;
-  const now = Date.now();
-  const examInWindow = now >= exam.openAt.getTime() && now < exam.closeAt.getTime();
-  const examClosed = now >= exam.closeAt.getTime();
-
   const stats = [
     { icon: Users, label: "应到", num: students.length, tone: "muted" as const },
     { icon: PlayCircle, label: "进行中", num: inProgress, tone: "warning" as const },
@@ -157,14 +166,26 @@ export default async function ExamMonitorPage({
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
           <Link
-            href={`/t/exams/${exam.id}`}
+            href={`/t/exams/${exam.id}?classId=${selectedClassId}`}
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
           >
             <ChevronLeft className="h-4 w-4" />
             返回考试详情
           </Link>
 
-          {/* 考试头部 + 倒计时 */}
+          <form action={`/t/exams/${exam.id}/monitor`} method="get" className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-4">
+            <label className="space-y-1 text-xs font-medium text-muted-foreground">
+              <span>监考班级</span>
+              <select name="classId" defaultValue={selectedClassId} className="block h-9 min-w-56 rounded-md border border-border bg-background px-3 text-sm text-foreground">
+                {classOptions.map((item) => (
+                  <option key={item.id} value={item.id}>{item.grade.name} · {item.name}</option>
+                ))}
+              </select>
+            </label>
+            <Button type="submit" variant="outline" size="sm">查看</Button>
+          </form>
+
+          {/* 考试头部 */}
           <Card>
             <CardContent className="p-6">
               <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
@@ -172,8 +193,8 @@ export default async function ExamMonitorPage({
                   <div className="flex items-center gap-2.5">
                     <GraduationCap className="h-5 w-5 text-primary" />
                     <h1 className="text-2xl font-semibold tracking-tight">{exam.title}</h1>
-                    <Badge variant={examClosed ? "default" : examInWindow ? "success" : "warning"}>
-                      {examClosed ? "已结束" : examInWindow ? "进行中" : "未开始"}
+                    <Badge variant={classSessionStatus === "OPEN" ? "success" : classSessionStatus === "CLOSED" ? "warning" : "default"}>
+                      {classSessionStatus === "OPEN" ? "进行中" : classSessionStatus === "CLOSED" ? "已结束" : "等待开考"}
                     </Badge>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -181,17 +202,14 @@ export default async function ExamMonitorPage({
                       {exam.course.title}
                     </Badge>
                     <span>·</span>
-                    <span>开考 {formatDate(exam.openAt)}</span>
-                    <span>·</span>
-                    <span>结束 {formatDate(exam.closeAt)}</span>
+                    <span>{selectedClass ? `${selectedClass.grade.name} · ${selectedClass.name}` : "未选择班级"}</span>
                     <span>·</span>
                     <span>时长 {exam.durationMin} 分钟</span>
                     <span>·</span>
                     <span>{totalQuestions} 题 · 共 {exam.totalScore} 分</span>
+                    {classSession?.openedAt && <><span>·</span><span>开考 {formatDate(classSession.openedAt)}</span></>}
+                    {classSession?.closedAt && <><span>·</span><span>结束 {formatDate(classSession.closedAt)}</span></>}
                   </div>
-                </div>
-                <div className="rounded-2xl border border-border bg-muted/30 px-6 py-4">
-                  <Countdown deadline={exam.closeAt.toISOString()} variant="big" label="整场考试" />
                 </div>
               </div>
             </CardContent>

@@ -38,6 +38,8 @@ services:
   web:
     build: .
     restart: unless-stopped
+    group_add:
+      - "${DOCKER_GID:-0}"
     env_file: .env
     environment:
       DATABASE_URL: postgresql://pylearn:pylearn_dev@postgres:5432/pylearn?schema=public
@@ -61,6 +63,8 @@ services:
     build: .
     command: ["./node_modules/.bin/tsx", "worker/index.ts"]
     restart: unless-stopped
+    group_add:
+      - "${DOCKER_GID:-0}"
     env_file: .env
     environment:
       DATABASE_URL: postgresql://pylearn:pylearn_dev@postgres:5432/pylearn?schema=public

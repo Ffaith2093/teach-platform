@@ -9,6 +9,8 @@ import { submitExam } from "@/lib/exams/submit";
 import { recordAccess } from "@/lib/access-log";
 import { drawQuestionIds, drawRulesSchema } from "@/lib/exams/rules";
 import { Prisma } from "@prisma/client";
+import { runSandbox } from "@/lib/judge/sandbox";
+import type { JudgeRunResult } from "@/lib/judge/local";
 
 async function requireStudent() {
   const session = await requireSession();
@@ -43,17 +45,22 @@ export async function startExamAction(examId: string) {
   });
   if (!exam) throw new Error("试卷不存在");
 
-  // 必须 published 且在窗口期内
+  // 试卷发布后，实际准入由本班级场次控制。
   const now = new Date();
   if (exam.status !== "PUBLISHED") throw new Error("试卷当前不可参加");
-  if (exam.openAt > now) throw new Error("考试尚未开始");
-  if (exam.closeAt < now) throw new Error("考试已结束");
 
   // 学生班级必须在课程班级列表里
   const accessible = await prisma.courseClass.count({
     where: { courseId: exam.courseId, classId: me.classId },
   });
   if (accessible === 0) throw new Error("您不在本课程关联的班级中");
+  const classSession = await prisma.examClassSession.findUnique({
+    where: { examId_classId: { examId, classId: me.classId } },
+    select: { status: true },
+  });
+  if (classSession?.status !== "OPEN") {
+    throw new Error(classSession?.status === "CLOSED" ? "本班考试已经结束" : "教师尚未为本班开放考试");
+  }
 
   // 已存在 attempt？
   const existing = await prisma.examAttempt.findUnique({
@@ -84,7 +91,7 @@ export async function startExamAction(examId: string) {
   }
 
   if (!pickedIds.length) throw new Error("试卷尚未配置题目");
-  const deadlineAt = new Date(Math.min(exam.closeAt.getTime(), now.getTime() + exam.durationMin * 60 * 1000));
+  const deadlineAt = new Date(now.getTime() + exam.durationMin * 60 * 1000);
 
   let attempt;
   try {
@@ -147,16 +154,30 @@ export async function saveAnswerAction(
 
   const attempt = await prisma.examAttempt.findUnique({
     where: { id: parsed.data.attemptId },
-    select: { id: true, studentId: true, status: true, deadlineAt: true, examId: true, questionIds: true, exam: { select: { closeAt: true } } },
+    select: {
+      id: true,
+      studentId: true,
+      status: true,
+      deadlineAt: true,
+      examId: true,
+      questionIds: true,
+      student: { select: { classId: true } },
+    },
   });
   if (!attempt) return { error: "尝试记录不存在" };
   if (attempt.studentId !== studentId) return { error: "无权访问" };
   if (attempt.status !== "IN_PROGRESS") {
     return { error: "已交卷，无法保存" };
   }
-  if (Math.min(attempt.deadlineAt.getTime(), attempt.exam.closeAt.getTime()) < Date.now()) {
+  if (attempt.deadlineAt.getTime() < Date.now()) {
     return { error: "已超过截止时间，请提交" };
   }
+  if (!attempt.student.classId) return { error: "您尚未分配班级" };
+  const classSession = await prisma.examClassSession.findUnique({
+    where: { examId_classId: { examId: attempt.examId, classId: attempt.student.classId } },
+    select: { status: true },
+  });
+  if (classSession?.status !== "OPEN") return { error: "本班考试已经结束，无法继续保存" };
   if (!attempt.questionIds.includes(parsed.data.questionId)) return { error: "题目不属于本次考试" };
   const question = await prisma.examQuestion.findUnique({
     where: { examId_questionId: { examId: attempt.examId, questionId: parsed.data.questionId } },
@@ -180,7 +201,16 @@ export async function saveAnswerAction(
 
   const saved = await prisma.$transaction(async (tx) => {
     const claim = await tx.examAttempt.updateMany({
-      where: { id: attempt.id, status: "IN_PROGRESS", deadlineAt: { gte: new Date() } },
+      where: {
+        id: attempt.id,
+        status: "IN_PROGRESS",
+        deadlineAt: { gte: new Date() },
+        exam: {
+          classSessions: {
+            some: { classId: attempt.student.classId!, status: "OPEN" },
+          },
+        },
+      },
       data: { status: "IN_PROGRESS" },
     });
     if (!claim.count) return false;
@@ -194,6 +224,105 @@ export async function saveAnswerAction(
   if (!saved) return { error: "已交卷或已超过截止时间，无法保存" };
   revalidatePath(`/exams/${attempt.examId}/attempt/${parsed.data.attemptId}`);
   return { ok: true };
+}
+
+// ========== 运行编程题公开样例（不写入 Submission）==========
+
+const runExamSampleSchema = z.object({
+  attemptId: z.string().min(1),
+  questionId: z.string().min(1),
+  code: z.string().min(1, "请输入代码").max(100000, "代码过长"),
+});
+
+export type ExamSampleResult = Omit<JudgeRunResult, "cases"> & {
+  cases: Array<JudgeRunResult["cases"][number] & { input: string; expected: string }>;
+};
+
+export type RunExamSampleState =
+  | { ok: true; result: ExamSampleResult; error?: undefined }
+  | { ok?: false; error: string; result?: undefined };
+
+export async function runExamSampleAction(input: {
+  attemptId: string;
+  questionId: string;
+  code: string;
+}): Promise<RunExamSampleState> {
+  const parsed = runExamSampleSchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "请检查输入" };
+
+  const session = await requireStudent();
+  const attempt = await prisma.examAttempt.findUnique({
+    where: { id: parsed.data.attemptId },
+    select: {
+      id: true,
+      examId: true,
+      studentId: true,
+      status: true,
+      deadlineAt: true,
+      questionIds: true,
+      student: { select: { classId: true } },
+    },
+  });
+  if (!attempt || attempt.studentId !== session.user.id) return { error: "无权访问本次考试" };
+  if (attempt.status !== "IN_PROGRESS" || attempt.deadlineAt.getTime() < Date.now()) {
+    return { error: "本次考试已经结束" };
+  }
+  if (!attempt.student.classId) return { error: "您尚未分配班级" };
+  const classSession = await prisma.examClassSession.findUnique({
+    where: { examId_classId: { examId: attempt.examId, classId: attempt.student.classId } },
+    select: { status: true },
+  });
+  if (classSession?.status !== "OPEN") return { error: "本班考试已经结束" };
+  if (!attempt.questionIds.includes(parsed.data.questionId)) return { error: "题目不属于本次考试" };
+
+  const examQuestion = await prisma.examQuestion.findUnique({
+    where: {
+      examId_questionId: { examId: attempt.examId, questionId: parsed.data.questionId },
+    },
+    select: {
+      question: {
+        select: {
+          type: true,
+          problem: {
+            select: {
+              timeLimitMs: true,
+              memoryLimitMb: true,
+              splitInputByWhitespace: true,
+              testCases: {
+                where: { isSample: true },
+                orderBy: { order: "asc" },
+                select: { input: true, expected: true, score: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+  const problem = examQuestion?.question.type === "PROGRAMMING" ? examQuestion.question.problem : null;
+  if (!problem) return { error: "这不是可运行的编程题" };
+  if (!problem.testCases.length) return { error: "本题没有公开样例" };
+
+  const result = await runSandbox(
+    parsed.data.code,
+    problem.testCases.map((testCase) => ({ ...testCase, isSample: true })),
+    {
+      timeLimitMs: problem.timeLimitMs,
+      memoryLimitMb: problem.memoryLimitMb,
+      splitInputByWhitespace: problem.splitInputByWhitespace,
+    },
+  );
+  return {
+    ok: true,
+    result: {
+      ...result,
+      cases: result.cases.map((caseResult, index) => ({
+        ...caseResult,
+        input: problem.testCases[index]?.input ?? "",
+        expected: problem.testCases[index]?.expected ?? "",
+      })),
+    },
+  };
 }
 
 // ========== 交卷 ==========

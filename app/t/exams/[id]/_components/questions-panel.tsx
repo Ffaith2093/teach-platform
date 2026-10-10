@@ -11,23 +11,18 @@ import {
   X,
   ListChecks,
   Code,
-  Pencil,
 } from "lucide-react";
 import {
   DIFFICULTY_LABELS,
   TYPE_LABEL,
 } from "@/app/t/questions/_components/forms";
 import {
-  QuestionFormDialog,
-  type QuestionFormState,
-} from "@/app/t/questions/_components/question-form-dialog";
-import {
   addQuestionToExamAction,
   removeQuestionFromExamAction,
-  updateQuestionInExamAction,
   type AddQuestionState,
 } from "@/app/t/exams/actions";
 import type { Difficulty, QuestionType } from "@prisma/client";
+import { ExamQuestionPicker } from "./exam-question-picker";
 
 type QuestionRow = {
   questionId: string;
@@ -47,6 +42,7 @@ export function QuestionsPanel({
   examId,
   questions,
   availableProblems,
+  availableLibraryQuestions,
   isDraft,
   isDraw = false,
   actualCount,
@@ -60,6 +56,14 @@ export function QuestionsPanel({
     difficulty: Difficulty;
     isPublic: boolean;
   }>;
+  availableLibraryQuestions: Array<{
+    id: string;
+    type: "SINGLE_CHOICE" | "FILL_BLANK";
+    content: string;
+    difficulty: Difficulty;
+    defaultScore: number;
+    bankName: string;
+  }>;
   isDraft: boolean;
   isDraw?: boolean;
   actualCount?: number;
@@ -68,8 +72,6 @@ export function QuestionsPanel({
   const editable = isDraft && !isDraw;
   const router = useRouter();
   const [addOpen, setAddOpen] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState<QuestionType>("SINGLE_CHOICE");
-  const [editing, setEditing] = React.useState<QuestionRow | null>(null);
   const [, startRemoveTransition] = useTransition();
 
   const [addState, addFormAction, addPending] = useActionState<
@@ -80,26 +82,12 @@ export function QuestionsPanel({
     undefined,
   );
 
-  const [editState, editFormAction, editPending] = useActionState<
-    AddQuestionState | undefined,
-    FormData
-  >(
-    async (_prev, fd) => updateQuestionInExamAction(examId, _prev, fd),
-    undefined,
-  );
-
   React.useEffect(() => {
     if (addState?.ok) {
       setAddOpen(false);
       router.refresh();
     }
   }, [addState, router]);
-  React.useEffect(() => {
-    if (editState?.ok) {
-      setEditing(null);
-      router.refresh();
-    }
-  }, [editState, router]);
 
   function handleRemove(questionId: string) {
     if (!confirm("确定移除这道题吗？")) return;
@@ -118,7 +106,7 @@ export function QuestionsPanel({
     arr.push(q);
     byType.set(q.type, arr);
   }
-  const typeOrder: QuestionType[] = ["SINGLE_CHOICE", "FILL_BLANK", "CODE_BLANK", "PROGRAMMING"];
+  const typeOrder: QuestionType[] = ["SINGLE_CHOICE", "FILL_BLANK", "PROGRAMMING", "CODE_BLANK"];
 
   return (
     <Card>
@@ -168,8 +156,6 @@ export function QuestionsPanel({
                           index={idx + 1}
                           row={q}
                           isDraft={editable}
-                          canEdit={q.type !== "PROGRAMMING"}
-                          onEdit={() => setEditing(q)}
                           onRemove={() => handleRemove(q.questionId)}
                         />
                       ))}
@@ -181,34 +167,13 @@ export function QuestionsPanel({
         )}
 
         {addOpen && (
-          <QuestionFormDialog
-            mode="add"
-            initialType={activeTab}
+          <ExamQuestionPicker
             formAction={addFormAction}
             state={addState ?? null}
             pending={addPending}
-            availableProblems={availableProblems}
+            questions={availableLibraryQuestions}
+            problems={availableProblems}
             onClose={() => setAddOpen(false)}
-          />
-        )}
-        {editing && (
-          <QuestionFormDialog
-            mode="edit"
-            formAction={editFormAction}
-            state={editState ?? null}
-            pending={editPending}
-            defaultValue={{
-              questionId: editing.questionId,
-              type: editing.type,
-              content: editing.content,
-              options: editing.detail?.options,
-              answer: editing.detail?.answer as string | string[] | undefined,
-              score: editing.score,
-              difficulty: editing.difficulty,
-              problemId: editing.detail?.problemId,
-            }}
-            availableProblems={availableProblems}
-            onClose={() => setEditing(null)}
           />
         )}
       </CardContent>
@@ -220,15 +185,11 @@ function QuestionRowItem({
   index,
   row,
   isDraft,
-  canEdit,
-  onEdit,
   onRemove,
 }: {
   index: number;
   row: QuestionRow;
   isDraft: boolean;
-  canEdit: boolean;
-  onEdit: () => void;
   onRemove: () => void;
 }) {
   return (
@@ -290,16 +251,6 @@ function QuestionRowItem({
           <div className="num rounded-md border border-border bg-muted px-2.5 py-1 text-sm font-semibold text-foreground">
             {row.score}
           </div>
-          {isDraft && canEdit && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onEdit}
-              aria-label="编辑"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
-          )}
           {isDraft && (
             <button
               type="button"

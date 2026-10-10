@@ -99,15 +99,18 @@ export default async function StudentChapterDetailPage({
   // 本章节考试（含我的尝试状态）
   const exams = await prisma.exam.findMany({
     where: { chapterId, status: { in: ["PUBLISHED", "CLOSED"] } },
-    orderBy: { openAt: "asc" },
+    orderBy: { createdAt: "desc" },
     select: {
       id: true,
       title: true,
       status: true,
-      openAt: true,
-      closeAt: true,
       durationMin: true,
       totalScore: true,
+      classSessions: {
+        where: { classId: me.classId },
+        select: { status: true, openedAt: true, closedAt: true },
+        take: 1,
+      },
       attempts: {
         where: { studentId: userId },
         select: { status: true, finalScore: true, submittedAt: true },
@@ -261,11 +264,9 @@ export default async function StudentChapterDetailPage({
             <ul className="divide-y divide-border">
               {exams.map((e) => {
                 const attempt = e.attempts[0];
-                const isAvailable =
-                  e.status === "PUBLISHED" && e.openAt <= now && e.closeAt >= now && !attempt;
-                const isMissed =
-                  !attempt &&
-                  (e.status === "CLOSED" || (e.status === "PUBLISHED" && e.closeAt < now));
+                const classSession = e.classSessions[0];
+                const isAvailable = e.status === "PUBLISHED" && classSession?.status === "OPEN" && !attempt;
+                const isMissed = !attempt && (e.status === "CLOSED" || classSession?.status === "CLOSED");
                 return (
                   <li key={e.id}>
                     <Link
@@ -292,7 +293,11 @@ export default async function StudentChapterDetailPage({
                         </div>
                         <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
                           <span className="num">
-                            {formatDate(e.openAt)} ~ {formatDate(e.closeAt)}
+                            {classSession?.status === "OPEN"
+                              ? `本班已于 ${classSession.openedAt ? formatDate(classSession.openedAt) : "刚刚"} 开考`
+                              : classSession?.status === "CLOSED"
+                                ? `本班已于 ${classSession.closedAt ? formatDate(classSession.closedAt) : "刚刚"} 结束`
+                                : "等待教师为本班开放"}
                           </span>
                           <span className="inline-flex items-center gap-1 num">
                             <Clock className="h-3 w-3" />

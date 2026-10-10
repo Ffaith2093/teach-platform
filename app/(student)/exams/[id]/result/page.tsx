@@ -17,7 +17,6 @@ import {
   BookOpen,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import type { ResultMode } from "@prisma/client";
 
 export const metadata = { title: "考试成绩" };
 
@@ -29,7 +28,11 @@ export default async function ExamResultPage({
   const { id } = await params;
   const session = await auth();
   const userId = session!.user.id;
-  const now = new Date();
+  const me = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { classId: true },
+  });
+  if (!me?.classId) redirect("/dashboard");
 
   const exam = await prisma.exam.findUnique({
     where: { id },
@@ -38,10 +41,12 @@ export default async function ExamResultPage({
       title: true,
       totalScore: true,
       durationMin: true,
-      openAt: true,
-      closeAt: true,
       status: true,
-      showResultMode: true,
+      classSessions: {
+        where: { classId: me.classId },
+        select: { status: true, closedAt: true },
+        take: 1,
+      },
       course: { select: { id: true, title: true } },
     },
   });
@@ -64,20 +69,8 @@ export default async function ExamResultPage({
     },
   });
 
-  // 是否允许查看结果（showResultMode 判定）
-  const canView = (() => {
-    if (!attempt) return false;
-    switch (exam.showResultMode as ResultMode) {
-      case "IMMEDIATELY":
-        return true;
-      case "AFTER_CLOSE":
-        return now >= exam.closeAt || exam.status === "CLOSED";
-      case "AFTER_GRADED":
-        return attempt.status === "GRADED";
-      case "NEVER":
-        return false;
-    }
-  })();
+  const classSession = exam.classSessions[0];
+  const canView = Boolean(attempt && (exam.status === "CLOSED" || classSession?.status === "CLOSED"));
 
   if (!attempt) {
     return (
@@ -123,11 +116,7 @@ export default async function ExamResultPage({
                 <Clock className="h-10 w-10 text-muted-foreground" />
                 <p className="text-sm font-medium text-foreground">成绩暂未公布</p>
                 <p className="text-xs text-muted-foreground">
-                  {exam.showResultMode === "AFTER_CLOSE"
-                    ? `考试结束后公布（${formatDate(exam.closeAt)}）`
-                    : exam.showResultMode === "AFTER_GRADED"
-                      ? "教师批改完成后公布"
-                      : "教师已设置不公布成绩"}
+                  教师结束本班考试后，系统会自动收卷并公布成绩。
                 </p>
                 <Link href={`/exams/${exam.id}`} className="mt-1 text-xs text-primary hover:underline">
                   返回考试详情 →

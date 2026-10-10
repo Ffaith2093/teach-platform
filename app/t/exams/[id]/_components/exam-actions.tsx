@@ -8,7 +8,6 @@ import { ClipboardCheck, Send, Loader2, Trash2, Archive, Activity } from "lucide
 import {
   publishExamAction,
   unpublishExamAction,
-  closeExamAction,
   deleteExamAction,
 } from "@/app/t/exams/actions";
 
@@ -19,6 +18,7 @@ export function ExamActions({
   hasAttempts,
   questionCount,
   pendingGradeCount,
+  classId,
 }: {
   examId: string;
   status: "DRAFT" | "PUBLISHED" | "CLOSED";
@@ -26,6 +26,7 @@ export function ExamActions({
   hasAttempts: boolean;
   questionCount: number;
   pendingGradeCount: number;
+  classId?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
@@ -46,7 +47,7 @@ export function ExamActions({
     <div className="flex items-center gap-2">
       {status !== "DRAFT" && (
         <Button asChild variant="outline" size="sm">
-          <Link href={`/t/exams/${examId}/monitor`}>
+          <Link href={`/t/exams/${examId}/monitor${classId ? `?classId=${classId}` : ""}`}>
             <Activity className="h-3.5 w-3.5" />
             监考
           </Link>
@@ -70,7 +71,7 @@ export function ExamActions({
           size="sm"
           disabled={pending || questionCount === 0}
           onClick={() =>
-            withConfirm("确定发布试卷吗？发布后学生可在开考时间参与。", async () => {
+            withConfirm("确定发布试卷吗？发布后仍需在详情页为各班级开放考试。", async () => {
               await publishExamAction(examId);
               router.refresh();
             })
@@ -94,22 +95,6 @@ export function ExamActions({
         >
           <Archive />
           撤回
-        </Button>
-      )}
-      {status === "PUBLISHED" && (
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={pending}
-          onClick={() =>
-            withConfirm("确定手动结束这场考试吗？结束后学生不能再作答。", async () => {
-              await closeExamAction(examId);
-              router.refresh();
-            })
-          }
-        >
-          <Archive />
-          结束考试
         </Button>
       )}
       {isOwner && (

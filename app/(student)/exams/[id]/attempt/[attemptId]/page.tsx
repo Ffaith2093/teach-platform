@@ -21,12 +21,19 @@ export default async function AttemptPage({
     where: { id: attemptId },
     include: {
       exam: { select: { id: true, title: true, totalScore: true, shuffleOption: true } },
+      student: { select: { classId: true } },
       answers: { select: { questionId: true, content: true } },
     },
   });
   if (!attempt || attempt.examId !== id) notFound();
   if (attempt.studentId !== userId) redirect("/exams");
   if (attempt.status !== "IN_PROGRESS") redirect(`/exams/${id}`);
+  if (!attempt.student.classId) redirect("/exams");
+  const classSession = await prisma.examClassSession.findUnique({
+    where: { examId_classId: { examId: id, classId: attempt.student.classId } },
+    select: { status: true },
+  });
+  if (classSession?.status !== "OPEN") redirect(`/exams/${id}`);
 
   const examQuestions = await prisma.examQuestion.findMany({
     where: { examId: id },
@@ -83,6 +90,7 @@ export default async function AttemptPage({
         examTitle={attempt.exam.title}
         totalScore={attempt.exam.totalScore}
         deadlineAt={attempt.deadlineAt.toISOString()}
+        serverNow={new Date().toISOString()}
         questions={questions}
       />
     </>

@@ -2,13 +2,12 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { useActionState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Lock, Eye, EyeOff } from "lucide-react";
+import { Lock, Eye, EyeOff, Check, GraduationCap, Presentation, ShieldCheck } from "lucide-react";
 import { loginAction, type LoginState } from "@/app/(public)/login/actions";
 
 const initial: LoginState = {};
@@ -18,6 +17,7 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const [state, formAction, pending] = useActionState(loginAction, initial);
   const [showPwd, setShowPwd] = React.useState(false);
+  const [selectedRole, setSelectedRole] = React.useState<"STUDENT" | "TEACHER" | "ADMIN">("STUDENT");
   const errorParam = searchParams.get("error");
 
   async function handleSuccess() {
@@ -51,6 +51,38 @@ export function LoginForm() {
           <p className="text-sm text-muted-foreground">教师与学生账号由管理员统一创建</p>
         </div>
         <form action={formAction} className="space-y-4">
+          <input type="hidden" name="role" value={selectedRole} />
+          <div className="space-y-1.5">
+            <Label>登录角色</Label>
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="登录角色">
+              {[
+                { value: "STUDENT" as const, label: "学生", icon: GraduationCap },
+                { value: "TEACHER" as const, label: "教师", icon: Presentation },
+                { value: "ADMIN" as const, label: "管理员", icon: ShieldCheck },
+              ].map((item) => {
+                const active = selectedRole === item.value;
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setSelectedRole(item.value)}
+                    className={`relative flex h-10 items-center justify-center gap-1.5 rounded-md border text-xs font-medium transition-colors ${
+                      active
+                        ? "border-primary bg-primary-subtle text-primary"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {item.label}
+                    {active && <Check className="absolute right-1.5 top-1.5 h-3 w-3" aria-hidden="true" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div className="space-y-1.5">
             <Label htmlFor="identifier">邮箱 / 学号 / 工号</Label>
             <Input
@@ -112,21 +144,6 @@ export function LoginForm() {
 
         <div className="rounded-lg border border-warning/30 bg-warning-subtle/40 p-3 text-xs text-muted-foreground">
           <b className="text-warning">首次登录？</b> 请使用管理员下发的初始密码登录，登录后强制跳转到修改密码页。
-        </div>
-        <div className="grid grid-cols-3 gap-2 pt-2">
-          {[
-            { role: "学生", href: "/dashboard" },
-            { role: "教师", href: "/t/dashboard" },
-            { role: "管理员", href: "/admin" },
-          ].map((r) => (
-            <Link
-              key={r.role}
-              href={r.href}
-              className="rounded-md border border-border bg-card px-3 py-2 text-center text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary"
-            >
-              演示 · {r.role}
-            </Link>
-          ))}
         </div>
       </CardContent>
     </Card>

@@ -7,7 +7,8 @@ import type { Prisma } from "@prisma/client";
 import { buildDrawPool, drawRulesSchema, drawTotalScore } from "@/lib/exams/rules";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/guard";
-import { notifyExamPublished } from "@/lib/notifications/actions";
+import { notifyMany } from "@/lib/notifications";
+import { submitExam } from "@/lib/exams/submit";
 import type { ResultMode } from "@prisma/client";
 
 // ========== 权限工具 ==========
@@ -33,7 +34,7 @@ export async function requireCourseTeacher(courseId: string, minRole: "OWNER" | 
 export async function requireExamAccess(examId: string, minRole: "OWNER" | "ASSISTANT" = "ASSISTANT") {
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
-    select: { id: true, courseId: true, status: true, drawRules: true },
+    select: { id: true, courseId: true, title: true, durationMin: true, status: true, drawRules: true },
   });
   if (!exam) throw new Error("试卷不存在");
   const ctx = await requireCourseTeacher(exam.courseId, minRole);
@@ -49,19 +50,12 @@ const createExamSchema = z
     title: z.string().min(1, "试卷标题不能为空").max(100),
     instructions: z.string().max(2000).optional().or(z.literal("")),
     durationMin: z.coerce.number().int().min(5, "时长至少 5 分钟").max(360, "时长不超过 360 分钟"),
-    openAt: z.string().min(1, "请选择开考时间"),
-    closeAt: z.string().min(1, "请选择结束时间"),
     shuffleQuestion: z.boolean().default(true),
     shuffleOption: z.boolean().default(true),
-    showResultMode: z.enum(["IMMEDIATELY", "AFTER_CLOSE", "AFTER_GRADED", "NEVER"]).default("AFTER_CLOSE"),
     publish: z.boolean().default(false),
     mode: z.enum(["FIXED", "DRAW"]).default("FIXED"),
     drawRules: drawRulesSchema.optional(),
-  })
-  .refine(
-    (d) => new Date(d.openAt).getTime() < new Date(d.closeAt).getTime(),
-    "结束时间必须晚于开考时间",
-  );
+  });
 
 export type CreateExamState = {
   error?: string;
@@ -91,11 +85,8 @@ export async function createExamAction(
     title: formData.get("title"),
     instructions: formData.get("instructions") || undefined,
     durationMin: formData.get("durationMin") || 60,
-    openAt: formData.get("openAt"),
-    closeAt: formData.get("closeAt"),
     shuffleQuestion: formData.get("shuffleQuestion") === "on",
     shuffleOption: formData.get("shuffleOption") === "on",
-    showResultMode: formData.get("showResultMode") || "AFTER_CLOSE",
     publish: formData.get("publish") === "1",
     mode: formData.get("mode") || "FIXED",
     drawRules: rawDrawRules ?? undefined,
@@ -123,12 +114,9 @@ export async function createExamAction(
     return { error: "您无权限在该课程创建试卷" };
   }
 
-  // 时间校验
-  const openAt = new Date(parsed.data.openAt);
-  const closeAt = new Date(parsed.data.closeAt);
-  if (parsed.data.publish && openAt.getTime() < Date.now()) {
-    return { fieldErrors: { openAt: "开考时间必须晚于当前时间" } };
-  }
+  // openAt / closeAt 为兼容历史数据保留；V1.1 起实际准入由 ExamClassSession 控制。
+  const openAt = new Date();
+  const closeAt = new Date("2100-01-01T00:00:00.000Z");
 
   let pool: ReturnType<typeof buildDrawPool> | null = null;
   if (parsed.data.mode === "DRAW") {
@@ -157,7 +145,7 @@ export async function createExamAction(
         closeAt,
         shuffleQuestion: parsed.data.shuffleQuestion,
         shuffleOption: parsed.data.shuffleOption,
-        showResultMode: parsed.data.showResultMode as ResultMode,
+        showResultMode: "AFTER_CLOSE",
         totalScore: pool ? drawTotalScore(pool) : 0,
         drawRules: pool ? (pool as Prisma.InputJsonValue) : undefined,
         status: parsed.data.publish ? "PUBLISHED" : "DRAFT",
@@ -176,22 +164,6 @@ export async function createExamAction(
     }
     return exam.id;
   });
-
-  // 立即发布：发通知给受众
-  if (parsed.data.publish) {
-    try {
-      await notifyExamPublished({
-        examId,
-        examTitle: parsed.data.title,
-        courseId: parsed.data.courseId,
-        openAt,
-        durationMin: parsed.data.durationMin,
-        publisherId: session.user.id,
-      });
-    } catch {
-      // 通知失败不影响主流程
-    }
-  }
 
   revalidatePath("/t/exams");
   if (!parsed.data.publish) {
@@ -331,7 +303,33 @@ export async function addQuestionToExamAction(
   let questionId: string;
   let score: number;
 
-  if (rawType === "SINGLE_CHOICE") {
+  if (rawType === "LIBRARY") {
+    const parsed = z.object({
+      questionId: z.string().min(1, "请选择题库题目"),
+      score: z.coerce.number().int().min(1).max(100),
+    }).safeParse({
+      questionId: formData.get("questionId"),
+      score: formData.get("score"),
+    });
+    if (!parsed.success) return { error: "请选择题库题目并填写分值" };
+    const question = await prisma.question.findFirst({
+      where: {
+        id: parsed.data.questionId,
+        bankId: { not: null },
+        bank: { ownerId: teacherId },
+        type: { in: ["SINGLE_CHOICE", "FILL_BLANK"] },
+      },
+      select: { id: true },
+    });
+    if (!question) return { error: "题库题目不存在或题型不可用" };
+    const alreadyAdded = await prisma.examQuestion.findUnique({
+      where: { examId_questionId: { examId, questionId: question.id } },
+      select: { questionId: true },
+    });
+    if (alreadyAdded) return { error: "这道题已经在试卷中" };
+    questionId = question.id;
+    score = parsed.data.score;
+  } else if (rawType === "SINGLE_CHOICE") {
     const optionsRaw = formData.get("options")?.toString() ?? "[]";
     let options: { key: string; text: string }[] = [];
     try {
@@ -707,7 +705,7 @@ export async function updateQuestionInExamAction(
 // ========== 发布 / 撤回 ==========
 
 export async function publishExamAction(examId: string) {
-  const { exam, session } = await requireExamAccess(examId);
+  const { exam } = await requireExamAccess(examId);
   if (exam.status === "PUBLISHED") return;
 
   // 必须有题目
@@ -722,32 +720,10 @@ export async function publishExamAction(examId: string) {
     if (new Set(ids).size !== ids.length || ids.length !== count) throw new Error("抽题池与规则不一致");
   }
 
-  // 时间校验 + 取元数据（发通知用）
-  const full = await prisma.exam.findUnique({
-    where: { id: examId },
-    select: { openAt: true, title: true, courseId: true, durationMin: true },
-  });
-  if (!full || full.openAt.getTime() < Date.now()) {
-    throw new Error("开考时间必须晚于当前时间");
-  }
-
   await prisma.exam.update({
     where: { id: examId },
     data: { status: "PUBLISHED" },
   });
-
-  try {
-    await notifyExamPublished({
-      examId,
-      examTitle: full.title,
-      courseId: full.courseId,
-      openAt: full.openAt,
-      durationMin: full.durationMin,
-      publisherId: session.user.id,
-    });
-  } catch {
-    // 通知失败不影响主流程
-  }
 
   revalidatePath(`/t/exams/${examId}`);
   revalidatePath("/t/exams");
@@ -778,6 +754,91 @@ export async function closeExamAction(examId: string) {
   });
   revalidatePath(`/t/exams/${examId}`);
   revalidatePath("/t/exams");
+}
+
+// ========== 按班级开考 / 结束 ==========
+
+async function requireExamClass(examId: string, classId: string) {
+  const { exam } = await requireExamAccess(examId);
+  if (exam.status !== "PUBLISHED") throw new Error("请先发布试卷");
+  const courseClass = await prisma.courseClass.findUnique({
+    where: { courseId_classId: { courseId: exam.courseId, classId } },
+    select: { class: { select: { id: true, name: true } } },
+  });
+  if (!courseClass) throw new Error("该班级不属于本课程");
+  return { exam, class: courseClass.class };
+}
+
+export async function openExamClassAction(examId: string, classId: string) {
+  const { exam, class: targetClass } = await requireExamClass(examId, classId);
+  const existing = await prisma.examClassSession.findUnique({
+    where: { examId_classId: { examId, classId } },
+  });
+  if (existing?.status === "CLOSED") throw new Error("该班考试已经结束，不能重新开考");
+  if (existing?.status === "OPEN") return { ok: true };
+
+  const openedAt = new Date();
+  await prisma.examClassSession.upsert({
+    where: { examId_classId: { examId, classId } },
+    create: { examId, classId, status: "OPEN", openedAt },
+    update: { status: "OPEN", openedAt, closedAt: null },
+  });
+
+  const students = await prisma.user.findMany({
+    where: { classId, role: "STUDENT", status: "ACTIVE" },
+    select: { id: true },
+  });
+  try {
+    await notifyMany({
+      userIds: students.map((student) => student.id),
+      title: `考试已开始：《${exam.title}》`,
+      body: `${targetClass.name}已开放答题 · 时长 ${exam.durationMin} 分钟`,
+      href: `/exams/${examId}`,
+      courseId: exam.courseId,
+      classId,
+    });
+  } catch {
+    // 通知失败不影响开考。
+  }
+
+  revalidatePath(`/t/exams/${examId}`);
+  revalidatePath(`/t/exams/${examId}/monitor`);
+  revalidatePath("/exams");
+  revalidatePath(`/exams/${examId}`);
+  return { ok: true };
+}
+
+export async function closeExamClassAction(examId: string, classId: string) {
+  await requireExamClass(examId, classId);
+  const current = await prisma.examClassSession.findUnique({
+    where: { examId_classId: { examId, classId } },
+    select: { status: true },
+  });
+  if (!current || current.status === "PENDING") throw new Error("该班考试尚未开始");
+  const claimed = await prisma.examClassSession.updateMany({
+    where: { examId, classId, status: "OPEN" },
+    data: { status: "CLOSED", closedAt: new Date() },
+  });
+
+  const attempts = await prisma.examAttempt.findMany({
+    where: {
+      examId,
+      status: "IN_PROGRESS",
+      student: { classId },
+    },
+    select: { id: true },
+  });
+  const settled = await Promise.allSettled(attempts.map((attempt) => submitExam(attempt.id)));
+  const failed = settled.filter(
+    (result) => result.status === "rejected" || (result.status === "fulfilled" && !result.value.ok),
+  ).length;
+
+  revalidatePath(`/t/exams/${examId}`);
+  revalidatePath(`/t/exams/${examId}/monitor`);
+  revalidatePath(`/t/exams/${examId}/grade`);
+  revalidatePath("/exams");
+  revalidatePath(`/exams/${examId}`);
+  return { ok: true, submitted: attempts.length - failed, failed, alreadyClosed: !claimed.count };
 }
 
 // ========== 删除（OWNER 专属） ==========

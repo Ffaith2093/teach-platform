@@ -89,6 +89,7 @@ model Class {
   teachers      ClassTeacher[]
   courseClasses CourseClass[]
   notifications Notification[]
+  examSessions  ExamClassSession[]
 
   @@unique([gradeId, name])
   @@index([gradeId, isActive])
@@ -522,9 +523,32 @@ model Exam {
   chapter   Chapter?       @relation(fields: [chapterId], references: [id], onDelete: SetNull)
   questions ExamQuestion[]
   attempts  ExamAttempt[]
+  classSessions ExamClassSession[]
 
   @@index([courseId, status, openAt])
   @@index([chapterId])
+}
+
+enum ExamClassStatus {
+  PENDING
+  OPEN
+  CLOSED
+}
+
+model ExamClassSession {
+  examId    String
+  classId   String
+  status    ExamClassStatus @default(PENDING)
+  openedAt  DateTime?
+  closedAt  DateTime?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  exam  Exam  @relation(fields: [examId], references: [id], onDelete: Cascade)
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@id([examId, classId])
+  @@index([classId, status])
 }
 
 enum ResultMode {

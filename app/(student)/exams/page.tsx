@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Topbar } from "@/components/shell/topbar";
-import { formatDate, relativeTime } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import {
   Library,
   Clock,
@@ -29,7 +29,6 @@ export default async function StudentExamsPage({
   const session = await auth();
   const userId = session!.user.id;
   const sp = await searchParams;
-  const now = new Date();
   const status: StatusFilter =
     sp.status === "upcoming" ||
     sp.status === "available" ||
@@ -69,9 +68,14 @@ export default async function StudentExamsPage({
     },
     include: {
       course: { select: { id: true, title: true } },
+      classSessions: {
+        where: { classId: me.classId },
+        select: { status: true, openedAt: true, closedAt: true },
+        take: 1,
+      },
       _count: { select: { questions: true } },
     },
-    orderBy: [{ openAt: "asc" }],
+    orderBy: [{ createdAt: "desc" }],
     take: 200,
   });
 
@@ -94,12 +98,13 @@ export default async function StudentExamsPage({
   const attemptByExam = new Map(myAttempts.map((a) => [a.examId, a]));
 
   // 分类
-  const upcoming = allExams.filter((e) => e.status === "PUBLISHED" && e.openAt > now && !attemptByExam.has(e.id));
+  const upcoming = allExams.filter(
+    (e) => e.status === "PUBLISHED" && (e.classSessions[0]?.status ?? "PENDING") === "PENDING" && !attemptByExam.has(e.id),
+  );
   const available = allExams.filter(
     (e) =>
       e.status === "PUBLISHED" &&
-      e.openAt <= now &&
-      e.closeAt >= now &&
+      e.classSessions[0]?.status === "OPEN" &&
       !attemptByExam.has(e.id),
   );
   const inProgress = allExams.filter((e) => {
@@ -112,7 +117,7 @@ export default async function StudentExamsPage({
   });
   const missed = allExams.filter(
     (e) =>
-      (e.status === "CLOSED" || (e.status === "PUBLISHED" && e.closeAt < now)) &&
+      (e.status === "CLOSED" || e.classSessions[0]?.status === "CLOSED") &&
       !attemptByExam.has(e.id),
   );
 
@@ -160,8 +165,8 @@ export default async function StudentExamsPage({
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
               {filterCourse
-                ? "本课程的已发布考试。按开考时间排序。"
-                : "您所在班级的已发布考试。按开考时间排序。"}
+                ? "本课程的已发布考试，由教师按班级统一开放和结束。"
+                : "您所在班级的考试，由教师统一开放和结束。"}
             </p>
           </div>
 
@@ -201,7 +206,10 @@ export default async function StudentExamsPage({
               <span className="text-xs text-muted-foreground">状态：</span>
               {statusTabs.map((t) => {
                 const active = status === t.key;
-                const href = `/exams${t.key !== "all" ? `?status=${t.key}` : ""}`;
+                const qs = new URLSearchParams();
+                if (t.key !== "all") qs.set("status", t.key);
+                if (filterCourseId) qs.set("course", filterCourseId);
+                const href = `/exams${qs.size ? `?${qs}` : ""}`;
                 return (
                   <Link
                     key={t.key}
@@ -249,8 +257,8 @@ export default async function StudentExamsPage({
                     <tr className="border-b border-border bg-muted/50 text-left text-xs font-medium text-muted-foreground">
                       <th className="px-6 py-3">标题</th>
                       <th className="px-6 py-3">课程</th>
-                      <th className="px-6 py-3">开考</th>
-                      <th className="px-6 py-3">截止</th>
+                      <th className="px-6 py-3">本班开考</th>
+                      <th className="px-6 py-3">本班结束</th>
                       <th className="px-6 py-3 text-right">时长</th>
                       <th className="px-6 py-3 text-right">题目</th>
                       <th className="px-6 py-3 text-right">总分</th>
@@ -261,11 +269,10 @@ export default async function StudentExamsPage({
                   <tbody className="divide-y divide-border">
                     {filtered.map((e) => {
                       const att = attemptByExam.get(e.id);
-                      const isUpcoming = e.status === "PUBLISHED" && e.openAt > now && !att;
-                      const isAvailable =
-                        e.status === "PUBLISHED" && e.openAt <= now && e.closeAt >= now && !att;
-                      const isMissed =
-                        !att && (e.status === "CLOSED" || (e.status === "PUBLISHED" && e.closeAt < now));
+                      const classSession = e.classSessions[0];
+                      const isUpcoming = e.status === "PUBLISHED" && (classSession?.status ?? "PENDING") === "PENDING" && !att;
+                      const isAvailable = e.status === "PUBLISHED" && classSession?.status === "OPEN" && !att;
+                      const isMissed = !att && (e.status === "CLOSED" || classSession?.status === "CLOSED");
                       return (
                         <tr
                           key={e.id}
@@ -285,10 +292,10 @@ export default async function StudentExamsPage({
                             </Badge>
                           </td>
                           <td className="px-6 py-3.5 text-xs text-muted-foreground">
-                            <div className="num">{formatDate(e.openAt)}</div>
+                            <div className="num">{classSession?.openedAt ? formatDate(classSession.openedAt) : "等待教师开放"}</div>
                           </td>
                           <td className="px-6 py-3.5 text-xs text-muted-foreground num">
-                            {formatDate(e.closeAt)}
+                            {classSession?.closedAt ? formatDate(classSession.closedAt) : "—"}
                           </td>
                           <td className="px-6 py-3.5 num text-right text-muted-foreground">
                             {e.durationMin}m

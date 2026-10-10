@@ -349,6 +349,15 @@ model Exam {
   drawRules       Json?      // 抽题规则，见下
 }
 
+model ExamClassSession {      // 同一考试按班级独立开考和结束
+  examId    String
+  classId   String
+  status    ExamClassStatus   // PENDING | OPEN | CLOSED
+  openedAt  DateTime?
+  closedAt  DateTime?
+  @@id([examId, classId])
+}
+
 model ExamQuestion {         // 固定组卷时使用
   examId     String
   questionId String
@@ -614,24 +623,28 @@ exitCode ≠ 0                        → RUNTIME_ERROR（返回 stderr 前 2000
 ### 3.2 考试流程
 
 ```
-教师：创建试卷（固定组卷 or 配置抽题规则）→ 设置时间与时长 → 发布
+教师：创建试卷（固定组卷 or 配置抽题规则）→ 发布为待开考试卷
   │
-学生：openAt 后可见「进入考试」
+教师：在考试详情先选择班级 → 点击「开始考试」→ 仅该班学生可进入
+  │
+学生：班级场次为 OPEN 时可见「进入考试」
   │
   ├─ 点击进入 → 服务端创建 ExamAttempt，计算 deadlineAt = now + durationMin，抽题固化
   ├─ 答题页每 15 秒自动保存草稿到 Answer（防断网丢失）
   ├─ 倒计时以服务端 deadlineAt 为准，前端每 30 秒与服务端校时
-  ├─ 提交 / 到点自动交卷 / 关闭页面后到点由定时任务兜底自动交卷
+  ├─ 提交 / 到点自动交卷 / 教师结束本班考试 / 定时任务兜底自动交卷
   │
   └─ 交卷后：
-       客观题（单选/填空/代码填空）立即自动判分
+       客观题（单选/填空；历史代码填空题兼容）立即自动判分
        编程题推入评测队列，判完写回 autoScore
        全部自动判分完成 → status=GRADING（若含需人工复核题）或 GRADED
   │
-教师：进入批改页 → 按题批改（可覆盖自动分）→ 提交成绩 → status=GRADED
+教师：结束所选班级考试 → 强制提交该班未交答卷 → 自动判分完成后立即出分
   │
-学生：按 showResultMode 规则查看成绩与解析
+学生：本班场次结束后查看成绩与解析
 ```
+
+固定组卷时，选择题和填空题必须从题库按题号/题干搜索后引用；编程题从编程题库引用。新建考试不再提供代码填空题入口，历史数据继续兼容显示与判分。
 
 **自动交卷兜底**：Worker 每分钟扫描 `status=IN_PROGRESS AND deadlineAt < now()` 的 attempt，强制提交并标记 `isAutoSubmit=true`。
 

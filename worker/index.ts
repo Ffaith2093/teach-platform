@@ -18,7 +18,7 @@
  */
 import { Worker, type Job } from "bullmq";
 import { prisma } from "@/lib/prisma";
-import { scaledProblemScore } from "@/lib/exams/scoring";
+import { finalExamScore, scaledProblemScore } from "@/lib/exams/scoring";
 import { JUDGE_QUEUE_NAME, type JudgeJobData, redisConnectionOptions } from "@/lib/judge/queue";
 import { runJudge, type JudgeRunResult } from "@/lib/judge/local";
 import { runSandbox } from "@/lib/judge/sandbox";
@@ -294,7 +294,27 @@ async function settleExamAttempt(submissionId: string): Promise<void> {
   const sub = await prisma.submission.findUnique({ where: { id: submissionId }, select: { contextType: true, contextId: true } });
   if (sub?.contextType !== "EXAM" || !sub.contextId) return;
   const pending = await prisma.submission.count({ where: { contextType: "EXAM", contextId: sub.contextId, status: { in: ["PENDING", "JUDGING"] } } });
-  if (!pending) await prisma.examAttempt.updateMany({ where: { id: sub.contextId, status: "SUBMITTED" }, data: { status: "GRADING" } });
+  if (pending) return;
+
+  const attempt = await prisma.examAttempt.findUnique({
+    where: { id: sub.contextId },
+    select: {
+      status: true,
+      exam: { select: { totalScore: true } },
+      answers: { select: { autoScore: true, manualScore: true } },
+    },
+  });
+  if (!attempt || !["SUBMITTED", "GRADING"].includes(attempt.status)) return;
+
+  const autoScore = attempt.answers.reduce((sum, answer) => sum + (answer.autoScore ?? 0), 0);
+  await prisma.examAttempt.updateMany({
+    where: { id: sub.contextId, status: { in: ["SUBMITTED", "GRADING"] } },
+    data: {
+      status: "GRADED",
+      autoScore,
+      finalScore: finalExamScore(attempt.answers, attempt.exam.totalScore),
+    },
+  });
 }
 
 // 优雅退出

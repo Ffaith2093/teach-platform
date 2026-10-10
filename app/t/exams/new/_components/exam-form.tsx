@@ -46,19 +46,6 @@ export function ExamForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
-  // 默认开考时间 = 下个整点（30 分钟后）
-  const defaultOpenAt = (() => {
-    const d = new Date();
-    d.setMinutes(d.getMinutes() + 30, 0, 0);
-    return toLocalDatetimeInput(d);
-  })();
-  const defaultCloseAt = (() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 7);
-    d.setHours(23, 0, 0, 0);
-    return toLocalDatetimeInput(d);
-  })();
-
   // 本地表单状态：控制 publish 按钮文案 + 切换
   const [publishMode, setPublishMode] = React.useState(false);
   const [mode, setMode] = React.useState<"FIXED" | "DRAW">("FIXED");
@@ -150,34 +137,8 @@ export function ExamForm({
             />
           </Field>
 
-          {/* 时间 */}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Field
-              label="开考时间"
-              error={state?.fieldErrors?.openAt}
-              required
-            >
-              <input
-                name="openAt"
-                type="datetime-local"
-                required
-                defaultValue={defaultOpenAt}
-                className="h-9 w-full rounded-md border border-border bg-card px-3 text-sm focus-visible:border-primary focus-visible:outline-none"
-              />
-            </Field>
-            <Field
-              label="结束时间"
-              error={state?.fieldErrors?.closeAt}
-              required
-            >
-              <input
-                name="closeAt"
-                type="datetime-local"
-                required
-                defaultValue={defaultCloseAt}
-                className="h-9 w-full rounded-md border border-border bg-card px-3 text-sm focus-visible:border-primary focus-visible:outline-none"
-              />
-            </Field>
+          {/* 时长 */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Field
               label="时长（分钟）"
               error={state?.fieldErrors?.durationMin}
@@ -193,6 +154,10 @@ export function ExamForm({
                 className="num h-9 w-full rounded-md border border-border bg-card px-3 text-sm focus-visible:border-primary focus-visible:outline-none"
               />
             </Field>
+            <div className="rounded-md border border-primary/20 bg-primary-subtle/30 px-3 py-2">
+              <p className="text-sm font-medium text-foreground">按班级统一开考</p>
+              <p className="mt-1 text-xs text-muted-foreground">发布试卷后，在考试详情选择班级并点击开考；教师结束该班考试后统一交卷出分。</p>
+            </div>
           </div>
 
           {/* 答题模式 */}
@@ -200,7 +165,7 @@ export function ExamForm({
             label="作答要求"
             hint="随机题序与选项可降低作弊"
           >
-            <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-card p-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 rounded-md border border-border bg-card p-3 sm:grid-cols-2">
               <CheckField
                 name="shuffleQuestion"
                 label="随机题目顺序"
@@ -211,21 +176,6 @@ export function ExamForm({
                 label="随机选项顺序"
                 defaultChecked
               />
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                  结果展示
-                </label>
-                <select
-                  name="showResultMode"
-                  defaultValue="AFTER_CLOSE"
-                  className="h-9 w-full rounded-md border border-border bg-card px-3 text-sm focus-visible:border-primary focus-visible:outline-none"
-                >
-                  <option value="IMMEDIATELY">交卷后立即</option>
-                  <option value="AFTER_CLOSE">考试结束后</option>
-                  <option value="AFTER_GRADED">全部批改后</option>
-                  <option value="NEVER">不展示</option>
-                </select>
-              </div>
             </div>
           </Field>
 
@@ -268,7 +218,7 @@ export function ExamForm({
                 {rules.map((rule, index) => (
                   <div key={index} className="grid grid-cols-2 gap-2 border-b border-border pb-3 md:grid-cols-[1fr_1fr_1fr_80px_80px_32px]">
                     <select aria-label={`规则 ${index + 1} 题型`} value={rule.type} onChange={(event) => updateRule(index, { type: event.target.value })} className="h-9 rounded border border-border bg-card px-2 text-sm">
-                      <option value="SINGLE_CHOICE">单选题</option><option value="FILL_BLANK">填空题</option><option value="CODE_BLANK">代码填空</option><option value="PROGRAMMING">编程题</option>
+                      <option value="SINGLE_CHOICE">单选题</option><option value="FILL_BLANK">填空题</option><option value="PROGRAMMING">编程题</option>
                     </select>
                     <select aria-label={`规则 ${index + 1} 难度`} value={rule.difficulty} onChange={(event) => updateRule(index, { difficulty: event.target.value })} className="h-9 rounded border border-border bg-card px-2 text-sm">
                       <option value="">全部难度</option><option value="EASY">简单</option><option value="MEDIUM">中等</option><option value="HARD">困难</option>
@@ -302,7 +252,7 @@ export function ExamForm({
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {publishMode
-                    ? "学生可在开考时间参与考试"
+                    ? "试卷发布后仍需在详情页按班级点击开考"
                     : mode === "FIXED" ? "创建后在试卷详情添加题目，再发布" : "确认抽题池后可在详情页发布"}
                 </p>
               </div>
@@ -380,9 +330,4 @@ function CheckField({
       <span className="text-sm text-foreground">{label}</span>
     </label>
   );
-}
-
-function toLocalDatetimeInput(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }

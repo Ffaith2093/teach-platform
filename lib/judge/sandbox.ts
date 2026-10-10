@@ -13,7 +13,7 @@
  * 返回结构与 lib/judge/local.ts 一致，调用方零修改。
  */
 import Docker from "dockerode";
-import { chmod, mkdir, mkdtemp, writeFile, rm } from "node:fs/promises";
+import { chmod, copyFile, mkdir, mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type {
@@ -150,10 +150,15 @@ async function runOneCase(
   const caseScore = tc.score ?? 0;
   const timeoutSec = Math.max(1, Math.ceil(limits.timeLimitMs / 1000) + 1);
 
-  // 写 input.txt（容器启动前必须就位）
+  // Each case gets a distinct bind mount. Reusing input.txt across containers can
+  // expose stale file contents through Docker Desktop's bind-mount cache.
+  const caseDir = await mkdtemp(join(stageDir, "case-"));
+  await chmod(caseDir, 0o755);
+  await copyFile(join(stageDir, "main.py"), join(caseDir, "main.py"));
+  await chmod(join(caseDir, "main.py"), 0o644);
   const input = prepareJudgeInput(tc.input, limits.splitInputByWhitespace ?? false);
-  await writeFile(join(stageDir, "input.txt"), input, "utf8");
-  await chmod(join(stageDir, "input.txt"), 0o644);
+  await writeFile(join(caseDir, "input.txt"), input, "utf8");
+  await chmod(join(caseDir, "input.txt"), 0o644);
 
   const container = await docker.createContainer({
     Image: DEFAULT_IMAGE,
@@ -178,7 +183,7 @@ async function runOneCase(
       CapDrop: ["ALL"],
       SecurityOpt: ["no-new-privileges"],
       // 仅挂载临时目录（CLAUDE.md 红线）
-      Binds: [`${stageDir}:/code:ro`],
+      Binds: [`${caseDir}:/code:ro`],
       AutoRemove: false,
     },
   });

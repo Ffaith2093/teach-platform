@@ -4,8 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Check, Clock, Loader2 } from "lucide-react";
-import { saveAnswerAction, submitExamAction } from "@/app/(student)/exams/actions";
+import { AlertCircle, Check, CheckCircle2, Clock, Loader2, Play, XCircle } from "lucide-react";
+import {
+  runExamSampleAction,
+  saveAnswerAction,
+  submitExamAction,
+  type ExamSampleResult,
+} from "@/app/(student)/exams/actions";
 import type { Difficulty, QuestionType } from "@prisma/client";
 import { CodeEditor } from "@/components/code-editor";
 import { MarkdownContent } from "@/components/markdown-content";
@@ -29,16 +34,18 @@ export function AttemptClient({
   examTitle,
   totalScore,
   deadlineAt,
+  serverNow,
   questions,
 }: {
   attemptId: string;
   examTitle: string;
   totalScore: number;
   deadlineAt: string;
+  serverNow: string;
   questions: Q[];
 }) {
   const deadline = useMemo(() => new Date(deadlineAt).getTime(), [deadlineAt]);
-  const [remain, setRemain] = useState(() => Math.max(0, deadline - Date.now()));
+  const [remain, setRemain] = useState(() => Math.max(0, deadline - new Date(serverNow).getTime()));
   const [answers, setAnswers] = useState<Record<string, unknown>>(() => {
     const m: Record<string, unknown> = {};
     for (const q of questions)
@@ -231,6 +238,7 @@ export function AttemptClient({
           {questions.map((q) => (
             <QuestionCard
               key={q.questionId}
+              attemptId={attemptId}
               q={q}
               value={answers[q.questionId]}
               onChange={(v) => setAnswer(q.questionId, v)}
@@ -393,10 +401,12 @@ function blankCount(content: string) {
 }
 
 function QuestionCard({
+  attemptId,
   q,
   value,
   onChange,
 }: {
+  attemptId: string;
   q: Q;
   value: unknown;
   onChange: (v: unknown) => void;
@@ -481,18 +491,134 @@ function QuestionCard({
           )}
 
           {q.type === "PROGRAMMING" && (
-            <CodeEditor
-              value={typeof value === "string" ? value : (q.problem?.starterCode ?? "")}
-              onChange={(v) => onChange(v)}
-              language="python"
-              height={300}
-              minLines={14}
-              aria-label="Python 代码编辑器"
+            <ProgrammingAnswer
+              attemptId={attemptId}
+              questionId={q.questionId}
+              initialCode={q.problem?.starterCode ?? ""}
+              value={value}
+              onChange={onChange}
             />
           )}
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function ProgrammingAnswer({
+  attemptId,
+  questionId,
+  initialCode,
+  value,
+  onChange,
+}: {
+  attemptId: string;
+  questionId: string;
+  initialCode: string;
+  value: unknown;
+  onChange: (value: unknown) => void;
+}) {
+  const code = typeof value === "string" ? value : initialCode;
+  const [running, startRun] = useTransition();
+  const [result, setResult] = useState<ExamSampleResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function runSamples() {
+    setError(null);
+    setResult(null);
+    startRun(async () => {
+      const response = await runExamSampleAction({ attemptId, questionId, code });
+      if (!response.ok) {
+        setError(response.error);
+        return;
+      }
+      setResult(response.result);
+    });
+  }
+
+  return (
+    <div>
+      <CodeEditor
+        value={code}
+        onChange={onChange}
+        language="python"
+        height={320}
+        minLines={14}
+        aria-label="Python 代码编辑器"
+      />
+      <div className="mt-3 flex items-center gap-3">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={running || !code.trim()}
+          onClick={runSamples}
+        >
+          {running ? <Loader2 className="animate-spin" /> : <Play />}
+          {running ? "运行中…" : "运行全部样例"}
+        </Button>
+        <span className="text-xs text-muted-foreground">一次运行本题全部公开测试点</span>
+      </div>
+      {error && (
+        <div className="mt-3 rounded-md border border-danger/30 bg-danger-subtle/40 px-3 py-2 text-xs text-danger">
+          {error}
+        </div>
+      )}
+      {result && <ExamSampleResultPanel result={result} />}
+    </div>
+  );
+}
+
+const SAMPLE_STATUS_LABEL: Record<string, string> = {
+  ACCEPTED: "通过",
+  WRONG_ANSWER: "答案错误",
+  TLE: "超时",
+  MLE: "内存超限",
+  RUNTIME_ERROR: "运行错误",
+  COMPILE_ERROR: "语法错误",
+  SYSTEM_ERROR: "系统错误",
+};
+
+function ExamSampleResultPanel({ result }: { result: ExamSampleResult }) {
+  const allPassed = result.passedCount === result.totalCount;
+  return (
+    <div className={`mt-4 rounded-lg border p-4 ${allPassed ? "border-success/30 bg-success-subtle/30" : "border-danger/30 bg-danger-subtle/20"}`}>
+      <div className="flex flex-wrap items-center gap-2">
+        {allPassed ? <CheckCircle2 className="h-4 w-4 text-success" /> : <XCircle className="h-4 w-4 text-danger" />}
+        <span className="text-sm font-medium">样例运行结果</span>
+        <Badge variant={allPassed ? "success" : "danger"}>
+          通过 {result.passedCount}/{result.totalCount}
+        </Badge>
+      </div>
+      <div className="mt-3 space-y-2">
+        {result.cases.map((testCase, index) => (
+          <details key={index} className="rounded-md border border-border bg-card p-3" open={testCase.status !== "ACCEPTED"}>
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs">
+              <span className="font-medium">测试点 {index + 1}</span>
+              <span className={testCase.status === "ACCEPTED" ? "text-success" : "text-danger"}>
+                {SAMPLE_STATUS_LABEL[testCase.status] ?? testCase.status} · {testCase.timeMs}ms
+              </span>
+            </summary>
+            <div className="mt-3 grid gap-3 md:grid-cols-3">
+              <SampleOutput label="输入" value={testCase.input} />
+              <SampleOutput label="期望输出" value={testCase.expected} />
+              <SampleOutput label="实际输出" value={testCase.actualOutput ?? testCase.errorMsg ?? "（无输出）"} danger={testCase.status !== "ACCEPTED"} />
+            </div>
+          </details>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SampleOutput({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) {
+  return (
+    <div className="min-w-0">
+      <div className="mb-1 text-[11px] text-muted-foreground">{label}</div>
+      <pre className={`min-h-16 overflow-x-auto whitespace-pre-wrap rounded-md bg-muted/50 p-2 font-mono text-xs ${danger ? "text-danger" : "text-foreground"}`}>
+        {value || "（空）"}
+      </pre>
+    </div>
   );
 }
 

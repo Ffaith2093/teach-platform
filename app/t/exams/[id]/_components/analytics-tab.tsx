@@ -22,7 +22,7 @@ const TYPE_LABEL: Record<QuestionType, string> = {
   PROGRAMMING: "编程",
 };
 
-export async function AnalyticsTab({ examId }: { examId: string }) {
+export async function AnalyticsTab({ examId, classId }: { examId: string; classId: string }) {
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
     select: { totalScore: true, title: true },
@@ -33,6 +33,7 @@ export async function AnalyticsTab({ examId }: { examId: string }) {
     prisma.examAttempt.findMany({
       where: {
         examId,
+        student: { classId },
         status: { in: ["SUBMITTED", "GRADING", "GRADED"] },
       },
       select: {

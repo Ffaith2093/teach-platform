@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Topbar } from "@/components/shell/topbar";
-import { formatDate, relativeTime } from "@/lib/utils";
 import {
   Library,
   Plus,
@@ -36,7 +35,6 @@ export default async function TeacherExamsPage({
   const session = await auth();
   const userId = session!.user.id;
   const sp = await searchParams;
-  const now = new Date();
 
   if (session!.user.role !== "TEACHER") {
     redirect("/login?error=forbidden");
@@ -79,55 +77,50 @@ export default async function TeacherExamsPage({
     );
   }
 
-  const exams = await prisma.exam.findMany({
+  const allExams = await prisma.exam.findMany({
     where: {
       courseId: { in: myCourseIds },
       ...(courseFilter ? { courseId: courseFilter } : {}),
-      ...(status === "draft" ? { status: "DRAFT" } : {}),
-      ...(status === "published"
-        ? { status: "PUBLISHED", closeAt: { gte: now } }
-        : {}),
-      ...(status === "closed"
-        ? { OR: [{ status: "CLOSED" }, { status: "PUBLISHED", closeAt: { lt: now } }] }
-        : {}),
     },
-    orderBy: [{ openAt: "desc" }, { createdAt: "desc" }],
+    orderBy: { createdAt: "desc" },
     include: {
       course: { select: { title: true } },
+      classSessions: { select: { status: true } },
       _count: { select: { questions: true, attempts: true } },
     },
-    take: 100,
+    take: 300,
   });
 
+  function lifecycle(exam: (typeof allExams)[number]): "draft" | "published" | "closed" {
+    if (exam.status === "DRAFT") return "draft";
+    if (exam.status === "CLOSED") return "closed";
+    if (exam.classSessions.length > 0 && exam.classSessions.every((item) => item.status === "CLOSED")) return "closed";
+    return "published";
+  }
+  const exams = status === "all" ? allExams : allExams.filter((exam) => lifecycle(exam) === status);
+
   // 全局 stats
-  const [draftCount, publishedCount, closedCount, attemptCount] = await Promise.all([
-    prisma.exam.count({ where: { courseId: { in: myCourseIds }, status: "DRAFT" } }),
-    prisma.exam.count({
-      where: { courseId: { in: myCourseIds }, status: "PUBLISHED", closeAt: { gte: now } },
-    }),
-    prisma.exam.count({
-      where: {
-        courseId: { in: myCourseIds },
-        OR: [{ status: "CLOSED" }, { status: "PUBLISHED", closeAt: { lt: now } }],
-      },
-    }),
+  const [attemptCount] = await Promise.all([
     prisma.examAttempt.count({
       where: { exam: { courseId: { in: myCourseIds } } },
     }),
   ]);
+  const draftCount = allExams.filter((exam) => lifecycle(exam) === "draft").length;
+  const publishedCount = allExams.filter((exam) => lifecycle(exam) === "published").length;
+  const closedCount = allExams.filter((exam) => lifecycle(exam) === "closed").length;
 
   const stats = [
     { icon: FileText, label: "草稿", num: draftCount },
-    { icon: CheckCircle2, label: "进行中", num: publishedCount, accent: true },
-    { icon: AlertCircle, label: "已截止", num: closedCount },
+    { icon: CheckCircle2, label: "已发布", num: publishedCount, accent: true },
+    { icon: AlertCircle, label: "全部结束", num: closedCount },
     { icon: Clock, label: "总参考人次", num: attemptCount, muted: true },
   ];
 
   const statusTabs: { key: StatusFilter; label: string }[] = [
     { key: "all", label: "全部" },
     { key: "draft", label: "草稿" },
-    { key: "published", label: "进行中" },
-    { key: "closed", label: "已截止" },
+    { key: "published", label: "已发布" },
+    { key: "closed", label: "全部结束" },
   ];
 
   return (
@@ -139,7 +132,7 @@ export default async function TeacherExamsPage({
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">我的试卷</h1>
               <p className="mt-1.5 text-sm text-muted-foreground">
-                选择课程下的编程题、填空题、选择题与代码填空题，组合为试卷。
+                从题库选择编程题、填空题和选择题组卷，并按班级开放考试。
               </p>
             </div>
             <Link
@@ -267,7 +260,7 @@ export default async function TeacherExamsPage({
                       <th className="px-6 py-3">标题</th>
                       <th className="px-6 py-3">课程</th>
                       <th className="px-6 py-3">状态</th>
-                      <th className="px-6 py-3">开考</th>
+                      <th className="px-6 py-3">班级场次</th>
                       <th className="px-6 py-3">时长</th>
                       <th className="px-6 py-3 text-right">题目</th>
                       <th className="px-6 py-3 text-right">总分</th>
@@ -277,9 +270,16 @@ export default async function TeacherExamsPage({
                   </thead>
                   <tbody className="divide-y divide-border">
                     {exams.map((e) => {
-                      const overdue = e.status === "PUBLISHED" && e.closeAt < now;
-                      const computedStatus: ExamStatus = overdue ? "CLOSED" : e.status;
-                      const st = STATUS_LABEL[computedStatus];
+                      const state = lifecycle(e);
+                      const openCount = e.classSessions.filter((item) => item.status === "OPEN").length;
+                      const closedSessionCount = e.classSessions.filter((item) => item.status === "CLOSED").length;
+                      const st = state === "draft"
+                        ? STATUS_LABEL.DRAFT
+                        : state === "closed"
+                          ? STATUS_LABEL.CLOSED
+                          : openCount > 0
+                            ? { label: "有班级进行中", tone: "success" as const }
+                            : { label: "等待班级开考", tone: "default" as const };
                       return (
                         <tr
                           key={e.id}
@@ -302,10 +302,8 @@ export default async function TeacherExamsPage({
                             <Badge variant={st.tone}>{st.label}</Badge>
                           </td>
                           <td className="px-6 py-3.5 text-xs text-muted-foreground">
-                            <div className="num">{formatDate(e.openAt)}</div>
-                            <div className="text-[11px] text-subtle-foreground">
-                              {relativeTime(e.closeAt)}截止
-                            </div>
+                            <div className="num">进行中 {openCount} 个</div>
+                            <div className="text-[11px] text-subtle-foreground">已结束 {closedSessionCount} 个</div>
                           </td>
                           <td className="px-6 py-3.5 num text-muted-foreground">
                             {e.durationMin}m

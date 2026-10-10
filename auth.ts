@@ -8,6 +8,7 @@ import { authConfig } from "@/auth.config";
 const credentialsSchema = z.object({
   identifier: z.string().min(1, "请输入邮箱 / 学号 / 工号"),
   password: z.string().min(1, "请输入密码"),
+  role: z.enum(["STUDENT", "TEACHER", "ADMIN"]),
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -18,12 +19,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         identifier: { label: "邮箱/学号/工号", type: "text" },
         password: { label: "密码", type: "password" },
+        role: { label: "角色", type: "text" },
       },
       async authorize(rawCredentials) {
         const parsed = credentialsSchema.safeParse(rawCredentials);
         if (!parsed.success) return null;
 
-        const { identifier, password } = parsed.data;
+        const { identifier, password, role } = parsed.data;
 
         // 1. 优先按 email 查找；其次按学号/工号
         const user = await prisma.user.findFirst({
@@ -33,6 +35,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
 
         if (!user) return null;
+        if (user.role !== role) return null;
         if (user.status !== "ACTIVE") {
           // SPEC §1.2: DISABLED 拒绝登录
           throw new Error("账号已停用，请联系管理员");

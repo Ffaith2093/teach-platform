@@ -90,7 +90,7 @@ export default async function NewExamPage({
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">新建试卷</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              填写基本信息。发布后学生即可在开考时间参与。
+              填写基本信息并组卷。发布后由教师按班级统一开放考试。
             </p>
           </div>
           <ExamForm
