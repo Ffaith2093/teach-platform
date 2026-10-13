@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/guard";
 import { notifyMany } from "@/lib/notifications";
 import { submitExam } from "@/lib/exams/submit";
+import { normalizeExamQuestionSelections } from "@/lib/exams/selection";
 import type { ResultMode } from "@prisma/client";
 
 // ========== 权限工具 ==========
@@ -284,7 +285,118 @@ export type AddQuestionState = {
   error?: string;
   fieldErrors?: Record<string, string>;
   ok?: boolean;
+  addedCount?: number;
+  skippedCount?: number;
 };
+
+export async function addQuestionsToExamAction(
+  examId: string,
+  _prev: AddQuestionState | undefined,
+  formData: FormData,
+): Promise<AddQuestionState> {
+  const { exam } = await requireExamAccess(examId);
+  if (exam.status !== "DRAFT") return { error: "已发布的试卷不可修改题目" };
+  if (exam.drawRules) return { error: "抽题试卷的题池不可单独修改" };
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(String(formData.get("selections") ?? "[]"));
+  } catch {
+    return { error: "题目选择格式错误" };
+  }
+
+  let selections;
+  try {
+    selections = normalizeExamQuestionSelections(raw);
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
+
+  const teacherId = (await requireSession()).user.id;
+  const libraryIds = selections.filter((item) => item.kind === "LIBRARY").map((item) => item.id);
+  const problemIds = selections.filter((item) => item.kind === "PROGRAMMING").map((item) => item.id);
+  const [libraryQuestions, programmingProblems, existingRows, lastRow] = await Promise.all([
+    prisma.question.findMany({
+      where: {
+        id: { in: libraryIds },
+        bankId: { not: null },
+        bank: { ownerId: teacherId },
+        type: { in: ["SINGLE_CHOICE", "FILL_BLANK"] },
+      },
+      select: { id: true },
+    }),
+    prisma.problem.findMany({
+      where: {
+        id: { in: problemIds },
+        OR: [{ authorId: teacherId }, { isPublic: true }],
+      },
+      select: { id: true, title: true, difficulty: true },
+    }),
+    prisma.examQuestion.findMany({
+      where: { examId },
+      select: { questionId: true, question: { select: { problemId: true } } },
+    }),
+    prisma.examQuestion.findFirst({
+      where: { examId },
+      orderBy: { order: "desc" },
+      select: { order: true },
+    }),
+  ]);
+
+  const allowedLibraryIds = new Set(libraryQuestions.map((question) => question.id));
+  const problemById = new Map(programmingProblems.map((problem) => [problem.id, problem]));
+  if (allowedLibraryIds.size !== libraryIds.length || problemById.size !== problemIds.length) {
+    return { error: "部分题目不存在、不可用，或不属于您的题库" };
+  }
+
+  const existingQuestionIds = new Set(existingRows.map((row) => row.questionId));
+  const existingProblemIds = new Set(
+    existingRows.map((row) => row.question.problemId).filter((id): id is string => Boolean(id)),
+  );
+  const additions = selections.filter((item) =>
+    item.kind === "LIBRARY"
+      ? !existingQuestionIds.has(item.id)
+      : !existingProblemIds.has(item.id),
+  );
+  if (additions.length === 0) {
+    return { error: "所选题目都已经在试卷中" };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    let order = (lastRow?.order ?? -1) + 1;
+    let totalScore = 0;
+    for (const item of additions) {
+      let questionId = item.id;
+      if (item.kind === "PROGRAMMING") {
+        const problem = problemById.get(item.id)!;
+        const wrapper = await tx.question.create({
+          data: {
+            type: "PROGRAMMING",
+            content: problem.title,
+            problemId: problem.id,
+            score: item.score,
+            difficulty: problem.difficulty,
+            courseId: exam.courseId,
+          },
+          select: { id: true },
+        });
+        questionId = wrapper.id;
+      }
+      await tx.examQuestion.create({
+        data: { examId, questionId, score: item.score, order: order++ },
+      });
+      totalScore += item.score;
+    }
+    await tx.exam.update({ where: { id: examId }, data: { totalScore: { increment: totalScore } } });
+  });
+
+  revalidatePath(`/t/exams/${examId}`);
+  return {
+    ok: true,
+    addedCount: additions.length,
+    skippedCount: selections.length - additions.length,
+  };
+}
 
 export async function addQuestionToExamAction(
   examId: string,

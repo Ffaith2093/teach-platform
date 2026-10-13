@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Search, X } from "lucide-react";
+import { Check, Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { AddQuestionState } from "@/app/t/exams/actions";
@@ -48,8 +48,9 @@ export function ExamQuestionPicker({
 }) {
   const [type, setType] = React.useState<keyof typeof TYPE_LABEL>("SINGLE_CHOICE");
   const [query, setQuery] = React.useState("");
-  const [selectedId, setSelectedId] = React.useState("");
-  const [score, setScore] = React.useState(10);
+  const [selections, setSelections] = React.useState<
+    Record<string, { kind: "LIBRARY" | "PROGRAMMING"; id: string; score: number; title: string }>
+  >({});
 
   const normalized = query.trim().toLowerCase().replace(/^#/, "");
   const filteredQuestions = questions.filter((question) => {
@@ -63,10 +64,30 @@ export function ExamQuestionPicker({
     return problem.id.toLowerCase().includes(normalized) || problem.id.slice(-8).toLowerCase().includes(normalized) || problem.title.toLowerCase().includes(normalized);
   });
 
-  function select(id: string, defaultScore = 10) {
-    setSelectedId(id);
-    setScore(Math.max(1, defaultScore));
+  function toggle(kind: "LIBRARY" | "PROGRAMMING", id: string, title: string, defaultScore = 10) {
+    const key = `${kind}:${id}`;
+    setSelections((current) => {
+      if (current[key]) {
+        const next = { ...current };
+        delete next[key];
+        return next;
+      }
+      return {
+        ...current,
+        [key]: { kind, id, title, score: Math.max(1, defaultScore) },
+      };
+    });
   }
+
+  function updateScore(key: string, score: number) {
+    setSelections((current) => ({
+      ...current,
+      [key]: { ...current[key], score: Math.max(1, Math.min(100, score || 1)) },
+    }));
+  }
+
+  const selectedItems = Object.values(selections);
+  const totalScore = selectedItems.reduce((sum, item) => sum + item.score, 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={onClose}>
@@ -86,7 +107,7 @@ export function ExamQuestionPicker({
             <button
               key={value}
               type="button"
-              onClick={() => { setType(value); setSelectedId(""); setQuery(""); }}
+              onClick={() => { setType(value); setQuery(""); }}
               className={`rounded-md px-3 py-1.5 text-sm ${type === value ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
             >
               {TYPE_LABEL[value]}
@@ -114,10 +135,12 @@ export function ExamQuestionPicker({
                   <PickerRow
                     key={problem.id}
                     id={problem.id}
-                    selected={selectedId === problem.id}
+                    selected={Boolean(selections[`PROGRAMMING:${problem.id}`])}
                     title={problem.title}
                     meta={`${DIFFICULTY_LABEL[problem.difficulty]} · ${problem.isPublic ? "公共题" : "我的题目"}`}
-                    onSelect={() => select(problem.id, 20)}
+                    score={selections[`PROGRAMMING:${problem.id}`]?.score ?? 20}
+                    onScoreChange={(score) => updateScore(`PROGRAMMING:${problem.id}`, score)}
+                    onSelect={() => toggle("PROGRAMMING", problem.id, problem.title, 20)}
                   />
                 ))}
               </div>
@@ -128,10 +151,12 @@ export function ExamQuestionPicker({
                 <PickerRow
                   key={question.id}
                   id={question.id}
-                  selected={selectedId === question.id}
+                  selected={Boolean(selections[`LIBRARY:${question.id}`])}
                   title={question.content.replace(/\s+/g, " ").slice(0, 120) || "（无题干）"}
                   meta={`${question.bankName} · ${DIFFICULTY_LABEL[question.difficulty]}`}
-                  onSelect={() => select(question.id, question.defaultScore)}
+                  score={selections[`LIBRARY:${question.id}`]?.score ?? question.defaultScore}
+                  onScoreChange={(score) => updateScore(`LIBRARY:${question.id}`, score)}
+                  onSelect={() => toggle("LIBRARY", question.id, question.content, question.defaultScore)}
                 />
               ))}
             </div>
@@ -139,49 +164,81 @@ export function ExamQuestionPicker({
         </div>
 
         <form action={formAction} className="flex flex-wrap items-end gap-3 border-t border-border bg-muted/30 px-5 py-4">
-          <input type="hidden" name="type" value={type === "PROGRAMMING" ? "PROGRAMMING" : "LIBRARY"} />
-          <input type="hidden" name={type === "PROGRAMMING" ? "problemId" : "questionId"} value={selectedId} />
-          <label className="space-y-1 text-xs text-muted-foreground">
-            <span>本卷分值</span>
-            <input
-              name="score"
-              type="number"
-              min={1}
-              max={100}
-              value={score}
-              onChange={(event) => setScore(Number(event.target.value) || 1)}
-              className="num h-9 w-24 rounded-md border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary"
-            />
-          </label>
+          <input
+            type="hidden"
+            name="selections"
+            value={JSON.stringify(selectedItems.map(({ kind, id, score }) => ({ kind, id, score })))}
+          />
           <div className="min-w-0 flex-1">
-            {selectedId ? (
-              <Badge variant="primary">已选择 #{selectedId.slice(-8).toUpperCase()}</Badge>
+            {selectedItems.length ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="primary">已选择 {selectedItems.length} 道题</Badge>
+                <span className="num text-xs text-muted-foreground">合计 {totalScore} 分</span>
+              </div>
             ) : (
-              <span className="text-xs text-muted-foreground">请先选择一道题</span>
+              <span className="text-xs text-muted-foreground">可跨题型选择多道题目</span>
             )}
             {state?.error && <p className="mt-1 text-xs text-danger">{state.error}</p>}
           </div>
           <Button type="button" variant="outline" onClick={onClose}>取消</Button>
-          <Button type="submit" disabled={pending || !selectedId}>{pending ? "添加中…" : "添加到试卷"}</Button>
+          <Button type="submit" disabled={pending || selectedItems.length === 0}>
+            {pending ? "添加中…" : `添加 ${selectedItems.length} 道题`}
+          </Button>
         </form>
       </div>
     </div>
   );
 }
 
-function PickerRow({ id, selected, title, meta, onSelect }: { id: string; selected: boolean; title: string; meta: string; onSelect: () => void }) {
+function PickerRow({
+  id,
+  selected,
+  title,
+  meta,
+  score,
+  onScoreChange,
+  onSelect,
+}: {
+  id: string;
+  selected: boolean;
+  title: string;
+  meta: string;
+  score: number;
+  onScoreChange: (score: number) => void;
+  onSelect: () => void;
+}) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
+    <div
       className={`flex w-full items-start gap-3 rounded-md border p-3 text-left transition-colors ${selected ? "border-primary bg-primary-subtle/50" : "border-border hover:bg-muted/50"}`}
     >
-      <span className={`mt-0.5 h-4 w-4 shrink-0 rounded-full border-4 ${selected ? "border-primary bg-card" : "border-border bg-card"}`} />
+      <button
+        type="button"
+        onClick={onSelect}
+        className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border ${selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"}`}
+        aria-label={selected ? "取消选择" : "选择题目"}
+      >
+        {selected && <Check className="h-3.5 w-3.5" />}
+      </button>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm text-foreground">{title}</span>
+        <button type="button" onClick={onSelect} className="block w-full text-left text-sm text-foreground">
+          {title}
+        </button>
         <span className="mt-1 block text-xs text-muted-foreground">#{id.slice(-8).toUpperCase()} · {meta}</span>
       </span>
-    </button>
+      {selected && (
+        <label className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+          <span>分值</span>
+          <input
+            type="number"
+            min={1}
+            max={100}
+            value={score}
+            onChange={(event) => onScoreChange(Number(event.target.value))}
+            className="num h-8 w-16 rounded-md border border-border bg-card px-2 text-center text-sm text-foreground outline-none focus:border-primary"
+          />
+        </label>
+      )}
+    </div>
   );
 }
 

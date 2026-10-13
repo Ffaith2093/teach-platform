@@ -171,16 +171,21 @@ export default async function StudentExamDetailPage({
                     </p>
                   </div>
                   {showScore ? (
-                    <div className="rounded-xl border border-border bg-muted/40 px-8 py-4">
-                      <div className="text-xs text-muted-foreground">
-                        {attempt.status === "GRADED" ? "最终得分" : "自动评分"}
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="rounded-xl border border-border bg-muted/40 px-8 py-4">
+                        <div className="text-xs text-muted-foreground">
+                          {attempt.status === "GRADED" ? "最终得分" : "自动评分"}
+                        </div>
+                        <div className="mt-1 num text-3xl font-bold tracking-tight">
+                          {attempt.finalScore ?? attempt.autoScore ?? 0}
+                          <span className="ml-1 text-base font-normal text-muted-foreground">
+                            / {exam.totalScore}
+                          </span>
+                        </div>
                       </div>
-                      <div className="mt-1 num text-3xl font-bold tracking-tight">
-                        {attempt.finalScore ?? attempt.autoScore ?? 0}
-                        <span className="ml-1 text-base font-normal text-muted-foreground">
-                          / {exam.totalScore}
-                        </span>
-                      </div>
+                      <Button asChild>
+                        <Link href={`/exams/${exam.id}/result`}>查看试卷与答题详情</Link>
+                      </Button>
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground">本班考试结束后自动公布成绩。</p>

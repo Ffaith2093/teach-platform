@@ -7,7 +7,7 @@ import { requireSession } from "@/lib/auth/guard";
 import { addJudgeJob } from "@/lib/judge/queue";
 import { notifyMany } from "@/lib/notifications";
 import { recordAccess } from "@/lib/access-log";
-import { runSandbox } from "@/lib/judge/sandbox";
+import { runSandbox, runSandboxWithInput, type CustomRunResult } from "@/lib/judge/sandbox";
 import type { JudgeRunResult } from "@/lib/judge/local";
 import { writeFile, unlink } from "node:fs/promises";
 import { extname, join } from "node:path";
@@ -385,5 +385,35 @@ export async function runAssignmentSampleAction(
     },
   );
 
+  return { ok: true, result };
+}
+
+const runAssignmentCustomInputSchema = runAssignmentSampleSchema.extend({
+  input: z.string().max(20000, "输入数据过长（>20KB）"),
+});
+
+export type RunAssignmentCustomInputState =
+  | { ok: true; result: CustomRunResult; error?: undefined }
+  | { ok?: false; error: string; result?: undefined };
+
+export async function runAssignmentCustomInputAction(input: {
+  assignmentId: string;
+  problemId: string;
+  code: string;
+  input: string;
+}): Promise<RunAssignmentCustomInputState> {
+  const parsed = runAssignmentCustomInputSchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "请检查输入" };
+  try {
+    await requireAssignmentForStudent(parsed.data.assignmentId, parsed.data.problemId);
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
+  const problem = await prisma.problem.findUnique({
+    where: { id: parsed.data.problemId },
+    select: { timeLimitMs: true, memoryLimitMb: true, splitInputByWhitespace: true },
+  });
+  if (!problem) return { error: "题目不存在" };
+  const result = await runSandboxWithInput(parsed.data.code, parsed.data.input, problem);
   return { ok: true, result };
 }

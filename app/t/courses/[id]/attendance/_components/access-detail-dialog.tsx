@@ -41,7 +41,7 @@ export function AccessDetailDialog({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="-mx-1 inline-flex cursor-pointer items-center gap-1.5 rounded px-1 text-left transition-colors hover:text-primary"
+        className="-mx-1 inline-flex max-w-full cursor-pointer items-center gap-1.5 whitespace-nowrap rounded px-1 text-left transition-colors hover:text-primary"
       >
         <span className="font-mono text-[11px] text-muted-foreground num">
           {studentNo ?? "—"}

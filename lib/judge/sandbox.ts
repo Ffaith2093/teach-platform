@@ -140,6 +140,49 @@ export async function runSandbox(
   }
 }
 
+export type CustomRunResult = Pick<
+  JudgeCaseResult,
+  "status" | "timeMs" | "actualOutput" | "errorMsg"
+>;
+
+/** 安全运行一次自定义输入；不与标准答案比对，也不产生分数或提交记录。 */
+export async function runSandboxWithInput(
+  code: string,
+  input: string,
+  limits: JudgeLimits,
+): Promise<CustomRunResult> {
+  const tempRoot = process.env.JUDGE_TMP_DIR ?? tmpdir();
+  await mkdir(tempRoot, { recursive: true });
+  const stageDir = await mkdtemp(join(tempRoot, "judge-custom-"));
+  const createdContainers: import("dockerode").Container[] = [];
+  try {
+    await chmod(stageDir, 0o755);
+    await writeFile(join(stageDir, "main.py"), code, "utf8");
+    await chmod(join(stageDir, "main.py"), 0o644);
+    const result = await runOneCase(
+      stageDir,
+      { input, expected: "", isSample: true, score: 0 },
+      limits,
+      createdContainers,
+    );
+    return {
+      status: result.status,
+      timeMs: result.timeMs,
+      actualOutput: result.actualOutput,
+      errorMsg: result.errorMsg,
+    };
+  } catch (error) {
+    return {
+      status: "SYSTEM_ERROR",
+      timeMs: 0,
+      errorMsg: (error as Error).message,
+    };
+  } finally {
+    await Promise.all(createdContainers.map((container) => container.remove({ force: true }).catch(() => {})));
+    await rm(stageDir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
 async function runOneCase(
   stageDir: string,
   tc: JudgeCaseInput,

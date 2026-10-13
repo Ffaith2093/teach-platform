@@ -17,7 +17,7 @@ import {
   TYPE_LABEL,
 } from "@/app/t/questions/_components/forms";
 import {
-  addQuestionToExamAction,
+  addQuestionsToExamAction,
   removeQuestionFromExamAction,
   type AddQuestionState,
 } from "@/app/t/exams/actions";
@@ -78,7 +78,7 @@ export function QuestionsPanel({
     AddQuestionState | undefined,
     FormData
   >(
-    async (_prev, fd) => addQuestionToExamAction(examId, _prev, fd),
+    async (_prev, fd) => addQuestionsToExamAction(examId, _prev, fd),
     undefined,
   );
 

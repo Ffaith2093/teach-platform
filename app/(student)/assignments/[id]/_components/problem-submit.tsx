@@ -21,6 +21,7 @@ import {
 import type { Difficulty } from "@prisma/client";
 import {
   submitProblemAction,
+  runAssignmentCustomInputAction,
   runAssignmentSampleAction,
 } from "@/app/(student)/assignments/actions";
 import { usePollSubmission } from "@/hooks/use-poll-submission";
@@ -93,6 +94,13 @@ interface LastResult {
   cases: JudgeCaseView[];
 }
 
+interface CustomInputResult {
+  status: string;
+  timeMs: number;
+  actualOutput?: string;
+  errorMsg?: string;
+}
+
 export function ProblemSubmit({
   assignmentId,
   myTotalScore,
@@ -116,6 +124,11 @@ export function ProblemSubmit({
   const [sampleRunning, startSampleTransition] = useTransition();
   const [sampleResult, setSampleResult] = React.useState<JudgeRunResult | null>(null);
   const [sampleError, setSampleError] = React.useState<string | null>(null);
+  const [customInputOpen, setCustomInputOpen] = React.useState(false);
+  const [customInput, setCustomInput] = React.useState("");
+  const [customRunning, startCustomTransition] = useTransition();
+  const [customResult, setCustomResult] = React.useState<CustomInputResult | null>(null);
+  const [customError, setCustomError] = React.useState<string | null>(null);
 
   function handleRunSample() {
     setSampleError(null);
@@ -131,6 +144,21 @@ export function ProblemSubmit({
         setSampleError(res.error ?? "运行失败");
         setSampleResult(null);
       }
+    });
+  }
+
+  function handleCustomRun() {
+    setCustomError(null);
+    setCustomResult(null);
+    startCustomTransition(async () => {
+      const res = await runAssignmentCustomInputAction({
+        assignmentId,
+        problemId: problem.id,
+        code,
+        input: customInput,
+      });
+      if (res.ok) setCustomResult(res.result);
+      else setCustomError(res.error ?? "运行失败");
     });
   }
 
@@ -254,7 +282,7 @@ export function ProblemSubmit({
               {state.error}
             </div>
           )}
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-[11px] text-subtle-foreground">
               提交后将自动跑全部用例（含隐藏用例），隐藏用例的实际输出不会展示。
             </p>
@@ -264,7 +292,7 @@ export function ProblemSubmit({
                 variant="outline"
                 size="sm"
                 onClick={handleRunSample}
-                disabled={sampleRunning || pending || isPolling || !code.trim()}
+                disabled={sampleRunning || customRunning || pending || isPolling || !code.trim()}
               >
                 {sampleRunning ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -273,12 +301,58 @@ export function ProblemSubmit({
                 )}
                 {sampleRunning ? "运行中…" : "运行样例"}
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setCustomInputOpen((open) => !open)}
+                disabled={sampleRunning || customRunning || pending || isPolling}
+              >
+                <Code2 className="h-3.5 w-3.5" />
+                自定义输入
+              </Button>
               <Button type="submit" disabled={pending || isPolling || !code.trim()} size="sm">
                 <Send className="h-3.5 w-3.5" />
                 {pending || isPolling ? "评测中…" : "提交评测"}
               </Button>
             </div>
           </div>
+
+          {customInputOpen && (
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <label htmlFor={`custom-input-${problem.id}`} className="text-xs font-medium text-foreground">
+                  输入数据（stdin）
+                </label>
+                <span className="text-[11px] text-muted-foreground">仅运行，不提交、不计分</span>
+              </div>
+              <textarea
+                id={`custom-input-${problem.id}`}
+                value={customInput}
+                onChange={(event) => setCustomInput(event.target.value)}
+                rows={5}
+                placeholder="输入程序需要读取的数据"
+                className="mt-2 flex w-full resize-y rounded-md border border-border bg-card px-3 py-2 font-mono text-sm outline-none focus:border-primary"
+              />
+              <div className="mt-2 flex justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleCustomRun}
+                  disabled={customRunning || sampleRunning || !code.trim()}
+                >
+                  {customRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+                  {customRunning ? "运行中…" : "运行自定义输入"}
+                </Button>
+              </div>
+              {customError && (
+                <div className="mt-3 rounded-md border border-danger/30 bg-danger-subtle/40 px-3 py-2 text-xs text-danger">
+                  {customError}
+                </div>
+              )}
+              {customResult && <CustomInputResultPanel result={customResult} />}
+            </div>
+          )}
         </form>
 
         {sampleError && (
@@ -469,6 +543,23 @@ function SampleResultPanel({ result }: { result: JudgeRunResult }) {
           ))}
         </div>
       </details>
+    </div>
+  );
+}
+
+function CustomInputResultPanel({ result }: { result: CustomInputResult }) {
+  const succeeded = result.status === "ACCEPTED";
+  return (
+    <div className={`mt-3 rounded-md border p-3 ${succeeded ? "border-success/30 bg-success-subtle/30" : "border-danger/30 bg-danger-subtle/30"}`}>
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <span className="font-medium">运行输出</span>
+        <span className={succeeded ? "text-success" : "text-danger"}>
+          {succeeded ? "运行完成" : (STATUS_LABEL[result.status] ?? result.status)} · {result.timeMs}ms
+        </span>
+      </div>
+      <pre className="mt-2 min-h-16 overflow-x-auto whitespace-pre-wrap rounded bg-card/80 p-2 font-mono text-xs text-foreground">
+        {result.actualOutput || result.errorMsg || "（无输出）"}
+      </pre>
     </div>
   );
 }

@@ -299,21 +299,71 @@ export default async function StudentGradesPage() {
               </CardContent>
             </Card>
           ) : (
-            <Card className="min-w-0 overflow-hidden">
+            <>
+              <div className="space-y-3 md:hidden">
+                {perCourse.map((p) => {
+                  const lastAssign = p.assignmentSubs.find((s) => s.gradedAt);
+                  const lastExam = p.examAttempts.find((a) => a.submittedAt);
+                  const lastActivity = [
+                    lastAssign?.gradedAt ? { at: lastAssign.gradedAt, kind: "作业" } : null,
+                    lastExam?.submittedAt ? { at: lastExam.submittedAt, kind: "考试" } : null,
+                  ]
+                    .filter((x): x is { at: Date; kind: string } => x !== null)
+                    .sort((a, b) => b.at.getTime() - a.at.getTime())[0];
+                  return (
+                    <Card key={p.course.id}>
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <Link
+                              href={`/courses/${p.course.id}`}
+                              className="block truncate font-medium text-foreground hover:text-primary"
+                            >
+                              {p.course.title}
+                            </Link>
+                            <p className="mt-1 whitespace-nowrap text-xs text-muted-foreground">
+                              {p.course.semester}
+                            </p>
+                          </div>
+                          <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-subtle-foreground" />
+                        </div>
+                        <div className="mt-4 grid grid-cols-2 gap-3 text-center">
+                          <MobileGradeMetric
+                            label="作业均分"
+                            value={p.avgAssign == null ? "—" : `${Math.round(p.avgAssign)}%`}
+                            detail={formatRank(p.assignRank, classSize)}
+                          />
+                          <MobileGradeMetric
+                            label="考试均分"
+                            value={p.avgExam == null ? "—" : `${Math.round(p.avgExam)}%`}
+                            detail={formatRank(p.examRank, classSize)}
+                          />
+                        </div>
+                        <div className="mt-3 flex items-center justify-between gap-3 whitespace-nowrap text-xs text-muted-foreground">
+                          <span>作业 {p.gradedAssignments.length}/{p.assignmentSubs.length}</span>
+                          <span>考试 {p.gradedExams.length}/{p.examAttempts.length}</span>
+                          <span>{lastActivity ? `${lastActivity.kind} ${formatDate(lastActivity.at)}` : "暂无活动"}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+              <Card className="hidden min-w-0 overflow-hidden md:block">
               <CardContent className="overflow-x-auto p-0">
-                <table className="min-w-[1120px] w-full text-sm">
+                <table className="min-w-[1080px] w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/50 text-left text-xs font-medium text-muted-foreground">
                       <th className="whitespace-nowrap px-6 py-3">课程</th>
-                      <th className="whitespace-nowrap px-6 py-3">作业</th>
-                      <th className="whitespace-nowrap px-6 py-3">作业均分</th>
-                      <th className="whitespace-nowrap px-6 py-3">vs 班级</th>
-                      <th className="whitespace-nowrap px-6 py-3">班级排名</th>
-                      <th className="whitespace-nowrap px-6 py-3">考试</th>
-                      <th className="whitespace-nowrap px-6 py-3">考试均分</th>
-                      <th className="whitespace-nowrap px-6 py-3">vs 班级</th>
-                      <th className="whitespace-nowrap px-6 py-3">班级排名</th>
-                      <th className="whitespace-nowrap px-6 py-3">最近活动</th>
+                      <th className="whitespace-nowrap px-4 py-3 text-center">作业</th>
+                      <th className="whitespace-nowrap px-4 py-3 text-center">作业均分</th>
+                      <th className="whitespace-nowrap px-4 py-3 text-center">vs 班级</th>
+                      <th className="whitespace-nowrap px-4 py-3 text-center">班级排名</th>
+                      <th className="whitespace-nowrap px-4 py-3 text-center">考试</th>
+                      <th className="whitespace-nowrap px-4 py-3 text-center">考试均分</th>
+                      <th className="whitespace-nowrap px-4 py-3 text-center">vs 班级</th>
+                      <th className="whitespace-nowrap px-4 py-3 text-center">班级排名</th>
+                      <th className="whitespace-nowrap px-4 py-3 text-center">最近活动</th>
                       <th className="w-10"></th>
                     </tr>
                   </thead>
@@ -338,44 +388,41 @@ export default async function StudentGradesPage() {
                             </Link>
                             <div className="mt-0.5 text-[11px] text-subtle-foreground">{p.course.semester}</div>
                           </td>
-                          <td className="px-6 py-3.5 num text-muted-foreground">
+                          <td className="whitespace-nowrap px-4 py-3.5 text-center num text-muted-foreground">
                             {p.gradedAssignments.length} / {p.assignmentSubs.length}
                           </td>
-                          <td className="px-6 py-3.5">
+                          <td className="whitespace-nowrap px-4 py-3.5 text-center">
                             {p.avgAssign == null ? (
                               <span className="text-subtle-foreground">—</span>
                             ) : (
                               <ScoreBadge value={p.avgAssign} />
                             )}
                           </td>
-                          <td className="px-6 py-3.5">
+                          <td className="whitespace-nowrap px-4 py-3.5 text-center">
                             <ClassCompare mine={p.myAssignAvg} classAvg={p.classAssignAvg} />
                           </td>
-                          <td className="px-6 py-3.5">
+                          <td className="whitespace-nowrap px-4 py-3.5 text-center">
                             <RankBadge rank={p.assignRank} total={classSize} />
                           </td>
-                          <td className="px-6 py-3.5 num text-muted-foreground">
+                          <td className="whitespace-nowrap px-4 py-3.5 text-center num text-muted-foreground">
                             {p.gradedExams.length} / {p.examAttempts.length}
                           </td>
-                          <td className="px-6 py-3.5">
+                          <td className="whitespace-nowrap px-4 py-3.5 text-center">
                             {p.avgExam == null ? (
                               <span className="text-subtle-foreground">—</span>
                             ) : (
                               <ScoreBadge value={p.avgExam} />
                             )}
                           </td>
-                          <td className="px-6 py-3.5">
+                          <td className="whitespace-nowrap px-4 py-3.5 text-center">
                             <ClassCompare mine={p.myExamAvg} classAvg={p.classExamAvg} />
                           </td>
-                          <td className="px-6 py-3.5">
+                          <td className="whitespace-nowrap px-4 py-3.5 text-center">
                             <RankBadge rank={p.examRank} total={classSize} />
                           </td>
-                          <td className="px-6 py-3.5 text-xs text-muted-foreground">
+                          <td className="whitespace-nowrap px-4 py-3.5 text-center text-xs text-muted-foreground">
                             {lastActivity ? (
-                              <>
-                                <div className="num">{formatDate(lastActivity.at)}</div>
-                                <div className="text-[11px] text-subtle-foreground">{lastActivity.kind}</div>
-                              </>
+                              <span className="num">{lastActivity.kind} · {formatDate(lastActivity.at)}</span>
                             ) : (
                               <span className="text-subtle-foreground">暂无</span>
                             )}
@@ -389,7 +436,8 @@ export default async function StudentGradesPage() {
                   </tbody>
                 </table>
               </CardContent>
-            </Card>
+              </Card>
+            </>
           )}
         </div>
       </main>
@@ -422,15 +470,28 @@ function ClassCompare({ mine, classAvg }: { mine: number | null; classAvg: numbe
         : "text-danger";
   const arrow = Math.abs(delta) < 0.5 ? "≈" : delta > 0 ? "▲" : "▼";
   return (
-    <div className="flex min-w-[150px] flex-col whitespace-nowrap leading-tight">
+    <div className="inline-flex min-w-[150px] items-center justify-center gap-1 whitespace-nowrap">
       <span className="num text-foreground">
         {Math.round(mine)}
         <span className="ml-0.5 text-subtle-foreground">%</span>
       </span>
       <span className={`num text-[11px] ${tone}`}>
-        {arrow} 班均 {Math.round(classAvg)}% ({sign}
-        {Math.round(delta)})
+        {arrow} 班均 {Math.round(classAvg)}% ({sign}{Math.round(delta)})
       </span>
+    </div>
+  );
+}
+
+function formatRank(rank: number | null, total: number): string {
+  return rank == null || total === 0 ? "暂无排名" : `第 ${rank} / ${total}`;
+}
+
+function MobileGradeMetric({ label, value, detail }: { label: string; value: string; detail: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-muted/30 px-3 py-3">
+      <div className="whitespace-nowrap text-xs text-muted-foreground">{label}</div>
+      <div className="mt-1 whitespace-nowrap text-xl font-semibold num text-foreground">{value}</div>
+      <div className="mt-1 whitespace-nowrap text-[11px] text-subtle-foreground">{detail}</div>
     </div>
   );
 }

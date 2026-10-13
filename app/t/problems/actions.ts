@@ -299,6 +299,25 @@ export async function removeTestCaseAction(problemId: string, testCaseId: string
   revalidatePath(`/t/problems/${problemId}`);
 }
 
+export async function setTestCasesSampleAction(
+  problemId: string,
+  testCaseIds: string[],
+  isSample: boolean,
+) {
+  await requireProblemOwner(problemId);
+  const ids = [...new Set(testCaseIds.filter(Boolean))];
+  if (ids.length === 0) throw new Error("请至少选择一个测试用例");
+  const ownedCount = await prisma.testCase.count({
+    where: { problemId, id: { in: ids } },
+  });
+  if (ownedCount !== ids.length) throw new Error("包含不属于本题的测试用例");
+  await prisma.testCase.updateMany({
+    where: { problemId, id: { in: ids } },
+    data: { isSample },
+  });
+  revalidatePath(`/t/problems/${problemId}`);
+}
+
 // 批量粘贴：每行 `input|||expected|||score`，空行忽略
 export async function batchAddTestCasesAction(
   problemId: string,

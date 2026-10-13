@@ -34,6 +34,7 @@ import {
   updateTestCaseAction,
   removeTestCaseAction,
   batchAddTestCasesAction,
+  setTestCasesSampleAction,
   type CreateProblemState,
   type UpdateProblemState,
 } from "@/app/t/problems/actions";
@@ -370,6 +371,11 @@ function TestCasesSection({
 }) {
   const [batchOpen, setBatchOpen] = React.useState(false);
   const [batchSample, setBatchSample] = React.useState(false);
+  const [selectedTestCaseIds, setSelectedTestCaseIds] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+  const [sampleUpdateError, setSampleUpdateError] = React.useState<string | null>(null);
+  const [sampleUpdating, startSampleUpdate] = React.useTransition();
 
   const [addState, addAction, addingPending] = useActionState(
     async (prev: { error?: string; ok?: boolean } | undefined, fd: FormData) =>
@@ -391,6 +397,42 @@ function TestCasesSection({
       setBatchOpen(false);
     }
   }, [addState?.ok, batchState?.ok, router]);
+
+  React.useEffect(() => {
+    const validIds = new Set(testCases.map((testCase) => testCase.id));
+    setSelectedTestCaseIds((previous) =>
+      new Set([...previous].filter((id) => validIds.has(id))),
+    );
+  }, [testCases]);
+
+  function toggleSelection(testCaseId: string, selected: boolean) {
+    setSelectedTestCaseIds((previous) => {
+      const next = new Set(previous);
+      if (selected) next.add(testCaseId);
+      else next.delete(testCaseId);
+      return next;
+    });
+  }
+
+  function updateSelectedSampleState(isSample: boolean) {
+    const ids = [...selectedTestCaseIds];
+    if (ids.length === 0) return;
+    setSampleUpdateError(null);
+    startSampleUpdate(async () => {
+      try {
+        await setTestCasesSampleAction(problemId, ids, isSample);
+        setTestCases((previous) =>
+          previous.map((testCase) =>
+            selectedTestCaseIds.has(testCase.id) ? { ...testCase, isSample } : testCase,
+          ),
+        );
+        setSelectedTestCaseIds(new Set());
+        router.refresh();
+      } catch (error) {
+        setSampleUpdateError(error instanceof Error ? error.message : "批量更新失败");
+      }
+    });
+  }
 
   function moveTestCase(idx: number, dir: -1 | 1) {
     setTestCases((prev) => {
@@ -482,29 +524,78 @@ function TestCasesSection({
             <p className="mt-1 text-xs text-subtle-foreground">填写上方表单或使用「批量粘贴」</p>
           </div>
         ) : (
-          <ul className="mt-4 space-y-2">
-            {testCases.map((tc, idx) => (
-              <TestCaseRow
-                key={tc.id}
-                tc={tc}
-                idx={idx}
-                total={testCases.length}
-                onMove={(dir) => moveTestCase(idx, dir)}
-                onRemove={() => handleRemove(tc.id)}
-                onUpdate={async (data) => {
-                  const fd = new FormData();
-                  fd.set("input", data.input);
-                  fd.set("expected", data.expected);
-                  if (data.isSample) fd.set("isSample", "on");
-                  fd.set("score", String(data.score));
-                  setTestCases((prev) =>
-                    prev.map((t) => (t.id === tc.id ? { ...t, ...data } : t)),
-                  );
-                  await updateTestCaseAction(problemId, tc.id, undefined, fd);
-                }}
-              />
-            ))}
-          </ul>
+          <>
+            <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
+              <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-foreground">
+                <input
+                  type="checkbox"
+                  checked={selectedTestCaseIds.size === testCases.length}
+                  onChange={(event) =>
+                    setSelectedTestCaseIds(
+                      event.target.checked
+                        ? new Set(testCases.map((testCase) => testCase.id))
+                        : new Set(),
+                    )
+                  }
+                  className="h-3.5 w-3.5 rounded border-border text-primary focus:ring-primary"
+                />
+                全选
+              </label>
+              <span className="text-xs text-muted-foreground">
+                已选 {selectedTestCaseIds.size} / {testCases.length}
+              </span>
+              <div className="ml-auto flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={selectedTestCaseIds.size === 0 || sampleUpdating}
+                  onClick={() => updateSelectedSampleState(true)}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  设为样例
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={selectedTestCaseIds.size === 0 || sampleUpdating}
+                  onClick={() => updateSelectedSampleState(false)}
+                >
+                  <EyeOff className="h-3.5 w-3.5" />
+                  设为隐藏
+                </Button>
+              </div>
+            </div>
+            {sampleUpdateError && (
+              <p className="mt-2 text-xs text-danger">{sampleUpdateError}</p>
+            )}
+            <ul className="mt-2 space-y-2">
+              {testCases.map((tc, idx) => (
+                <TestCaseRow
+                  key={tc.id}
+                  tc={tc}
+                  idx={idx}
+                  total={testCases.length}
+                  selected={selectedTestCaseIds.has(tc.id)}
+                  onSelectedChange={(selected) => toggleSelection(tc.id, selected)}
+                  onMove={(dir) => moveTestCase(idx, dir)}
+                  onRemove={() => handleRemove(tc.id)}
+                  onUpdate={async (data) => {
+                    const fd = new FormData();
+                    fd.set("input", data.input);
+                    fd.set("expected", data.expected);
+                    if (data.isSample) fd.set("isSample", "on");
+                    fd.set("score", String(data.score));
+                    setTestCases((prev) =>
+                      prev.map((t) => (t.id === tc.id ? { ...t, ...data } : t)),
+                    );
+                    await updateTestCaseAction(problemId, tc.id, undefined, fd);
+                  }}
+                />
+              ))}
+            </ul>
+          </>
         )}
 
         {/* 批量粘贴 Dialog */}
@@ -576,6 +667,8 @@ function TestCaseRow({
   tc,
   idx,
   total,
+  selected,
+  onSelectedChange,
   onMove,
   onRemove,
   onUpdate,
@@ -583,6 +676,8 @@ function TestCaseRow({
   tc: TestCase;
   idx: number;
   total: number;
+  selected: boolean;
+  onSelectedChange: (selected: boolean) => void;
   onMove: (dir: -1 | 1) => void;
   onRemove: () => void;
   onUpdate: (data: { input: string; expected: string; isSample: boolean; score: number }) => Promise<void>;
@@ -600,7 +695,7 @@ function TestCaseRow({
     setIsSample(tc.isSample);
     setScore(tc.score);
     setDirty(false);
-  }, [tc.id]);
+  }, [tc.id, tc.input, tc.expected, tc.isSample, tc.score]);
 
   function handleSave() {
     startTransition(async () => {
@@ -619,6 +714,13 @@ function TestCaseRow({
   return (
     <li className="rounded-lg border border-border bg-card p-3">
       <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={(event) => onSelectedChange(event.target.checked)}
+          aria-label={`选择测试用例 ${idx + 1}`}
+          className="h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
+        />
         <div className="flex flex-col items-center text-subtle-foreground">
           <button
             type="button"

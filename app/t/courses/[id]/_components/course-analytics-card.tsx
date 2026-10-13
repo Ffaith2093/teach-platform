@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrendingUp, FileText, GraduationCap } from "lucide-react";
 import { buildAssignmentGradebook, buildExamGradebook } from "@/lib/analytics/gradebook";
 import { formatDate } from "@/lib/utils";
+import { teacherAssignmentHref } from "@/lib/navigation/teacher";
 
 type StudentLite = { id: string; name: string; studentNo: string | null };
 
@@ -311,7 +312,7 @@ function Section({
               const submitted = subMap.get(c.id) ?? 0;
               const href =
                 kind === "assignment"
-                  ? `/t/assignments/${c.id}/submissions`
+                  ? teacherAssignmentHref(c.id)
                   : `/t/exams/${c.id}/monitor`;
               return (
                 <tr key={c.id} className="transition-colors hover:bg-muted/30">

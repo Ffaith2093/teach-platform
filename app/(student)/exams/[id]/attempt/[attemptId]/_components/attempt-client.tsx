@@ -4,9 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Check, CheckCircle2, Clock, Loader2, Play, XCircle } from "lucide-react";
+import { AlertCircle, Check, CheckCircle2, Clock, Code2, Loader2, Play, XCircle } from "lucide-react";
 import {
   runExamSampleAction,
+  runExamCustomInputAction,
   saveAnswerAction,
   submitExamAction,
   type ExamSampleResult,
@@ -522,6 +523,16 @@ function ProgrammingAnswer({
   const [running, startRun] = useTransition();
   const [result, setResult] = useState<ExamSampleResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [customInputOpen, setCustomInputOpen] = useState(false);
+  const [customInput, setCustomInput] = useState("");
+  const [customRunning, startCustomRun] = useTransition();
+  const [customResult, setCustomResult] = useState<{
+    status: string;
+    timeMs: number;
+    actualOutput?: string;
+    errorMsg?: string;
+  } | null>(null);
+  const [customError, setCustomError] = useState<string | null>(null);
 
   function runSamples() {
     setError(null);
@@ -536,6 +547,24 @@ function ProgrammingAnswer({
     });
   }
 
+  function runCustomInput() {
+    setCustomError(null);
+    setCustomResult(null);
+    startCustomRun(async () => {
+      const response = await runExamCustomInputAction({
+        attemptId,
+        questionId,
+        code,
+        input: customInput,
+      });
+      if (!response.ok) {
+        setCustomError(response.error);
+        return;
+      }
+      setCustomResult(response.result);
+    });
+  }
+
   return (
     <div>
       <CodeEditor
@@ -546,19 +575,64 @@ function ProgrammingAnswer({
         minLines={14}
         aria-label="Python 代码编辑器"
       />
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-3 flex flex-wrap items-center gap-3">
         <Button
           type="button"
           size="sm"
           variant="outline"
-          disabled={running || !code.trim()}
+          disabled={running || customRunning || !code.trim()}
           onClick={runSamples}
         >
           {running ? <Loader2 className="animate-spin" /> : <Play />}
           {running ? "运行中…" : "运行全部样例"}
         </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={running || customRunning}
+          onClick={() => setCustomInputOpen((open) => !open)}
+        >
+          <Code2 className="h-4 w-4" />
+          自定义输入
+        </Button>
         <span className="text-xs text-muted-foreground">一次运行本题全部公开测试点</span>
       </div>
+      {customInputOpen && (
+        <div className="mt-3 rounded-lg border border-border bg-muted/30 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <label htmlFor={`exam-custom-input-${questionId}`} className="text-xs font-medium">
+              输入数据（stdin）
+            </label>
+            <span className="text-[11px] text-muted-foreground">仅运行，不保存为答卷、不计分</span>
+          </div>
+          <textarea
+            id={`exam-custom-input-${questionId}`}
+            value={customInput}
+            onChange={(event) => setCustomInput(event.target.value)}
+            rows={5}
+            placeholder="输入程序需要读取的数据"
+            className="mt-2 flex w-full resize-y rounded-md border border-border bg-card px-3 py-2 font-mono text-sm outline-none focus:border-primary"
+          />
+          <div className="mt-2 flex justify-end">
+            <Button
+              type="button"
+              size="sm"
+              disabled={customRunning || running || !code.trim()}
+              onClick={runCustomInput}
+            >
+              {customRunning ? <Loader2 className="animate-spin" /> : <Play />}
+              {customRunning ? "运行中…" : "运行自定义输入"}
+            </Button>
+          </div>
+          {customError && (
+            <div className="mt-3 rounded-md border border-danger/30 bg-danger-subtle/40 px-3 py-2 text-xs text-danger">
+              {customError}
+            </div>
+          )}
+          {customResult && <ExamCustomInputResultPanel result={customResult} />}
+        </div>
+      )}
       {error && (
         <div className="mt-3 rounded-md border border-danger/30 bg-danger-subtle/40 px-3 py-2 text-xs text-danger">
           {error}
@@ -607,6 +681,27 @@ function ExamSampleResultPanel({ result }: { result: ExamSampleResult }) {
           </details>
         ))}
       </div>
+    </div>
+  );
+}
+
+function ExamCustomInputResultPanel({
+  result,
+}: {
+  result: { status: string; timeMs: number; actualOutput?: string; errorMsg?: string };
+}) {
+  const succeeded = result.status === "ACCEPTED";
+  return (
+    <div className={`mt-3 rounded-md border p-3 ${succeeded ? "border-success/30 bg-success-subtle/30" : "border-danger/30 bg-danger-subtle/30"}`}>
+      <div className="flex items-center justify-between gap-2 text-xs">
+        <span className="font-medium">运行输出</span>
+        <span className={succeeded ? "text-success" : "text-danger"}>
+          {succeeded ? "运行完成" : (SAMPLE_STATUS_LABEL[result.status] ?? result.status)} · {result.timeMs}ms
+        </span>
+      </div>
+      <pre className="mt-2 min-h-16 overflow-x-auto whitespace-pre-wrap rounded-md bg-card p-2 font-mono text-xs text-foreground">
+        {result.actualOutput || result.errorMsg || "（无输出）"}
+      </pre>
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { submitExam } from "@/lib/exams/submit";
 import { recordAccess } from "@/lib/access-log";
 import { drawQuestionIds, drawRulesSchema } from "@/lib/exams/rules";
 import { Prisma } from "@prisma/client";
-import { runSandbox } from "@/lib/judge/sandbox";
+import { runSandbox, runSandboxWithInput, type CustomRunResult } from "@/lib/judge/sandbox";
 import type { JudgeRunResult } from "@/lib/judge/local";
 
 async function requireStudent() {
@@ -325,6 +325,64 @@ export async function runExamSampleAction(input: {
   };
 }
 
+export type RunExamCustomInputState =
+  | { ok: true; result: CustomRunResult; error?: undefined }
+  | { ok?: false; error: string; result?: undefined };
+
+export async function runExamCustomInputAction(input: {
+  attemptId: string;
+  questionId: string;
+  code: string;
+  input: string;
+}): Promise<RunExamCustomInputState> {
+  const parsed = runExamSampleSchema
+    .extend({ input: z.string().max(20000, "输入数据过长（>20KB）") })
+    .safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "请检查输入" };
+
+  const session = await requireStudent();
+  const attempt = await prisma.examAttempt.findUnique({
+    where: { id: parsed.data.attemptId },
+    select: {
+      examId: true,
+      studentId: true,
+      status: true,
+      deadlineAt: true,
+      questionIds: true,
+      student: { select: { classId: true } },
+    },
+  });
+  if (!attempt || attempt.studentId !== session.user.id) return { error: "无权访问本次考试" };
+  if (attempt.status !== "IN_PROGRESS" || attempt.deadlineAt.getTime() < Date.now()) {
+    return { error: "本次考试已经结束" };
+  }
+  if (!attempt.student.classId) return { error: "您尚未分配班级" };
+  const classSession = await prisma.examClassSession.findUnique({
+    where: { examId_classId: { examId: attempt.examId, classId: attempt.student.classId } },
+    select: { status: true },
+  });
+  if (classSession?.status !== "OPEN") return { error: "本班考试已经结束" };
+  if (!attempt.questionIds.includes(parsed.data.questionId)) return { error: "题目不属于本次考试" };
+
+  const examQuestion = await prisma.examQuestion.findUnique({
+    where: { examId_questionId: { examId: attempt.examId, questionId: parsed.data.questionId } },
+    select: {
+      question: {
+        select: {
+          type: true,
+          problem: {
+            select: { timeLimitMs: true, memoryLimitMb: true, splitInputByWhitespace: true },
+          },
+        },
+      },
+    },
+  });
+  const problem = examQuestion?.question.type === "PROGRAMMING" ? examQuestion.question.problem : null;
+  if (!problem) return { error: "这不是可运行的编程题" };
+  const result = await runSandboxWithInput(parsed.data.code, parsed.data.input, problem);
+  return { ok: true, result };
+}
+
 // ========== 交卷 ==========
 
 const submitSchema = z.object({
@@ -367,5 +425,5 @@ export async function submitExamAction(
 
   revalidatePath(`/exams/${attempt.examId}`);
   revalidatePath(`/exams/${attempt.examId}/attempt/${parsed.data.attemptId}`);
-  redirect(`/exams/${attempt.examId}`);
+  redirect(`/exams/${attempt.examId}/result`);
 }

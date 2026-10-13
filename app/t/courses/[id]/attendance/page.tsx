@@ -252,10 +252,10 @@ export default async function AttendanceDetailPage({
               <Card>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="min-w-[1180px] w-full text-sm">
                       <thead>
                         <tr className="border-b border-border bg-muted/50 text-left text-xs font-medium text-muted-foreground">
-                          <th className="sticky left-0 z-10 bg-muted/50 px-4 py-3">学生</th>
+                          <th className="sticky left-0 z-10 w-48 min-w-48 bg-muted/50 px-4 py-3">学生</th>
                           {columns.map((c) => (
                             <th
                               key={c.date}
@@ -288,7 +288,7 @@ export default async function AttendanceDetailPage({
                             const entries = userEntries.get(s.id) ?? [];
                             return (
                               <tr key={s.id} className="hover:bg-muted/30">
-                                <td className="sticky left-0 z-10 bg-card px-4 py-2.5 group-hover:bg-muted/30">
+                                <td className="sticky left-0 z-10 w-48 min-w-48 whitespace-nowrap bg-card px-4 py-2.5 group-hover:bg-muted/30">
                                   <AccessDetailDialog
                                     studentName={s.name}
                                     studentNo={s.studentNo}

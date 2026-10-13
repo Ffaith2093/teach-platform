@@ -17,6 +17,8 @@ import {
   BookOpen,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { orderAttemptQuestions } from "@/lib/exams/result";
+import { MarkdownContent } from "@/components/markdown-content";
 
 export const metadata = { title: "考试成绩" };
 
@@ -144,20 +146,14 @@ export default async function ExamResultPage({
           options: true,
           answer: true,
           explanation: true,
-          problem: { select: { id: true, title: true } },
+          problem: { select: { id: true, title: true, description: true } },
         },
       },
     },
   });
 
-  // 按 attempt.questionIds 顺序排列
-  const orderMap = new Map<string, number>();
-  attempt.questionIds.forEach((qid, i) => orderMap.set(qid, i));
-  const ordered = [...examQuestions].sort((a, b) => {
-    const ai = orderMap.get(a.questionId) ?? 999;
-    const bi = orderMap.get(b.questionId) ?? 999;
-    return ai - bi;
-  });
+  // 抽题试卷只展示该学生本次固化的题目，并保持作答顺序。
+  const ordered = orderAttemptQuestions(examQuestions, attempt.questionIds);
 
   const answerMap = new Map(attempt.answers.map((a) => [a.questionId, a]));
 
@@ -178,6 +174,7 @@ export default async function ExamResultPage({
         select: {
           id: true,
           problemId: true,
+          code: true,
           score: true,
           passedCount: true,
           totalCount: true,
@@ -313,9 +310,10 @@ export default async function ExamResultPage({
                         </div>
 
                         {/* 题干 */}
-                        <div className="mt-3 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-foreground">
-                          {q.content}
-                        </div>
+                        <MarkdownContent
+                          content={isProgramming ? q.problem!.description : q.content}
+                          className="mt-3 rounded-lg border border-border bg-muted/30 px-4 py-3"
+                        />
 
                         {/* 客观题：选项 + 你的答案 + 标准答案 */}
                         {!isProgramming && Array.isArray(q.options) && (
@@ -338,6 +336,8 @@ export default async function ExamResultPage({
                                   className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
                                     isCorrectKey
                                       ? "border-success/30 bg-success-subtle/30 text-foreground"
+                                      : isYour
+                                        ? "border-danger/30 bg-danger-subtle/30 text-foreground"
                                       : "border-border bg-card text-muted-foreground"
                                   }`}
                                 >
@@ -351,7 +351,7 @@ export default async function ExamResultPage({
                                   </span>
                                   <span className="flex-1">{opt.text}</span>
                                   {isYour && (
-                                    <Badge variant="primary" className="text-[10px]">
+                                    <Badge variant={isCorrectKey ? "success" : "danger"} className="text-[10px]">
                                       你的答案
                                     </Badge>
                                   )}
@@ -361,9 +361,32 @@ export default async function ExamResultPage({
                           </div>
                         )}
 
+                        {!isProgramming && (q.type === "FILL_BLANK" || q.type === "CODE_BLANK") && (
+                          <div className="mt-3 grid gap-3 md:grid-cols-2">
+                            <AnswerPanel
+                              label="你的答案"
+                              values={answerValues(ans?.content)}
+                              tone={isFull ? "success" : "danger"}
+                            />
+                            <AnswerPanel
+                              label="标准答案"
+                              values={answerValues(q.answer)}
+                              tone="success"
+                            />
+                          </div>
+                        )}
+
                         {/* 编程题：评测结果 */}
                         {isProgramming && sub && (
                           <div className="mt-3 space-y-3">
+                            <div className="overflow-hidden rounded-lg border border-border">
+                              <div className="border-b border-border bg-muted/50 px-4 py-2 text-xs font-medium text-muted-foreground">
+                                你的代码
+                              </div>
+                              <pre className="max-h-80 overflow-auto whitespace-pre p-4 font-mono text-sm leading-6 text-foreground">
+                                {sub.code || "（未作答）"}
+                              </pre>
+                            </div>
                             <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm">
                               <Code className="h-4 w-4 text-primary" />
                               <span>通过</span>
@@ -438,9 +461,7 @@ export default async function ExamResultPage({
                               <BookOpen className="h-3.5 w-3.5" />
                               题目解析
                             </p>
-                            <p className="mt-1.5 whitespace-pre-line text-foreground">
-                              {q.explanation}
-                            </p>
+                            <MarkdownContent content={q.explanation} className="mt-1.5" />
                           </div>
                         )}
                       </div>
@@ -453,5 +474,44 @@ export default async function ExamResultPage({
         </div>
       </main>
     </>
+  );
+}
+
+function answerValues(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map((item) => String(item ?? ""));
+  if (value === null || value === undefined || value === "") return [];
+  return [String(value)];
+}
+
+function AnswerPanel({
+  label,
+  values,
+  tone,
+}: {
+  label: string;
+  values: string[];
+  tone: "success" | "danger";
+}) {
+  return (
+    <div
+      className={`rounded-lg border p-3 ${
+        tone === "success"
+          ? "border-success/30 bg-success-subtle/20"
+          : "border-danger/30 bg-danger-subtle/20"
+      }`}
+    >
+      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {values.length ? (
+          values.map((value, index) => (
+            <code key={index} className="rounded bg-card px-2 py-1 font-mono text-sm text-foreground">
+              {value || "（空）"}
+            </code>
+          ))
+        ) : (
+          <span className="text-sm text-subtle-foreground">未作答</span>
+        )}
+      </div>
+    </div>
   );
 }
