@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "prepare:monaco": "node scripts/copy-monaco-assets.mjs",
+    "predev": "npm run prepare:monaco",
     "dev": "next dev",
+    "prebuild": "npm run prepare:monaco",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",

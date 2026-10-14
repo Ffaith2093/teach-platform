@@ -7,19 +7,26 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Monaco 在浏览器里加载 worker，不能 SSR
-const MonacoEditor = dynamic(() => import("@monaco-editor/react").then((m) => m.Editor), {
-  ssr: false,
-  loading: () => (
-    <div
-      role="status"
-      aria-label="编辑器加载中"
-      className="flex h-[320px] w-full items-center justify-center rounded-lg border border-border bg-muted/30 text-xs text-muted-foreground"
-    >
-      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-      正在加载编辑器…
-    </div>
-  ),
-});
+const MonacoEditor = dynamic(
+  async () => {
+    const monacoReact = await import("@monaco-editor/react");
+    monacoReact.loader.config({ paths: { vs: "/monaco/vs" } });
+    return monacoReact.Editor;
+  },
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        role="status"
+        aria-label="编辑器加载中"
+        className="flex h-[320px] w-full items-center justify-center rounded-lg border border-border bg-muted/30 text-xs text-muted-foreground"
+      >
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        正在加载编辑器…
+      </div>
+    ),
+  },
+);
 
 export interface CodeEditorProps {
   /** 当前代码 */

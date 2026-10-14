@@ -22,6 +22,7 @@ RUN groupadd --gid 10001 pylearn \
 COPY --from=production-dependencies --chown=pylearn:pylearn /app/node_modules ./node_modules
 COPY --chown=pylearn:pylearn package.json package-lock.json tsconfig.json ./
 COPY --from=build --chown=pylearn:pylearn /app/.next ./.next
+COPY --from=build --chown=pylearn:pylearn /app/public ./public
 COPY --chown=pylearn:pylearn lib ./lib
 COPY --chown=pylearn:pylearn prisma ./prisma
 COPY --chown=pylearn:pylearn scripts ./scripts
