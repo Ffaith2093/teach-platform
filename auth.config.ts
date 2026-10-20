@@ -23,11 +23,8 @@ export const authConfig = {
         pathname.startsWith("/_next") ||
         pathname.startsWith("/api/auth");
 
-      if (isPublic) return true;
-      if (!isLoggedIn) return false;
-
       // 已登录用户访问 login：踢回 dashboard
-      if (pathname === "/login") {
+      if (isLoggedIn && pathname === "/login") {
         const role = auth?.user?.role;
         return Response.redirect(
           new URL(
@@ -38,7 +35,7 @@ export const authConfig = {
       }
 
       // 已登录访问根路径：按角色跳转
-      if (pathname === "/") {
+      if (isLoggedIn && pathname === "/") {
         const role = auth?.user?.role;
         return Response.redirect(
           new URL(
@@ -47,6 +44,9 @@ export const authConfig = {
           ),
         );
       }
+
+      if (isPublic) return true;
+      if (!isLoggedIn) return false;
 
       // 角色越权检查
       const role = auth?.user?.role;

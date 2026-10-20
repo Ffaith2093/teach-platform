@@ -10,3 +10,16 @@ test("login does not depend on deployment-specific server action ids", () => {
   assert.match(source, /fetch\(["']\/api\/auth\/session["']/);
   assert.match(source, /window\.location\.assign\(/);
 });
+
+test("authenticated users are redirected before public routes are allowed", () => {
+  const source = readFileSync("auth.config.ts", "utf8");
+  const loginRedirect = source.indexOf('pathname === "/login"');
+  const rootRedirect = source.indexOf('pathname === "/"');
+  const publicBypass = source.indexOf("if (isPublic) return true");
+
+  assert.notEqual(loginRedirect, -1);
+  assert.notEqual(rootRedirect, -1);
+  assert.notEqual(publicBypass, -1);
+  assert.ok(loginRedirect < publicBypass, "login redirect must run before the public-route bypass");
+  assert.ok(rootRedirect < publicBypass, "root redirect must run before the public-route bypass");
+});
