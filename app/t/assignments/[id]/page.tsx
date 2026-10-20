@@ -113,15 +113,18 @@ export default async function TeacherAssignmentDetailPage({
 
   // 可添加的编程题（本人 or 公开，且不在本作业中）
   const usedProblemIds = new Set(problems.map((p) => p.problemId));
-  const availableProblems = await prisma.problem.findMany({
-    where: {
-      id: { notIn: [...usedProblemIds] },
-      OR: [{ authorId: userId }, { isPublic: true }],
-    },
-    select: { id: true, title: true, difficulty: true, isPublic: true },
-    orderBy: { updatedAt: "desc" },
-    take: 100,
-  });
+  const availableProblems =
+    activeTab === "problems"
+      ? await prisma.problem.findMany({
+          where: {
+            id: { notIn: [...usedProblemIds] },
+            OR: [{ authorId: userId }, { isPublic: true }],
+          },
+          select: { id: true, title: true, difficulty: true, isPublic: true },
+          orderBy: { updatedAt: "desc" },
+          take: 100,
+        })
+      : [];
 
   // ========== 提交数据 ==========
   // 概览统计
@@ -195,7 +198,7 @@ export default async function TeacherAssignmentDetailPage({
   const problemIds = problems.map((p) => p.problemId);
 
   const perProblemSubs =
-    allStudents.length > 0 && problemIds.length > 0
+    activeTab === "submissions" && allStudents.length > 0 && problemIds.length > 0
       ? await prisma.submission.findMany({
           where: {
             contextType: "ASSIGNMENT",
@@ -747,6 +750,7 @@ function SubmissionsTab({
                             {sub ? (
                               <Link
                                 href={`/t/assignments/${assignmentId}/submissions/${sub.id}`}
+                                prefetch={false}
                                 className="text-xs text-primary hover:underline"
                               >
                                 查看作答

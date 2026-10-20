@@ -57,6 +57,7 @@ export function BankProblemList({
               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <Link
                   href={`/t/problems/${q.problemId}`}
+                  prefetch={false}
                   className="hover:text-primary"
                 >
                   {q.title}

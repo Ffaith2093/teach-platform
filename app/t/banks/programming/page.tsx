@@ -319,6 +319,7 @@ export default async function PublicProgrammingPage({
                             <div className="flex items-center gap-2">
                               <Link
                                 href={`/t/problems/${p.id}`}
+                                prefetch={false}
                                 className="font-medium text-foreground hover:text-primary"
                               >
                                 {p.title}

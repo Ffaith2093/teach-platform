@@ -271,6 +271,7 @@ export default async function TeacherAssignmentsPage({
                           <td className="px-6 py-3.5">
                             <Link
                               href={`/t/assignments/${a.id}`}
+                              prefetch={false}
                               className="font-medium text-foreground hover:text-primary"
                             >
                               {a.title}

@@ -370,6 +370,7 @@ export default async function CourseStudentsPage({
                               <td className="px-6 py-2.5 font-medium text-foreground">
                                 <Link
                                   href={`/t/students/${s.id}`}
+                                  prefetch={false}
                                   className="transition-colors hover:text-primary"
                                 >
                                   {s.name}

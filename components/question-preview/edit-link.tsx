@@ -5,6 +5,7 @@ export function EditLink({ href, title }: { href: string; title?: string }) {
   return (
     <Link
       href={href}
+      prefetch={false}
       title={title ?? "编辑"}
       className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
     >

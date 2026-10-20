@@ -5,6 +5,7 @@ export function PreviewLink({ id }: { id: string }) {
   return (
     <Link
       href={`/t/banks/preview/${id}`}
+      prefetch={false}
       title="学生视角预览"
       className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
     >

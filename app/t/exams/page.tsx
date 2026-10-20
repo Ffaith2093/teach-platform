@@ -288,6 +288,7 @@ export default async function TeacherExamsPage({
                           <td className="px-6 py-3.5">
                             <Link
                               href={`/t/exams/${e.id}`}
+                              prefetch={false}
                               className="font-medium text-foreground hover:text-primary"
                             >
                               {e.title}
