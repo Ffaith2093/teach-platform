@@ -59,7 +59,9 @@ export async function startExamAction(examId: string) {
     select: { status: true },
   });
   if (classSession?.status !== "OPEN") {
-    throw new Error(classSession?.status === "CLOSED" ? "本班考试已经结束" : "教师尚未为本班开放考试");
+    throw new Error(
+      classSession?.status === "CLOSED" ? "本班考试已经结束" : "教师尚未为本班开放考试",
+    );
   }
 
   // 已存在 attempt？
@@ -96,18 +98,21 @@ export async function startExamAction(examId: string) {
   let attempt;
   try {
     attempt = await prisma.examAttempt.create({
-    data: {
-      examId,
-      studentId,
-      questionIds: pickedIds,
-      startedAt: now,
-      deadlineAt,
-      status: "IN_PROGRESS",
-    },
+      data: {
+        examId,
+        studentId,
+        questionIds: pickedIds,
+        startedAt: now,
+        deadlineAt,
+        status: "IN_PROGRESS",
+      },
     });
   } catch (error) {
-    if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") throw error;
-    attempt = await prisma.examAttempt.findUniqueOrThrow({ where: { examId_studentId: { examId, studentId } } });
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002")
+      throw error;
+    attempt = await prisma.examAttempt.findUniqueOrThrow({
+      where: { examId_studentId: { examId, studentId } },
+    });
     if (attempt.status !== "IN_PROGRESS") throw new Error("您已交卷，无法再次参加");
   }
 
@@ -187,17 +192,35 @@ export async function saveAnswerAction(
 
   // content 是 JSON 字符串
   let jsonContent: unknown;
-  try { jsonContent = JSON.parse(parsed.data.content); } catch { return { error: "答案格式错误" }; }
+  try {
+    jsonContent = JSON.parse(parsed.data.content);
+  } catch {
+    return { error: "答案格式错误" };
+  }
   const { type, options } = question.question;
-  if (type === "SINGLE_CHOICE" && (typeof jsonContent !== "string" ||
-      (jsonContent !== "" && !(Array.isArray(options) && options.some((o) => typeof o === "object" && o !== null && "key" in o && o.key === jsonContent))))) {
+  if (
+    type === "SINGLE_CHOICE" &&
+    (typeof jsonContent !== "string" ||
+      (jsonContent !== "" &&
+        !(
+          Array.isArray(options) &&
+          options.some(
+            (o) => typeof o === "object" && o !== null && "key" in o && o.key === jsonContent,
+          )
+        )))
+  ) {
     return { error: "选项无效" };
   }
-  if ((type === "FILL_BLANK" || type === "CODE_BLANK") &&
-      (!Array.isArray(jsonContent) || jsonContent.length > 30 || jsonContent.some((v) => typeof v !== "string" || v.length > 2000))) {
+  if (
+    (type === "FILL_BLANK" || type === "CODE_BLANK") &&
+    (!Array.isArray(jsonContent) ||
+      jsonContent.length > 30 ||
+      jsonContent.some((v) => typeof v !== "string" || v.length > 2000))
+  ) {
     return { error: "填空答案无效" };
   }
-  if (type === "PROGRAMMING" && (typeof jsonContent !== "string" || jsonContent.length > 100000)) return { error: "代码内容无效" };
+  if (type === "PROGRAMMING" && (typeof jsonContent !== "string" || jsonContent.length > 100000))
+    return { error: "代码内容无效" };
 
   const saved = await prisma.$transaction(async (tx) => {
     const claim = await tx.examAttempt.updateMany({
@@ -215,9 +238,15 @@ export async function saveAnswerAction(
     });
     if (!claim.count) return false;
     await tx.answer.upsert({
-      where: { attemptId_questionId: { attemptId: attempt.id, questionId: parsed.data.questionId } },
+      where: {
+        attemptId_questionId: { attemptId: attempt.id, questionId: parsed.data.questionId },
+      },
       update: { content: jsonContent as never },
-      create: { attemptId: attempt.id, questionId: parsed.data.questionId, content: jsonContent as never },
+      create: {
+        attemptId: attempt.id,
+        questionId: parsed.data.questionId,
+        content: jsonContent as never,
+      },
     });
     return true;
   });
@@ -288,6 +317,8 @@ export async function runExamSampleAction(input: {
               timeLimitMs: true,
               memoryLimitMb: true,
               splitInputByWhitespace: true,
+              ignoreOutputWhitespace: true,
+              ignoreOutputPunctuation: true,
               testCases: {
                 where: { isSample: true },
                 orderBy: { order: "asc" },
@@ -299,7 +330,8 @@ export async function runExamSampleAction(input: {
       },
     },
   });
-  const problem = examQuestion?.question.type === "PROGRAMMING" ? examQuestion.question.problem : null;
+  const problem =
+    examQuestion?.question.type === "PROGRAMMING" ? examQuestion.question.problem : null;
   if (!problem) return { error: "这不是可运行的编程题" };
   if (!problem.testCases.length) return { error: "本题没有公开样例" };
 
@@ -310,6 +342,8 @@ export async function runExamSampleAction(input: {
       timeLimitMs: problem.timeLimitMs,
       memoryLimitMb: problem.memoryLimitMb,
       splitInputByWhitespace: problem.splitInputByWhitespace,
+      ignoreOutputWhitespace: problem.ignoreOutputWhitespace,
+      ignoreOutputPunctuation: problem.ignoreOutputPunctuation,
     },
   );
   return {
@@ -371,13 +405,20 @@ export async function runExamCustomInputAction(input: {
         select: {
           type: true,
           problem: {
-            select: { timeLimitMs: true, memoryLimitMb: true, splitInputByWhitespace: true },
+            select: {
+              timeLimitMs: true,
+              memoryLimitMb: true,
+              splitInputByWhitespace: true,
+              ignoreOutputWhitespace: true,
+              ignoreOutputPunctuation: true,
+            },
           },
         },
       },
     },
   });
-  const problem = examQuestion?.question.type === "PROGRAMMING" ? examQuestion.question.problem : null;
+  const problem =
+    examQuestion?.question.type === "PROGRAMMING" ? examQuestion.question.problem : null;
   if (!problem) return { error: "这不是可运行的编程题" };
   const result = await runSandboxWithInput(parsed.data.code, parsed.data.input, problem);
   return { ok: true, result };

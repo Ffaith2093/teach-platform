@@ -40,7 +40,12 @@ import {
 } from "@/app/t/problems/actions";
 import { MarkdownContent } from "@/components/markdown-content";
 
-const DIFFICULTY_OPTIONS: Array<{ value: Difficulty; label: string; stars: number; tone: "success" | "warning" | "danger" }> = [
+const DIFFICULTY_OPTIONS: Array<{
+  value: Difficulty;
+  label: string;
+  stars: number;
+  tone: "success" | "warning" | "danger";
+}> = [
   { value: "EASY", label: "入门", stars: 1, tone: "success" },
   { value: "MEDIUM", label: "中等", stars: 2, tone: "warning" },
   { value: "HARD", label: "进阶", stars: 3, tone: "danger" },
@@ -65,6 +70,8 @@ interface ProblemEditorProps {
     timeLimitMs: number;
     memoryLimitMb: number;
     splitInputByWhitespace: boolean;
+    ignoreOutputWhitespace: boolean;
+    ignoreOutputPunctuation: boolean;
     starterCode: string;
     referenceSolution: string;
     tags: string[];
@@ -76,7 +83,12 @@ interface ProblemEditorProps {
 const initialCreate: CreateProblemState = {};
 const initialUpdate: UpdateProblemState = {};
 
-export function ProblemEditor({ mode, problemId, initial, testCases: initialTestCases }: ProblemEditorProps) {
+export function ProblemEditor({
+  mode,
+  problemId,
+  initial,
+  testCases: initialTestCases,
+}: ProblemEditorProps) {
   const router = useRouter();
   const isEdit = mode === "edit";
 
@@ -174,7 +186,7 @@ export function ProblemEditor({ mode, problemId, initial, testCases: initialTest
                       <Badge variant={opt.tone} className="font-normal">
                         {opt.label}
                       </Badge>
-                      <span className="text-warning text-xs">{"★".repeat(opt.stars)}</span>
+                      <span className="text-xs text-warning">{"★".repeat(opt.stars)}</span>
                     </label>
                   );
                 })}
@@ -258,24 +270,57 @@ export function ProblemEditor({ mode, problemId, initial, testCases: initialTest
               </div>
             </label>
 
+            <div className="space-y-2 rounded-lg border border-border bg-muted/40 p-3">
+              <div>
+                <div className="text-sm font-medium text-foreground">输出判定规则</div>
+                <div className="text-xs text-muted-foreground">
+                  按题目需要放宽答案格式；不开启时仍只忽略行尾空白和首尾空行
+                </div>
+              </div>
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  name="ignoreOutputWhitespace"
+                  defaultChecked={initial.ignoreOutputWhitespace}
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                />
+                忽略空格、Tab 和换行
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  name="ignoreOutputPunctuation"
+                  defaultChecked={initial.ignoreOutputPunctuation}
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                />
+                中英文标点视为相同
+              </label>
+            </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="prob-desc">题干（Markdown）</Label>
               <div className="grid gap-3 lg:grid-cols-2">
                 <div className="overflow-hidden rounded-lg border border-border bg-muted focus-within:border-primary focus-within:bg-card">
-                  <div className="border-b border-border px-3 py-2 text-xs font-medium text-muted-foreground">Markdown 编辑</div>
+                  <div className="border-b border-border px-3 py-2 text-xs font-medium text-muted-foreground">
+                    Markdown 编辑
+                  </div>
                   <textarea
                     id="prob-desc"
                     name="description"
                     rows={14}
                     value={description}
                     onChange={(event) => setDescription(event.target.value)}
-                    placeholder={'## 题目描述\n\n给定两个整数 a 和 b，求它们的和。\n\n## 输入格式\n一行，两个整数。\n\n## 输出格式\n一个整数。'}
+                    placeholder={
+                      "## 题目描述\n\n给定两个整数 a 和 b，求它们的和。\n\n## 输入格式\n一行，两个整数。\n\n## 输出格式\n一个整数。"
+                    }
                     required
                     className="flex min-h-[340px] w-full resize-y bg-transparent px-3 py-3 font-mono text-sm leading-6 outline-none"
                   />
                 </div>
                 <div className="min-h-[340px] overflow-auto rounded-lg border border-border bg-card">
-                  <div className="sticky top-0 z-[1] border-b border-border bg-card px-3 py-2 text-xs font-medium text-muted-foreground">实时预览</div>
+                  <div className="sticky top-0 z-[1] border-b border-border bg-card px-3 py-2 text-xs font-medium text-muted-foreground">
+                    实时预览
+                  </div>
                   <MarkdownContent
                     content={description}
                     emptyText="在左侧输入 Markdown 后，这里会实时显示学生看到的效果。"
@@ -400,9 +445,7 @@ function TestCasesSection({
 
   React.useEffect(() => {
     const validIds = new Set(testCases.map((testCase) => testCase.id));
-    setSelectedTestCaseIds((previous) =>
-      new Set([...previous].filter((id) => validIds.has(id))),
-    );
+    setSelectedTestCaseIds((previous) => new Set([...previous].filter((id) => validIds.has(id))));
   }, [testCases]);
 
   function toggleSelection(testCaseId: string, selected: boolean) {
@@ -468,7 +511,10 @@ function TestCasesSection({
         </div>
 
         {/* 添加单行 */}
-        <form action={addAction} className="mt-4 rounded-lg border border-dashed border-border bg-muted/30 p-3">
+        <form
+          action={addAction}
+          className="mt-4 rounded-lg border border-dashed border-border bg-muted/30 p-3"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-foreground">添加新用例</span>
             <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -501,7 +547,7 @@ function TestCasesSection({
                 min={0}
                 max={1000}
                 defaultValue={10}
-                className="flex h-9 w-full rounded-lg border border-border bg-card px-2 text-center text-xs num focus-visible:border-primary focus-visible:outline-none"
+                className="num flex h-9 w-full rounded-lg border border-border bg-card px-2 text-center text-xs focus-visible:border-primary focus-visible:outline-none"
                 title="分值"
               />
             </div>
@@ -511,9 +557,7 @@ function TestCasesSection({
               </Button>
             </div>
           </div>
-          {addState?.error && (
-            <p className="mt-2 text-xs text-danger">{addState.error}</p>
-          )}
+          {addState?.error && <p className="mt-2 text-xs text-danger">{addState.error}</p>}
         </form>
 
         {/* 用例列表 */}
@@ -567,9 +611,7 @@ function TestCasesSection({
                 </Button>
               </div>
             </div>
-            {sampleUpdateError && (
-              <p className="mt-2 text-xs text-danger">{sampleUpdateError}</p>
-            )}
+            {sampleUpdateError && <p className="mt-2 text-xs text-danger">{sampleUpdateError}</p>}
             <ul className="mt-2 space-y-2">
               {testCases.map((tc, idx) => (
                 <TestCaseRow
@@ -619,14 +661,12 @@ function TestCasesSection({
                 </button>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                每行一个用例，格式：<code className="rounded bg-muted px-1">输入|||期望输出|||分值</code>，分值可省略默认 10
+                每行一个用例，格式：
+                <code className="rounded bg-muted px-1">输入|||期望输出|||分值</code>
+                ，分值可省略默认 10
               </p>
               <form action={batchAction} className="mt-3 space-y-3">
-                <input
-                  type="hidden"
-                  name="isSample"
-                  value={batchSample ? "on" : ""}
-                />
+                <input type="hidden" name="isSample" value={batchSample ? "on" : ""} />
                 <textarea
                   name="bulk"
                   rows={8}
@@ -643,9 +683,7 @@ function TestCasesSection({
                   />
                   全部作为样例
                 </label>
-                {batchState?.error && (
-                  <p className="text-xs text-danger">{batchState.error}</p>
-                )}
+                {batchState?.error && <p className="text-xs text-danger">{batchState.error}</p>}
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => setBatchOpen(false)}>
                     取消
@@ -680,7 +718,12 @@ function TestCaseRow({
   onSelectedChange: (selected: boolean) => void;
   onMove: (dir: -1 | 1) => void;
   onRemove: () => void;
-  onUpdate: (data: { input: string; expected: string; isSample: boolean; score: number }) => Promise<void>;
+  onUpdate: (data: {
+    input: string;
+    expected: string;
+    isSample: boolean;
+    score: number;
+  }) => Promise<void>;
 }) {
   const [input, setInput] = React.useState(tc.input);
   const [expected, setExpected] = React.useState(tc.expected);
@@ -774,7 +817,7 @@ function TestCaseRow({
                   setScore(Number(e.target.value) || 0);
                   setDirty(true);
                 }}
-                className="h-7 w-16 rounded border border-border bg-muted px-2 text-center num text-foreground focus-visible:border-primary focus-visible:outline-none"
+                className="num h-7 w-16 rounded border border-border bg-muted px-2 text-center text-foreground focus-visible:border-primary focus-visible:outline-none"
               />
             </div>
           </div>

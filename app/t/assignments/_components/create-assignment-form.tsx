@@ -2,7 +2,19 @@
 
 import * as React from "react";
 import { useActionState } from "react";
-import { Check, ChevronRight, ChevronLeft, FileText, BookOpen, Code, Plus, X, Search, ListChecks, Paperclip } from "lucide-react";
+import {
+  Check,
+  ChevronRight,
+  ChevronLeft,
+  FileText,
+  BookOpen,
+  Code,
+  Plus,
+  X,
+  Search,
+  ListChecks,
+  Paperclip,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,7 +63,10 @@ const STEPS = [
   { key: "content", label: "作业内容", icon: ListChecks },
 ] as const;
 
-const DIFFICULTY_LABELS: Record<Difficulty, { label: string; tone: "success" | "warning" | "danger" }> = {
+const DIFFICULTY_LABELS: Record<
+  Difficulty,
+  { label: string; tone: "success" | "warning" | "danger" }
+> = {
   EASY: { label: "入门", tone: "success" },
   MEDIUM: { label: "中等", tone: "warning" },
   HARD: { label: "进阶", tone: "danger" },
@@ -77,14 +92,13 @@ export function CreateAssignmentForm({
   const [courseId, setCourseId] = React.useState<string>(
     initialCourseId && courses.some((c) => c.id === initialCourseId)
       ? initialCourseId
-      : courses[0]?.id ?? "",
+      : (courses[0]?.id ?? ""),
   );
   const [chapterId, setChapterId] = React.useState<string>(initialChapterId ?? "");
   const [allowLate, setAllowLate] = React.useState(true);
   const [picked, setPicked] = React.useState<PickedProblem[]>([]);
   const [pickedQuestions, setPickedQuestions] = React.useState<PickedQuestion[]>([]);
   const [allowAttachment, setAllowAttachment] = React.useState(false);
-  const [attachmentScore, setAttachmentScore] = React.useState(0);
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [pickerSearch, setPickerSearch] = React.useState("");
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -102,9 +116,9 @@ export function CreateAssignmentForm({
 
   const hasContent = picked.length > 0 || pickedQuestions.length > 0 || allowAttachment;
   const canNext = step === 0 ? !!courseId : step === 1 ? true : hasContent;
-  const totalScore = picked.reduce((sum, p) => sum + p.score, 0)
-    + pickedQuestions.reduce((sum, question) => sum + question.assignedScore, 0)
-    + (allowAttachment ? attachmentScore : 0);
+  const totalScore =
+    picked.reduce((sum, p) => sum + p.score, 0) +
+    pickedQuestions.reduce((sum, question) => sum + question.assignedScore, 0);
 
   function addProblem(p: ProblemOption) {
     if (picked.find((x) => x.problemId === p.id)) return;
@@ -196,144 +210,151 @@ export function CreateAssignmentForm({
         <input type="hidden" name="courseId" value={courseId} />
         <input type="hidden" name="chapterId" value={chapterId} />
         <input type="hidden" name="problems" value={JSON.stringify(picked)} />
-        <input type="hidden" name="questions" value={JSON.stringify(pickedQuestions.map((question) => ({ questionId: question.id, score: question.assignedScore })))} />
+        <input
+          type="hidden"
+          name="questions"
+          value={JSON.stringify(
+            pickedQuestions.map((question) => ({
+              questionId: question.id,
+              score: question.assignedScore,
+            })),
+          )}
+        />
 
         {/* 步骤 1：选择课程 */}
         <div className={step === 0 ? "space-y-3" : "hidden"}>
-            <p className="text-sm text-muted-foreground">
-              选择要布置作业的课程（您必须为该课程的主讲或助教）。
-            </p>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {courses.map((c) => {
-                const checked = courseId === c.id;
-                return (
-                  <label
-                    key={c.id}
-                    className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-all ${
-                      checked
-                        ? "border-primary bg-primary-subtle/40"
-                        : "border-border bg-card hover:border-primary/40"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="courseId-radio"
-                      value={c.id}
-                      checked={checked}
-                      onChange={() => setCourseId(c.id)}
-                      className="h-4 w-4 border-border text-primary focus:ring-primary"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-foreground">{c.title}</div>
-                      <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Badge variant="primary" className="font-normal">
-                          {c.role === "OWNER" ? "主讲" : "助教"}
-                        </Badge>
-                        <span className="num">{c.classCount} 个班级</span>
-                      </div>
+          <p className="text-sm text-muted-foreground">
+            选择要布置作业的课程（您必须为该课程的主讲或助教）。
+          </p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {courses.map((c) => {
+              const checked = courseId === c.id;
+              return (
+                <label
+                  key={c.id}
+                  className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-all ${
+                    checked
+                      ? "border-primary bg-primary-subtle/40"
+                      : "border-border bg-card hover:border-primary/40"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="courseId-radio"
+                    value={c.id}
+                    checked={checked}
+                    onChange={() => setCourseId(c.id)}
+                    className="h-4 w-4 border-border text-primary focus:ring-primary"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-foreground">{c.title}</div>
+                    <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Badge variant="primary" className="font-normal">
+                        {c.role === "OWNER" ? "主讲" : "助教"}
+                      </Badge>
+                      <span className="num">{c.classCount} 个班级</span>
                     </div>
-                  </label>
-                );
-              })}
-            </div>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
         </div>
 
         {/* 步骤 2：基本信息 */}
         <div className={step === 1 ? "space-y-4" : "hidden"}>
+          <div className="space-y-1.5">
+            <Label htmlFor="as-title">作业标题</Label>
+            <Input
+              id="as-title"
+              name="title"
+              placeholder="例：第一章 · 变量与数据类型练习"
+              required
+            />
+            {state.fieldErrors?.title && (
+              <p className="text-xs text-danger">{state.fieldErrors.title}</p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="as-desc">作业说明（可选）</Label>
+            <textarea
+              id="as-desc"
+              name="description"
+              rows={3}
+              placeholder="作业要求、提交方式、参考资料链接…"
+              maxLength={2000}
+              className="flex w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus-visible:border-primary focus-visible:bg-card focus-visible:outline-none"
+            />
+            {state.fieldErrors?.description && (
+              <p className="text-xs text-danger">{state.fieldErrors.description}</p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="as-chapter">所属章节（可选）</Label>
+            {courseChapters.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                所选课程暂无章节，可在课程详情页先创建章节
+              </p>
+            ) : (
+              <select
+                id="as-chapter"
+                value={chapterId}
+                onChange={(e) => setChapterId(e.target.value)}
+                className="flex h-9 w-full rounded-lg border border-border bg-muted px-3 text-sm focus-visible:border-primary focus-visible:bg-card focus-visible:outline-none"
+              >
+                <option value="">未分组</option>
+                {courseChapters.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    第 {c.order} 章 · {c.title}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="as-title">作业标题</Label>
-              <Input
-                id="as-title"
-                name="title"
-                placeholder="例：第一章 · 变量与数据类型练习"
-                required
-              />
-              {state.fieldErrors?.title && (
-                <p className="text-xs text-danger">{state.fieldErrors.title}</p>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="as-desc">作业说明（可选）</Label>
-              <textarea
-                id="as-desc"
-                name="description"
-                rows={3}
-                placeholder="作业要求、提交方式、参考资料链接…"
-                maxLength={2000}
-                className="flex w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm focus-visible:border-primary focus-visible:bg-card focus-visible:outline-none"
-              />
-              {state.fieldErrors?.description && (
-                <p className="text-xs text-danger">{state.fieldErrors.description}</p>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="as-chapter">所属章节（可选）</Label>
-              {courseChapters.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                  所选课程暂无章节，可在课程详情页先创建章节
-                </p>
-              ) : (
-                <select
-                  id="as-chapter"
-                  value={chapterId}
-                  onChange={(e) => setChapterId(e.target.value)}
-                  className="flex h-9 w-full rounded-lg border border-border bg-muted px-3 text-sm focus-visible:border-primary focus-visible:bg-card focus-visible:outline-none"
-                >
-                  <option value="">未分组</option>
-                  {courseChapters.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      第 {c.order} 章 · {c.title}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="as-due">截止时间</Label>
-                <input
-                  id="as-due"
-                  name="dueAt"
-                  type="datetime-local"
-                  defaultValue={defaultDueAt}
-                  required
-                  className="flex h-9 w-full rounded-lg border border-border bg-muted px-3 text-sm focus-visible:border-primary focus-visible:bg-card focus-visible:outline-none"
-                />
-                {state.fieldErrors?.dueAt && (
-                  <p className="text-xs text-danger">{state.fieldErrors.dueAt}</p>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="as-late-penalty">迟交扣分（%）</Label>
-                <Input
-                  id="as-late-penalty"
-                  name="latePenalty"
-                  type="number"
-                  min={0}
-                  max={100}
-                  defaultValue={20}
-                />
-              </div>
-            </div>
-
-            <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-muted/40 p-3">
+              <Label htmlFor="as-due">截止时间</Label>
               <input
-                type="checkbox"
-                name="allowLate"
-                checked={allowLate}
-                onChange={(e) => setAllowLate(e.target.checked)}
-                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                id="as-due"
+                name="dueAt"
+                type="datetime-local"
+                defaultValue={defaultDueAt}
+                required
+                className="flex h-9 w-full rounded-lg border border-border bg-muted px-3 text-sm focus-visible:border-primary focus-visible:bg-card focus-visible:outline-none"
               />
-              <div>
-                <div className="text-sm font-medium text-foreground">允许迟交</div>
-                <div className="text-xs text-muted-foreground">
-                  关闭后超过截止时间的提交将被拒绝
-                </div>
-              </div>
-            </label>
+              {state.fieldErrors?.dueAt && (
+                <p className="text-xs text-danger">{state.fieldErrors.dueAt}</p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="as-late-penalty">迟交扣分（%）</Label>
+              <Input
+                id="as-late-penalty"
+                name="latePenalty"
+                type="number"
+                min={0}
+                max={100}
+                defaultValue={20}
+              />
+            </div>
+          </div>
+
+          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-muted/40 p-3">
+            <input
+              type="checkbox"
+              name="allowLate"
+              checked={allowLate}
+              onChange={(e) => setAllowLate(e.target.checked)}
+              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+            />
+            <div>
+              <div className="text-sm font-medium text-foreground">允许迟交</div>
+              <div className="text-xs text-muted-foreground">关闭后超过截止时间的提交将被拒绝</div>
+            </div>
+          </label>
         </div>
 
         {/* 步骤 3：配置作业内容 */}
@@ -342,8 +363,9 @@ export function CreateAssignmentForm({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">
-                  从您创建或公开题库的编程题中选择。已选 <b className="text-foreground num">{picked.length}</b>{" "}
-                  题，总分 <b className="text-foreground num">{totalScore}</b>。
+                  从您创建或公开题库的编程题中选择。已选{" "}
+                  <b className="num text-foreground">{picked.length}</b> 题，总分{" "}
+                  <b className="num text-foreground">{totalScore}</b>。
                 </p>
               </div>
               <Button
@@ -369,7 +391,9 @@ export function CreateAssignmentForm({
               <div className="rounded-lg border border-dashed border-border bg-muted/30 px-6 py-12 text-center text-sm text-muted-foreground">
                 <Code className="mx-auto h-8 w-8 text-subtle-foreground" />
                 <p className="mt-3">还没有挂载任何编程题</p>
-                <p className="mt-1 text-xs text-subtle-foreground">点击右上角「添加编程题」开始选择</p>
+                <p className="mt-1 text-xs text-subtle-foreground">
+                  点击右上角「添加编程题」开始选择
+                </p>
               </div>
             ) : (
               <ul className="space-y-2">
@@ -380,9 +404,7 @@ export function CreateAssignmentForm({
                       key={p.problemId}
                       className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
                     >
-                      <span className="num font-mono text-xs text-subtle-foreground">
-                        #{i + 1}
-                      </span>
+                      <span className="num font-mono text-xs text-subtle-foreground">#{i + 1}</span>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                           {p.title}
@@ -392,7 +414,10 @@ export function CreateAssignmentForm({
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <Label htmlFor={`score-${p.problemId}`} className="text-xs text-muted-foreground">
+                        <Label
+                          htmlFor={`score-${p.problemId}`}
+                          className="text-xs text-muted-foreground"
+                        >
                           分值
                         </Label>
                         <Input
@@ -402,7 +427,7 @@ export function CreateAssignmentForm({
                           max={1000}
                           value={p.score}
                           onChange={(e) => updateScore(p.problemId, Number(e.target.value) || 0)}
-                          className="h-8 w-20 text-center num"
+                          className="num h-8 w-20 text-center"
                         />
                       </div>
                       <div className="flex shrink-0 items-center gap-0.5">
@@ -528,24 +553,124 @@ export function CreateAssignmentForm({
 
           <section className="space-y-3 border-t border-border pt-5">
             <div className="flex items-center justify-between gap-3">
-              <div><h3 className="flex items-center gap-2 text-sm font-semibold"><ListChecks className="h-4 w-4 text-primary" />选择题与填空题</h3><p className="mt-1 text-xs text-muted-foreground">从当前课程或您的题库中选择，提交后自动评分。</p></div>
+              <div>
+                <h3 className="flex items-center gap-2 text-sm font-semibold">
+                  <ListChecks className="h-4 w-4 text-primary" />
+                  选择题与填空题
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  从当前课程或您的题库中选择，提交后自动评分。
+                </p>
+              </div>
             </div>
-            {questions.length === 0 ? <p className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">暂无可用的选择题或填空题</p> : (
+            {questions.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+                暂无可用的选择题或填空题
+              </p>
+            ) : (
               <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-border p-2">
                 {questions.map((question) => {
                   const selected = pickedQuestions.find((item) => item.id === question.id);
-                  return <label key={question.id} className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 hover:bg-muted/50"><input type="checkbox" checked={!!selected} onChange={(event) => setPickedQuestions((current) => event.target.checked ? [...current, { ...question, assignedScore: question.score }] : current.filter((item) => item.id !== question.id))} /><span className="min-w-0 flex-1 truncate text-sm">{question.content}</span><Badge variant="default">{question.type === "SINGLE_CHOICE" ? "选择题" : question.type === "FILL_BLANK" ? "填空题" : "代码填空"}</Badge>{selected && <Input aria-label={`${question.content}分值`} type="number" min={1} max={1000} value={selected.assignedScore} onChange={(event) => setPickedQuestions((current) => current.map((item) => item.id === question.id ? { ...item, assignedScore: Number(event.target.value) || 1 } : item))} className="h-8 w-20 text-center num" />}</label>;
+                  return (
+                    <label
+                      key={question.id}
+                      className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 hover:bg-muted/50"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!!selected}
+                        onChange={(event) =>
+                          setPickedQuestions((current) =>
+                            event.target.checked
+                              ? [...current, { ...question, assignedScore: question.score }]
+                              : current.filter((item) => item.id !== question.id),
+                          )
+                        }
+                      />
+                      <span className="min-w-0 flex-1 truncate text-sm">{question.content}</span>
+                      <Badge variant="default">
+                        {question.type === "SINGLE_CHOICE"
+                          ? "选择题"
+                          : question.type === "FILL_BLANK"
+                            ? "填空题"
+                            : "代码填空"}
+                      </Badge>
+                      {selected && (
+                        <Input
+                          aria-label={`${question.content}分值`}
+                          type="number"
+                          min={1}
+                          max={1000}
+                          value={selected.assignedScore}
+                          onChange={(event) =>
+                            setPickedQuestions((current) =>
+                              current.map((item) =>
+                                item.id === question.id
+                                  ? { ...item, assignedScore: Number(event.target.value) || 1 }
+                                  : item,
+                              ),
+                            )
+                          }
+                          className="num h-8 w-20 text-center"
+                        />
+                      )}
+                    </label>
+                  );
                 })}
               </div>
             )}
           </section>
 
           <section className="space-y-3 border-t border-border pt-5">
-            <label className="flex cursor-pointer items-start gap-3"><input type="checkbox" name="allowAttachment" checked={allowAttachment} onChange={(event) => setAllowAttachment(event.target.checked)} className="mt-1" /><span><span className="flex items-center gap-2 text-sm font-semibold"><Paperclip className="h-4 w-4 text-primary" />附件提交</span><span className="text-xs text-muted-foreground">允许学生上传一份文件，并限制格式和大小。</span></span></label>
-            {allowAttachment && <div className="grid gap-3 pl-7 sm:grid-cols-[1fr_130px_110px]"><div><Label htmlFor="allowed-ext">允许格式</Label><Input id="allowed-ext" name="allowedFileExtensions" required={allowAttachment} defaultValue="pdf,docx,zip" placeholder="pdf,docx,zip" /></div><div><Label htmlFor="max-file-size">上限 MB</Label><Input id="max-file-size" name="maxFileSizeMb" type="number" min={1} max={100} defaultValue={10} /></div><div><Label htmlFor="attachment-score">分值</Label><Input id="attachment-score" name="attachmentScore" type="number" min={0} max={1000} value={attachmentScore} onChange={(event) => setAttachmentScore(Number(event.target.value) || 0)} /></div></div>}
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                name="allowAttachment"
+                checked={allowAttachment}
+                onChange={(event) => setAllowAttachment(event.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                <span className="flex items-center gap-2 text-sm font-semibold">
+                  <Paperclip className="h-4 w-4 text-primary" />
+                  附件提交
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  允许学生上传一份文件，并限制格式和大小。
+                </span>
+              </span>
+            </label>
+            {allowAttachment && (
+              <div className="grid gap-3 pl-7 sm:grid-cols-[1fr_130px]">
+                <div>
+                  <Label htmlFor="allowed-ext">允许格式</Label>
+                  <Input
+                    id="allowed-ext"
+                    name="allowedFileExtensions"
+                    required={allowAttachment}
+                    defaultValue="pdf,docx,zip"
+                    placeholder="pdf,docx,zip"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="max-file-size">上限 MB</Label>
+                  <Input
+                    id="max-file-size"
+                    name="maxFileSizeMb"
+                    type="number"
+                    min={1}
+                    max={100}
+                    defaultValue={10}
+                  />
+                </div>
+              </div>
+            )}
           </section>
 
-          <p className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">当前已配置总分：<b className="num text-foreground">{totalScore}</b>（附件分值会在提交时一并计入作业总分）</p>
+          <p className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+            当前已配置总分：<b className="num text-foreground">{totalScore}</b>
+            （附件仅作补充材料，不计分）
+          </p>
         </div>
 
         {state.error && (
@@ -581,19 +706,13 @@ export function CreateAssignmentForm({
                 >
                   {pending ? "保存中…" : "保存草稿"}
                 </Button>
-                <Button
-                  type="submit"
-                  name="publish"
-                  value="1"
-                  disabled={pending || !canNext}
-                >
+                <Button type="submit" name="publish" value="1" disabled={pending || !canNext}>
                   {pending ? "发布中…" : "直接发布"}
                 </Button>
               </>
             )}
           </div>
         </div>
-
       </form>
     </div>
   );

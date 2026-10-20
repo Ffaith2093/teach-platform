@@ -141,9 +141,10 @@ export type RunSampleState =
   | { ok: true; result: JudgeRunResult; error?: undefined }
   | { ok?: false; error: string; result?: undefined };
 
-export async function runSamplePracticeAction(
-  input: { problemId: string; code: string },
-): Promise<RunSampleState> {
+export async function runSamplePracticeAction(input: {
+  problemId: string;
+  code: string;
+}): Promise<RunSampleState> {
   const parsed = runSampleSchema.safeParse(input);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "请检查输入" };
@@ -168,6 +169,8 @@ export async function runSamplePracticeAction(
       timeLimitMs: true,
       memoryLimitMb: true,
       splitInputByWhitespace: true,
+      ignoreOutputWhitespace: true,
+      ignoreOutputPunctuation: true,
       testCases: {
         where: { isSample: true },
         orderBy: { order: "asc" },
@@ -192,6 +195,8 @@ export async function runSamplePracticeAction(
       timeLimitMs: ctx.problem.timeLimitMs,
       memoryLimitMb: ctx.problem.memoryLimitMb,
       splitInputByWhitespace: problem.splitInputByWhitespace,
+      ignoreOutputWhitespace: problem.ignoreOutputWhitespace,
+      ignoreOutputPunctuation: problem.ignoreOutputPunctuation,
     },
   );
 

@@ -9,12 +9,15 @@ import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/guard";
 import { notifyMany } from "@/lib/notifications";
 import { submitExam } from "@/lib/exams/submit";
+import { finalizeAutomaticExamAttempt } from "@/lib/exams/finalize";
 import { normalizeExamQuestionSelections } from "@/lib/exams/selection";
-import type { ResultMode } from "@prisma/client";
 
 // ========== 权限工具 ==========
 
-export async function requireCourseTeacher(courseId: string, minRole: "OWNER" | "ASSISTANT" = "ASSISTANT") {
+export async function requireCourseTeacher(
+  courseId: string,
+  minRole: "OWNER" | "ASSISTANT" = "ASSISTANT",
+) {
   const session = await requireSession();
   if (session.user.role !== "TEACHER") {
     throw new Error("仅教师可执行此操作");
@@ -32,10 +35,20 @@ export async function requireCourseTeacher(courseId: string, minRole: "OWNER" | 
   return { session, role: ct.role };
 }
 
-export async function requireExamAccess(examId: string, minRole: "OWNER" | "ASSISTANT" = "ASSISTANT") {
+export async function requireExamAccess(
+  examId: string,
+  minRole: "OWNER" | "ASSISTANT" = "ASSISTANT",
+) {
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
-    select: { id: true, courseId: true, title: true, durationMin: true, status: true, drawRules: true },
+    select: {
+      id: true,
+      courseId: true,
+      title: true,
+      durationMin: true,
+      status: true,
+      drawRules: true,
+    },
   });
   if (!exam) throw new Error("试卷不存在");
   const ctx = await requireCourseTeacher(exam.courseId, minRole);
@@ -44,19 +57,18 @@ export async function requireExamAccess(examId: string, minRole: "OWNER" | "ASSI
 
 // ========== 创建试卷 ==========
 
-const createExamSchema = z
-  .object({
-    courseId: z.string().min(1, "请选择课程"),
-    chapterId: z.string().optional().or(z.literal("")),
-    title: z.string().min(1, "试卷标题不能为空").max(100),
-    instructions: z.string().max(2000).optional().or(z.literal("")),
-    durationMin: z.coerce.number().int().min(5, "时长至少 5 分钟").max(360, "时长不超过 360 分钟"),
-    shuffleQuestion: z.boolean().default(true),
-    shuffleOption: z.boolean().default(true),
-    publish: z.boolean().default(false),
-    mode: z.enum(["FIXED", "DRAW"]).default("FIXED"),
-    drawRules: drawRulesSchema.optional(),
-  });
+const createExamSchema = z.object({
+  courseId: z.string().min(1, "请选择课程"),
+  chapterId: z.string().optional().or(z.literal("")),
+  title: z.string().min(1, "试卷标题不能为空").max(100),
+  instructions: z.string().max(2000).optional().or(z.literal("")),
+  durationMin: z.coerce.number().int().min(5, "时长至少 5 分钟").max(360, "时长不超过 360 分钟"),
+  shuffleQuestion: z.boolean().default(true),
+  shuffleOption: z.boolean().default(true),
+  publish: z.boolean().default(false),
+  mode: z.enum(["FIXED", "DRAW"]).default("FIXED"),
+  drawRules: drawRulesSchema.optional(),
+});
 
 export type CreateExamState = {
   error?: string;
@@ -124,7 +136,10 @@ export async function createExamAction(
     const config = parsed.data.drawRules!;
     const bank = await prisma.questionBank.findUnique({
       where: { id: config.bankId },
-      select: { ownerId: true, questions: { select: { id: true, type: true, difficulty: true, tags: true } } },
+      select: {
+        ownerId: true,
+        questions: { select: { id: true, type: true, difficulty: true, tags: true } },
+      },
     });
     if (!bank || bank.ownerId !== session.user.id) return { error: "题库不可用" };
     try {
@@ -155,12 +170,14 @@ export async function createExamAction(
     });
     if (pool) {
       await tx.examQuestion.createMany({
-        data: pool.rules.flatMap((rule, order) => rule.questionIds.map((questionId, index) => ({
-          examId: exam.id,
-          questionId,
-          score: rule.scorePerQuestion,
-          order: order * 10000 + index,
-        }))),
+        data: pool.rules.flatMap((rule, order) =>
+          rule.questionIds.map((questionId, index) => ({
+            examId: exam.id,
+            questionId,
+            score: rule.scorePerQuestion,
+            order: order * 10000 + index,
+          })),
+        ),
       });
     }
     return exam.id;
@@ -184,7 +201,6 @@ const updateExamSchema = z
     closeAt: z.string().min(1),
     shuffleQuestion: z.boolean().default(true),
     shuffleOption: z.boolean().default(true),
-    showResultMode: z.enum(["IMMEDIATELY", "AFTER_CLOSE", "AFTER_GRADED", "NEVER"]),
   })
   .refine(
     (d) => new Date(d.openAt).getTime() < new Date(d.closeAt).getTime(),
@@ -214,7 +230,6 @@ export async function updateExamAction(
     closeAt: formData.get("closeAt"),
     shuffleQuestion: formData.get("shuffleQuestion") === "on",
     shuffleOption: formData.get("shuffleOption") === "on",
-    showResultMode: formData.get("showResultMode") || "AFTER_CLOSE",
   });
   if (!parsed.success) {
     const fieldErrors: NonNullable<UpdateExamState["fieldErrors"]> = {};
@@ -235,7 +250,7 @@ export async function updateExamAction(
       closeAt: new Date(parsed.data.closeAt),
       shuffleQuestion: parsed.data.shuffleQuestion,
       shuffleOption: parsed.data.shuffleOption,
-      showResultMode: parsed.data.showResultMode as ResultMode,
+      showResultMode: "AFTER_CLOSE",
     },
   });
   revalidatePath(`/t/exams/${examId}`);
@@ -314,7 +329,9 @@ export async function addQuestionsToExamAction(
 
   const teacherId = (await requireSession()).user.id;
   const libraryIds = selections.filter((item) => item.kind === "LIBRARY").map((item) => item.id);
-  const problemIds = selections.filter((item) => item.kind === "PROGRAMMING").map((item) => item.id);
+  const problemIds = selections
+    .filter((item) => item.kind === "PROGRAMMING")
+    .map((item) => item.id);
   const [libraryQuestions, programmingProblems, existingRows, lastRow] = await Promise.all([
     prisma.question.findMany({
       where: {
@@ -354,9 +371,7 @@ export async function addQuestionsToExamAction(
     existingRows.map((row) => row.question.problemId).filter((id): id is string => Boolean(id)),
   );
   const additions = selections.filter((item) =>
-    item.kind === "LIBRARY"
-      ? !existingQuestionIds.has(item.id)
-      : !existingProblemIds.has(item.id),
+    item.kind === "LIBRARY" ? !existingQuestionIds.has(item.id) : !existingProblemIds.has(item.id),
   );
   if (additions.length === 0) {
     return { error: "所选题目都已经在试卷中" };
@@ -387,7 +402,10 @@ export async function addQuestionsToExamAction(
       });
       totalScore += item.score;
     }
-    await tx.exam.update({ where: { id: examId }, data: { totalScore: { increment: totalScore } } });
+    await tx.exam.update({
+      where: { id: examId },
+      data: { totalScore: { increment: totalScore } },
+    });
   });
 
   revalidatePath(`/t/exams/${examId}`);
@@ -416,13 +434,15 @@ export async function addQuestionToExamAction(
   let score: number;
 
   if (rawType === "LIBRARY") {
-    const parsed = z.object({
-      questionId: z.string().min(1, "请选择题库题目"),
-      score: z.coerce.number().int().min(1).max(100),
-    }).safeParse({
-      questionId: formData.get("questionId"),
-      score: formData.get("score"),
-    });
+    const parsed = z
+      .object({
+        questionId: z.string().min(1, "请选择题库题目"),
+        score: z.coerce.number().int().min(1).max(100),
+      })
+      .safeParse({
+        questionId: formData.get("questionId"),
+        score: formData.get("score"),
+      });
     if (!parsed.success) return { error: "请选择题库题目并填写分值" };
     const question = await prisma.question.findFirst({
       where: {
@@ -825,11 +845,15 @@ export async function publishExamAction(examId: string) {
   if (count === 0) throw new Error("请先挂载至少一道题再发布");
   if (exam.drawRules) {
     const parsed = drawRulesSchema.safeParse(exam.drawRules);
-    if (!parsed.success || parsed.data.rules.some((rule) => !rule.questionIds || rule.questionIds.length < rule.count)) {
+    if (
+      !parsed.success ||
+      parsed.data.rules.some((rule) => !rule.questionIds || rule.questionIds.length < rule.count)
+    ) {
       throw new Error("抽题规则或题池不完整");
     }
     const ids = parsed.data.rules.flatMap((rule) => rule.questionIds ?? []);
-    if (new Set(ids).size !== ids.length || ids.length !== count) throw new Error("抽题池与规则不一致");
+    if (new Set(ids).size !== ids.length || ids.length !== count)
+      throw new Error("抽题池与规则不一致");
   }
 
   await prisma.exam.update({
@@ -944,6 +968,12 @@ export async function closeExamClassAction(examId: string, classId: string) {
   const failed = settled.filter(
     (result) => result.status === "rejected" || (result.status === "fulfilled" && !result.value.ok),
   ).length;
+
+  const submittedAttempts = await prisma.examAttempt.findMany({
+    where: { examId, student: { classId }, status: { not: "IN_PROGRESS" } },
+    select: { id: true },
+  });
+  await Promise.all(submittedAttempts.map((attempt) => finalizeAutomaticExamAttempt(attempt.id)));
 
   revalidatePath(`/t/exams/${examId}`);
   revalidatePath(`/t/exams/${examId}/monitor`);

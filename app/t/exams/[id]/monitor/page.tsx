@@ -22,10 +22,13 @@ import type { AttemptStatus } from "@prisma/client";
 
 export const metadata = { title: "监考视图" };
 
-const STATUS_LABELS: Record<AttemptStatus, { label: string; tone: "default" | "warning" | "primary" | "success" }> = {
+const STATUS_LABELS: Record<
+  AttemptStatus,
+  { label: string; tone: "default" | "warning" | "primary" | "success" }
+> = {
   IN_PROGRESS: { label: "进行中", tone: "warning" },
   SUBMITTED: { label: "已交卷", tone: "primary" },
-  GRADING: { label: "批改中", tone: "warning" },
+  GRADING: { label: "自动评分中", tone: "warning" },
   GRADED: { label: "已发布", tone: "success" },
 };
 
@@ -81,7 +84,11 @@ export default async function ExamMonitorPage({
 
   const classOptions = exam.course.classes
     .map((item) => item.class)
-    .sort((a, b) => `${a.grade.name}${a.name}`.localeCompare(`${b.grade.name}${b.name}`, "zh-CN", { numeric: true }));
+    .sort((a, b) =>
+      `${a.grade.name}${a.name}`.localeCompare(`${b.grade.name}${b.name}`, "zh-CN", {
+        numeric: true,
+      }),
+    );
   const selectedClassId = classOptions.some((item) => item.id === sp.classId)
     ? sp.classId!
     : (classOptions[0]?.id ?? "");
@@ -140,13 +147,17 @@ export default async function ExamMonitorPage({
     groupedByClass.get(key)!.rows.push(s);
   }
   const groups = Array.from(groupedByClass.values()).sort((a, b) =>
-    a.gradeName === b.gradeName ? a.className.localeCompare(b.className) : a.gradeName.localeCompare(b.gradeName),
+    a.gradeName === b.gradeName
+      ? a.className.localeCompare(b.className)
+      : a.gradeName.localeCompare(b.gradeName),
   );
 
   // stats
   const notStarted = students.filter((s) => !attemptByStudent.has(s.id)).length;
   const inProgress = attempts.filter((a) => a.status === "IN_PROGRESS").length;
-  const submitted = attempts.filter((a) => a.status === "SUBMITTED" || a.status === "GRADING" || a.status === "GRADED").length;
+  const submitted = attempts.filter(
+    (a) => a.status === "SUBMITTED" || a.status === "GRADING" || a.status === "GRADED",
+  ).length;
   const stats = [
     { icon: Users, label: "应到", num: students.length, tone: "muted" as const },
     { icon: PlayCircle, label: "进行中", num: inProgress, tone: "warning" as const },
@@ -173,16 +184,28 @@ export default async function ExamMonitorPage({
             返回考试详情
           </Link>
 
-          <form action={`/t/exams/${exam.id}/monitor`} method="get" className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-4">
+          <form
+            action={`/t/exams/${exam.id}/monitor`}
+            method="get"
+            className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-4"
+          >
             <label className="space-y-1 text-xs font-medium text-muted-foreground">
               <span>监考班级</span>
-              <select name="classId" defaultValue={selectedClassId} className="block h-9 min-w-56 rounded-md border border-border bg-background px-3 text-sm text-foreground">
+              <select
+                name="classId"
+                defaultValue={selectedClassId}
+                className="block h-9 min-w-56 rounded-md border border-border bg-background px-3 text-sm text-foreground"
+              >
                 {classOptions.map((item) => (
-                  <option key={item.id} value={item.id}>{item.grade.name} · {item.name}</option>
+                  <option key={item.id} value={item.id}>
+                    {item.grade.name} · {item.name}
+                  </option>
                 ))}
               </select>
             </label>
-            <Button type="submit" variant="outline" size="sm">查看</Button>
+            <Button type="submit" variant="outline" size="sm">
+              查看
+            </Button>
           </form>
 
           {/* 考试头部 */}
@@ -193,8 +216,20 @@ export default async function ExamMonitorPage({
                   <div className="flex items-center gap-2.5">
                     <GraduationCap className="h-5 w-5 text-primary" />
                     <h1 className="text-2xl font-semibold tracking-tight">{exam.title}</h1>
-                    <Badge variant={classSessionStatus === "OPEN" ? "success" : classSessionStatus === "CLOSED" ? "warning" : "default"}>
-                      {classSessionStatus === "OPEN" ? "进行中" : classSessionStatus === "CLOSED" ? "已结束" : "等待开考"}
+                    <Badge
+                      variant={
+                        classSessionStatus === "OPEN"
+                          ? "success"
+                          : classSessionStatus === "CLOSED"
+                            ? "warning"
+                            : "default"
+                      }
+                    >
+                      {classSessionStatus === "OPEN"
+                        ? "进行中"
+                        : classSessionStatus === "CLOSED"
+                          ? "已结束"
+                          : "等待开考"}
                     </Badge>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -202,13 +237,29 @@ export default async function ExamMonitorPage({
                       {exam.course.title}
                     </Badge>
                     <span>·</span>
-                    <span>{selectedClass ? `${selectedClass.grade.name} · ${selectedClass.name}` : "未选择班级"}</span>
+                    <span>
+                      {selectedClass
+                        ? `${selectedClass.grade.name} · ${selectedClass.name}`
+                        : "未选择班级"}
+                    </span>
                     <span>·</span>
                     <span>时长 {exam.durationMin} 分钟</span>
                     <span>·</span>
-                    <span>{totalQuestions} 题 · 共 {exam.totalScore} 分</span>
-                    {classSession?.openedAt && <><span>·</span><span>开考 {formatDate(classSession.openedAt)}</span></>}
-                    {classSession?.closedAt && <><span>·</span><span>结束 {formatDate(classSession.closedAt)}</span></>}
+                    <span>
+                      {totalQuestions} 题 · 共 {exam.totalScore} 分
+                    </span>
+                    {classSession?.openedAt && (
+                      <>
+                        <span>·</span>
+                        <span>开考 {formatDate(classSession.openedAt)}</span>
+                      </>
+                    )}
+                    {classSession?.closedAt && (
+                      <>
+                        <span>·</span>
+                        <span>结束 {formatDate(classSession.closedAt)}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -236,7 +287,7 @@ export default async function ExamMonitorPage({
                         <Icon className="h-4 w-4" />
                       </div>
                     </div>
-                    <div className="mt-3 text-3xl font-bold tracking-tight num">{s.num}</div>
+                    <div className="num mt-3 text-3xl font-bold tracking-tight">{s.num}</div>
                   </CardContent>
                 </Card>
               );
@@ -259,7 +310,9 @@ export default async function ExamMonitorPage({
                   const a = attemptByStudent.get(s.id) ?? null;
                   return { student: s, attempt: a };
                 });
-                const gInProgress = groupRows.filter((r) => r.attempt?.status === "IN_PROGRESS").length;
+                const gInProgress = groupRows.filter(
+                  (r) => r.attempt?.status === "IN_PROGRESS",
+                ).length;
                 const gSubmitted = groupRows.filter(
                   (r) => r.attempt?.status && r.attempt.status !== "IN_PROGRESS",
                 ).length;
@@ -276,7 +329,9 @@ export default async function ExamMonitorPage({
                               {g.gradeName} · {g.className}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              <span className="num">{g.rows.length}</span> 人 · 进行中 <span className="num">{gInProgress}</span> · 已交卷 <span className="num">{gSubmitted}</span>
+                              <span className="num">{g.rows.length}</span> 人 · 进行中{" "}
+                              <span className="num">{gInProgress}</span> · 已交卷{" "}
+                              <span className="num">{gSubmitted}</span>
                             </div>
                           </div>
                         </div>
@@ -299,7 +354,7 @@ export default async function ExamMonitorPage({
                               if (!attempt) {
                                 return (
                                   <tr key={student.id} className="text-muted-foreground">
-                                    <td className="px-6 py-3 num">{student.studentNo}</td>
+                                    <td className="num px-6 py-3">{student.studentNo}</td>
                                     <td className="px-6 py-3">{student.name}</td>
                                     <td className="px-6 py-3">
                                       <Badge variant="default">未开始</Badge>
@@ -314,8 +369,13 @@ export default async function ExamMonitorPage({
                               const meta = STATUS_LABELS[attempt.status];
                               const isLive = attempt.status === "IN_PROGRESS";
                               return (
-                                <tr key={student.id} className="group transition-colors hover:bg-muted/30">
-                                  <td className="px-6 py-3 num text-muted-foreground">{student.studentNo}</td>
+                                <tr
+                                  key={student.id}
+                                  className="group transition-colors hover:bg-muted/30"
+                                >
+                                  <td className="num px-6 py-3 text-muted-foreground">
+                                    {student.studentNo}
+                                  </td>
                                   <td className="px-6 py-3 font-medium">{student.name}</td>
                                   <td className="px-6 py-3">
                                     <Badge variant={meta.tone}>{meta.label}</Badge>
@@ -323,26 +383,31 @@ export default async function ExamMonitorPage({
                                   <td className="px-6 py-3">
                                     {isLive ? (
                                       <div className="flex flex-col gap-0.5">
-                                        <span className="text-xs text-muted-foreground num">
+                                        <span className="num text-xs text-muted-foreground">
                                           {formatDate(attempt.startedAt)}
                                         </span>
                                         <Countdown deadline={attempt.deadlineAt.toISOString()} />
                                       </div>
                                     ) : attempt.submittedAt ? (
-                                      <span className="text-xs text-muted-foreground num">
+                                      <span className="num text-xs text-muted-foreground">
                                         {formatDate(attempt.submittedAt)}
                                       </span>
                                     ) : (
-                                      <span className="text-xs text-muted-foreground num">
+                                      <span className="num text-xs text-muted-foreground">
                                         {formatDate(attempt.startedAt)}
                                       </span>
                                     )}
                                   </td>
-                                  <td className="px-6 py-3 num text-muted-foreground">
-                                    <span className="font-medium text-foreground">{attempt._count.answers}</span>
-                                    <span className="text-subtle-foreground"> / {totalQuestions}</span>
+                                  <td className="num px-6 py-3 text-muted-foreground">
+                                    <span className="font-medium text-foreground">
+                                      {attempt._count.answers}
+                                    </span>
+                                    <span className="text-subtle-foreground">
+                                      {" "}
+                                      / {totalQuestions}
+                                    </span>
                                   </td>
-                                  <td className="px-6 py-3 num">
+                                  <td className="num px-6 py-3">
                                     {attempt.autoScore != null ? (
                                       <span
                                         className={
@@ -354,7 +419,10 @@ export default async function ExamMonitorPage({
                                         }
                                       >
                                         {attempt.autoScore}
-                                        <span className="text-subtle-foreground"> / {exam.totalScore}</span>
+                                        <span className="text-subtle-foreground">
+                                          {" "}
+                                          / {exam.totalScore}
+                                        </span>
                                       </span>
                                     ) : (
                                       <span className="text-subtle-foreground">—</span>
@@ -382,7 +450,7 @@ export default async function ExamMonitorPage({
           )}
 
           {/* 隐藏 case 提示 */}
-          <div className="rounded-xl border border-info/30 bg-info-subtle/40 p-3 text-xs text-info">
+          <div className="border-info/30 bg-info-subtle/40 text-info rounded-xl border p-3 text-xs">
             <Clock className="mr-1 inline h-3 w-3" />
             倒计时每秒刷新。超过 5 分钟变红，超时变灰。学生剩余时间以 attempt.deadlineAt 为准。
           </div>

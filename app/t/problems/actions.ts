@@ -46,6 +46,8 @@ const createProblemSchema = z.object({
   timeLimitMs: z.coerce.number().int().min(100).max(30000).default(1000),
   memoryLimitMb: z.coerce.number().int().min(16).max(1024).default(256),
   splitInputByWhitespace: z.boolean().default(false),
+  ignoreOutputWhitespace: z.boolean().default(false),
+  ignoreOutputPunctuation: z.boolean().default(false),
   starterCode: z.string().optional().or(z.literal("")),
   referenceSolution: z.string().optional().or(z.literal("")),
   tags: z.array(z.string()).default([]),
@@ -81,6 +83,8 @@ export async function createProblemAction(
     timeLimitMs: formData.get("timeLimitMs") || 1000,
     memoryLimitMb: formData.get("memoryLimitMb") || 256,
     splitInputByWhitespace: formData.get("splitInputByWhitespace") === "on",
+    ignoreOutputWhitespace: formData.get("ignoreOutputWhitespace") === "on",
+    ignoreOutputPunctuation: formData.get("ignoreOutputPunctuation") === "on",
     starterCode: formData.get("starterCode") || undefined,
     referenceSolution: formData.get("referenceSolution") || undefined,
     tags,
@@ -103,6 +107,8 @@ export async function createProblemAction(
       timeLimitMs: parsed.data.timeLimitMs,
       memoryLimitMb: parsed.data.memoryLimitMb,
       splitInputByWhitespace: parsed.data.splitInputByWhitespace,
+      ignoreOutputWhitespace: parsed.data.ignoreOutputWhitespace,
+      ignoreOutputPunctuation: parsed.data.ignoreOutputPunctuation,
       starterCode: parsed.data.starterCode || null,
       referenceSolution: parsed.data.referenceSolution || null,
       tags: parsed.data.tags,
@@ -123,6 +129,8 @@ const updateProblemSchema = z.object({
   timeLimitMs: z.coerce.number().int().min(100).max(30000),
   memoryLimitMb: z.coerce.number().int().min(16).max(1024),
   splitInputByWhitespace: z.boolean().default(false),
+  ignoreOutputWhitespace: z.boolean().default(false),
+  ignoreOutputPunctuation: z.boolean().default(false),
   starterCode: z.string().optional().or(z.literal("")),
   referenceSolution: z.string().optional().or(z.literal("")),
   tags: z.array(z.string()).default([]),
@@ -157,6 +165,8 @@ export async function updateProblemAction(
     timeLimitMs: formData.get("timeLimitMs"),
     memoryLimitMb: formData.get("memoryLimitMb"),
     splitInputByWhitespace: formData.get("splitInputByWhitespace") === "on",
+    ignoreOutputWhitespace: formData.get("ignoreOutputWhitespace") === "on",
+    ignoreOutputPunctuation: formData.get("ignoreOutputPunctuation") === "on",
     starterCode: formData.get("starterCode") || undefined,
     referenceSolution: formData.get("referenceSolution") || undefined,
     tags,
@@ -180,6 +190,8 @@ export async function updateProblemAction(
       timeLimitMs: parsed.data.timeLimitMs,
       memoryLimitMb: parsed.data.memoryLimitMb,
       splitInputByWhitespace: parsed.data.splitInputByWhitespace,
+      ignoreOutputWhitespace: parsed.data.ignoreOutputWhitespace,
+      ignoreOutputPunctuation: parsed.data.ignoreOutputPunctuation,
       starterCode: parsed.data.starterCode || null,
       referenceSolution: parsed.data.referenceSolution || null,
       tags: parsed.data.tags,
@@ -200,9 +212,7 @@ export async function deleteProblemAction(problemId: string) {
   // 检查：是否被作业引用（保护学生成绩）
   const refCount = await prisma.assignmentProblem.count({ where: { problemId } });
   if (refCount > 0) {
-    throw new Error(
-      `该题已被 ${refCount} 份作业引用，无法删除。请改用「共享到公共库」开关`,
-    );
+    throw new Error(`该题已被 ${refCount} 份作业引用，无法删除。请改用「共享到公共库」开关`);
   }
   // 检查：是否被题库引用
   const qCount = await prisma.question.count({ where: { problemId } });
@@ -340,7 +350,14 @@ export async function batchAddTestCasesAction(
   });
   let nextOrder = (lastOrder?.order ?? -1) + 1;
 
-  const data: { problemId: string; input: string; expected: string; isSample: boolean; score: number; order: number }[] = [];
+  const data: {
+    problemId: string;
+    input: string;
+    expected: string;
+    isSample: boolean;
+    score: number;
+    order: number;
+  }[] = [];
   for (const line of lines) {
     const parts = line.split("|||").map((s) => s.trim());
     if (parts.length < 2) continue;
@@ -364,7 +381,14 @@ export async function batchAddTestCasesAction(
 // ========== 跑测试（用参考答案） ==========
 
 export interface RunResult {
-  status: "ACCEPTED" | "WRONG_ANSWER" | "TLE" | "MLE" | "RUNTIME_ERROR" | "COMPILE_ERROR" | "SYSTEM_ERROR";
+  status:
+    | "ACCEPTED"
+    | "WRONG_ANSWER"
+    | "TLE"
+    | "MLE"
+    | "RUNTIME_ERROR"
+    | "COMPILE_ERROR"
+    | "SYSTEM_ERROR";
   passedCount: number;
   totalCount: number;
   maxTimeMs: number;
@@ -433,6 +457,8 @@ export async function runProblemTestsAction(problemId: string): Promise<RunResul
       timeLimitMs: full.timeLimitMs,
       memoryLimitMb: full.memoryLimitMb,
       splitInputByWhitespace: full.splitInputByWhitespace,
+      ignoreOutputWhitespace: full.ignoreOutputWhitespace,
+      ignoreOutputPunctuation: full.ignoreOutputPunctuation,
     },
   );
 

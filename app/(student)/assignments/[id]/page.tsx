@@ -22,10 +22,13 @@ import { AssignmentContentSubmit } from "./_components/assignment-content-submit
 
 export const metadata = { title: "作业详情" };
 
-const STATUS_LABELS: Record<SubmissionStatus, { label: string; tone: "default" | "warning" | "success" | "accent" }> = {
+const STATUS_LABELS: Record<
+  SubmissionStatus,
+  { label: string; tone: "default" | "warning" | "success" | "accent" }
+> = {
   DRAFT: { label: "草稿", tone: "default" },
   SUBMITTED: { label: "已提交", tone: "warning" },
-  GRADED: { label: "已批改", tone: "success" },
+  GRADED: { label: "已自动评分", tone: "success" },
   RETURNED: { label: "已退回", tone: "accent" },
 };
 
@@ -77,7 +80,11 @@ export default async function StudentAssignmentDetailPage({
       },
       questions: {
         orderBy: { order: "asc" },
-        include: { question: { select: { id: true, content: true, type: true, options: true, answer: true } } },
+        include: {
+          question: {
+            select: { id: true, content: true, type: true, options: true, answer: true },
+          },
+        },
       },
     },
   });
@@ -130,7 +137,21 @@ export default async function StudentAssignmentDetailPage({
   // 取每题最新
   const latestByProblem = new Map<
     string,
-    { code: string; status: string; passedCount: number; totalCount: number; score: number; cases: Array<{ order: number; isSample: boolean; status: string; timeMs: number; actualOutput?: string; errorMsg?: string }> }
+    {
+      code: string;
+      status: string;
+      passedCount: number;
+      totalCount: number;
+      score: number;
+      cases: Array<{
+        order: number;
+        isSample: boolean;
+        status: string;
+        timeMs: number;
+        actualOutput?: string;
+        errorMsg?: string;
+      }>;
+    }
   >();
   for (const s of allMySubs) {
     if (latestByProblem.has(s.problemId)) continue;
@@ -147,11 +168,14 @@ export default async function StudentAssignmentDetailPage({
           isSample: jc.testCase.isSample,
           status: jc.status,
           timeMs: jc.timeMs ?? 0,
-          actualOutput: jc.testCase.isSample ? jc.actualOutput ?? undefined : undefined,
+          actualOutput: jc.testCase.isSample ? (jc.actualOutput ?? undefined) : undefined,
           errorMsg:
             s.errorMsg && idx === 0
               ? s.errorMsg.slice(0, 2000)
-              : jc.status === "RUNTIME_ERROR" || jc.status === "COMPILE_ERROR" || jc.status === "TLE" || jc.status === "MLE"
+              : jc.status === "RUNTIME_ERROR" ||
+                  jc.status === "COMPILE_ERROR" ||
+                  jc.status === "TLE" ||
+                  jc.status === "MLE"
                 ? (s.errorMsg?.slice(0, 2000) ?? "")
                 : undefined,
         })),
@@ -196,12 +220,7 @@ export default async function StudentAssignmentDetailPage({
 
   return (
     <>
-      <Topbar
-        crumbs={[
-          { label: "我的作业", href: "/assignments" },
-          { label: assignment.title },
-        ]}
-      />
+      <Topbar crumbs={[{ label: "我的作业", href: "/assignments" }, { label: assignment.title }]} />
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-[1100px] flex-col gap-6">
           <div>
@@ -263,7 +282,7 @@ export default async function StudentAssignmentDetailPage({
                 <div className="text-sm text-muted-foreground">{stat.label}</div>
                 <div className="mt-3 flex items-baseline gap-1">
                   <span
-                    className={`text-3xl font-bold tracking-tight num ${
+                    className={`num text-3xl font-bold tracking-tight ${
                       stat.tone === "success"
                         ? "text-success"
                         : stat.tone === "danger"
@@ -282,7 +301,9 @@ export default async function StudentAssignmentDetailPage({
               <CardContent className="p-5">
                 <div className="text-sm text-muted-foreground">题目数</div>
                 <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-3xl font-bold tracking-tight num">{problemCount + assignment.questions.length}</span>
+                  <span className="num text-3xl font-bold tracking-tight">
+                    {problemCount + assignment.questions.length}
+                  </span>
                   <span className="text-sm text-muted-foreground">题</span>
                 </div>
               </CardContent>
@@ -291,7 +312,9 @@ export default async function StudentAssignmentDetailPage({
               <CardContent className="p-5">
                 <div className="text-sm text-muted-foreground">总分</div>
                 <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-3xl font-bold tracking-tight num">{assignment.totalScore}</span>
+                  <span className="num text-3xl font-bold tracking-tight">
+                    {assignment.totalScore}
+                  </span>
                   <span className="text-sm text-muted-foreground">分</span>
                 </div>
               </CardContent>
@@ -305,7 +328,7 @@ export default async function StudentAssignmentDetailPage({
                     if (ms < 0)
                       return (
                         <>
-                          <span className="text-3xl font-bold tracking-tight text-danger num">
+                          <span className="num text-3xl font-bold tracking-tight text-danger">
                             已截止
                           </span>
                         </>
@@ -314,7 +337,7 @@ export default async function StudentAssignmentDetailPage({
                     const hours = Math.floor((ms % 86400000) / 3600000);
                     return (
                       <>
-                        <span className="text-3xl font-bold tracking-tight num">
+                        <span className="num text-3xl font-bold tracking-tight">
                           {days > 0 ? `${days}` : hours}
                         </span>
                         <span className="text-sm text-muted-foreground">
@@ -336,9 +359,7 @@ export default async function StudentAssignmentDetailPage({
                   <ClipboardCheck className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium">教师反馈</span>
                 </div>
-                <p className="mt-2 whitespace-pre-line text-sm text-foreground">
-                  {mySub.feedback}
-                </p>
+                <p className="mt-2 whitespace-pre-line text-sm text-foreground">{mySub.feedback}</p>
               </CardContent>
             </Card>
           )}
@@ -350,19 +371,29 @@ export default async function StudentAssignmentDetailPage({
                 id: item.questionId,
                 content: item.question.content,
                 type: item.question.type,
-                options: Array.isArray(item.question.options) ? item.question.options as Array<{ key: string; text: string }> : [],
-                blankCount: Array.isArray(item.question.answer) ? Math.max(1, item.question.answer.length) : 1,
+                options: Array.isArray(item.question.options)
+                  ? (item.question.options as Array<{ key: string; text: string }>)
+                  : [],
+                blankCount: Array.isArray(item.question.answer)
+                  ? Math.max(1, item.question.answer.length)
+                  : 1,
                 score: item.score,
               }))}
               allowAttachment={assignment.allowAttachment}
               allowedExtensions={assignment.allowedFileExtensions}
               maxFileSizeMb={assignment.maxFileSizeMb}
-              initialAnswers={mySub?.answers && typeof mySub.answers === "object" && !Array.isArray(mySub.answers) ? mySub.answers as Record<string, unknown> : {}}
+              initialAnswers={
+                mySub?.answers && typeof mySub.answers === "object" && !Array.isArray(mySub.answers)
+                  ? (mySub.answers as Record<string, unknown>)
+                  : {}
+              }
               existingFileName={mySub?.fileName ?? null}
             />
           )}
 
-          {assignment.problems.length === 0 && assignment.questions.length === 0 && !assignment.allowAttachment ? (
+          {assignment.problems.length === 0 &&
+          assignment.questions.length === 0 &&
+          !assignment.allowAttachment ? (
             <Card>
               <CardContent className="flex flex-col items-center gap-3 px-6 py-16 text-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">

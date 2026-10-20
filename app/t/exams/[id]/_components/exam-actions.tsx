@@ -5,11 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ClipboardCheck, Send, Loader2, Trash2, Archive, Activity } from "lucide-react";
-import {
-  publishExamAction,
-  unpublishExamAction,
-  deleteExamAction,
-} from "@/app/t/exams/actions";
+import { publishExamAction, unpublishExamAction, deleteExamAction } from "@/app/t/exams/actions";
 
 export function ExamActions({
   examId,
@@ -57,9 +53,9 @@ export function ExamActions({
         <Button asChild variant="outline" size="sm">
           <Link href={`/t/exams/${examId}/grade`}>
             <ClipboardCheck className="h-3.5 w-3.5" />
-            批改
+            成绩与答卷
             {pendingGradeCount > 0 && (
-              <span className="num ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-warning px-1.5 text-[10px] font-medium text-warning-foreground">
+              <span className="num text-warning-foreground ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-warning px-1.5 text-[10px] font-medium">
                 {pendingGradeCount}
               </span>
             )}

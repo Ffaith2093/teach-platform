@@ -60,22 +60,16 @@ export type ExamAttemptForGradebook = {
 
 export function effectiveAssignmentScore(s: AssignmentSubmissionForGradebook): number | null {
   if (s.finalScore != null) return s.finalScore;
-  if (s.autoScore != null || s.manualScore != null) {
-    return (s.autoScore ?? 0) + (s.manualScore ?? 0);
-  }
-  return null;
+  return s.autoScore;
 }
 
 export function effectiveExamScore(s: ExamAttemptForGradebook, totalScore: number): number | null {
   if (s.finalScore != null) return s.finalScore;
-  if (s.autoScore != null || s.manualScore != null) {
-    return Math.max(0, Math.min((s.autoScore ?? 0) + (s.manualScore ?? 0), totalScore));
-  }
-  return null;
+  return s.autoScore == null ? null : Math.max(0, Math.min(s.autoScore, totalScore));
 }
 
 function cellForStatus(score: number | null, status: string): GradebookCellValue {
-  // GRADED（已批改且有 finalScore） / SUBMITTED（仅提交未批） / NOT_SUBMITTED
+  // GRADED（已自动出分） / SUBMITTED（自动评分中） / NOT_SUBMITTED
   const hasScore = score != null;
   if (!hasScore && status === "DRAFT") return { score: null, status: "NOT_SUBMITTED" };
   if (!hasScore) return { score: null, status: "NOT_SUBMITTED" };

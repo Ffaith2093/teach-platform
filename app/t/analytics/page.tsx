@@ -57,9 +57,7 @@ export default async function TeacherAnalyticsPage() {
       course: { select: { id: true, title: true, isArchived: true } },
     },
   });
-  const myCourses = memberships
-    .filter((m) => !m.course.isArchived)
-    .map((m) => m.course);
+  const myCourses = memberships.filter((m) => !m.course.isArchived).map((m) => m.course);
   const myCourseIds = myCourses.map((c) => c.id);
 
   if (myCourseIds.length === 0) {
@@ -74,9 +72,7 @@ export default async function TeacherAnalyticsPage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
                   <BarChart3 className="h-5 w-5" />
                 </div>
-                <p className="text-sm font-medium text-foreground">
-                  您尚未加入任何课程
-                </p>
+                <p className="text-sm font-medium text-foreground">您尚未加入任何课程</p>
                 <p className="text-xs text-muted-foreground">
                   请联系管理员把您加入课程后再来查看成绩分析。
                 </p>
@@ -196,9 +192,7 @@ export default async function TeacherAnalyticsPage() {
       : [];
   // 限定到过去 30 天内已结束的考试
   const recentExamIds = new Set(
-    exams
-      .filter((e) => e.closeAt >= since && e.closeAt <= now)
-      .map((e) => e.id),
+    exams.filter((e) => e.closeAt >= since && e.closeAt <= now).map((e) => e.id),
   );
   type Aggregator = { sum: number; n: number; pass: number };
   const statsByExam = new Map<string, Aggregator>();
@@ -216,10 +210,7 @@ export default async function TeacherAnalyticsPage() {
     if (total > 0) {
       // 重新算 pass：>= 60% 总分
       const passCount = examAttempts.filter(
-        (a) =>
-          a.examId === eid &&
-          a.finalScore != null &&
-          a.finalScore >= total * 0.6,
+        (a) => a.examId === eid && a.finalScore != null && a.finalScore >= total * 0.6,
       ).length;
       agg.pass = passCount;
     }
@@ -232,16 +223,14 @@ export default async function TeacherAnalyticsPage() {
       (a) => a.publishedAt && a.dueAt >= now,
     ).length;
     const closedAssignments = courseAssignments.filter(
-      (a) =>
-        a.publishedAt && a.dueAt < now && a.dueAt >= since,
+      (a) => a.publishedAt && a.dueAt < now && a.dueAt >= since,
     ).length;
 
     const recentClosedAssignIds = courseAssignments
       .filter((a) => a.publishedAt && a.dueAt < now && a.dueAt >= since)
       .map((a) => a.id);
     const studentIds = studentsByCourse.get(c.id) ?? new Set<string>();
-    const expectedFromClosed =
-      recentClosedAssignIds.length * studentIds.size;
+    const expectedFromClosed = recentClosedAssignIds.length * studentIds.size;
     const submittedFromClosed = recentClosedAssignIds.reduce(
       (sum, id) => sum + (subCountByAssignment.get(id) ?? 0),
       0,
@@ -338,7 +327,7 @@ export default async function TeacherAnalyticsPage() {
       icon: TrendingUp,
       label: "近 30 天作业均分",
       num: recentAssignmentAvg == null ? "—" : recentAssignmentAvg.toFixed(1),
-      hint: "已批改样本",
+      hint: "已出分样本",
       tone: "muted" as const,
     },
     {
@@ -383,7 +372,7 @@ export default async function TeacherAnalyticsPage() {
                         <Icon className="h-4 w-4" />
                       </div>
                     </div>
-                    <div className="mt-3 num text-3xl font-bold tracking-tight">{s.num}</div>
+                    <div className="num mt-3 text-3xl font-bold tracking-tight">{s.num}</div>
                     <div className="mt-1 text-xs text-muted-foreground">{s.hint}</div>
                   </CardContent>
                 </Card>
@@ -419,9 +408,7 @@ function CourseMetricCard({ metric }: { metric: CourseMetric }) {
   const completion =
     metric.assignmentCompletion.expected > 0
       ? Math.round(
-          (metric.assignmentCompletion.submitted /
-            metric.assignmentCompletion.expected) *
-            100,
+          (metric.assignmentCompletion.submitted / metric.assignmentCompletion.expected) * 100,
         )
       : null;
   return (
@@ -445,15 +432,25 @@ function CourseMetricCard({ metric }: { metric: CourseMetric }) {
               )}
             </div>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-              <span><span className="num">{metric.classCount}</span> 个班级</span>
+              <span>
+                <span className="num">{metric.classCount}</span> 个班级
+              </span>
               <span>·</span>
-              <span><span className="num">{metric.studentCount}</span> 名学生</span>
+              <span>
+                <span className="num">{metric.studentCount}</span> 名学生
+              </span>
               <span>·</span>
-              <span>活跃作业 <span className="num">{metric.activeAssignments}</span></span>
+              <span>
+                活跃作业 <span className="num">{metric.activeAssignments}</span>
+              </span>
               <span>·</span>
-              <span>近 30 天截止 <span className="num">{metric.closedAssignments}</span></span>
+              <span>
+                近 30 天截止 <span className="num">{metric.closedAssignments}</span>
+              </span>
               <span>·</span>
-              <span>近 30 天考试 <span className="num">{metric.closedExams}</span></span>
+              <span>
+                近 30 天考试 <span className="num">{metric.closedExams}</span>
+              </span>
             </div>
           </div>
           <Link
@@ -471,7 +468,7 @@ function CourseMetricCard({ metric }: { metric: CourseMetric }) {
             label="作业平均分"
             value={
               metric.assignmentAvg == null ? (
-                <span className="text-muted-foreground">暂无批改数据</span>
+                <span className="text-muted-foreground">暂无出分数据</span>
               ) : (
                 <>
                   <span className="num text-2xl font-bold tracking-tight">
@@ -526,8 +523,8 @@ function CourseMetricCard({ metric }: { metric: CourseMetric }) {
                   <span className="num text-2xl font-bold tracking-tight">
                     {metric.examAvg.toFixed(1)}
                   </span>
-                  <span className="ml-2 num text-sm text-muted-foreground">
-                    及格 {(metric.examPassRate ?? 0) * 100 | 0}%
+                  <span className="num ml-2 text-sm text-muted-foreground">
+                    及格 {((metric.examPassRate ?? 0) * 100) | 0}%
                   </span>
                 </>
               )

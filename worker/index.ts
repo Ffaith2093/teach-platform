@@ -18,7 +18,8 @@
  */
 import { Worker, type Job } from "bullmq";
 import { prisma } from "@/lib/prisma";
-import { finalExamScore, scaledProblemScore } from "@/lib/exams/scoring";
+import { scaledProblemScore } from "@/lib/exams/scoring";
+import { finalizeAutomaticExamAttempt } from "@/lib/exams/finalize";
 import { JUDGE_QUEUE_NAME, type JudgeJobData, redisConnectionOptions } from "@/lib/judge/queue";
 import { runJudge, type JudgeRunResult } from "@/lib/judge/local";
 import { runSandbox } from "@/lib/judge/sandbox";
@@ -26,7 +27,10 @@ import { scoreAssignmentAnswers, scoreAssignmentProblem } from "@/lib/assignment
 import { finalizeAutomaticAssignment } from "@/lib/assignments/finalize";
 
 const backend = process.env.JUDGE_BACKEND ?? "docker";
-const concurrency = Math.min(6, Math.max(1, parseInt(process.env.JUDGE_CONCURRENCY ?? "6", 10) || 6));
+const concurrency = Math.min(
+  6,
+  Math.max(1, parseInt(process.env.JUDGE_CONCURRENCY ?? "6", 10) || 6),
+);
 if (backend !== "docker" && (backend !== "local" || process.env.NODE_ENV === "production")) {
   throw new Error("Only the Docker judge is allowed in production");
 }
@@ -69,13 +73,16 @@ worker.on("completed", (job) => {
 worker.on("failed", (job, err) => {
   console.error(`[judge-worker] job ${job?.id} ✗`, err);
   if (!job) return;
-  void job.getState().then(async (state) => {
-    if (state !== "failed") return;
-    await prisma.submission.updateMany({
-      where: { id: job.data.submissionId, status: { in: ["PENDING", "JUDGING"] } },
-      data: { status: "SYSTEM_ERROR", errorMsg: err.message.slice(0, 2000) },
-    });
-  }).catch((error) => console.error("[judge-worker] failed to finalize job:", error));
+  void job
+    .getState()
+    .then(async (state) => {
+      if (state !== "failed") return;
+      await prisma.submission.updateMany({
+        where: { id: job.data.submissionId, status: { in: ["PENDING", "JUDGING"] } },
+        data: { status: "SYSTEM_ERROR", errorMsg: err.message.slice(0, 2000) },
+      });
+    })
+    .catch((error) => console.error("[judge-worker] failed to finalize job:", error));
 });
 
 async function processSubmission(submissionId: string, retry: boolean): Promise<void> {
@@ -85,7 +92,10 @@ async function processSubmission(submissionId: string, retry: boolean): Promise<
     include: {
       problem: {
         include: {
-          testCases: { orderBy: { order: "asc" }, select: { id: true, input: true, expected: true, isSample: true, score: true } },
+          testCases: {
+            orderBy: { order: "asc" },
+            select: { id: true, input: true, expected: true, isSample: true, score: true },
+          },
         },
       },
     },
@@ -94,7 +104,12 @@ async function processSubmission(submissionId: string, retry: boolean): Promise<
     console.warn(`[judge-worker] submission ${submissionId} not found, skip`);
     return;
   }
-  if (retry && submission.status !== "PENDING" && submission.status !== "JUDGING" && submission.status !== "SYSTEM_ERROR") {
+  if (
+    retry &&
+    submission.status !== "PENDING" &&
+    submission.status !== "JUDGING" &&
+    submission.status !== "SYSTEM_ERROR"
+  ) {
     await propagateToParent(submissionId, submission.score);
     return;
   }
@@ -123,6 +138,8 @@ async function processSubmission(submissionId: string, retry: boolean): Promise<
       timeLimitMs: problem.timeLimitMs,
       memoryLimitMb: problem.memoryLimitMb,
       splitInputByWhitespace: problem.splitInputByWhitespace,
+      ignoreOutputWhitespace: problem.ignoreOutputWhitespace,
+      ignoreOutputPunctuation: problem.ignoreOutputPunctuation,
     },
   );
   if (result.status === "SYSTEM_ERROR") {
@@ -163,7 +180,7 @@ async function processSubmission(submissionId: string, retry: boolean): Promise<
               | "SYSTEM_ERROR",
             timeMs: c?.timeMs ?? 0,
             // 仅 sample 返回实际输出（SPEC §3.1 红线）
-            actualOutput: tc.isSample ? c?.actualOutput ?? null : null,
+            actualOutput: tc.isSample ? (c?.actualOutput ?? null) : null,
           };
         }),
       });
@@ -237,7 +254,13 @@ async function propagateToParent(submissionId: string, totalScore: number): Prom
       include: {
         exam: {
           include: {
-            questions: { select: { questionId: true, score: true, question: { select: { problemId: true, type: true } } } },
+            questions: {
+              select: {
+                questionId: true,
+                score: true,
+                question: { select: { problemId: true, type: true } },
+              },
+            },
           },
         },
       },
@@ -245,9 +268,7 @@ async function propagateToParent(submissionId: string, totalScore: number): Prom
     if (!attempt) return;
 
     // 找到这道编程题对应的 ExamQuestion
-    const eq = attempt.exam.questions.find(
-      (q) => q.question.problemId === sub.problemId,
-    );
+    const eq = attempt.exam.questions.find((q) => q.question.problemId === sub.problemId);
     if (!eq || !attempt.questionIds.includes(eq.questionId) || attempt.status === "GRADED") return;
 
     // 按比例缩放到 ExamQuestion.score
@@ -291,30 +312,12 @@ async function propagateToParent(submissionId: string, totalScore: number): Prom
 }
 
 async function settleExamAttempt(submissionId: string): Promise<void> {
-  const sub = await prisma.submission.findUnique({ where: { id: submissionId }, select: { contextType: true, contextId: true } });
+  const sub = await prisma.submission.findUnique({
+    where: { id: submissionId },
+    select: { contextType: true, contextId: true },
+  });
   if (sub?.contextType !== "EXAM" || !sub.contextId) return;
-  const pending = await prisma.submission.count({ where: { contextType: "EXAM", contextId: sub.contextId, status: { in: ["PENDING", "JUDGING"] } } });
-  if (pending) return;
-
-  const attempt = await prisma.examAttempt.findUnique({
-    where: { id: sub.contextId },
-    select: {
-      status: true,
-      exam: { select: { totalScore: true } },
-      answers: { select: { autoScore: true, manualScore: true } },
-    },
-  });
-  if (!attempt || !["SUBMITTED", "GRADING"].includes(attempt.status)) return;
-
-  const autoScore = attempt.answers.reduce((sum, answer) => sum + (answer.autoScore ?? 0), 0);
-  await prisma.examAttempt.updateMany({
-    where: { id: sub.contextId, status: { in: ["SUBMITTED", "GRADING"] } },
-    data: {
-      status: "GRADED",
-      autoScore,
-      finalScore: finalExamScore(attempt.answers, attempt.exam.totalScore),
-    },
-  });
+  await finalizeAutomaticExamAttempt(sub.contextId);
 }
 
 // 优雅退出

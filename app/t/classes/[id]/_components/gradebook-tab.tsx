@@ -209,8 +209,8 @@ export async function GradebookTab({
 
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <span>
-          共 <span className="num font-medium text-foreground">{gradebook.columns.length}</span> 项 ·
-          班级平均{" "}
+          共 <span className="num font-medium text-foreground">{gradebook.columns.length}</span> 项
+          · 班级平均{" "}
           <span className="num font-medium text-foreground">
             {gradebook.overallAverage != null ? gradebook.overallAverage.toFixed(1) : "—"}
           </span>
@@ -236,7 +236,7 @@ export async function GradebookTab({
                     title={`${col.title} · 总分 ${col.totalScore} · ${formatDate(col.at)}`}
                   >
                     <div className="line-clamp-2 text-foreground">{col.title}</div>
-                    <div className="mt-0.5 text-[10px] font-normal num text-muted-foreground">
+                    <div className="num mt-0.5 text-[10px] font-normal text-muted-foreground">
                       / {col.totalScore}
                     </div>
                   </th>
@@ -296,9 +296,7 @@ export async function GradebookTab({
                 })}
                 <td className="sticky right-0 z-10 border-l border-t border-border bg-muted/60 px-3 py-2.5 text-center">
                   <span className="num text-sm font-bold text-foreground">
-                    {gradebook.overallAverage != null
-                      ? gradebook.overallAverage.toFixed(1)
-                      : "—"}
+                    {gradebook.overallAverage != null ? gradebook.overallAverage.toFixed(1) : "—"}
                   </span>
                 </td>
               </tr>
@@ -324,7 +322,7 @@ function CellTd({ cell, total }: { cell: GradebookCellValue | undefined; total: 
       <span className={`num text-sm font-medium ${TONE_TEXT[tone]}`}>
         {cell.score}
         {cell.status === "SUBMITTED" && (
-          <span className="ml-0.5 text-[10px] text-muted-foreground" title="已提交未批改">
+          <span className="ml-0.5 text-[10px] text-muted-foreground" title="已提交，自动评分中">
             ·
           </span>
         )}
@@ -373,9 +371,7 @@ function FilterBar({
               key={k}
               href={`/t/classes/${classId}?tab=gradebook&courseId=${selectedCourseId}&kind=${k}`}
               className={`inline-flex items-center gap-1 rounded px-3 py-1 text-xs transition-colors ${
-                active
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                active ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {k === "assignment" ? (

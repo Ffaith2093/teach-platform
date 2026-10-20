@@ -13,7 +13,10 @@ export const metadata = { title: "我的提交" };
 
 type Tab = "all" | "practice" | "assignment" | "exam";
 
-const JUDGE_LABELS: Record<JudgeStatus, { label: string; tone: "default" | "warning" | "success" | "danger" | "primary" }> = {
+const JUDGE_LABELS: Record<
+  JudgeStatus,
+  { label: string; tone: "default" | "warning" | "success" | "danger" | "primary" }
+> = {
   PENDING: { label: "等待评测", tone: "default" },
   JUDGING: { label: "评测中", tone: "warning" },
   ACCEPTED: { label: "通过", tone: "success" },
@@ -25,18 +28,24 @@ const JUDGE_LABELS: Record<JudgeStatus, { label: string; tone: "default" | "warn
   SYSTEM_ERROR: { label: "系统错误", tone: "danger" },
 };
 
-const ASSIGN_LABELS: Record<SubmissionStatus, { label: string; tone: "default" | "warning" | "success" | "danger" | "accent" }> = {
+const ASSIGN_LABELS: Record<
+  SubmissionStatus,
+  { label: string; tone: "default" | "warning" | "success" | "danger" | "accent" }
+> = {
   DRAFT: { label: "草稿", tone: "default" },
   SUBMITTED: { label: "已提交", tone: "warning" },
-  GRADED: { label: "已批改", tone: "success" },
+  GRADED: { label: "已自动评分", tone: "success" },
   RETURNED: { label: "已退回", tone: "accent" },
 };
 
-const ATTEMPT_LABELS: Record<AttemptStatus, { label: string; tone: "default" | "warning" | "success" | "primary" }> = {
+const ATTEMPT_LABELS: Record<
+  AttemptStatus,
+  { label: string; tone: "default" | "warning" | "success" | "primary" }
+> = {
   IN_PROGRESS: { label: "进行中", tone: "warning" },
   SUBMITTED: { label: "已交卷", tone: "primary" },
-  GRADING: { label: "批改中", tone: "warning" },
-  GRADED: { label: "已批改", tone: "success" },
+  GRADING: { label: "自动评分中", tone: "warning" },
+  GRADED: { label: "已出分", tone: "success" },
 };
 
 export default async function StudentSubmissionsPage({
@@ -107,7 +116,14 @@ export default async function StudentSubmissionsPage({
         manualScore: true,
         finalScore: true,
         submittedAt: true,
-        exam: { select: { id: true, title: true, totalScore: true, course: { select: { id: true, title: true } } } },
+        exam: {
+          select: {
+            id: true,
+            title: true,
+            totalScore: true,
+            course: { select: { id: true, title: true } },
+          },
+        },
       },
     }),
   ]);
@@ -175,9 +191,7 @@ export default async function StudentSubmissionsPage({
               <CardContent className="flex flex-col items-center gap-3 px-6 py-16 text-center">
                 <FileText className="h-10 w-10 text-muted-foreground" />
                 <p className="text-sm font-medium text-foreground">暂无提交记录</p>
-                <p className="text-xs text-muted-foreground">
-                  练习、作业或考试提交后会出现在这里
-                </p>
+                <p className="text-xs text-muted-foreground">练习、作业或考试提交后会出现在这里</p>
               </CardContent>
             </Card>
           ) : (
@@ -209,11 +223,16 @@ export default async function StudentSubmissionsPage({
                             </td>
                             <td className="px-6 py-3.5 text-subtle-foreground">—</td>
                             <td className="px-6 py-3.5">
-                              <Badge variant={meta.tone as "default" | "warning" | "success" | "danger" | "primary"}>
+                              <Badge
+                                variant={
+                                  meta.tone as
+                                    "default" | "warning" | "success" | "danger" | "primary"
+                                }
+                              >
                                 {meta.label}
                               </Badge>
                             </td>
-                            <td className="px-6 py-3.5 text-right num text-foreground">
+                            <td className="num px-6 py-3.5 text-right text-foreground">
                               {s.status === "PENDING" || s.status === "JUDGING" ? (
                                 <span className="text-subtle-foreground">—</span>
                               ) : (
@@ -222,7 +241,7 @@ export default async function StudentSubmissionsPage({
                                 </span>
                               )}
                             </td>
-                            <td className="px-6 py-3.5 text-xs text-muted-foreground num">
+                            <td className="num px-6 py-3.5 text-xs text-muted-foreground">
                               {formatDate(s.createdAt)}
                             </td>
                             <td className="px-2 py-3.5">
@@ -254,11 +273,13 @@ export default async function StudentSubmissionsPage({
                               </Badge>
                             </td>
                             <td className="px-6 py-3.5">
-                              <Badge variant={meta.tone as "default" | "warning" | "success" | "accent"}>
+                              <Badge
+                                variant={meta.tone as "default" | "warning" | "success" | "accent"}
+                              >
                                 {meta.label}
                               </Badge>
                             </td>
-                            <td className="px-6 py-3.5 text-right num">
+                            <td className="num px-6 py-3.5 text-right">
                               {score != null ? (
                                 <span
                                   className={
@@ -275,7 +296,7 @@ export default async function StudentSubmissionsPage({
                                 <span className="text-subtle-foreground">—</span>
                               )}
                             </td>
-                            <td className="px-6 py-3.5 text-xs text-muted-foreground num">
+                            <td className="num px-6 py-3.5 text-xs text-muted-foreground">
                               {formatDate(s.gradedAt ?? s.submittedAt ?? new Date(0))}
                             </td>
                             <td className="px-2 py-3.5">
@@ -307,11 +328,13 @@ export default async function StudentSubmissionsPage({
                               </Badge>
                             </td>
                             <td className="px-6 py-3.5">
-                              <Badge variant={meta.tone as "default" | "warning" | "success" | "primary"}>
+                              <Badge
+                                variant={meta.tone as "default" | "warning" | "success" | "primary"}
+                              >
                                 {meta.label}
                               </Badge>
                             </td>
-                            <td className="px-6 py-3.5 text-right num">
+                            <td className="num px-6 py-3.5 text-right">
                               {score != null ? (
                                 <span
                                   className={
@@ -328,7 +351,7 @@ export default async function StudentSubmissionsPage({
                                 <span className="text-subtle-foreground">—</span>
                               )}
                             </td>
-                            <td className="px-6 py-3.5 text-xs text-muted-foreground num">
+                            <td className="num px-6 py-3.5 text-xs text-muted-foreground">
                               {formatDate(a.submittedAt!)}
                             </td>
                             <td className="px-2 py-3.5">
@@ -357,7 +380,9 @@ function TypeBadge({ kind }: { kind: "practice" | "assignment" | "exam" }) {
   const m = map[kind];
   const Icon = m.icon;
   return (
-    <div className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-medium ${m.tone}`}>
+    <div
+      className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-medium ${m.tone}`}
+    >
       <Icon className="h-3 w-3" />
       {m.label}
     </div>

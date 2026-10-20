@@ -19,11 +19,7 @@ const DIFFICULTY_LABELS: Record<Difficulty, string> = {
   HARD: "进阶",
 };
 
-export default async function EditProblemPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function EditProblemPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await auth();
   const userId = session!.user.id;
@@ -48,12 +44,7 @@ export default async function EditProblemPage({
 
   return (
     <>
-      <Topbar
-        crumbs={[
-          { label: "我的编程题", href: "/t/problems" },
-          { label: problem.title },
-        ]}
-      />
+      <Topbar crumbs={[{ label: "我的编程题", href: "/t/problems" }, { label: problem.title }]} />
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-[1024px] flex-col gap-6">
           <div>
@@ -77,13 +68,11 @@ export default async function EditProblemPage({
                   )}
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  创建于 {relativeTime(problem.createdAt)} · 更新于 {relativeTime(problem.updatedAt)}
+                  创建于 {relativeTime(problem.createdAt)} · 更新于{" "}
+                  {relativeTime(problem.updatedAt)}
                 </p>
               </div>
-              <ProblemActions
-                problemId={problem.id}
-                hasRefs={refCount > 0}
-              />
+              <ProblemActions problemId={problem.id} hasRefs={refCount > 0} />
             </div>
           </div>
 
@@ -104,6 +93,8 @@ export default async function EditProblemPage({
               timeLimitMs: problem.timeLimitMs,
               memoryLimitMb: problem.memoryLimitMb,
               splitInputByWhitespace: problem.splitInputByWhitespace,
+              ignoreOutputWhitespace: problem.ignoreOutputWhitespace,
+              ignoreOutputPunctuation: problem.ignoreOutputPunctuation,
               starterCode: problem.starterCode ?? "",
               referenceSolution: problem.referenceSolution ?? "",
               tags: problem.tags,

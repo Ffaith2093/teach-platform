@@ -11,7 +11,6 @@ import {
   FileText,
   Code,
   Library,
-  ClipboardCheck,
   ListChecks,
   Server,
   BarChart3,
@@ -90,7 +89,6 @@ const teacherNav: NavSection[] = [
       { href: "/t/assignments", label: "作业", icon: FileText },
       { href: "/t/exams", label: "试卷", icon: Library },
       { href: "/t/surveys", label: "问卷", icon: ClipboardList },
-      { href: "/t/grading", label: "批改", icon: ClipboardCheck },
     ],
   },
   {

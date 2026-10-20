@@ -22,11 +22,7 @@ import { MarkdownContent } from "@/components/markdown-content";
 
 export const metadata = { title: "考试成绩" };
 
-export default async function ExamResultPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function ExamResultPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await auth();
   const userId = session!.user.id;
@@ -64,7 +60,6 @@ export default async function ExamResultPage({
           questionId: true,
           content: true,
           autoScore: true,
-          manualScore: true,
           comment: true,
         },
       },
@@ -72,7 +67,12 @@ export default async function ExamResultPage({
   });
 
   const classSession = exam.classSessions[0];
-  const canView = Boolean(attempt && (exam.status === "CLOSED" || classSession?.status === "CLOSED"));
+  const canView = Boolean(
+    attempt &&
+    attempt.status === "GRADED" &&
+    attempt.finalScore != null &&
+    (exam.status === "CLOSED" || classSession?.status === "CLOSED"),
+  );
 
   if (!attempt) {
     return (
@@ -120,7 +120,10 @@ export default async function ExamResultPage({
                 <p className="text-xs text-muted-foreground">
                   教师结束本班考试后，系统会自动收卷并公布成绩。
                 </p>
-                <Link href={`/exams/${exam.id}`} className="mt-1 text-xs text-primary hover:underline">
+                <Link
+                  href={`/exams/${exam.id}`}
+                  className="mt-1 text-xs text-primary hover:underline"
+                >
                   返回考试详情 →
                 </Link>
               </CardContent>
@@ -193,15 +196,14 @@ export default async function ExamResultPage({
       })
     : [];
   // 同一题多次提交时取最新
-  const submissionByProblemId = new Map<string, typeof submissions[number]>();
+  const submissionByProblemId = new Map<string, (typeof submissions)[number]>();
   for (const s of submissions) {
     if (!submissionByProblemId.has(s.problemId)) submissionByProblemId.set(s.problemId, s);
   }
 
-  const totalScore = attempt.finalScore ?? attempt.autoScore ?? 0;
+  const totalScore = attempt.finalScore ?? 0;
   const ratio = exam.totalScore > 0 ? totalScore / exam.totalScore : 0;
-  const ratioBadge =
-    ratio >= 0.85 ? "success" : ratio >= 0.6 ? "warning" : "danger";
+  const ratioBadge = ratio >= 0.85 ? "success" : ratio >= 0.6 ? "warning" : "danger";
 
   return (
     <>
@@ -234,7 +236,13 @@ export default async function ExamResultPage({
                     <span>·</span>
                     <span>交卷时间 {formatDate(attempt.submittedAt!)}</span>
                     <span>·</span>
-                    <span>用时 {Math.round((attempt.submittedAt!.getTime() - attempt.startedAt.getTime()) / 60000)} 分钟</span>
+                    <span>
+                      用时{" "}
+                      {Math.round(
+                        (attempt.submittedAt!.getTime() - attempt.startedAt.getTime()) / 60000,
+                      )}{" "}
+                      分钟
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-5 rounded-2xl border border-border bg-muted/30 px-6 py-4">
@@ -265,9 +273,7 @@ export default async function ExamResultPage({
               const sub = isProgramming ? submissionByProblemId.get(q.problem!.id) : null;
 
               const autoScore = ans?.autoScore ?? null;
-              const manualScore = ans?.manualScore ?? null;
-              const finalQScore =
-                manualScore != null ? manualScore : autoScore ?? 0;
+              const finalQScore = autoScore ?? 0;
               const isFull = finalQScore >= eq.score;
               const isPartial = finalQScore > 0 && finalQScore < eq.score;
 
@@ -294,7 +300,15 @@ export default async function ExamResultPage({
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium">第 {i + 1} 题</span>
                           <Badge variant="default">
-                            {isProgramming ? "编程" : q.type === "SINGLE_CHOICE" ? "单选" : q.type === "FILL_BLANK" ? "填空" : q.type === "CODE_BLANK" ? "代码填空" : "其他"}
+                            {isProgramming
+                              ? "编程"
+                              : q.type === "SINGLE_CHOICE"
+                                ? "单选"
+                                : q.type === "FILL_BLANK"
+                                  ? "填空"
+                                  : q.type === "CODE_BLANK"
+                                    ? "代码填空"
+                                    : "其他"}
                           </Badge>
                           <span className="text-xs text-muted-foreground">满分 {eq.score}</span>
                           <span className="ml-auto">
@@ -338,7 +352,7 @@ export default async function ExamResultPage({
                                       ? "border-success/30 bg-success-subtle/30 text-foreground"
                                       : isYour
                                         ? "border-danger/30 bg-danger-subtle/30 text-foreground"
-                                      : "border-border bg-card text-muted-foreground"
+                                        : "border-border bg-card text-muted-foreground"
                                   }`}
                                 >
                                   {isCorrectKey ? (
@@ -351,7 +365,10 @@ export default async function ExamResultPage({
                                   </span>
                                   <span className="flex-1">{opt.text}</span>
                                   {isYour && (
-                                    <Badge variant={isCorrectKey ? "success" : "danger"} className="text-[10px]">
+                                    <Badge
+                                      variant={isCorrectKey ? "success" : "danger"}
+                                      className="text-[10px]"
+                                    >
                                       你的答案
                                     </Badge>
                                   )}
@@ -413,7 +430,7 @@ export default async function ExamResultPage({
                                   <tbody className="divide-y divide-border">
                                     {sub.judgeCases.map((c) => (
                                       <tr key={c.testCase.order}>
-                                        <td className="px-3 py-2 num">#{c.testCase.order}</td>
+                                        <td className="num px-3 py-2">#{c.testCase.order}</td>
                                         <td className="px-3 py-2">
                                           {c.testCase.isSample ? (
                                             <Badge variant="default">示例</Badge>
@@ -422,11 +439,13 @@ export default async function ExamResultPage({
                                           )}
                                         </td>
                                         <td className="px-3 py-2">
-                                          <Badge variant={c.status === "ACCEPTED" ? "success" : "danger"}>
+                                          <Badge
+                                            variant={c.status === "ACCEPTED" ? "success" : "danger"}
+                                          >
                                             {c.status === "ACCEPTED" ? "通过" : "未通过"}
                                           </Badge>
                                         </td>
-                                        <td className="px-3 py-2 num text-muted-foreground">
+                                        <td className="num px-3 py-2 text-muted-foreground">
                                           {c.timeMs ?? "—"} ms
                                         </td>
                                       </tr>
@@ -504,7 +523,10 @@ function AnswerPanel({
       <div className="mt-2 flex flex-wrap gap-2">
         {values.length ? (
           values.map((value, index) => (
-            <code key={index} className="rounded bg-card px-2 py-1 font-mono text-sm text-foreground">
+            <code
+              key={index}
+              className="rounded bg-card px-2 py-1 font-mono text-sm text-foreground"
+            >
               {value || "（空）"}
             </code>
           ))

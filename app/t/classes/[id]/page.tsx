@@ -5,7 +5,17 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent } from "@/components/ui/card";
 import { Topbar } from "@/components/shell/topbar";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Users, GraduationCap, BookOpen, FileText, Mail, Hash, ChevronRight, TableProperties } from "lucide-react";
+import {
+  ChevronLeft,
+  Users,
+  GraduationCap,
+  BookOpen,
+  FileText,
+  Mail,
+  Hash,
+  ChevronRight,
+  TableProperties,
+} from "lucide-react";
 import { GradebookTab } from "./_components/gradebook-tab";
 import { AnnounceForm } from "./_components/announce-form";
 import { MissingDetailDialog, type MissingItem } from "./_components/missing-detail-dialog";
@@ -188,12 +198,7 @@ export default async function TeacherClassDetailPage({
 
   return (
     <>
-      <Topbar
-        crumbs={[
-          { label: "我的班级", href: "/t/classes" },
-          { label: cls.name },
-        ]}
-      />
+      <Topbar crumbs={[{ label: "我的班级", href: "/t/classes" }, { label: cls.name }]} />
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
           <div>
@@ -213,7 +218,9 @@ export default async function TeacherClassDetailPage({
                 <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1">
                     <Users className="h-3 w-3" />
-                    <span className="num">{cls.students.filter((s) => s.status === "ACTIVE").length}</span>{" "}
+                    <span className="num">
+                      {cls.students.filter((s) => s.status === "ACTIVE").length}
+                    </span>{" "}
                     名在读学生（共 <span className="num">{cls.students.length}</span>）
                   </span>
                   {cls.teachers[0] && (
@@ -284,7 +291,9 @@ export default async function TeacherClassDetailPage({
             />
           )}
 
-          {activeTab === "courses" && <CoursesTab courses={cls.courseClasses.map((cc) => cc.course)} />}
+          {activeTab === "courses" && (
+            <CoursesTab courses={cls.courseClasses.map((cc) => cc.course)} />
+          )}
         </div>
       </main>
     </>
@@ -334,8 +343,8 @@ function RosterTab({
       <CardContent className="p-0">
         <div className="flex items-center justify-between border-b border-border px-6 py-3">
           <div className="text-sm text-muted-foreground">
-            共 <span className="num font-medium text-foreground">{students.length}</span> 名学生 ·
-            {" "}<span className="num">{totalAssignments}</span> 项作业
+            共 <span className="num font-medium text-foreground">{students.length}</span> 名学生 ·{" "}
+            <span className="num">{totalAssignments}</span> 项作业
           </div>
           {missingStudentCount > 0 && (
             <Badge variant="danger">{missingStudentCount} 人有欠交作业</Badge>
@@ -355,11 +364,11 @@ function RosterTab({
           <tbody className="divide-y divide-border">
             {students.map((s) => {
               const isActive = s.status === "ACTIVE";
-              const missing = isActive ? missingByStudent.get(s.id) ?? 0 : null;
-              const detail = isActive ? missingDetailJSON[s.id] ?? [] : [];
+              const missing = isActive ? (missingByStudent.get(s.id) ?? 0) : null;
+              const detail = isActive ? (missingDetailJSON[s.id] ?? []) : [];
               return (
                 <tr key={s.id} className="transition-colors hover:bg-muted/30">
-                  <td className="px-6 py-3.5 num font-mono text-xs text-muted-foreground">
+                  <td className="num px-6 py-3.5 font-mono text-xs text-muted-foreground">
                     {s.studentNo}
                   </td>
                   <td className="px-6 py-3.5 font-medium text-foreground">{s.name}</td>
@@ -387,7 +396,7 @@ function RosterTab({
                       />
                     )}
                   </td>
-                  <td className="px-6 py-3.5 text-xs text-muted-foreground num">
+                  <td className="num px-6 py-3.5 text-xs text-muted-foreground">
                     {s.lastLoginAt
                       ? new Date(s.lastLoginAt).toLocaleString("zh-CN", {
                           month: "2-digit",
@@ -415,7 +424,13 @@ function PerformanceTab({
 }: {
   avgScore: number | null;
   gradedCount: number;
-  recentAssignments: Array<{ id: string; title: string; totalScore: number; submitted: number; total: number }>;
+  recentAssignments: Array<{
+    id: string;
+    title: string;
+    totalScore: number;
+    submitted: number;
+    total: number;
+  }>;
   totalStudents: number;
 }) {
   return (
@@ -423,9 +438,9 @@ function PerformanceTab({
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-5">
-            <div className="text-sm text-muted-foreground">已批改份数</div>
+            <div className="text-sm text-muted-foreground">已出分份数</div>
             <div className="mt-3 flex items-baseline gap-1">
-              <span className="text-3xl font-bold tracking-tight num">{gradedCount}</span>
+              <span className="num text-3xl font-bold tracking-tight">{gradedCount}</span>
               <span className="text-sm text-muted-foreground">份</span>
             </div>
           </CardContent>
@@ -434,15 +449,11 @@ function PerformanceTab({
           <CardContent className="p-5">
             <div className="text-sm text-muted-foreground">平均分</div>
             <div className="mt-3 flex items-baseline gap-1">
-              <span className="text-3xl font-bold tracking-tight num">
-                {avgScore ?? "—"}
-              </span>
-              {avgScore != null && (
-                <span className="text-sm text-muted-foreground">分</span>
-              )}
+              <span className="num text-3xl font-bold tracking-tight">{avgScore ?? "—"}</span>
+              {avgScore != null && <span className="text-sm text-muted-foreground">分</span>}
             </div>
             {avgScore == null && (
-              <p className="mt-1 text-[11px] text-subtle-foreground">尚无已批改数据</p>
+              <p className="mt-1 text-[11px] text-subtle-foreground">尚无已出分数据</p>
             )}
           </CardContent>
         </Card>
@@ -450,7 +461,7 @@ function PerformanceTab({
           <CardContent className="p-5">
             <div className="text-sm text-muted-foreground">学生总数</div>
             <div className="mt-3 flex items-baseline gap-1">
-              <span className="text-3xl font-bold tracking-tight num">{totalStudents}</span>
+              <span className="num text-3xl font-bold tracking-tight">{totalStudents}</span>
               <span className="text-sm text-muted-foreground">人</span>
             </div>
           </CardContent>
@@ -460,9 +471,7 @@ function PerformanceTab({
       <Card>
         <CardContent className="p-6">
           <h2 className="text-base font-semibold">近期作业提交情况</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            仅展示所属课程已发布作业的前 8 项。
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">仅展示所属课程已发布作业的前 8 项。</p>
           {recentAssignments.length === 0 ? (
             <div className="mt-6 rounded-lg border border-dashed border-border bg-muted/30 px-6 py-10 text-center text-sm text-muted-foreground">
               暂无已发布的作业
@@ -476,7 +485,7 @@ function PerformanceTab({
                 >
                   <div className="min-w-0">
                     <div className="truncate font-medium text-foreground">{a.title}</div>
-                    <div className="mt-0.5 text-xs text-muted-foreground num">
+                    <div className="num mt-0.5 text-xs text-muted-foreground">
                       总分 {a.totalScore}
                     </div>
                   </div>
@@ -495,7 +504,17 @@ function PerformanceTab({
   );
 }
 
-function CoursesTab({ courses }: { courses: Array<{ id: string; title: string; isArchived: boolean; _count: { assignments: number; exams: number }; teachers: Array<{ teacher: { name: string } }> }> }) {
+function CoursesTab({
+  courses,
+}: {
+  courses: Array<{
+    id: string;
+    title: string;
+    isArchived: boolean;
+    _count: { assignments: number; exams: number };
+    teachers: Array<{ teacher: { name: string } }>;
+  }>;
+}) {
   if (courses.length === 0) {
     return (
       <Card>
@@ -525,8 +544,8 @@ function CoursesTab({ courses }: { courses: Array<{ id: string; title: string; i
                     </div>
                     <div className="mt-0.5 text-xs text-muted-foreground">
                       {owner && <span>主讲：{owner}</span>}
-                      <span className="ml-3 num">{c._count.assignments} 作业</span>
-                      <span className="ml-2 num">· {c._count.exams} 试卷</span>
+                      <span className="num ml-3">{c._count.assignments} 作业</span>
+                      <span className="num ml-2">· {c._count.exams} 试卷</span>
                     </div>
                   </div>
                   <ChevronRight className="h-4 w-4 shrink-0 text-subtle-foreground" />

@@ -99,13 +99,14 @@ export default async function StudentExamsPage({
 
   // 分类
   const upcoming = allExams.filter(
-    (e) => e.status === "PUBLISHED" && (e.classSessions[0]?.status ?? "PENDING") === "PENDING" && !attemptByExam.has(e.id),
+    (e) =>
+      e.status === "PUBLISHED" &&
+      (e.classSessions[0]?.status ?? "PENDING") === "PENDING" &&
+      !attemptByExam.has(e.id),
   );
   const available = allExams.filter(
     (e) =>
-      e.status === "PUBLISHED" &&
-      e.classSessions[0]?.status === "OPEN" &&
-      !attemptByExam.has(e.id),
+      e.status === "PUBLISHED" && e.classSessions[0]?.status === "OPEN" && !attemptByExam.has(e.id),
   );
   const inProgress = allExams.filter((e) => {
     const a = attemptByExam.get(e.id);
@@ -192,7 +193,7 @@ export default async function StudentExamsPage({
                         <Icon className="h-4 w-4" />
                       </div>
                     </div>
-                    <div className="mt-3 text-3xl font-bold tracking-tight num">{s.num}</div>
+                    <div className="num mt-3 text-3xl font-bold tracking-tight">{s.num}</div>
                   </CardContent>
                 </Card>
               );
@@ -233,9 +234,7 @@ export default async function StudentExamsPage({
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
                   <Library className="h-5 w-5" />
                 </div>
-                <p className="text-sm font-medium text-foreground">
-                  您所在的班级尚未加入任何课程
-                </p>
+                <p className="text-sm font-medium text-foreground">您所在的班级尚未加入任何课程</p>
               </CardContent>
             </Card>
           ) : filtered.length === 0 ? (
@@ -245,7 +244,9 @@ export default async function StudentExamsPage({
                   <Library className="h-5 w-5" />
                 </div>
                 <p className="text-sm font-medium text-foreground">
-                  {status === "all" ? "本课程暂无考试" : `暂无${statusTabs.find((t) => t.key === status)?.label}的考试`}
+                  {status === "all"
+                    ? "本课程暂无考试"
+                    : `暂无${statusTabs.find((t) => t.key === status)?.label}的考试`}
                 </p>
               </CardContent>
             </Card>
@@ -270,14 +271,16 @@ export default async function StudentExamsPage({
                     {filtered.map((e) => {
                       const att = attemptByExam.get(e.id);
                       const classSession = e.classSessions[0];
-                      const isUpcoming = e.status === "PUBLISHED" && (classSession?.status ?? "PENDING") === "PENDING" && !att;
-                      const isAvailable = e.status === "PUBLISHED" && classSession?.status === "OPEN" && !att;
-                      const isMissed = !att && (e.status === "CLOSED" || classSession?.status === "CLOSED");
+                      const isUpcoming =
+                        e.status === "PUBLISHED" &&
+                        (classSession?.status ?? "PENDING") === "PENDING" &&
+                        !att;
+                      const isAvailable =
+                        e.status === "PUBLISHED" && classSession?.status === "OPEN" && !att;
+                      const isMissed =
+                        !att && (e.status === "CLOSED" || classSession?.status === "CLOSED");
                       return (
-                        <tr
-                          key={e.id}
-                          className="group transition-colors hover:bg-muted/30"
-                        >
+                        <tr key={e.id} className="group transition-colors hover:bg-muted/30">
                           <td className="px-6 py-3.5">
                             <Link
                               href={`/exams/${e.id}`}
@@ -292,18 +295,22 @@ export default async function StudentExamsPage({
                             </Badge>
                           </td>
                           <td className="px-6 py-3.5 text-xs text-muted-foreground">
-                            <div className="num">{classSession?.openedAt ? formatDate(classSession.openedAt) : "等待教师开放"}</div>
+                            <div className="num">
+                              {classSession?.openedAt
+                                ? formatDate(classSession.openedAt)
+                                : "等待教师开放"}
+                            </div>
                           </td>
-                          <td className="px-6 py-3.5 text-xs text-muted-foreground num">
+                          <td className="num px-6 py-3.5 text-xs text-muted-foreground">
                             {classSession?.closedAt ? formatDate(classSession.closedAt) : "—"}
                           </td>
-                          <td className="px-6 py-3.5 num text-right text-muted-foreground">
+                          <td className="num px-6 py-3.5 text-right text-muted-foreground">
                             {e.durationMin}m
                           </td>
-                          <td className="px-6 py-3.5 num text-right text-muted-foreground">
+                          <td className="num px-6 py-3.5 text-right text-muted-foreground">
                             {e._count.questions}
                           </td>
-                          <td className="px-6 py-3.5 num text-right text-muted-foreground">
+                          <td className="num px-6 py-3.5 text-right text-muted-foreground">
                             {e.totalScore}
                           </td>
                           <td className="px-6 py-3.5">
@@ -350,8 +357,8 @@ function AttemptBadge({ status }: { status: AttemptStatus }) {
     case "SUBMITTED":
       return <Badge variant="primary">已交卷</Badge>;
     case "GRADING":
-      return <Badge variant="warning">批改中</Badge>;
+      return <Badge variant="warning">自动评分中</Badge>;
     case "GRADED":
-      return <Badge variant="success">已批改</Badge>;
+      return <Badge variant="success">已出分</Badge>;
   }
 }

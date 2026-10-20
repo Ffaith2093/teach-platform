@@ -29,19 +29,25 @@ const CATEGORY_LABELS: Record<CourseCategory, string> = {
   INTERDISCIPLINARY: "多学科交叉",
 };
 
-const SUBMISSION_STATUS: Record<string, { label: string; tone: "default" | "primary" | "success" | "warning" }> = {
+const SUBMISSION_STATUS: Record<
+  string,
+  { label: string; tone: "default" | "primary" | "success" | "warning" }
+> = {
   DRAFT: { label: "草稿", tone: "default" },
   SUBMITTED: { label: "已提交", tone: "primary" },
-  GRADED: { label: "已批改", tone: "success" },
+  GRADED: { label: "已自动评分", tone: "success" },
   RETURNED: { label: "已退回", tone: "warning" },
 };
 
-const EXAM_STATUS: Record<string, { label: string; tone: "default" | "primary" | "warning" | "success" }> = {
+const EXAM_STATUS: Record<
+  string,
+  { label: string; tone: "default" | "primary" | "warning" | "success" }
+> = {
   ENROLLED: { label: "未开始", tone: "default" },
   IN_PROGRESS: { label: "进行中", tone: "primary" },
   SUBMITTED: { label: "已交卷", tone: "warning" },
-  GRADING: { label: "批改中", tone: "warning" },
-  GRADED: { label: "已批改", tone: "success" },
+  GRADING: { label: "自动评分中", tone: "warning" },
+  GRADED: { label: "已出分", tone: "success" },
   EXPIRED: { label: "已过期", tone: "default" },
 };
 
@@ -93,57 +99,56 @@ export default async function TeacherStudentDetailPage({
   const now = new Date();
 
   // 第二轮：作业 + 该学生的提交 + 考试 + 该学生尝试
-  const [assignmentsWithSubs, examsWithAttempts, closedAssignmentCount] =
-    await Promise.all([
-      prisma.assignment.findMany({
-        where: {
-          courseId: { in: sharedCourseIds },
-          publishedAt: { not: null },
-        },
-        include: {
-          course: { select: { id: true, title: true, category: true } },
-          submissions: {
-            where: { studentId },
-            orderBy: { submittedAt: "desc" },
-            take: 1,
-            select: {
-              id: true,
-              status: true,
-              finalScore: true,
-              submittedAt: true,
-              gradedAt: true,
-            },
+  const [assignmentsWithSubs, examsWithAttempts, closedAssignmentCount] = await Promise.all([
+    prisma.assignment.findMany({
+      where: {
+        courseId: { in: sharedCourseIds },
+        publishedAt: { not: null },
+      },
+      include: {
+        course: { select: { id: true, title: true, category: true } },
+        submissions: {
+          where: { studentId },
+          orderBy: { submittedAt: "desc" },
+          take: 1,
+          select: {
+            id: true,
+            status: true,
+            finalScore: true,
+            submittedAt: true,
+            gradedAt: true,
           },
         },
-        orderBy: [{ dueAt: "desc" }],
-      }),
-      prisma.exam.findMany({
-        where: { courseId: { in: sharedCourseIds }, status: "PUBLISHED" },
-        include: {
-          course: { select: { id: true, title: true, category: true } },
-          attempts: {
-            where: { studentId },
-            orderBy: { startedAt: "desc" },
-            take: 1,
-            select: {
-              id: true,
-              status: true,
-              finalScore: true,
-              submittedAt: true,
-              startedAt: true,
-            },
+      },
+      orderBy: [{ dueAt: "desc" }],
+    }),
+    prisma.exam.findMany({
+      where: { courseId: { in: sharedCourseIds }, status: "PUBLISHED" },
+      include: {
+        course: { select: { id: true, title: true, category: true } },
+        attempts: {
+          where: { studentId },
+          orderBy: { startedAt: "desc" },
+          take: 1,
+          select: {
+            id: true,
+            status: true,
+            finalScore: true,
+            submittedAt: true,
+            startedAt: true,
           },
         },
-        orderBy: { closeAt: "desc" },
-      }),
-      prisma.assignment.count({
-        where: {
-          courseId: { in: sharedCourseIds },
-          publishedAt: { not: null },
-          dueAt: { lt: now },
-        },
-      }),
-    ]);
+      },
+      orderBy: { closeAt: "desc" },
+    }),
+    prisma.assignment.count({
+      where: {
+        courseId: { in: sharedCourseIds },
+        publishedAt: { not: null },
+        dueAt: { lt: now },
+      },
+    }),
+  ]);
 
   // 顶部 4 张统计卡
   let avgSum = 0;
@@ -239,7 +244,10 @@ export default async function TeacherStudentDetailPage({
                   {student.class && (
                     <span className="inline-flex items-center gap-1">
                       <GraduationCap className="h-3 w-3" />
-                      {formatGradeLabel(student.class.grade.name, student.class.grade.joinYear)} · {student.class.name}
+                      {formatGradeLabel(
+                        student.class.grade.name,
+                        student.class.grade.joinYear,
+                      )} · {student.class.name}
                     </span>
                   )}
                   <span className="inline-flex items-center gap-1">
@@ -283,11 +291,7 @@ export default async function TeacherStudentDetailPage({
               icon={<Trophy className="h-4 w-4" />}
               label="作业均分"
               value={overallAvgPct == null ? "—" : `${overallAvgPct}%`}
-              hint={
-                avgN === 0
-                  ? "暂无已批改样本"
-                  : `基于 ${avgN} 次已批改作业`
-              }
+              hint={avgN === 0 ? "暂无已批改样本" : `基于 ${avgN} 次已批改作业`}
               tone={
                 overallAvgPct == null
                   ? "muted"
@@ -302,11 +306,7 @@ export default async function TeacherStudentDetailPage({
               icon={<BarChart3 className="h-4 w-4" />}
               label="考试均分"
               value={examAvgPct == null ? "—" : `${examAvgPct}%`}
-              hint={
-                examN === 0
-                  ? "暂无已批改考试"
-                  : `基于 ${examN} 场已批改考试`
-              }
+              hint={examN === 0 ? "暂无已批改考试" : `基于 ${examN} 场已批改考试`}
               tone={
                 examAvgPct == null
                   ? "muted"
@@ -325,7 +325,7 @@ export default async function TeacherStudentDetailPage({
               <div className="mb-4 flex items-center gap-2">
                 <FileText className="h-4 w-4 text-primary" />
                 <h2 className="text-base font-semibold">作业总览</h2>
-                <span className="text-xs text-muted-foreground num">
+                <span className="num text-xs text-muted-foreground">
                   · {assignmentsWithSubs.length} 项
                 </span>
               </div>
@@ -341,13 +341,9 @@ export default async function TeacherStudentDetailPage({
                     return (
                       <section key={c.id}>
                         <div className="mb-2 flex items-center gap-2">
-                          <Badge variant="primary">
-                            {CATEGORY_LABELS[c.category]}
-                          </Badge>
-                          <span className="text-sm font-medium text-foreground">
-                            {c.title}
-                          </span>
-                          <span className="text-xs text-muted-foreground num">
+                          <Badge variant="primary">{CATEGORY_LABELS[c.category]}</Badge>
+                          <span className="text-sm font-medium text-foreground">{c.title}</span>
+                          <span className="num text-xs text-muted-foreground">
                             · {items.length} 项
                           </span>
                         </div>
@@ -369,10 +365,10 @@ export default async function TeacherStudentDetailPage({
                                   a.dueAt.getTime() < now.getTime() &&
                                   (!sub || sub.status === "DRAFT");
                                 const status = sub
-                                  ? SUBMISSION_STATUS[sub.status] ?? {
+                                  ? (SUBMISSION_STATUS[sub.status] ?? {
                                       label: sub.status,
                                       tone: "default" as const,
-                                    }
+                                    })
                                   : { label: "未提交", tone: "default" as const };
                                 const pct =
                                   sub && sub.finalScore != null && a.totalScore > 0
@@ -387,35 +383,28 @@ export default async function TeacherStudentDetailPage({
                                         ? "primary"
                                         : "warning";
                                 return (
-                                  <tr
-                                    key={a.id}
-                                    className="transition-colors hover:bg-muted/20"
-                                  >
+                                  <tr key={a.id} className="transition-colors hover:bg-muted/20">
                                     <td className="px-4 py-2.5">
-                                      <div className="font-medium text-foreground">
-                                        {a.title}
-                                      </div>
+                                      <div className="font-medium text-foreground">{a.title}</div>
                                     </td>
                                     <td className="px-4 py-2.5 text-xs text-muted-foreground">
                                       <div>{formatDate(a.dueAt)}</div>
                                       {overdue && (
-                                        <div className="text-[11px] text-danger">
-                                          已逾期
-                                        </div>
+                                        <div className="text-[11px] text-danger">已逾期</div>
                                       )}
                                     </td>
                                     <td className="px-4 py-2.5">
                                       <Badge variant={status.tone}>{status.label}</Badge>
                                     </td>
-                                    <td className="px-4 py-2.5 num">
+                                    <td className="num px-4 py-2.5">
                                       {sub && sub.finalScore != null ? (
                                         <span
                                           className={
                                             scoreTone === "success"
-                                              ? "text-success font-medium"
+                                              ? "font-medium text-success"
                                               : scoreTone === "primary"
-                                                ? "text-primary font-medium"
-                                                : "text-warning font-medium"
+                                                ? "font-medium text-primary"
+                                                : "font-medium text-warning"
                                           }
                                         >
                                           {sub.finalScore}
@@ -430,10 +419,10 @@ export default async function TeacherStudentDetailPage({
                                     </td>
                                     <td className="px-4 py-2.5 text-right">
                                       <Link
-                                        href={`/t/assignments/${a.id}/grade`}
+                                        href={`/t/assignments/${a.id}?tab=submissions`}
                                         className="inline-flex items-center gap-0.5 text-xs text-primary hover:underline"
                                       >
-                                        批改
+                                        查看
                                         <ArrowRight className="h-3 w-3" />
                                       </Link>
                                     </td>
@@ -457,7 +446,7 @@ export default async function TeacherStudentDetailPage({
               <div className="mb-4 flex items-center gap-2">
                 <GraduationCap className="h-4 w-4 text-primary" />
                 <h2 className="text-base font-semibold">考试总览</h2>
-                <span className="text-xs text-muted-foreground num">
+                <span className="num text-xs text-muted-foreground">
                   · {examsWithAttempts.length} 场
                 </span>
               </div>
@@ -473,13 +462,9 @@ export default async function TeacherStudentDetailPage({
                     return (
                       <section key={c.id}>
                         <div className="mb-2 flex items-center gap-2">
-                          <Badge variant="primary">
-                            {CATEGORY_LABELS[c.category]}
-                          </Badge>
-                          <span className="text-sm font-medium text-foreground">
-                            {c.title}
-                          </span>
-                          <span className="text-xs text-muted-foreground num">
+                          <Badge variant="primary">{CATEGORY_LABELS[c.category]}</Badge>
+                          <span className="text-sm font-medium text-foreground">{c.title}</span>
+                          <span className="num text-xs text-muted-foreground">
                             · {items.length} 场
                           </span>
                         </div>
@@ -498,10 +483,10 @@ export default async function TeacherStudentDetailPage({
                               {items.map((e) => {
                                 const att = e.attempts[0];
                                 const status = att
-                                  ? EXAM_STATUS[att.status] ?? {
+                                  ? (EXAM_STATUS[att.status] ?? {
                                       label: att.status,
                                       tone: "default" as const,
-                                    }
+                                    })
                                   : { label: "未参加", tone: "default" as const };
                                 const pct =
                                   att && att.finalScore != null && e.totalScore > 0
@@ -516,10 +501,7 @@ export default async function TeacherStudentDetailPage({
                                         ? "primary"
                                         : "warning";
                                 return (
-                                  <tr
-                                    key={e.id}
-                                    className="transition-colors hover:bg-muted/20"
-                                  >
+                                  <tr key={e.id} className="transition-colors hover:bg-muted/20">
                                     <td className="px-4 py-2.5">
                                       <Link
                                         href={`/t/exams/${e.id}/grade`}
@@ -528,24 +510,24 @@ export default async function TeacherStudentDetailPage({
                                         {e.title}
                                       </Link>
                                     </td>
-                                    <td className="px-4 py-2.5 text-xs text-muted-foreground num">
+                                    <td className="num px-4 py-2.5 text-xs text-muted-foreground">
                                       {formatDate(e.openAt)}
                                     </td>
-                                    <td className="px-4 py-2.5 text-xs text-muted-foreground num">
+                                    <td className="num px-4 py-2.5 text-xs text-muted-foreground">
                                       {e.durationMin}m
                                     </td>
                                     <td className="px-4 py-2.5">
                                       <Badge variant={status.tone}>{status.label}</Badge>
                                     </td>
-                                    <td className="px-4 py-2.5 num">
+                                    <td className="num px-4 py-2.5">
                                       {att && att.finalScore != null ? (
                                         <span
                                           className={
                                             scoreTone === "success"
-                                              ? "text-success font-medium"
+                                              ? "font-medium text-success"
                                               : scoreTone === "primary"
-                                                ? "text-primary font-medium"
-                                                : "text-warning font-medium"
+                                                ? "font-medium text-primary"
+                                                : "font-medium text-warning"
                                           }
                                         >
                                           {att.finalScore}
@@ -605,7 +587,7 @@ function StatCard({
             {icon}
           </div>
         </div>
-        <div className="mt-3 text-3xl font-bold tracking-tight num">{value}</div>
+        <div className="num mt-3 text-3xl font-bold tracking-tight">{value}</div>
         <div className="mt-1 text-xs text-muted-foreground">{hint}</div>
       </CardContent>
     </Card>

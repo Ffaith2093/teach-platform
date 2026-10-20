@@ -45,7 +45,10 @@ interface Props {
   available: AvailableCollaborator[];
 }
 
-const ROLE_LABELS: Record<CourseTeacherRole, { label: string; tone: "primary" | "accent" | "default" }> = {
+const ROLE_LABELS: Record<
+  CourseTeacherRole,
+  { label: string; tone: "primary" | "accent" | "default" }
+> = {
   OWNER: { label: "主讲", tone: "primary" },
   ASSISTANT: { label: "助教", tone: "accent" },
   CONTRIBUTOR: { label: "外聘", tone: "default" },
@@ -61,7 +64,9 @@ export function CollaboratorsPanel({
   const [addOpen, setAddOpen] = React.useState(false);
   const [transferOpen, setTransferOpen] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
-  const [targetId, setTargetId] = React.useState<string>(members.find((m) => m.role !== "OWNER")?.id ?? "");
+  const [targetId, setTargetId] = React.useState<string>(
+    members.find((m) => m.role !== "OWNER")?.id ?? "",
+  );
   const [error, setError] = React.useState<string | null>(null);
 
   function handleAdd(id: string) {
@@ -103,7 +108,7 @@ export function CollaboratorsPanel({
           <div>
             <h2 className="text-base font-semibold">教师团队</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              主讲（OWNER）拥有完整权限；助教可出题与批改。
+              主讲（OWNER）拥有完整权限；助教可出题、发布考核并查看自动评分结果。
             </p>
           </div>
           {isOwner && (
@@ -117,9 +122,7 @@ export function CollaboratorsPanel({
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>邀请协作者</DialogTitle>
-                  <DialogDescription>
-                    添加的教师将作为助教加入课程。
-                  </DialogDescription>
+                  <DialogDescription>添加的教师将作为助教加入课程。</DialogDescription>
                 </DialogHeader>
                 <div className="max-h-80 overflow-y-auto rounded-lg border border-border">
                   {available.length === 0 ? (
@@ -136,9 +139,7 @@ export function CollaboratorsPanel({
                           <div className="min-w-0">
                             <div className="text-sm font-medium text-foreground">{c.name}</div>
                             <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                              {c.teacherNo && (
-                                <span className="num font-mono">{c.teacherNo}</span>
-                              )}
+                              {c.teacherNo && <span className="num font-mono">{c.teacherNo}</span>}
                               {c.subjects.length > 0 && (
                                 <>
                                   {c.teacherNo && <span>·</span>}
@@ -178,7 +179,9 @@ export function CollaboratorsPanel({
                   <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                     {m.role === "OWNER" && <Crown className="h-3.5 w-3.5 text-primary" />}
                     {m.name}
-                    {isCurrentUser && <span className="text-[11px] text-subtle-foreground">(我)</span>}
+                    {isCurrentUser && (
+                      <span className="text-[11px] text-subtle-foreground">(我)</span>
+                    )}
                   </div>
                   <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                     {m.teacherNo && <span className="num font-mono">{m.teacherNo}</span>}
@@ -191,9 +194,7 @@ export function CollaboratorsPanel({
                   </div>
                   <div className="mt-1.5 flex items-center gap-1">
                     <Badge variant={role.tone}>{role.label}</Badge>
-                    {m.status !== "ACTIVE" && (
-                      <Badge variant="default">已停用</Badge>
-                    )}
+                    {m.status !== "ACTIVE" && <Badge variant="default">已停用</Badge>}
                   </div>
                 </div>
                 {isOwner && m.role !== "OWNER" && (

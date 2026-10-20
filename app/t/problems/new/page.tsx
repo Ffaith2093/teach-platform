@@ -8,12 +8,7 @@ export const metadata = { title: "新建编程题" };
 export default function NewProblemPage() {
   return (
     <>
-      <Topbar
-        crumbs={[
-          { label: "我的编程题", href: "/t/problems" },
-          { label: "新建题目" },
-        ]}
-      />
+      <Topbar crumbs={[{ label: "我的编程题", href: "/t/problems" }, { label: "新建题目" }]} />
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-[1024px] flex-col gap-6">
           <div>
@@ -39,6 +34,8 @@ export default function NewProblemPage() {
               timeLimitMs: 1000,
               memoryLimitMb: 256,
               splitInputByWhitespace: false,
+              ignoreOutputWhitespace: false,
+              ignoreOutputPunctuation: false,
               starterCode: "",
               referenceSolution: "",
               tags: [],
@@ -49,8 +46,8 @@ export default function NewProblemPage() {
 
           <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 text-xs text-muted-foreground">
             <Code className="mr-1.5 inline h-3.5 w-3.5" />
-            提示：题干支持 Markdown 语法，可在编辑框右侧实时预览学生看到的效果。
-            测试用例至少要 1 组，发布前建议用参考答案跑全部用例。
+            提示：题干支持 Markdown 语法，可在编辑框右侧实时预览学生看到的效果。 测试用例至少要 1
+            组，发布前建议用参考答案跑全部用例。
           </div>
         </div>
       </main>

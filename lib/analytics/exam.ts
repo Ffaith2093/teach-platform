@@ -65,10 +65,16 @@ export type ExamAnalytics = {
   bottomPerformers: ExamPerformers[];
 };
 
-/** 取该 attempt 的有效分数（GRADED 用 finalScore；未发布用 auto+manual 预估） */
+/** 取该 attempt 的有效分数（GRADED 用 finalScore；未出分时仅看自动分）。 */
 function effectiveScore(a: ExamAttemptForAnalysis, totalScore: number): number {
   if (a.finalScore != null) return a.finalScore;
-  return Math.max(0, Math.min(a.answers.reduce((sum, answer) => sum + (answer.manualScore ?? answer.autoScore ?? 0), 0), totalScore));
+  return Math.max(
+    0,
+    Math.min(
+      a.answers.reduce((sum, answer) => sum + (answer.autoScore ?? 0), 0),
+      totalScore,
+    ),
+  );
 }
 
 function percentileRate(score: number, totalScore: number): number {
@@ -89,7 +95,7 @@ function groupScoreRate(
     if (a.questionIds && !a.questionIds.includes(questionId)) continue;
     assigned++;
     const ans = a.answers.find((x) => x.questionId === questionId);
-    if (ans) sum += ans.manualScore ?? ans.autoScore ?? 0;
+    if (ans) sum += ans.autoScore ?? 0;
     // 未作答计 0
   }
   return assigned ? sum / (assigned * fullScore) : 0;
@@ -101,11 +107,7 @@ export function analyzeExam(
   totalScore: number,
 ): ExamAnalytics {
   const submitted = attempts.filter(
-    (a) =>
-      a.finalScore != null ||
-      a.autoScore != null ||
-      a.manualScore != null ||
-      a.answers.length > 0,
+    (a) => a.finalScore != null || a.autoScore != null || a.answers.length > 0,
   );
   const scores = submitted.map((a) => effectiveScore(a, totalScore));
 
@@ -121,9 +123,7 @@ export function analyzeExam(
   const max = sorted.length ? sorted[sorted.length - 1] : 0;
   const min = sorted.length ? sorted[0] : 0;
   const variance =
-    scores.length > 1
-      ? scores.reduce((s, n) => s + (n - mean) ** 2, 0) / scores.length
-      : 0;
+    scores.length > 1 ? scores.reduce((s, n) => s + (n - mean) ** 2, 0) / scores.length : 0;
   const stdDev = Math.sqrt(variance);
   const passRate = scores.length
     ? scores.filter((s) => percentileRate(s, totalScore) >= 0.6).length / scores.length
@@ -160,7 +160,7 @@ export function analyzeExam(
       if (a.questionIds && !a.questionIds.includes(q.questionId)) continue;
       assigned++;
       const ans = a.answers.find((x) => x.questionId === q.questionId);
-      const s = ans ? (ans.manualScore ?? ans.autoScore ?? 0) : 0;
+      const s = ans?.autoScore ?? 0;
       sum += s;
       if (s >= q.score) correctCount++;
     }
@@ -193,8 +193,8 @@ export function analyzeExam(
     studentId: string;
     studentName: string;
   };
-  const withStudent = submitted.filter(
-    (a): a is WithStudent => Boolean(a.id && a.studentId && a.studentName),
+  const withStudent = submitted.filter((a): a is WithStudent =>
+    Boolean(a.id && a.studentId && a.studentName),
   );
   const ranked = withStudent
     .map<ExamPerformers>((a) => ({

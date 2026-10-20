@@ -6,18 +6,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Topbar } from "@/components/shell/topbar";
 import { formatDate, relativeTime } from "@/lib/utils";
-import {
-  ChevronLeft,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  User,
-} from "lucide-react";
+import { ChevronLeft, Clock, CheckCircle2, AlertCircle, User } from "lucide-react";
 import { GradeAttemptForm } from "./_components/grade-attempt-form";
-import { GradeHeaderActions } from "./_components/grade-header-actions";
 import type { AttemptStatus, Difficulty, QuestionType } from "@prisma/client";
 
-export const metadata = { title: "批改学生答卷" };
+export const metadata = { title: "查看学生答卷" };
 
 export default async function GradeAttemptPage({
   params,
@@ -47,7 +40,6 @@ export default async function GradeAttemptPage({
   if (!myRole || (myRole !== "OWNER" && myRole !== "ASSISTANT")) {
     redirect(`/t/exams/${id}/grade?error=forbidden`);
   }
-  const isOwner = myRole === "OWNER";
 
   const attempt = await prisma.examAttempt.findUnique({
     where: { id: attemptId },
@@ -134,15 +126,13 @@ export default async function GradeAttemptPage({
     })
     .filter((x): x is NonNullable<typeof x> => Boolean(x));
 
-  const isManual = (q: { type: QuestionType }) => q.type === "PROGRAMMING";
-
   return (
     <>
       <Topbar
         crumbs={[
           { label: "我的试卷", href: "/t/exams" },
           { label: exam.title, href: `/t/exams/${id}` },
-          { label: "批改", href: `/t/exams/${id}/grade` },
+          { label: "成绩与答卷", href: `/t/exams/${id}/grade` },
           { label: attempt.student.name },
         ]}
       />
@@ -154,7 +144,7 @@ export default async function GradeAttemptPage({
               className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               <ChevronLeft className="h-3 w-3" />
-              返回批改列表
+              返回成绩与答卷
             </Link>
             <div className="mt-2 flex items-end justify-between gap-4">
               <div className="min-w-0">
@@ -188,12 +178,6 @@ export default async function GradeAttemptPage({
                   <span className="num">{questions.length} 题</span>
                 </div>
               </div>
-              <GradeHeaderActions
-                examId={id}
-                attemptId={attemptId}
-                status={attempt.status}
-                isOwner={isOwner}
-              />
             </div>
           </div>
 
@@ -203,7 +187,7 @@ export default async function GradeAttemptPage({
             totalScore={exam.totalScore}
             questions={questions.map((q) => ({
               ...q,
-              isManual: isManual(q),
+              isManual: false,
             }))}
           />
         </div>
@@ -217,7 +201,7 @@ function StatusBadge({ status }: { status: AttemptStatus }) {
     case "SUBMITTED":
       return <Badge variant="default">已交卷</Badge>;
     case "GRADING":
-      return <Badge variant="warning">批改中</Badge>;
+      return <Badge variant="warning">自动评分中</Badge>;
     case "GRADED":
       return <Badge variant="success">已发布</Badge>;
     case "IN_PROGRESS":

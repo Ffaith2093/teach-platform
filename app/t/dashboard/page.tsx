@@ -17,83 +17,87 @@ export default async function TeacherDashboardPage() {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
-  const [classCount, courseCount, toGrade, recentSubs, taughtClasses, myCourses, attendanceCourses] =
-    await Promise.all([
-      prisma.classTeacher.count({ where: { teacherId: userId } }),
-      prisma.courseTeacher.count({ where: { teacherId: userId } }),
-      prisma.assignmentSubmission.count({
-        where: {
-          status: "SUBMITTED",
-          gradedById: null,
-          assignment: { course: { teachers: { some: { teacherId: userId } } } },
-        },
-      }),
-      prisma.submission.findMany({
-        where: {
-          userId,
-          contextType: "ASSIGNMENT",
-          createdAt: { gte: new Date(Date.now() - 7 * 86400000) },
-        },
-        take: 5,
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.classTeacher.findMany({
-        where: { teacherId: userId },
-        include: {
-          class: {
-            include: {
-              grade: { select: { name: true, joinYear: true } },
-              _count: { select: { students: { where: { status: "ACTIVE" } } } },
-            },
+  const [
+    classCount,
+    courseCount,
+    toGrade,
+    recentSubs,
+    taughtClasses,
+    myCourses,
+    attendanceCourses,
+  ] = await Promise.all([
+    prisma.classTeacher.count({ where: { teacherId: userId } }),
+    prisma.courseTeacher.count({ where: { teacherId: userId } }),
+    prisma.assignmentSubmission.count({
+      where: {
+        status: "SUBMITTED",
+        gradedById: null,
+        assignment: { course: { teachers: { some: { teacherId: userId } } } },
+      },
+    }),
+    prisma.submission.findMany({
+      where: {
+        userId,
+        contextType: "ASSIGNMENT",
+        createdAt: { gte: new Date(Date.now() - 7 * 86400000) },
+      },
+      take: 5,
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.classTeacher.findMany({
+      where: { teacherId: userId },
+      include: {
+        class: {
+          include: {
+            grade: { select: { name: true, joinYear: true } },
+            _count: { select: { students: { where: { status: "ACTIVE" } } } },
           },
         },
-        orderBy: { class: { name: "asc" } },
-      }),
-      prisma.courseTeacher.findMany({
-        where: { teacherId: userId, course: { isArchived: false } },
-        include: {
-          course: {
-            include: { _count: { select: { classes: true, assignments: true } } },
-          },
+      },
+      orderBy: { class: { name: "asc" } },
+    }),
+    prisma.courseTeacher.findMany({
+      where: { teacherId: userId, course: { isArchived: false } },
+      include: {
+        course: {
+          include: { _count: { select: { classes: true, assignments: true } } },
         },
-        take: 5,
-        orderBy: { course: { updatedAt: "desc" } },
-      }),
-      // 「今日到课总览」数据：教师教的全部未归档课程 + 应到 + 今日到课
-      prisma.courseTeacher.findMany({
-        where: { teacherId: userId, course: { isArchived: false } },
-        include: {
-          course: {
-            include: {
-              classes: {
-                include: {
-                  class: {
-                    select: {
-                      students: {
-                        where: { status: "ACTIVE" },
-                        select: { id: true },
-                      },
+      },
+      take: 5,
+      orderBy: { course: { updatedAt: "desc" } },
+    }),
+    // 「今日到课总览」数据：教师教的全部未归档课程 + 应到 + 今日到课
+    prisma.courseTeacher.findMany({
+      where: { teacherId: userId, course: { isArchived: false } },
+      include: {
+        course: {
+          include: {
+            classes: {
+              include: {
+                class: {
+                  select: {
+                    students: {
+                      where: { status: "ACTIVE" },
+                      select: { id: true },
                     },
                   },
                 },
               },
-              accessLogs: {
-                where: { createdAt: { gte: todayStart } },
-                select: { userId: true },
-              },
+            },
+            accessLogs: {
+              where: { createdAt: { gte: todayStart } },
+              select: { userId: true },
             },
           },
         },
-      }),
-    ]);
+      },
+    }),
+  ]);
 
   // 装配出勤（按 present/total 直接展示，不算率/不做对比）
   const attendanceRows = attendanceCourses
     .map((ct) => {
-      const expected = ct.course.classes.reduce(
-        (s, cc) => s + cc.class.students.length,
-        0,
-      );
+      const expected = ct.course.classes.reduce((s, cc) => s + cc.class.students.length, 0);
       const presentSet = new Set(ct.course.accessLogs.map((l) => l.userId));
       const present = presentSet.size;
       return {
@@ -109,7 +113,7 @@ export default async function TeacherDashboardPage() {
   const stats = [
     { icon: Users, label: "我教的班级", num: classCount, suffix: "个" },
     { icon: BookOpen, label: "我的课程", num: courseCount },
-    { icon: ClipboardCheck, label: "待批改", num: toGrade, accent: true },
+    { icon: ClipboardCheck, label: "自动评分中", num: toGrade, accent: true },
     { icon: FileText, label: "本周提交", num: recentSubs.length },
   ];
 
@@ -118,9 +122,7 @@ export default async function TeacherDashboardPage() {
       <Topbar crumbs={[{ label: "工作台" }]} />
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {session?.user.name} 老师
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{session?.user.name} 老师</h1>
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {stats.map((s) => {
@@ -128,21 +130,27 @@ export default async function TeacherDashboardPage() {
               return (
                 <Card
                   key={s.label}
-                  className={s.accent ? "border-warning/40 hover:shadow-md" : "hover:border-primary/40 hover:shadow-md"}
+                  className={
+                    s.accent
+                      ? "border-warning/40 hover:shadow-md"
+                      : "hover:border-primary/40 hover:shadow-md"
+                  }
                 >
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between">
                       <span className="text-sm text-muted-foreground">{s.label}</span>
                       <div
                         className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-                          s.accent ? "bg-warning-subtle text-warning" : "bg-primary-subtle text-primary"
+                          s.accent
+                            ? "bg-warning-subtle text-warning"
+                            : "bg-primary-subtle text-primary"
                         }`}
                       >
                         <Icon className="h-4 w-4" />
                       </div>
                     </div>
                     <div className="mt-3 flex items-baseline gap-1">
-                      <span className="text-3xl font-bold tracking-tight num">{s.num}</span>
+                      <span className="num text-3xl font-bold tracking-tight">{s.num}</span>
                       {s.suffix && (
                         <span className="text-sm text-muted-foreground">{s.suffix}</span>
                       )}
@@ -159,9 +167,7 @@ export default async function TeacherDashboardPage() {
               <div className="mb-4 flex items-center gap-2">
                 <Activity className="h-4 w-4 text-primary" />
                 <h2 className="text-base font-semibold">今日到课</h2>
-                <span className="text-[11px] text-subtle-foreground">
-                  基于学生访问课程页打点
-                </span>
+                <span className="text-[11px] text-subtle-foreground">基于学生访问课程页打点</span>
               </div>
               {attendanceRows.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-border bg-muted/30 px-6 py-10 text-center text-sm text-muted-foreground">
@@ -178,9 +184,13 @@ export default async function TeacherDashboardPage() {
                         <div className="flex min-w-0 items-center gap-2">
                           <span className="truncate text-foreground">{r.title}</span>
                           {r.role === "OWNER" ? (
-                            <Badge variant="primary" className="shrink-0">主讲</Badge>
+                            <Badge variant="primary" className="shrink-0">
+                              主讲
+                            </Badge>
                           ) : r.role === "ASSISTANT" ? (
-                            <Badge variant="accent" className="shrink-0">助教</Badge>
+                            <Badge variant="accent" className="shrink-0">
+                              助教
+                            </Badge>
                           ) : null}
                         </div>
                         <span className="num shrink-0 text-muted-foreground">
@@ -278,10 +288,12 @@ export default async function TeacherDashboardPage() {
                                 {ct.course.title}
                               </div>
                               <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                                <Badge
-                                  variant={ct.role === "OWNER" ? "primary" : "accent"}
-                                >
-                                  {ct.role === "OWNER" ? "主讲" : ct.role === "ASSISTANT" ? "助教" : "外聘"}
+                                <Badge variant={ct.role === "OWNER" ? "primary" : "accent"}>
+                                  {ct.role === "OWNER"
+                                    ? "主讲"
+                                    : ct.role === "ASSISTANT"
+                                      ? "助教"
+                                      : "外聘"}
                                 </Badge>
                               </div>
                             </div>
@@ -298,18 +310,18 @@ export default async function TeacherDashboardPage() {
             <div className="space-y-6">
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="text-base font-semibold">待批改</h2>
+                  <h2 className="text-base font-semibold">自动评分</h2>
                   {toGrade === 0 ? (
                     <div className="mt-4 flex flex-col items-center gap-2 py-6 text-center text-sm text-muted-foreground">
                       <ClipboardCheck className="h-6 w-6 text-success" />
-                      <p>暂无待批改作业</p>
+                      <p>暂无评测中的作业</p>
                     </div>
                   ) : (
                     <Link
-                      href="/t/grading"
+                      href="/t/assignments"
                       className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning-subtle/30 p-3 transition-colors hover:bg-warning-subtle/50"
                     >
-                      <div className="text-2xl font-bold num text-warning">{toGrade}</div>
+                      <div className="num text-2xl font-bold text-warning">{toGrade}</div>
                       <ChevronRight className="h-4 w-4 text-warning" />
                     </Link>
                   )}
@@ -330,7 +342,10 @@ export default async function TeacherDashboardPage() {
                           <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
                           <div className="min-w-0 flex-1">
                             <div className="truncate text-xs">
-                              学生提交了 <span className="font-medium text-foreground">编程题 #{s.problemId.slice(-4)}</span>
+                              学生提交了{" "}
+                              <span className="font-medium text-foreground">
+                                编程题 #{s.problemId.slice(-4)}
+                              </span>
                             </div>
                             <div className="text-[11px] text-subtle-foreground">
                               {relativeTime(s.createdAt)} · {s.status}

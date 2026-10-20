@@ -6,19 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Topbar } from "@/components/shell/topbar";
 import { formatDate, relativeTime } from "@/lib/utils";
-import {
-  ChevronLeft,
-  Clock,
-  Users,
-  ClipboardCheck,
-  CheckCircle2,
-  AlertCircle,
-  Send,
-} from "lucide-react";
-import { GradeHeaderActions } from "./_components/grade-header-actions";
+import { ChevronLeft, Clock, Users, ClipboardCheck, CheckCircle2, AlertCircle } from "lucide-react";
 import type { AttemptStatus } from "@prisma/client";
 
-export const metadata = { title: "批改考试" };
+export const metadata = { title: "考试成绩与答卷" };
 
 type StatusFilter = "all" | "todo" | "grading" | "graded";
 
@@ -57,7 +48,6 @@ export default async function GradeExamPage({
   if (!myRole || (myRole !== "OWNER" && myRole !== "ASSISTANT")) {
     redirect("/t/exams?error=forbidden");
   }
-  const isOwner = myRole === "OWNER";
   const isDraft = exam.status === "DRAFT";
 
   const status: StatusFilter =
@@ -112,10 +102,13 @@ export default async function GradeExamPage({
   const stats = [
     {
       icon: ClipboardCheck,
-      label: "待批改",
+      label: "自动评分中",
       num: todoCount,
       tone: "primary" as const,
-      hint: submittedCount + gradingCount > 0 ? `已交 ${submittedCount} · 批改中 ${gradingCount}` : undefined,
+      hint:
+        submittedCount + gradingCount > 0
+          ? `已交 ${submittedCount} · 评测中 ${gradingCount}`
+          : undefined,
     },
     { icon: CheckCircle2, label: "已发布", num: gradedCount, tone: "success" as const },
     { icon: Clock, label: "进行中", num: inProgressCount, tone: "warning" as const },
@@ -144,8 +137,8 @@ export default async function GradeExamPage({
 
   const statusTabs: { key: StatusFilter; label: string }[] = [
     { key: "all", label: "全部" },
-    { key: "todo", label: "待批改" },
-    { key: "grading", label: "批改中" },
+    { key: "todo", label: "待评测" },
+    { key: "grading", label: "评测中" },
     { key: "graded", label: "已发布" },
   ];
 
@@ -155,7 +148,7 @@ export default async function GradeExamPage({
         crumbs={[
           { label: "我的试卷", href: "/t/exams" },
           { label: exam.title, href: `/t/exams/${exam.id}` },
-          { label: "批改" },
+          { label: "成绩与答卷" },
         ]}
       />
       <main className="flex-1 p-8">
@@ -171,7 +164,9 @@ export default async function GradeExamPage({
             <div className="mt-2 flex items-end justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl font-semibold tracking-tight">批改 · {exam.title}</h1>
+                  <h1 className="text-2xl font-semibold tracking-tight">
+                    成绩与答卷 · {exam.title}
+                  </h1>
                   <Badge variant="primary">{exam.course.title}</Badge>
                 </div>
                 <p className="mt-1.5 text-sm text-muted-foreground">
@@ -179,13 +174,6 @@ export default async function GradeExamPage({
                   <span className="num"> {classes.length}</span> 个班级
                 </p>
               </div>
-              {!isDraft && (
-                <GradeHeaderActions
-                  examId={exam.id}
-                  isOwner={isOwner}
-                  todoCount={todoCount}
-                />
-              )}
             </div>
           </div>
 
@@ -194,7 +182,7 @@ export default async function GradeExamPage({
               <CardContent className="flex flex-col items-center gap-3 px-6 py-16 text-center">
                 <AlertCircle className="h-8 w-8 text-muted-foreground" />
                 <p className="text-sm font-medium text-foreground">试卷尚未发布</p>
-                <p className="text-xs text-muted-foreground">发布后再来批改。</p>
+                <p className="text-xs text-muted-foreground">发布并结束考试后，系统会自动出分。</p>
               </CardContent>
             </Card>
           ) : (
@@ -221,8 +209,10 @@ export default async function GradeExamPage({
                             <Icon className="h-4 w-4" />
                           </div>
                         </div>
-                        <div className="mt-3 text-3xl font-bold tracking-tight num">{s.num}</div>
-                        {s.hint && <div className="mt-1 text-xs text-muted-foreground">{s.hint}</div>}
+                        <div className="num mt-3 text-3xl font-bold tracking-tight">{s.num}</div>
+                        {s.hint && (
+                          <div className="mt-1 text-xs text-muted-foreground">{s.hint}</div>
+                        )}
                       </CardContent>
                     </Card>
                   );
@@ -277,7 +267,6 @@ export default async function GradeExamPage({
                           <th className="px-6 py-3">班级</th>
                           <th className="px-6 py-3">提交时间</th>
                           <th className="px-6 py-3 text-right">客观</th>
-                          <th className="px-6 py-3 text-right">手动</th>
                           <th className="px-6 py-3 text-right">总分</th>
                           <th className="px-6 py-3">状态</th>
                           <th className="w-32 px-6 py-3 text-right">操作</th>
@@ -314,31 +303,26 @@ function Row({
 }: {
   examId: string;
   student: { id: string; name: string; studentNo: string | null; class: { name: string } | null };
-  attempt:
-    | {
-        id: string;
-        status: AttemptStatus;
-        autoScore: number | null;
-        manualScore: number | null;
-        answers: Array<{ autoScore: number | null; manualScore: number | null }>;
-        finalScore: number | null;
-        submittedAt: Date | null;
-      }
-    | null;
+  attempt: {
+    id: string;
+    status: AttemptStatus;
+    autoScore: number | null;
+    manualScore: number | null;
+    answers: Array<{ autoScore: number | null; manualScore: number | null }>;
+    finalScore: number | null;
+    submittedAt: Date | null;
+  } | null;
   totalScore: number;
 }) {
   if (!attempt) {
     return (
       <tr className="bg-muted/20 text-muted-foreground">
-        <td className="px-6 py-3.5 num font-mono text-xs">{student.studentNo ?? "—"}</td>
+        <td className="num px-6 py-3.5 font-mono text-xs">{student.studentNo ?? "—"}</td>
         <td className="px-6 py-3.5 font-medium">{student.name}</td>
-        <td className="px-6 py-3.5 text-xs text-muted-foreground">
-          {student.class?.name ?? "—"}
-        </td>
+        <td className="px-6 py-3.5 text-xs text-muted-foreground">{student.class?.name ?? "—"}</td>
         <td className="px-6 py-3.5 text-xs text-subtle-foreground">—</td>
-        <td className="px-6 py-3.5 num text-right text-subtle-foreground">—</td>
-        <td className="px-6 py-3.5 num text-right text-subtle-foreground">—</td>
-        <td className="px-6 py-3.5 num text-right text-subtle-foreground">—</td>
+        <td className="num px-6 py-3.5 text-right text-subtle-foreground">—</td>
+        <td className="num px-6 py-3.5 text-right text-subtle-foreground">—</td>
         <td className="px-6 py-3.5">
           <Badge variant="default">未参加</Badge>
         </td>
@@ -347,31 +331,22 @@ function Row({
     );
   }
 
-  const finalShown =
-    attempt.finalScore ??
-    (attempt.status === "SUBMITTED"
-      ? attempt.autoScore
-      : attempt.answers.reduce((sum, answer) => sum + (answer.manualScore ?? answer.autoScore ?? 0), 0));
+  const finalShown = attempt.finalScore ?? attempt.autoScore;
 
   return (
     <tr className={attempt.status === "GRADED" ? "bg-success-subtle/10" : ""}>
-      <td className="px-6 py-3.5 num font-mono text-xs text-muted-foreground">
+      <td className="num px-6 py-3.5 font-mono text-xs text-muted-foreground">
         {student.studentNo ?? "—"}
       </td>
       <td className="px-6 py-3.5 font-medium text-foreground">{student.name}</td>
-      <td className="px-6 py-3.5 text-xs text-muted-foreground">
-        {student.class?.name ?? "—"}
-      </td>
-      <td className="px-6 py-3.5 num text-xs text-muted-foreground">
+      <td className="px-6 py-3.5 text-xs text-muted-foreground">{student.class?.name ?? "—"}</td>
+      <td className="num px-6 py-3.5 text-xs text-muted-foreground">
         {attempt.submittedAt ? formatDate(attempt.submittedAt) : "—"}
       </td>
-      <td className="px-6 py-3.5 num text-right text-muted-foreground">
+      <td className="num px-6 py-3.5 text-right text-muted-foreground">
         {attempt.autoScore ?? "—"}
       </td>
-      <td className="px-6 py-3.5 num text-right text-muted-foreground">
-        {attempt.manualScore ?? "—"}
-      </td>
-      <td className="px-6 py-3.5 num text-right">
+      <td className="num px-6 py-3.5 text-right">
         {finalShown != null ? (
           <span
             className={
@@ -403,7 +378,7 @@ function Row({
             className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
           >
             <ClipboardCheck className="h-3 w-3" />
-            {attempt.status === "GRADED" ? "查看" : "批改"}
+            查看答卷
           </Link>
         )}
       </td>
@@ -418,7 +393,7 @@ function StatusBadge({ status }: { status: AttemptStatus }) {
     case "SUBMITTED":
       return <Badge variant="default">已交卷</Badge>;
     case "GRADING":
-      return <Badge variant="warning">批改中</Badge>;
+      return <Badge variant="warning">自动评分中</Badge>;
     case "GRADED":
       return <Badge variant="success">已发布</Badge>;
   }

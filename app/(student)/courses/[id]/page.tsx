@@ -51,104 +51,104 @@ export default async function StudentCourseOverviewPage({
     recentGrades,
     courseNotis,
   ] = await Promise.all([
-      prisma.course.findFirst({
-        where: {
-          id,
-          isArchived: false,
-          classes: { some: { classId: me.classId } },
+    prisma.course.findFirst({
+      where: {
+        id,
+        isArchived: false,
+        classes: { some: { classId: me.classId } },
+      },
+      include: {
+        teachers: {
+          include: { teacher: { select: { id: true, name: true, email: true } } },
+          orderBy: [{ role: "asc" }],
         },
-        include: {
-          teachers: {
-            include: { teacher: { select: { id: true, name: true, email: true } } },
-            orderBy: [{ role: "asc" }],
-          },
-          classes: {
-            include: {
-              class: {
-                include: { grade: { select: { name: true, joinYear: true } } },
-              },
+        classes: {
+          include: {
+            class: {
+              include: { grade: { select: { name: true, joinYear: true } } },
             },
           },
         },
-      }),
-      prisma.assignmentSubmission.findMany({
-        where: { studentId: userId, assignment: { courseId: id } },
-        select: { status: true, finalScore: true, assignment: { select: { totalScore: true } } },
-      }),
-      prisma.examAttempt.findMany({
-        where: { studentId: userId, exam: { courseId: id } },
-        select: { status: true },
-      }),
-      // 本课程待办作业：已发布、未到期、未被批阅完成
-      prisma.assignment.findMany({
-        where: {
-          courseId: id,
-          publishedAt: { not: null },
-          dueAt: { gte: now },
-          submissions: {
-            none: { studentId: userId, status: { in: ["GRADED", "RETURNED"] } },
-          },
+      },
+    }),
+    prisma.assignmentSubmission.findMany({
+      where: { studentId: userId, assignment: { courseId: id } },
+      select: { status: true, finalScore: true, assignment: { select: { totalScore: true } } },
+    }),
+    prisma.examAttempt.findMany({
+      where: { studentId: userId, exam: { courseId: id } },
+      select: { status: true },
+    }),
+    // 本课程待办作业：已发布、未到期、未被批阅完成
+    prisma.assignment.findMany({
+      where: {
+        courseId: id,
+        publishedAt: { not: null },
+        dueAt: { gte: now },
+        submissions: {
+          none: { studentId: userId, status: { in: ["GRADED", "RETURNED"] } },
         },
-        orderBy: { dueAt: "asc" },
-        take: 5,
-        select: {
-          id: true,
-          title: true,
-          dueAt: true,
-          submissions: {
-            where: { studentId: userId },
-            select: { status: true },
-            take: 1,
-          },
+      },
+      orderBy: { dueAt: "asc" },
+      take: 5,
+      select: {
+        id: true,
+        title: true,
+        dueAt: true,
+        submissions: {
+          where: { studentId: userId },
+          select: { status: true },
+          take: 1,
         },
-      }),
-      // 本课程进行中考试
-      prisma.examAttempt.findMany({
-        where: {
-          studentId: userId,
-          status: "IN_PROGRESS",
-          deadlineAt: { gt: now },
-          exam: { courseId: id },
-        },
-        orderBy: { deadlineAt: "asc" },
-        take: 5,
-        select: {
-          id: true,
-          deadlineAt: true,
-          exam: { select: { id: true, title: true } },
-        },
-      }),
-      // 本课程最近出分
-      prisma.assignmentSubmission.findMany({
-        where: {
-          studentId: userId,
-          status: "GRADED",
-          assignment: { courseId: id },
-        },
-        orderBy: { gradedAt: "desc" },
-        take: 3,
-        select: {
-          id: true,
-          finalScore: true,
-          gradedAt: true,
-          assignment: { select: { id: true, title: true, totalScore: true } },
-        },
-      }),
-      // 课程公告：本课程作用域 + 当前学生
-      prisma.notification.findMany({
-        where: { userId, courseId: id },
-        orderBy: { createdAt: "desc" },
-        take: 20,
-        select: {
-          id: true,
-          title: true,
-          body: true,
-          href: true,
-          isRead: true,
-          createdAt: true,
-        },
-      }),
-    ]);
+      },
+    }),
+    // 本课程进行中考试
+    prisma.examAttempt.findMany({
+      where: {
+        studentId: userId,
+        status: "IN_PROGRESS",
+        deadlineAt: { gt: now },
+        exam: { courseId: id },
+      },
+      orderBy: { deadlineAt: "asc" },
+      take: 5,
+      select: {
+        id: true,
+        deadlineAt: true,
+        exam: { select: { id: true, title: true } },
+      },
+    }),
+    // 本课程最近出分
+    prisma.assignmentSubmission.findMany({
+      where: {
+        studentId: userId,
+        status: "GRADED",
+        assignment: { courseId: id },
+      },
+      orderBy: { gradedAt: "desc" },
+      take: 3,
+      select: {
+        id: true,
+        finalScore: true,
+        gradedAt: true,
+        assignment: { select: { id: true, title: true, totalScore: true } },
+      },
+    }),
+    // 课程公告：本课程作用域 + 当前学生
+    prisma.notification.findMany({
+      where: { userId, courseId: id },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      select: {
+        id: true,
+        title: true,
+        body: true,
+        href: true,
+        isRead: true,
+        createdAt: true,
+      },
+    }),
+  ]);
   if (!course) notFound();
 
   // 进度统计
@@ -156,8 +156,10 @@ export default async function StudentCourseOverviewPage({
   const avgRatio =
     gradedSubs.length === 0
       ? null
-      : gradedSubs.reduce((acc, s) => acc + (s.finalScore ?? 0) / (s.assignment.totalScore || 1), 0) /
-        gradedSubs.length;
+      : gradedSubs.reduce(
+          (acc, s) => acc + (s.finalScore ?? 0) / (s.assignment.totalScore || 1),
+          0,
+        ) / gradedSubs.length;
 
   const teacherCount = course.teachers.length;
   const classCount = course.classes.length;
@@ -174,7 +176,7 @@ export default async function StudentCourseOverviewPage({
             <Megaphone className="h-4 w-4 text-primary" />
             <h2 className="text-base font-semibold">课程公告</h2>
             {courseNotis.length > 0 && (
-              <span className="text-[11px] text-subtle-foreground num">
+              <span className="num text-[11px] text-subtle-foreground">
                 · {courseNotis.length} 条
               </span>
             )}
@@ -209,9 +211,7 @@ export default async function StudentCourseOverviewPage({
                           <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
                         )}
                       </div>
-                      <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                        {n.body}
-                      </p>
+                      <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.body}</p>
                       <div className="mt-1 text-[11px] text-subtle-foreground">
                         <span className="num">{relativeTime(n.createdAt)}</span>
                         <span className="mx-1">·</span>
@@ -250,11 +250,11 @@ export default async function StudentCourseOverviewPage({
                 <CheckCircle2 className="h-4 w-4" />
               </div>
             </div>
-            <div className="mt-3 text-3xl font-bold tracking-tight num">
+            <div className="num mt-3 text-3xl font-bold tracking-tight">
               {avgRatio == null ? "—" : `${Math.round(avgRatio * 100)}%`}
             </div>
             <p className="mt-1 text-xs text-subtle-foreground">
-              {gradedSubs.length === 0 ? "暂无已批改作业" : `基于 ${gradedSubs.length} 次作业`}
+              {gradedSubs.length === 0 ? "暂无已出分作业" : `基于 ${gradedSubs.length} 次作业`}
             </p>
           </CardContent>
         </Card>
@@ -266,7 +266,7 @@ export default async function StudentCourseOverviewPage({
                 <Users className="h-4 w-4" />
               </div>
             </div>
-            <div className="mt-3 text-3xl font-bold tracking-tight num">{classCount}</div>
+            <div className="num mt-3 text-3xl font-bold tracking-tight">{classCount}</div>
             <p className="mt-1 text-xs text-subtle-foreground">本课程关联班级</p>
           </CardContent>
         </Card>
@@ -278,7 +278,7 @@ export default async function StudentCourseOverviewPage({
                 <GraduationCap className="h-4 w-4" />
               </div>
             </div>
-            <div className="mt-3 text-3xl font-bold tracking-tight num">{myAttempts.length}</div>
+            <div className="num mt-3 text-3xl font-bold tracking-tight">{myAttempts.length}</div>
             <p className="mt-1 text-xs text-subtle-foreground">我参加过的考试</p>
           </CardContent>
         </Card>
@@ -307,7 +307,9 @@ export default async function StudentCourseOverviewPage({
                           {roleLabel(t.role)}
                         </Badge>
                       </div>
-                      <div className="mt-0.5 truncate text-xs text-muted-foreground">{t.teacher.email}</div>
+                      <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {t.teacher.email}
+                      </div>
                     </div>
                   </li>
                 ))}
@@ -406,7 +408,7 @@ export default async function StudentCourseOverviewPage({
                   <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     待办作业
                   </h3>
-                  <span className="text-[11px] text-subtle-foreground num">
+                  <span className="num text-[11px] text-subtle-foreground">
                     {pendingAssignments.length} 项
                   </span>
                 </div>
@@ -420,10 +422,7 @@ export default async function StudentCourseOverviewPage({
                         href={`/assignments/${a.id}`}
                         title={a.title}
                         dueAt={a.dueAt}
-                        submitted={
-                          a.submissions.length > 0 &&
-                          a.submissions[0].status !== "DRAFT"
-                        }
+                        submitted={a.submissions.length > 0 && a.submissions[0].status !== "DRAFT"}
                       />
                     ))}
                   </ul>
@@ -436,7 +435,7 @@ export default async function StudentCourseOverviewPage({
                   <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     进行中考试
                   </h3>
-                  <span className="text-[11px] text-subtle-foreground num">
+                  <span className="num text-[11px] text-subtle-foreground">
                     {inProgressExams.length} 场
                   </span>
                 </div>
@@ -462,7 +461,7 @@ export default async function StudentCourseOverviewPage({
                   <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     最近出分
                   </h3>
-                  <span className="text-[11px] text-subtle-foreground num">
+                  <span className="num text-[11px] text-subtle-foreground">
                     {recentGrades.length} 次
                   </span>
                 </div>
@@ -473,17 +472,14 @@ export default async function StudentCourseOverviewPage({
                     {recentGrades.map((g) => {
                       const pct =
                         g.assignment.totalScore > 0
-                          ? Math.round(
-                              ((g.finalScore ?? 0) / g.assignment.totalScore) * 100,
-                            )
+                          ? Math.round(((g.finalScore ?? 0) / g.assignment.totalScore) * 100)
                           : 0;
-                      const tone =
-                        pct >= 85 ? "success" : pct >= 60 ? "warning" : "danger";
+                      const tone = pct >= 85 ? "success" : pct >= 60 ? "warning" : "danger";
                       return (
                         <li key={g.id}>
                           <Link
                             href={`/assignments/${g.assignment.id}`}
-                            className="flex items-center gap-4 px-3 py-3 transition-colors hover:bg-muted/40 rounded-xl"
+                            className="flex items-center gap-4 rounded-xl px-3 py-3 transition-colors hover:bg-muted/40"
                           >
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-success-subtle text-success">
                               <Trophy className="h-4 w-4" />
@@ -493,13 +489,9 @@ export default async function StudentCourseOverviewPage({
                                 {g.assignment.title}
                               </div>
                               <div className="mt-0.5 text-[11px] text-subtle-foreground">
-                                <span className="num">
-                                  {relativeTime(g.gradedAt!)}
-                                </span>
+                                <span className="num">{relativeTime(g.gradedAt!)}</span>
                                 <span className="mx-1">·</span>
-                                <span className="num">
-                                  {formatDate(g.gradedAt!)}
-                                </span>
+                                <span className="num">{formatDate(g.gradedAt!)}</span>
                               </div>
                             </div>
                             <Badge variant={tone}>
@@ -558,13 +550,7 @@ function AssignmentRow({
 }) {
   const ms = dueAt.getTime() - Date.now();
   const overdue = ms < 0;
-  const tone = overdue
-    ? "danger"
-    : submitted
-      ? "muted"
-      : ms < 86400_000
-        ? "warning"
-        : "primary";
+  const tone = overdue ? "danger" : submitted ? "muted" : ms < 86400_000 ? "warning" : "primary";
   const toneClass = {
     warning: "bg-warning-subtle text-warning",
     primary: "bg-primary-subtle text-primary",
@@ -575,9 +561,11 @@ function AssignmentRow({
     <li>
       <Link
         href={href}
-        className="flex items-center gap-4 px-3 py-3 transition-colors hover:bg-muted/40 rounded-xl"
+        className="flex items-center gap-4 rounded-xl px-3 py-3 transition-colors hover:bg-muted/40"
       >
-        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${toneClass}`}>
+        <div
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${toneClass}`}
+        >
           <FileText className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
@@ -598,15 +586,7 @@ function AssignmentRow({
   );
 }
 
-function ExamRow({
-  href,
-  title,
-  deadlineAt,
-}: {
-  href: string;
-  title: string;
-  deadlineAt: Date;
-}) {
+function ExamRow({ href, title, deadlineAt }: { href: string; title: string; deadlineAt: Date }) {
   const ms = deadlineAt.getTime() - Date.now();
   const tone = ms < 3600_000 ? "danger" : ms < 86400_000 ? "warning" : "primary";
   const toneClass = {
@@ -618,9 +598,11 @@ function ExamRow({
     <li>
       <Link
         href={href}
-        className="flex items-center gap-4 px-3 py-3 transition-colors hover:bg-muted/40 rounded-xl"
+        className="flex items-center gap-4 rounded-xl px-3 py-3 transition-colors hover:bg-muted/40"
       >
-        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${toneClass}`}>
+        <div
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${toneClass}`}
+        >
           <GraduationCap className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">

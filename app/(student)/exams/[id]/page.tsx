@@ -65,8 +65,7 @@ export default async function StudentExamDetailPage({
   const isOver = exam.status === "CLOSED" || classSession?.status === "CLOSED";
 
   // 是否可看成绩
-  const showScore =
-    attempt && isOver && attempt.status !== "IN_PROGRESS";
+  const showScore = attempt && isOver && attempt.status === "GRADED" && attempt.finalScore != null;
 
   return (
     <>
@@ -88,7 +87,7 @@ export default async function StudentExamDetailPage({
                 attempt.status === "IN_PROGRESS" ? (
                   <Badge variant="warning">进行中</Badge>
                 ) : attempt.status === "GRADED" ? (
-                  <Badge variant="success">已批改</Badge>
+                  <Badge variant="success">已出分</Badge>
                 ) : (
                   <Badge variant="primary">已交卷</Badge>
                 )
@@ -103,11 +102,17 @@ export default async function StudentExamDetailPage({
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                本班开考 <span className="num">{classSession?.openedAt ? formatDate(classSession.openedAt) : "等待教师开放"}</span>
+                本班开考{" "}
+                <span className="num">
+                  {classSession?.openedAt ? formatDate(classSession.openedAt) : "等待教师开放"}
+                </span>
               </span>
               <span>·</span>
               <span>
-                本班结束 <span className="num">{classSession?.closedAt ? formatDate(classSession.closedAt) : "由教师统一结束"}</span>
+                本班结束{" "}
+                <span className="num">
+                  {classSession?.closedAt ? formatDate(classSession.closedAt) : "由教师统一结束"}
+                </span>
               </span>
               <span>·</span>
               <span className="num">{exam.durationMin} 分钟</span>
@@ -140,8 +145,8 @@ export default async function StudentExamDetailPage({
                   <div>
                     <p className="text-sm font-medium text-foreground">您有一场进行中的考试</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      交卷截止 <span className="num">{formatDate(attempt.deadlineAt)}</span>
-                      （{relativeTime(attempt.deadlineAt)}）
+                      交卷截止 <span className="num">{formatDate(attempt.deadlineAt)}</span>（
+                      {relativeTime(attempt.deadlineAt)}）
                     </p>
                   </div>
                   <Button asChild>
@@ -154,7 +159,9 @@ export default async function StudentExamDetailPage({
                     <Clock className="h-5 w-5" />
                   </div>
                   <p className="text-sm font-medium text-foreground">教师已结束本班考试</p>
-                  <p className="text-xs text-muted-foreground">系统正在收卷并自动批改，请稍后刷新。</p>
+                  <p className="text-xs text-muted-foreground">
+                    系统正在收卷并自动批改，请稍后刷新。
+                  </p>
                 </>
               ) : attempt ? (
                 <>
@@ -173,11 +180,9 @@ export default async function StudentExamDetailPage({
                   {showScore ? (
                     <div className="flex flex-col items-center gap-4">
                       <div className="rounded-xl border border-border bg-muted/40 px-8 py-4">
-                        <div className="text-xs text-muted-foreground">
-                          {attempt.status === "GRADED" ? "最终得分" : "自动评分"}
-                        </div>
-                        <div className="mt-1 num text-3xl font-bold tracking-tight">
-                          {attempt.finalScore ?? attempt.autoScore ?? 0}
+                        <div className="text-xs text-muted-foreground">最终得分</div>
+                        <div className="num mt-1 text-3xl font-bold tracking-tight">
+                          {attempt.finalScore}
                           <span className="ml-1 text-base font-normal text-muted-foreground">
                             / {exam.totalScore}
                           </span>
@@ -199,7 +204,8 @@ export default async function StudentExamDetailPage({
                   <div>
                     <p className="text-sm font-medium text-foreground">准备好了吗？</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      开始后将计时 <span className="num">{exam.durationMin}</span> 分钟，中途关闭页面不会暂停，仅有一次机会。
+                      开始后将计时 <span className="num">{exam.durationMin}</span>{" "}
+                      分钟，中途关闭页面不会暂停，仅有一次机会。
                     </p>
                   </div>
                   <form

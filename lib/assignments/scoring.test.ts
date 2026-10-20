@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { scoreAssignmentAnswers, scoreAssignmentProblem } from "./scoring";
+import { automaticAssignmentFinalScore } from "./finalize";
 
 const questions = [
   { questionId: "choice", score: 5, question: { type: "SINGLE_CHOICE", answer: "B" } },
@@ -8,7 +9,10 @@ const questions = [
 ];
 
 test("scores choice and fill answers while ignoring case and surrounding whitespace", () => {
-  assert.equal(scoreAssignmentAnswers(questions, { choice: "b", fill: [" python ", "解释器"] }), 15);
+  assert.equal(
+    scoreAssignmentAnswers(questions, { choice: "b", fill: [" python ", "解释器"] }),
+    15,
+  );
 });
 
 test("assignment programming score is evenly divided by test-case count", () => {
@@ -26,4 +30,16 @@ test("does not award partial credit when a multi-blank answer is incomplete", ()
 test("treats malformed answer payloads as zero", () => {
   assert.equal(scoreAssignmentAnswers(questions, null), 0);
   assert.equal(scoreAssignmentAnswers(questions, []), 0);
+});
+
+test("automatic assignment score applies the configured late penalty", () => {
+  const dueAt = new Date("2026-10-20T08:00:00Z");
+  assert.equal(
+    automaticAssignmentFinalScore(80, new Date("2026-10-20T07:59:00Z"), dueAt, true, 20),
+    80,
+  );
+  assert.equal(
+    automaticAssignmentFinalScore(80, new Date("2026-10-20T08:01:00Z"), dueAt, true, 20),
+    64,
+  );
 });

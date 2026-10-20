@@ -24,19 +24,7 @@ import type {
   JudgeStatus,
 } from "./local";
 import { prepareJudgeInput } from "./input";
-
-/** 宽松比对：忽略行尾空白 + 末尾空行 */
-function looseEqual(actual: string, expected: string): boolean {
-  const norm = (s: string) =>
-    s
-      .replace(/\r\n/g, "\n")
-      .split("\n")
-      .map((l) => l.replace(/\s+$/, ""))
-      .join("\n")
-      .replace(/^\n+/, "")
-      .replace(/\n+$/, "");
-  return norm(actual) === norm(expected);
-}
+import { outputsEqual } from "./output";
 
 /** Docker logs 是 8 字节 header + payload 的多路复用流 */
 function parseDockerLogs(buf: Buffer): { stdout: string; stderr: string } {
@@ -69,16 +57,17 @@ export async function runSandbox(
   await mkdir(tempRoot, { recursive: true });
   const stageDir = await mkdtemp(join(tempRoot, "judge-"));
   const createdContainers: import("dockerode").Container[] = [];
-  const totalTimeoutMs = Math.min(30_000, Math.max(1, Number(process.env.JUDGE_TOTAL_TIMEOUT_MS) || 30_000));
+  const totalTimeoutMs = Math.min(
+    30_000,
+    Math.max(1, Number(process.env.JUDGE_TOTAL_TIMEOUT_MS) || 30_000),
+  );
   let totalTimedOut = false;
   const totalTimer = setTimeout(() => {
     totalTimedOut = true;
     void Promise.all(createdContainers.map((c) => c.kill({ signal: "SIGKILL" }).catch(() => {})));
   }, totalTimeoutMs);
   const cleanup = async () => {
-    await Promise.all(
-      createdContainers.map((c) => c.remove({ force: true }).catch(() => {})),
-    );
+    await Promise.all(createdContainers.map((c) => c.remove({ force: true }).catch(() => {})));
     await rm(stageDir, { recursive: true, force: true }).catch(() => {});
   };
 
@@ -100,7 +89,10 @@ export async function runSandbox(
       }
       // 输出比对（local.ts 的逻辑）
       if (r.status === "ACCEPTED") {
-        const ok = looseEqual(r.actualOutput ?? "", tc.expected);
+        const ok = outputsEqual(r.actualOutput ?? "", tc.expected, {
+          ignoreWhitespace: limits.ignoreOutputWhitespace,
+          ignorePunctuation: limits.ignoreOutputPunctuation,
+        });
         cases.push({
           ...r,
           status: ok ? "ACCEPTED" : "WRONG_ANSWER",
@@ -178,7 +170,9 @@ export async function runSandboxWithInput(
       errorMsg: (error as Error).message,
     };
   } finally {
-    await Promise.all(createdContainers.map((container) => container.remove({ force: true }).catch(() => {})));
+    await Promise.all(
+      createdContainers.map((container) => container.remove({ force: true }).catch(() => {})),
+    );
     await rm(stageDir, { recursive: true, force: true }).catch(() => {});
   }
 }
@@ -298,7 +292,12 @@ async function runOneCase(
   if (oomKilled || stderr.includes("MemoryError") || stderr.includes("OOM")) {
     return { status: "MLE", timeMs, score: 0, errorMsg: "内存超限" };
   }
-  if (timedOut || exitCode === 124 || exitCode === 137 || (exitCode !== 0 && timeMs >= limits.timeLimitMs)) {
+  if (
+    timedOut ||
+    exitCode === 124 ||
+    exitCode === 137 ||
+    (exitCode !== 0 && timeMs >= limits.timeLimitMs)
+  ) {
     return { status: "TLE", timeMs, score: 0, errorMsg: "执行超时" };
   }
   if (

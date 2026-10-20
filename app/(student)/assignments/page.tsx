@@ -21,10 +21,13 @@ export const metadata = { title: "我的作业" };
 
 type StatusFilter = "all" | "pending" | "submitted" | "graded";
 
-const STATUS_LABELS: Record<SubmissionStatus, { label: string; tone: "default" | "warning" | "success" | "accent" }> = {
+const STATUS_LABELS: Record<
+  SubmissionStatus,
+  { label: string; tone: "default" | "warning" | "success" | "accent" }
+> = {
   DRAFT: { label: "草稿", tone: "default" },
   SUBMITTED: { label: "已提交", tone: "warning" },
-  GRADED: { label: "已批改", tone: "success" },
+  GRADED: { label: "已自动评分", tone: "success" },
   RETURNED: { label: "已退回", tone: "accent" },
 };
 
@@ -39,9 +42,7 @@ export default async function StudentAssignmentsPage({
   const now = new Date();
 
   const status: StatusFilter =
-    sp.status === "pending" ||
-    sp.status === "submitted" ||
-    sp.status === "graded"
+    sp.status === "pending" || sp.status === "submitted" || sp.status === "graded"
       ? sp.status
       : "all";
 
@@ -68,9 +69,7 @@ export default async function StudentAssignmentsPage({
           <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">我的作业</h1>
-              <p className="mt-1.5 text-sm text-muted-foreground">
-                下方为您布置的作业与提交记录。
-              </p>
+              <p className="mt-1.5 text-sm text-muted-foreground">下方为您布置的作业与提交记录。</p>
             </div>
             <Card>
               <CardContent className="flex flex-col items-center gap-3 px-6 py-16 text-center">
@@ -130,7 +129,10 @@ export default async function StudentAssignmentsPage({
     take: 100,
   });
 
-  const mySubByAssignment = new Map<string | null, typeof assignments[number]["submissions"][number] | null>();
+  const mySubByAssignment = new Map<
+    string | null,
+    (typeof assignments)[number]["submissions"][number] | null
+  >();
   // re-key: take=1 still returns array
   for (const a of assignments) {
     const sub = a.submissions[0] ?? null;
@@ -174,7 +176,7 @@ export default async function StudentAssignmentsPage({
   const stats = [
     { icon: Clock, label: "待完成", num: pendingCount },
     { icon: ClipboardCheck, label: "已提交", num: submittedCount },
-    { icon: CheckCircle2, label: "已批改", num: gradedCount, success: true },
+    { icon: CheckCircle2, label: "已出分", num: gradedCount, success: true },
     { icon: AlertCircle, label: "已逾期未交", num: overdueCount, warning: true },
   ];
 
@@ -183,11 +185,9 @@ export default async function StudentAssignmentsPage({
     const sub = mySubByAssignment.get(a.id) ?? null;
     const isOverdue = a.dueAt < now;
     if (status === "all") return true;
-    if (status === "submitted")
-      return sub?.status === "SUBMITTED" || sub?.status === "RETURNED";
+    if (status === "submitted") return sub?.status === "SUBMITTED" || sub?.status === "RETURNED";
     if (status === "graded") return sub?.status === "GRADED";
-    if (status === "pending")
-      return !sub && !isOverdue; // 仅未提交的进行中作业
+    if (status === "pending") return !sub && !isOverdue; // 仅未提交的进行中作业
     return true;
   });
 
@@ -195,7 +195,7 @@ export default async function StudentAssignmentsPage({
     { key: "all", label: "全部" },
     { key: "pending", label: "待完成" },
     { key: "submitted", label: "已提交" },
-    { key: "graded", label: "已批改" },
+    { key: "graded", label: "已出分" },
   ];
 
   return (
@@ -244,7 +244,7 @@ export default async function StudentAssignmentsPage({
                         <Icon className="h-4 w-4" />
                       </div>
                     </div>
-                    <div className="mt-3 text-3xl font-bold tracking-tight num">{s.num}</div>
+                    <div className="num mt-3 text-3xl font-bold tracking-tight">{s.num}</div>
                   </CardContent>
                 </Card>
               );
@@ -289,9 +289,7 @@ export default async function StudentAssignmentsPage({
                       : `没有${statusTabs.find((t) => t.key === status)?.label}作业`}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {status === "all"
-                      ? "教师发布后会出现在这里"
-                      : "切换其他状态查看"}
+                    {status === "all" ? "教师发布后会出现在这里" : "切换其他状态查看"}
                   </p>
                 </div>
               </CardContent>
@@ -316,10 +314,7 @@ export default async function StudentAssignmentsPage({
                       const sub = mySubByAssignment.get(a.id) ?? null;
                       const isOverdue = a.dueAt < now;
                       return (
-                        <tr
-                          key={a.id}
-                          className="group transition-colors hover:bg-muted/30"
-                        >
+                        <tr key={a.id} className="group transition-colors hover:bg-muted/30">
                           <td className="px-6 py-3.5">
                             <Link
                               href={`/assignments/${a.id}`}
@@ -336,10 +331,12 @@ export default async function StudentAssignmentsPage({
                           <td className="px-6 py-3.5 text-xs text-muted-foreground">
                             <div className="num">{formatDate(a.dueAt)}</div>
                             <div className="text-[11px] text-subtle-foreground">
-                              {isOverdue ? `${relativeTime(a.dueAt)}已截止` : `${relativeTime(a.dueAt)}截止`}
+                              {isOverdue
+                                ? `${relativeTime(a.dueAt)}已截止`
+                                : `${relativeTime(a.dueAt)}截止`}
                             </div>
                           </td>
-                          <td className="px-6 py-3.5 num text-muted-foreground">
+                          <td className="num px-6 py-3.5 text-muted-foreground">
                             {a._count.problems}
                           </td>
                           <td className="px-6 py-3.5">
@@ -353,7 +350,7 @@ export default async function StudentAssignmentsPage({
                               <Badge variant="success">进行中</Badge>
                             )}
                           </td>
-                          <td className="px-6 py-3.5 text-right text-sm num">
+                          <td className="num px-6 py-3.5 text-right text-sm">
                             {sub?.finalScore != null ? (
                               <span
                                 className={
@@ -370,7 +367,7 @@ export default async function StudentAssignmentsPage({
                               <span className="text-muted-foreground">
                                 {sub.autoScore} / {a.totalScore}
                                 <span className="ml-1 text-[11px] text-subtle-foreground">
-                                  (待批改)
+                                  (自动评分中)
                                 </span>
                               </span>
                             ) : (

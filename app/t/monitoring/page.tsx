@@ -56,9 +56,7 @@ export default async function TeacherMonitoringPage() {
     where: { teacherId: userId, role: { in: ["OWNER", "ASSISTANT"] } },
     select: { courseId: true, course: { select: { isArchived: true } } },
   });
-  const myCourseIds = memberships
-    .filter((m) => !m.course.isArchived)
-    .map((m) => m.courseId);
+  const myCourseIds = memberships.filter((m) => !m.course.isArchived).map((m) => m.courseId);
 
   if (myCourseIds.length === 0) {
     return (
@@ -72,9 +70,7 @@ export default async function TeacherMonitoringPage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
                   <Server className="h-5 w-5" />
                 </div>
-                <p className="text-sm font-medium text-foreground">
-                  您尚未加入任何课程
-                </p>
+                <p className="text-sm font-medium text-foreground">您尚未加入任何课程</p>
                 <p className="text-xs text-muted-foreground">
                   请联系管理员把您加入课程后再来查看全局监控。
                 </p>
@@ -227,9 +223,7 @@ export default async function TeacherMonitoringPage() {
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              考试全局监控
-            </h1>
+            <h1 className="text-2xl font-semibold tracking-tight">考试全局监控</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
               实时展示您所授课程下处于「即将开考 / 进行中 / 刚刚结束」三窗口的考试与进度。
             </p>
@@ -256,9 +250,7 @@ export default async function TeacherMonitoringPage() {
                         <Icon className="h-4 w-4" />
                       </div>
                     </div>
-                    <div className="mt-3 num text-3xl font-bold tracking-tight">
-                      {s.count}
-                    </div>
+                    <div className="num mt-3 text-3xl font-bold tracking-tight">{s.count}</div>
                     <div className="mt-1 text-xs text-muted-foreground">
                       {s.label.startsWith("进行中")
                         ? "实时刷新"
@@ -306,12 +298,7 @@ export default async function TeacherMonitoringPage() {
               )}
 
               {upcoming.length > 0 && (
-                <Section
-                  icon={Timer}
-                  title="即将开考"
-                  tone="warning"
-                  subtitle="未来 24 小时内开考"
-                >
+                <Section icon={Timer} title="即将开考" tone="warning" subtitle="未来 24 小时内开考">
                   <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     {upcoming.map((e) => (
                       <ExamCard key={e.id} exam={e} kind="upcoming" />
@@ -390,13 +377,7 @@ function Section({
   );
 }
 
-function ExamCard({
-  exam,
-  kind,
-}: {
-  exam: ExamLite;
-  kind: "ongoing" | "upcoming" | "closed";
-}) {
+function ExamCard({ exam, kind }: { exam: ExamLite; kind: "ongoing" | "upcoming" | "closed" }) {
   const { attemptCounts, expectedStudents } = exam;
   const started = attemptCounts.IN_PROGRESS + attemptCounts.SUBMITTED + attemptCounts.GRADED;
   const submitted = attemptCounts.SUBMITTED + attemptCounts.GRADED;
@@ -453,7 +434,9 @@ function ExamCard({
               <span>·</span>
               <span className="num">{exam.totalScore} 分</span>
               <span>·</span>
-              <span>应到 <span className="num">{expectedStudents}</span> 人</span>
+              <span>
+                应到 <span className="num">{expectedStudents}</span> 人
+              </span>
             </div>
           </div>
         </div>
@@ -545,7 +528,7 @@ function ExamCard({
               href={`/t/exams/${exam.id}/grade`}
               className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
             >
-              去批改
+              查看成绩
               <ChevronRight className="h-3 w-3" />
             </Link>
           )}
@@ -555,7 +538,7 @@ function ExamCard({
         {kind === "ongoing" && expectedStudents > 0 && submittedRate === 100 && (
           <div className="mt-3 rounded-lg border border-success/30 bg-success-subtle/40 p-2 text-[11px] text-success">
             <CheckCircle2 className="mr-1 inline h-3 w-3" />
-            全员已交卷，可进入批改。
+            全员已交卷，系统会在结束考试后自动出分。
           </div>
         )}
         {kind === "ongoing" && remainMs < 5 * 60 * 1000 && remainMs > 0 && (

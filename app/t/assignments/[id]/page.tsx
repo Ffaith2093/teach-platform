@@ -21,21 +21,28 @@ import { ProblemsPanel } from "./_components/problems-panel";
 import { AssignmentActions } from "./_components/assignment-actions";
 import { CsvExportControl } from "./_components/csv-export-control";
 import type { Difficulty, SubmissionStatus } from "@prisma/client";
+import { scoreAssignmentProblem } from "@/lib/assignments/scoring";
 
 export const metadata = { title: "作业详情" };
 
 type Tab = "overview" | "problems" | "submissions";
 
-const DIFFICULTY_LABELS: Record<Difficulty, { label: string; tone: "success" | "warning" | "danger" }> = {
+const DIFFICULTY_LABELS: Record<
+  Difficulty,
+  { label: string; tone: "success" | "warning" | "danger" }
+> = {
   EASY: { label: "入门", tone: "success" },
   MEDIUM: { label: "中等", tone: "warning" },
   HARD: { label: "进阶", tone: "danger" },
 };
 
-const STATUS_LABELS: Record<SubmissionStatus, { label: string; tone: "default" | "warning" | "success" | "accent" }> = {
+const STATUS_LABELS: Record<
+  SubmissionStatus,
+  { label: string; tone: "default" | "warning" | "success" | "accent" }
+> = {
   DRAFT: { label: "草稿", tone: "default" },
-  SUBMITTED: { label: "已提交", tone: "warning" },
-  GRADED: { label: "已批改", tone: "success" },
+  SUBMITTED: { label: "自动评分中", tone: "warning" },
+  GRADED: { label: "已自动评分", tone: "success" },
   RETURNED: { label: "已退回", tone: "accent" },
 };
 
@@ -183,33 +190,39 @@ export default async function TeacherAssignmentDetailPage({
   const subByStudent = new Map(submissions.map((s) => [s.studentId, s]));
 
   // ========== 每题编程提交（用于明细 + CSV 导出） ==========
-  // Submissions 表：contextType=ASSIGNMENT, contextId=AssignmentSubmission.id, problemId
-  // 每个 (attempt, problem) 取最新一条
-  const attemptSubIds = submissions.map((s) => s.id);
+  // Submissions 表：contextType=ASSIGNMENT, contextId=assignmentId。
+  // 每个 (student, problem) 取最新一条。
   const problemIds = problems.map((p) => p.problemId);
 
   const perProblemSubs =
-    attemptSubIds.length > 0 && problemIds.length > 0
+    allStudents.length > 0 && problemIds.length > 0
       ? await prisma.submission.findMany({
           where: {
             contextType: "ASSIGNMENT",
-            contextId: { in: attemptSubIds },
+            contextId: assignment.id,
+            userId: { in: allStudents.map((student) => student.id) },
             problemId: { in: problemIds },
           },
           orderBy: { createdAt: "desc" },
           select: {
-            contextId: true,
+            userId: true,
             problemId: true,
             score: true,
+            passedCount: true,
+            totalCount: true,
             status: true,
           },
         })
       : [];
-  const scoreByAttemptProblem = new Map<string, { score: number; status: string }>();
+  const scoreByStudentProblem = new Map<string, { score: number; status: string }>();
   for (const s of perProblemSubs) {
-    const key = `${s.contextId}:${s.problemId}`;
-    if (!scoreByAttemptProblem.has(key)) {
-      scoreByAttemptProblem.set(key, { score: s.score, status: s.status });
+    const key = `${s.userId}:${s.problemId}`;
+    if (!scoreByStudentProblem.has(key)) {
+      const allocated = problems.find((problem) => problem.problemId === s.problemId)?.score ?? 0;
+      scoreByStudentProblem.set(key, {
+        score: scoreAssignmentProblem(s.passedCount, s.totalCount, allocated),
+        status: s.status,
+      });
     }
   }
   const problemsForTab = problems.map((p) => ({
@@ -219,7 +232,7 @@ export default async function TeacherAssignmentDetailPage({
     order: p.order,
   }));
 
-  // 进度率：已提交+已批改 / 学生总数
+  // 进度率：已提交+已出分 / 学生总数
   const submittedCount = statusCounts.SUBMITTED + statusCounts.GRADED + statusCounts.RETURNED;
   const gradedFinalScores = submissions
     .filter((s) => s.finalScore != null)
@@ -238,10 +251,7 @@ export default async function TeacherAssignmentDetailPage({
   return (
     <>
       <Topbar
-        crumbs={[
-          { label: "我的作业", href: "/t/assignments" },
-          { label: assignment.title },
-        ]}
+        crumbs={[{ label: "我的作业", href: "/t/assignments" }, { label: assignment.title }]}
       />
       <main className="flex-1 p-8">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
@@ -279,9 +289,7 @@ export default async function TeacherAssignmentDetailPage({
                   <span>·</span>
                   <span>
                     {assignment.allowLate ? (
-                      <span className="text-success">
-                        允许迟交 · 扣 {assignment.latePenalty}%
-                      </span>
+                      <span className="text-success">允许迟交 · 扣 {assignment.latePenalty}%</span>
                     ) : (
                       <span className="text-warning">不允许迟交</span>
                     )}
@@ -387,8 +395,8 @@ export default async function TeacherAssignmentDetailPage({
                 ]),
               )}
               problems={problemsForTab}
-              scoreByAttemptProblem={Object.fromEntries(
-                [...scoreByAttemptProblem.entries()].map(([k, v]) => [k, v]),
+              scoreByStudentProblem={Object.fromEntries(
+                [...scoreByStudentProblem.entries()].map(([k, v]) => [k, v]),
               )}
               totalScore={assignment.totalScore}
               isPublished={!isDraft}
@@ -410,7 +418,12 @@ function OverviewTab({
   avgScore,
   submittedCount,
 }: {
-  assignment: { totalScore: number; allowLate: boolean; latePenalty: number; allowAttachment: boolean };
+  assignment: {
+    totalScore: number;
+    allowLate: boolean;
+    latePenalty: number;
+    allowAttachment: boolean;
+  };
   questionsCount: number;
   allStudents: Array<{ className: string }>;
   statusCounts: Record<SubmissionStatus, number>;
@@ -427,7 +440,7 @@ function OverviewTab({
           <CardContent className="p-5">
             <div className="text-sm text-muted-foreground">题目数</div>
             <div className="mt-3 flex items-baseline gap-1">
-              <span className="text-3xl font-bold tracking-tight num">{questionsCount}</span>
+              <span className="num text-3xl font-bold tracking-tight">{questionsCount}</span>
               <span className="text-sm text-muted-foreground">题</span>
             </div>
           </CardContent>
@@ -436,7 +449,7 @@ function OverviewTab({
           <CardContent className="p-5">
             <div className="text-sm text-muted-foreground">总分</div>
             <div className="mt-3 flex items-baseline gap-1">
-              <span className="text-3xl font-bold tracking-tight num">{assignment.totalScore}</span>
+              <span className="num text-3xl font-bold tracking-tight">{assignment.totalScore}</span>
               <span className="text-sm text-muted-foreground">分</span>
             </div>
           </CardContent>
@@ -445,26 +458,23 @@ function OverviewTab({
           <CardContent className="p-5">
             <div className="text-sm text-muted-foreground">提交率</div>
             <div className="mt-3 flex items-baseline gap-1">
-              <span className="text-3xl font-bold tracking-tight num">{submittedRate}</span>
+              <span className="num text-3xl font-bold tracking-tight">{submittedRate}</span>
               <span className="text-sm text-muted-foreground">
-                %（<span className="num">{submittedCount}</span>/<span className="num">{total}</span>）
+                %（<span className="num">{submittedCount}</span>/
+                <span className="num">{total}</span>）
               </span>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-5">
-            <div className="text-sm text-muted-foreground">平均分（已批改）</div>
+            <div className="text-sm text-muted-foreground">平均分（已出分）</div>
             <div className="mt-3 flex items-baseline gap-1">
-              <span className="text-3xl font-bold tracking-tight num">
-                {avgScore ?? "—"}
-              </span>
-              {avgScore != null && (
-                <span className="text-sm text-muted-foreground">分</span>
-              )}
+              <span className="num text-3xl font-bold tracking-tight">{avgScore ?? "—"}</span>
+              {avgScore != null && <span className="text-sm text-muted-foreground">分</span>}
             </div>
             {avgScore == null && (
-              <p className="mt-1 text-[11px] text-subtle-foreground">尚无已批改数据</p>
+              <p className="mt-1 text-[11px] text-subtle-foreground">尚无已出分数据</p>
             )}
           </CardContent>
         </Card>
@@ -480,22 +490,17 @@ function OverviewTab({
         <CardContent className="p-6">
           <h2 className="text-base font-semibold">提交状态分布</h2>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatusBox
-              icon={FileText}
-              label="草稿"
-              count={statusCounts.DRAFT}
-              tone="default"
-            />
+            <StatusBox icon={FileText} label="草稿" count={statusCounts.DRAFT} tone="default" />
             <StatusBox
               icon={AlertCircle}
-              label="已提交（待批改）"
+              label="自动评分中"
               count={statusCounts.SUBMITTED}
               tone="warning"
               accent
             />
             <StatusBox
               icon={CheckCircle2}
-              label="已批改"
+              label="已自动评分"
               count={statusCounts.GRADED}
               tone="success"
             />
@@ -543,7 +548,7 @@ function StatusBox({
           <Icon className="h-3.5 w-3.5" />
         </div>
       </div>
-      <div className="mt-2 text-2xl font-semibold num">{count}</div>
+      <div className="num mt-2 text-2xl font-semibold">{count}</div>
     </div>
   );
 }
@@ -553,17 +558,32 @@ function SubmissionsTab({
   allStudents,
   subByStudent,
   problems,
-  scoreByAttemptProblem,
+  scoreByStudentProblem,
   totalScore,
   isPublished,
   dueAt,
   classesForFilter,
 }: {
   assignmentId: string;
-  allStudents: Array<{ id: string; name: string; studentNo: string | null; className: string; gradeName: string }>;
-  subByStudent: Record<string, { id: string; status: SubmissionStatus; finalScore: number | null; submittedAt: Date | null; gradedAt: Date | null }>;
+  allStudents: Array<{
+    id: string;
+    name: string;
+    studentNo: string | null;
+    className: string;
+    gradeName: string;
+  }>;
+  subByStudent: Record<
+    string,
+    {
+      id: string;
+      status: SubmissionStatus;
+      finalScore: number | null;
+      submittedAt: Date | null;
+      gradedAt: Date | null;
+    }
+  >;
   problems: Array<{ problemId: string; title: string; score: number; order: number }>;
-  scoreByAttemptProblem: Record<string, { score: number; status: string }>;
+  scoreByStudentProblem: Record<string, { score: number; status: string }>;
   totalScore: number;
   isPublished: boolean;
   dueAt: Date;
@@ -600,12 +620,10 @@ function SubmissionsTab({
       {/* 操作行：导出 CSV */}
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
-          按班级展示所有学生的提交情况。带 <span className="font-mono text-warning">迟</span> 标记表示迟交。
+          按班级展示所有学生的提交情况。带 <span className="font-mono text-warning">迟</span>{" "}
+          标记表示迟交。
         </p>
-        <CsvExportControl
-          assignmentId={assignmentId}
-          classes={classesForFilter}
-        />
+        <CsvExportControl assignmentId={assignmentId} classes={classesForFilter} />
       </div>
 
       {[...byClass.entries()].map(([className, students]) => {
@@ -627,37 +645,34 @@ function SubmissionsTab({
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/30 text-left text-xs font-medium text-muted-foreground">
-                      <th className="px-3 py-2.5 whitespace-nowrap">学号</th>
-                      <th className="px-3 py-2.5 whitespace-nowrap">姓名</th>
-                      <th className="px-3 py-2.5 whitespace-nowrap">状态</th>
+                      <th className="whitespace-nowrap px-3 py-2.5">学号</th>
+                      <th className="whitespace-nowrap px-3 py-2.5">姓名</th>
+                      <th className="whitespace-nowrap px-3 py-2.5">状态</th>
                       {problems.map((p) => (
                         <th
                           key={p.problemId}
-                          className="px-2 py-2.5 text-center whitespace-nowrap"
+                          className="whitespace-nowrap px-2 py-2.5 text-center"
                           title={`第${p.order + 1}题 · ${p.title}（满分 ${p.score}）`}
                         >
                           <div className="text-xs">第{p.order + 1}题</div>
-                          <div className="num text-[11px] text-subtle-foreground">
-                            /{p.score}
-                          </div>
+                          <div className="num text-[11px] text-subtle-foreground">/{p.score}</div>
                         </th>
                       ))}
-                      <th className="px-3 py-2.5 text-right whitespace-nowrap">总分</th>
-                      <th className="px-3 py-2.5 whitespace-nowrap">提交时间</th>
-                      <th className="px-3 py-2.5 whitespace-nowrap">操作</th>
+                      <th className="whitespace-nowrap px-3 py-2.5 text-right">总分</th>
+                      <th className="whitespace-nowrap px-3 py-2.5">提交时间</th>
+                      <th className="whitespace-nowrap px-3 py-2.5">操作</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {students.map((s) => {
                       const sub = subByStudent[s.id];
-                      const late =
-                        sub?.submittedAt && sub.submittedAt > dueAt;
+                      const late = sub?.submittedAt && sub.submittedAt > dueAt;
                       return (
                         <tr key={s.id} className="hover:bg-muted/20">
-                          <td className="px-3 py-2.5 num font-mono text-xs text-muted-foreground whitespace-nowrap">
+                          <td className="num whitespace-nowrap px-3 py-2.5 font-mono text-xs text-muted-foreground">
                             {s.studentNo ?? "—"}
                           </td>
-                          <td className="px-3 py-2.5 font-medium text-foreground whitespace-nowrap">
+                          <td className="whitespace-nowrap px-3 py-2.5 font-medium text-foreground">
                             {s.name}
                             {late && (
                               <span className="ml-1.5 inline-flex items-center rounded bg-warning-subtle px-1.5 py-0.5 text-[10px] font-medium text-warning">
@@ -665,7 +680,7 @@ function SubmissionsTab({
                               </span>
                             )}
                           </td>
-                          <td className="px-3 py-2.5 whitespace-nowrap">
+                          <td className="whitespace-nowrap px-3 py-2.5">
                             {sub ? (
                               <Badge variant={STATUS_LABELS[sub.status].tone}>
                                 {STATUS_LABELS[sub.status].label}
@@ -676,20 +691,20 @@ function SubmissionsTab({
                           </td>
                           {problems.map((p) => {
                             const cell = sub
-                              ? scoreByAttemptProblem[`${sub.id}:${p.problemId}`]
+                              ? scoreByStudentProblem[`${s.id}:${p.problemId}`]
                               : undefined;
                             const score = cell?.score;
                             const tone = scoreTone(score, p.score);
                             return (
                               <td
                                 key={p.problemId}
-                                className="px-2 py-2.5 text-center num text-xs whitespace-nowrap"
+                                className="num whitespace-nowrap px-2 py-2.5 text-center text-xs"
                               >
                                 {score != null ? (
                                   <span
                                     className={
                                       tone === "success"
-                                        ? "text-success font-medium"
+                                        ? "font-medium text-success"
                                         : tone === "warning"
                                           ? "text-warning"
                                           : tone === "danger"
@@ -705,7 +720,7 @@ function SubmissionsTab({
                               </td>
                             );
                           })}
-                          <td className="px-3 py-2.5 num text-right whitespace-nowrap">
+                          <td className="num whitespace-nowrap px-3 py-2.5 text-right">
                             {sub?.finalScore != null ? (
                               <span
                                 className={
@@ -725,18 +740,16 @@ function SubmissionsTab({
                               <span className="text-subtle-foreground">—</span>
                             )}
                           </td>
-                          <td className="px-3 py-2.5 text-xs text-muted-foreground num whitespace-nowrap">
-                            {sub?.submittedAt
-                              ? relativeTime(sub.submittedAt)
-                              : "—"}
+                          <td className="num whitespace-nowrap px-3 py-2.5 text-xs text-muted-foreground">
+                            {sub?.submittedAt ? relativeTime(sub.submittedAt) : "—"}
                           </td>
-                          <td className="px-3 py-2.5 whitespace-nowrap">
+                          <td className="whitespace-nowrap px-3 py-2.5">
                             {sub ? (
                               <Link
-                                href={`/t/assignments/${assignmentId}/grade`}
+                                href={`/t/assignments/${assignmentId}/submissions/${sub.id}`}
                                 className="text-xs text-primary hover:underline"
                               >
-                                批改
+                                查看作答
                               </Link>
                             ) : (
                               <span className="text-subtle-foreground">—</span>
@@ -757,7 +770,10 @@ function SubmissionsTab({
 }
 
 /** 单题得分色阶：≥0.8 绿 / ≥0.5 普通 / <0.5 黄 / 满分警告红（0 分或极端低） */
-function scoreTone(score: number | undefined, fullScore: number): "success" | "warning" | "danger" | "muted" {
+function scoreTone(
+  score: number | undefined,
+  fullScore: number,
+): "success" | "warning" | "danger" | "muted" {
   if (score == null) return "muted";
   if (fullScore <= 0) return "muted";
   const rate = score / fullScore;

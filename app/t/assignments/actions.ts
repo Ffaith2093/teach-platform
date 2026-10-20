@@ -5,11 +5,13 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth/guard";
-import { notify } from "@/lib/notifications";
 
 // ========== 教师课程权限工具 ==========
 
-async function requireCourseTeacher(courseId: string, minRole: "OWNER" | "ASSISTANT" = "ASSISTANT") {
+async function requireCourseTeacher(
+  courseId: string,
+  minRole: "OWNER" | "ASSISTANT" = "ASSISTANT",
+) {
   const session = await requireSession();
   if (session.user.role !== "TEACHER") {
     throw new Error("仅教师可执行此操作");
@@ -28,7 +30,10 @@ async function requireCourseTeacher(courseId: string, minRole: "OWNER" | "ASSIST
 }
 
 // 工具：根据 assignmentId 反查 courseId + 校验权限
-async function requireAssignmentAccess(assignmentId: string, minRole: "OWNER" | "ASSISTANT" = "ASSISTANT") {
+async function requireAssignmentAccess(
+  assignmentId: string,
+  minRole: "OWNER" | "ASSISTANT" = "ASSISTANT",
+) {
   const assignment = await prisma.assignment.findUnique({
     where: { id: assignmentId },
     select: { id: true, courseId: true, publishedAt: true },
@@ -57,14 +62,20 @@ const createAssignmentSchema = z.object({
       }),
     )
     .default([]),
-  questions: z.array(z.object({
-    questionId: z.string().min(1),
-    score: z.coerce.number().int().min(1).max(1000),
-  })).default([]),
+  questions: z
+    .array(
+      z.object({
+        questionId: z.string().min(1),
+        score: z.coerce.number().int().min(1).max(1000),
+      }),
+    )
+    .default([]),
   allowAttachment: z.boolean().default(false),
-  allowedFileExtensions: z.array(z.string().regex(/^[a-z0-9]+$/)).max(20).default([]),
+  allowedFileExtensions: z
+    .array(z.string().regex(/^[a-z0-9]+$/))
+    .max(20)
+    .default([]),
   maxFileSizeMb: z.coerce.number().int().min(1).max(100).default(10),
-  attachmentScore: z.coerce.number().int().min(0).max(1000).default(0),
   publish: z.boolean().default(false),
 });
 
@@ -119,7 +130,6 @@ export async function createAssignmentAction(
       .map((item) => item.trim().toLowerCase().replace(/^\./, ""))
       .filter(Boolean),
     maxFileSizeMb: formData.get("maxFileSizeMb") || 10,
-    attachmentScore: formData.get("attachmentScore") || 0,
     publish: formData.get("publish") === "1",
   });
   if (!parsed.success) {
@@ -167,10 +177,7 @@ export async function createAssignmentAction(
       where: {
         id: { in: questions.map((question) => question.questionId) },
         type: { in: ["SINGLE_CHOICE", "FILL_BLANK", "CODE_BLANK"] },
-        OR: [
-          { courseId: parsed.data.courseId },
-          { bank: { ownerId: teacherId } },
-        ],
+        OR: [{ courseId: parsed.data.courseId }, { bank: { ownerId: teacherId } }],
       },
       select: { id: true },
     });
@@ -187,9 +194,9 @@ export async function createAssignmentAction(
     return { error: "请至少添加一种作业内容后再发布" };
   }
 
-  const totalScore = problems.reduce((s, p) => s + p.score, 0)
-    + questions.reduce((s, question) => s + question.score, 0)
-    + (parsed.data.allowAttachment ? parsed.data.attachmentScore : 0);
+  const totalScore =
+    problems.reduce((s, p) => s + p.score, 0) +
+    questions.reduce((s, question) => s + question.score, 0);
 
   try {
     const assignmentId = await prisma.$transaction(async (tx) => {
@@ -205,9 +212,11 @@ export async function createAssignmentAction(
           latePenalty: parsed.data.latePenalty,
           totalScore,
           allowAttachment: parsed.data.allowAttachment,
-          allowedFileExtensions: parsed.data.allowAttachment ? parsed.data.allowedFileExtensions : [],
+          allowedFileExtensions: parsed.data.allowAttachment
+            ? parsed.data.allowedFileExtensions
+            : [],
           maxFileSizeMb: parsed.data.maxFileSizeMb,
-          attachmentScore: parsed.data.allowAttachment ? parsed.data.attachmentScore : 0,
+          attachmentScore: 0,
           publishedAt: parsed.data.publish ? new Date() : null,
         },
       });
@@ -364,10 +373,7 @@ export async function addProblemToAssignmentAction(
   return { ok: true };
 }
 
-export async function removeProblemFromAssignmentAction(
-  assignmentId: string,
-  problemId: string,
-) {
+export async function removeProblemFromAssignmentAction(assignmentId: string, problemId: string) {
   const { assignment } = await requireAssignmentAccess(assignmentId);
   if (assignment.publishedAt) {
     throw new Error("已发布的作业不可修改题目");
@@ -399,7 +405,10 @@ export async function publishAssignmentAction(assignmentId: string) {
     where: { id: assignmentId },
     select: { allowAttachment: true, _count: { select: { problems: true, questions: true } } },
   });
-  if (!content || (content._count.problems === 0 && content._count.questions === 0 && !content.allowAttachment)) {
+  if (
+    !content ||
+    (content._count.problems === 0 && content._count.questions === 0 && !content.allowAttachment)
+  ) {
     throw new Error("请至少添加一种作业内容后再发布");
   }
 
@@ -452,221 +461,4 @@ export async function deleteAssignmentAction(assignmentId: string) {
   await prisma.assignment.delete({ where: { id: assignmentId } });
   revalidatePath("/t/assignments");
   redirect("/t/assignments");
-}
-
-// ========== 批改学生作业 ==========
-
-const gradeSchema = z.object({
-  submissionId: z.string().min(1),
-  manualScore: z.coerce
-    .number()
-    .int()
-    .min(0, "分数不能小于 0")
-    .max(10000, "分数过大"),
-  feedback: z.string().max(2000).optional().or(z.literal("")),
-});
-
-export type GradeAssignmentState = {
-  error?: string;
-  fieldErrors?: Partial<Record<keyof z.infer<typeof gradeSchema>, string>>;
-  ok?: true;
-};
-
-export async function gradeAssignmentAction(
-  _prev: GradeAssignmentState | undefined,
-  formData: FormData,
-): Promise<GradeAssignmentState> {
-  const parsed = gradeSchema.safeParse({
-    submissionId: formData.get("submissionId"),
-    manualScore: formData.get("manualScore"),
-    feedback: formData.get("feedback") || undefined,
-  });
-  if (!parsed.success) {
-    const fieldErrors: NonNullable<GradeAssignmentState["fieldErrors"]> = {};
-    for (const issue of parsed.error.issues) {
-      const key = issue.path[0] as keyof z.infer<typeof gradeSchema>;
-      if (key) fieldErrors[key] = issue.message;
-    }
-    return { error: "请检查输入", fieldErrors };
-  }
-
-  const session = await requireSession();
-  if (session.user.role !== "TEACHER") {
-    return { error: "仅教师可批改" };
-  }
-  const teacherId = session.user.id;
-
-  // 校验：该 submission 属于当前教师有权批改的课程
-  const sub = await prisma.assignmentSubmission.findUnique({
-    where: { id: parsed.data.submissionId },
-    include: {
-      assignment: {
-        select: {
-          id: true,
-          title: true,
-          totalScore: true,
-          dueAt: true,
-          allowLate: true,
-          latePenalty: true,
-          courseId: true,
-          publishedAt: true,
-        },
-      },
-      student: { select: { id: true, name: true } },
-    },
-  });
-  if (!sub) return { error: "提交记录不存在" };
-  if (!sub.assignment.publishedAt) {
-    return { error: "未发布的作业没有可批改的提交" };
-  }
-
-  const ct = await prisma.courseTeacher.findUnique({
-    where: { courseId_teacherId: { courseId: sub.assignment.courseId, teacherId } },
-  });
-  if (!ct || (ct.role !== "OWNER" && ct.role !== "ASSISTANT")) {
-    return { error: "您无权限批改此作业的学生" };
-  }
-
-  const rawScore = Math.min(parsed.data.manualScore, sub.assignment.totalScore);
-  const late = !!sub.submittedAt && sub.submittedAt > sub.assignment.dueAt;
-  const finalScore = late && sub.assignment.allowLate
-    ? Math.round(rawScore * (100 - sub.assignment.latePenalty) / 100)
-    : rawScore;
-
-  await prisma.assignmentSubmission.update({
-    where: { id: parsed.data.submissionId },
-    data: {
-      manualScore: parsed.data.manualScore,
-      finalScore,
-      feedback: parsed.data.feedback || null,
-      gradedById: teacherId,
-      gradedAt: new Date(),
-      status: "GRADED",
-    },
-  });
-
-  // 给学生发批阅通知：标题带作业名，正文带分数 + 评语摘要，跳转作业详情
-  const feedback = parsed.data.feedback?.trim() || "";
-  const body = feedback
-    ? `得分 ${finalScore} / ${sub.assignment.totalScore} · 评语：${feedback.length > 60 ? feedback.slice(0, 60) + "…" : feedback}`
-    : `得分 ${finalScore} / ${sub.assignment.totalScore}`;
-  await notify({
-    userId: sub.studentId,
-    title: `作业已批阅：《${sub.assignment.title}》`,
-    body,
-    href: `/assignments/${sub.assignment.id}`,
-    courseId: sub.assignment.courseId,
-  });
-
-  revalidatePath(`/t/assignments/${sub.assignment.id}`);
-  revalidatePath(`/t/assignments/${sub.assignment.id}/grade`);
-  revalidatePath(`/t/grading`);
-  revalidatePath(`/assignments/${sub.assignment.id}`);
-  revalidatePath(`/notifications`);
-  revalidatePath(`/dashboard`);
-
-  return { ok: true };
-}
-
-const returnSchema = z.object({
-  submissionId: z.string().min(1),
-  feedback: z.string().min(1, "退回时必须填写反馈，告诉学生哪里需要修改").max(2000),
-});
-
-export type ReturnAssignmentState = {
-  error?: string;
-  fieldErrors?: Partial<Record<keyof z.infer<typeof returnSchema>, string>>;
-  ok?: true;
-};
-
-/**
- * 教师退回学生作业（status → RETURNED）：
- * - 必填反馈（学生收到通知能直接看到需要修改什么）
- * - manualScore / finalScore 置 null（不计入成绩）
- * - 触发学生通知：标题「作业需重做：《{title}》」+ 反馈摘要 + 跳转作业页
- *
- * 退回后学生可在作业详情页继续修改编程题代码并重新提交；
- * ASSIGNMENT 级 status 保留 RETURNED 作为「当前批改周期」标记。
- */
-export async function returnAssignmentAction(
-  _prev: ReturnAssignmentState | undefined,
-  formData: FormData,
-): Promise<ReturnAssignmentState> {
-  const parsed = returnSchema.safeParse({
-    submissionId: formData.get("submissionId"),
-    feedback: formData.get("feedback"),
-  });
-  if (!parsed.success) {
-    const fieldErrors: NonNullable<ReturnAssignmentState["fieldErrors"]> = {};
-    for (const issue of parsed.error.issues) {
-      const key = issue.path[0] as keyof z.infer<typeof returnSchema>;
-      if (key) fieldErrors[key] = issue.message;
-    }
-    return { error: "请检查输入", fieldErrors };
-  }
-
-  const session = await requireSession();
-  if (session.user.role !== "TEACHER") {
-    return { error: "仅教师可退回作业" };
-  }
-  const teacherId = session.user.id;
-
-  const sub = await prisma.assignmentSubmission.findUnique({
-    where: { id: parsed.data.submissionId },
-    include: {
-      assignment: {
-        select: {
-          id: true,
-          title: true,
-          courseId: true,
-          publishedAt: true,
-        },
-      },
-    },
-  });
-  if (!sub) return { error: "提交记录不存在" };
-  if (!sub.assignment.publishedAt) {
-    return { error: "未发布的作业没有可退回的提交" };
-  }
-
-  const ct = await prisma.courseTeacher.findUnique({
-    where: { courseId_teacherId: { courseId: sub.assignment.courseId, teacherId } },
-  });
-  if (!ct || (ct.role !== "OWNER" && ct.role !== "ASSISTANT")) {
-    return { error: "您无权限退回此作业的学生" };
-  }
-
-  await prisma.assignmentSubmission.update({
-    where: { id: parsed.data.submissionId },
-    data: {
-      manualScore: null,
-      finalScore: null,
-      feedback: parsed.data.feedback,
-      gradedById: teacherId,
-      gradedAt: new Date(),
-      status: "RETURNED",
-    },
-  });
-
-  // 给学生发退回通知
-  const feedback = parsed.data.feedback.trim();
-  const body = feedback.length > 80
-    ? `教师反馈：${feedback.slice(0, 80)}…`
-    : `教师反馈：${feedback}`;
-  await notify({
-    userId: sub.studentId,
-    title: `作业需重做：《${sub.assignment.title}》`,
-    body,
-    href: `/assignments/${sub.assignment.id}`,
-    courseId: sub.assignment.courseId,
-  });
-
-  revalidatePath(`/t/assignments/${sub.assignment.id}`);
-  revalidatePath(`/t/assignments/${sub.assignment.id}/grade`);
-  revalidatePath(`/t/grading`);
-  revalidatePath(`/assignments/${sub.assignment.id}`);
-  revalidatePath(`/notifications`);
-  revalidatePath(`/dashboard`);
-
-  return { ok: true };
 }

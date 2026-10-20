@@ -12,15 +12,10 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { prepareJudgeInput } from "./input";
+import { outputsEqual } from "./output";
 
 export type JudgeStatus =
-  | "ACCEPTED"
-  | "WRONG_ANSWER"
-  | "TLE"
-  | "MLE"
-  | "RUNTIME_ERROR"
-  | "COMPILE_ERROR"
-  | "SYSTEM_ERROR";
+  "ACCEPTED" | "WRONG_ANSWER" | "TLE" | "MLE" | "RUNTIME_ERROR" | "COMPILE_ERROR" | "SYSTEM_ERROR";
 
 export interface JudgeCaseInput {
   input: string;
@@ -33,6 +28,8 @@ export interface JudgeLimits {
   timeLimitMs: number;
   memoryLimitMb: number;
   splitInputByWhitespace?: boolean;
+  ignoreOutputWhitespace?: boolean;
+  ignoreOutputPunctuation?: boolean;
 }
 
 export interface JudgeCaseResult {
@@ -50,19 +47,6 @@ export interface JudgeRunResult {
   totalCount: number;
   totalScore: number; // 累加通过用例分值
   cases: JudgeCaseResult[];
-}
-
-/** 宽松比对：忽略行尾空白 + 末尾空行 */
-function looseEqual(actual: string, expected: string): boolean {
-  const norm = (s: string) =>
-    s
-      .replace(/\r\n/g, "\n")
-      .split("\n")
-      .map((l) => l.replace(/\s+$/, ""))
-      .join("\n")
-      .replace(/^\n+/, "")
-      .replace(/\n+$/, "");
-  return norm(actual) === norm(expected);
 }
 
 /** 单次执行单用例（带超时） */
@@ -167,7 +151,10 @@ export async function runJudge(
       const r = await runOneCase(mainPy, input, limits.timeLimitMs, caseScore);
       // 输出比对
       if (r.status === "ACCEPTED") {
-        const ok = looseEqual(r.actualOutput ?? "", tc.expected);
+        const ok = outputsEqual(r.actualOutput ?? "", tc.expected, {
+          ignoreWhitespace: limits.ignoreOutputWhitespace,
+          ignorePunctuation: limits.ignoreOutputPunctuation,
+        });
         cases.push({
           ...r,
           status: ok ? "ACCEPTED" : "WRONG_ANSWER",

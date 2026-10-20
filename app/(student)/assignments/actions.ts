@@ -151,14 +151,26 @@ export async function submitProblemAction(
       studentId,
       status: "RETURNED",
     },
-    data: { status: "SUBMITTED", submittedAt: now },
+    data: {
+      status: "SUBMITTED",
+      submittedAt: now,
+      manualScore: null,
+      finalScore: null,
+      gradedAt: null,
+    },
   });
   const isResubmit = resubmitUpdate.count === 1;
   if (!isResubmit) {
     // DRAFT 或不存在 → 走原 upsert 路径
     await prisma.assignmentSubmission.upsert({
       where: { assignmentId_studentId: { assignmentId: parsed.data.assignmentId, studentId } },
-      update: { status: "SUBMITTED", submittedAt: now },
+      update: {
+        status: "SUBMITTED",
+        submittedAt: now,
+        manualScore: null,
+        finalScore: null,
+        gradedAt: null,
+      },
       create: {
         assignmentId: parsed.data.assignmentId,
         studentId,
@@ -225,7 +237,10 @@ export async function submitAssignmentContentAction(
 ): Promise<SubmitAssignmentContentState> {
   const assignmentId = String(formData.get("assignmentId") ?? "");
   const session = await requireStudent();
-  const student = await prisma.user.findUnique({ where: { id: session.user.id }, select: { classId: true } });
+  const student = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { classId: true },
+  });
   if (!assignmentId || !student?.classId) return { error: "作业或班级信息无效" };
 
   const assignment = await prisma.assignment.findUnique({
@@ -236,7 +251,9 @@ export async function submitAssignmentContentAction(
     },
   });
   if (!assignment?.publishedAt) return { error: "作业不存在或尚未发布" };
-  const accessible = await prisma.courseClass.findFirst({ where: { courseId: assignment.courseId, classId: student.classId } });
+  const accessible = await prisma.courseClass.findFirst({
+    where: { courseId: assignment.courseId, classId: student.classId },
+  });
   if (!accessible) return { error: "您不在此作业关联的班级中" };
   const now = new Date();
   if (assignment.dueAt < now && !assignment.allowLate) return { error: "作业已截止且不允许迟交" };
@@ -249,7 +266,9 @@ export async function submitAssignmentContentAction(
   }
   for (const item of assignment.questions) {
     const value = answers[item.questionId];
-    const missing = Array.isArray(value) ? value.some((part) => !String(part ?? "").trim()) : !String(value ?? "").trim();
+    const missing = Array.isArray(value)
+      ? value.some((part) => !String(part ?? "").trim())
+      : !String(value ?? "").trim();
     if (missing) return { error: "请完成所有选择题和填空题" };
   }
 
@@ -258,16 +277,30 @@ export async function submitAssignmentContentAction(
     select: { id: true, fileUrl: true },
   });
   const file = formData.get("attachment");
-  let fileData: { fileUrl: string; fileName: string; fileMimeType: string; fileSizeBytes: number } | null = null;
+  let fileData: {
+    fileUrl: string;
+    fileName: string;
+    fileMimeType: string;
+    fileSizeBytes: number;
+  } | null = null;
   if (file instanceof File && file.size > 0) {
     const ext = extname(file.name).slice(1).toLowerCase();
     if (!assignment.allowAttachment) return { error: "此作业不接受附件" };
-    if (!assignment.allowedFileExtensions.includes(ext)) return { error: `附件仅支持：${assignment.allowedFileExtensions.map((item) => `.${item}`).join("、")}` };
-    if (file.size > assignment.maxFileSizeMb * 1024 * 1024) return { error: `附件不能超过 ${assignment.maxFileSizeMb}MB` };
+    if (!assignment.allowedFileExtensions.includes(ext))
+      return {
+        error: `附件仅支持：${assignment.allowedFileExtensions.map((item) => `.${item}`).join("、")}`,
+      };
+    if (file.size > assignment.maxFileSizeMb * 1024 * 1024)
+      return { error: `附件不能超过 ${assignment.maxFileSizeMb}MB` };
     const storedName = generateStoredName(ext);
     const directory = await ensureCourseDir(assignment.courseId);
     await writeFile(join(directory, storedName), Buffer.from(await file.arrayBuffer()));
-    fileData = { fileUrl: storedName, fileName: file.name, fileMimeType: file.type || "application/octet-stream", fileSizeBytes: file.size };
+    fileData = {
+      fileUrl: storedName,
+      fileName: file.name,
+      fileMimeType: file.type || "application/octet-stream",
+      fileSizeBytes: file.size,
+    };
   } else if (assignment.allowAttachment && !existing?.fileUrl) {
     return { error: "请选择要提交的附件" };
   }
@@ -276,7 +309,12 @@ export async function submitAssignmentContentAction(
   let programmingScore = 0;
   for (const problem of assignment.problems) {
     const latest = await prisma.submission.findFirst({
-      where: { problemId: problem.problemId, userId: session.user.id, contextType: "ASSIGNMENT", contextId: assignmentId },
+      where: {
+        problemId: problem.problemId,
+        userId: session.user.id,
+        contextType: "ASSIGNMENT",
+        contextId: assignmentId,
+      },
       orderBy: { createdAt: "desc" },
       select: { passedCount: true, totalCount: true },
     });
@@ -334,9 +372,11 @@ export type RunAssignmentSampleState =
   | { ok: true; result: JudgeRunResult; error?: undefined }
   | { ok?: false; error: string; result?: undefined };
 
-export async function runAssignmentSampleAction(
-  input: { assignmentId: string; problemId: string; code: string },
-): Promise<RunAssignmentSampleState> {
+export async function runAssignmentSampleAction(input: {
+  assignmentId: string;
+  problemId: string;
+  code: string;
+}): Promise<RunAssignmentSampleState> {
   const parsed = runAssignmentSampleSchema.safeParse(input);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "请检查输入" };
@@ -344,10 +384,7 @@ export async function runAssignmentSampleAction(
 
   let ctx;
   try {
-    ctx = await requireAssignmentForStudent(
-      parsed.data.assignmentId,
-      parsed.data.problemId,
-    );
+    ctx = await requireAssignmentForStudent(parsed.data.assignmentId, parsed.data.problemId);
   } catch (e) {
     return { error: (e as Error).message };
   }
@@ -358,6 +395,8 @@ export async function runAssignmentSampleAction(
       timeLimitMs: true,
       memoryLimitMb: true,
       splitInputByWhitespace: true,
+      ignoreOutputWhitespace: true,
+      ignoreOutputPunctuation: true,
       testCases: {
         where: { isSample: true },
         orderBy: { order: "asc" },
@@ -382,6 +421,8 @@ export async function runAssignmentSampleAction(
       timeLimitMs: problem.timeLimitMs,
       memoryLimitMb: problem.memoryLimitMb,
       splitInputByWhitespace: problem.splitInputByWhitespace,
+      ignoreOutputWhitespace: problem.ignoreOutputWhitespace,
+      ignoreOutputPunctuation: problem.ignoreOutputPunctuation,
     },
   );
 
@@ -411,7 +452,13 @@ export async function runAssignmentCustomInputAction(input: {
   }
   const problem = await prisma.problem.findUnique({
     where: { id: parsed.data.problemId },
-    select: { timeLimitMs: true, memoryLimitMb: true, splitInputByWhitespace: true },
+    select: {
+      timeLimitMs: true,
+      memoryLimitMb: true,
+      splitInputByWhitespace: true,
+      ignoreOutputWhitespace: true,
+      ignoreOutputPunctuation: true,
+    },
   });
   if (!problem) return { error: "题目不存在" };
   const result = await runSandboxWithInput(parsed.data.code, parsed.data.input, problem);

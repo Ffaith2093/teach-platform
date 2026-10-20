@@ -253,6 +253,8 @@ model Problem {
   timeLimitMs            Int        @default(1000)
   memoryLimitMb          Int        @default(256)
   splitInputByWhitespace Boolean    @default(false)
+  ignoreOutputWhitespace Boolean   @default(false)
+  ignoreOutputPunctuation Boolean  @default(false)
   starterCode            String?
   referenceSolution      String?
   tags                   String[]

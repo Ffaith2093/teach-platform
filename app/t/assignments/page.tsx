@@ -87,10 +87,10 @@ export default async function TeacherAssignmentsPage({
     { icon: FileText, label: "草稿", num: draftCount },
     { icon: CheckCircle2, label: "进行中", num: publishedCount, accent: true },
     { icon: AlertCircle, label: "已截止", num: overdueCount },
-    { icon: ClipboardCheck, label: "待批改", num: toGrade, warning: true },
+    { icon: ClipboardCheck, label: "自动评分中", num: toGrade, warning: true },
   ];
 
-  // 已批改 + 平均分（用于列表展示）
+  // 已出分 + 平均分（用于列表展示）
   const allSubmissions = await prisma.assignmentSubmission.findMany({
     where: {
       assignmentId: { in: assignments.map((a) => a.id) },
@@ -153,7 +153,7 @@ export default async function TeacherAssignmentsPage({
                         <Icon className="h-4 w-4" />
                       </div>
                     </div>
-                    <div className="mt-3 text-3xl font-bold tracking-tight num">{s.num}</div>
+                    <div className="num mt-3 text-3xl font-bold tracking-tight">{s.num}</div>
                   </CardContent>
                 </Card>
               );
@@ -233,7 +233,9 @@ export default async function TeacherAssignmentsPage({
                 </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">
-                    {status === "all" ? "还没有任何作业" : `没有${statusTabs.find((t) => t.key === status)?.label}作业`}
+                    {status === "all"
+                      ? "还没有任何作业"
+                      : `没有${statusTabs.find((t) => t.key === status)?.label}作业`}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {status === "all"
@@ -254,7 +256,7 @@ export default async function TeacherAssignmentsPage({
                       <th className="px-6 py-3">状态</th>
                       <th className="px-6 py-3">截止</th>
                       <th className="px-6 py-3 text-right">题目</th>
-                      <th className="px-6 py-3 text-right">提交 / 已批改</th>
+                      <th className="px-6 py-3 text-right">提交 / 已出分</th>
                       <th className="px-6 py-3 text-right">均分</th>
                       <th className="w-10"></th>
                     </tr>
@@ -265,10 +267,7 @@ export default async function TeacherAssignmentsPage({
                       const isOverdue = a.publishedAt && a.dueAt < now;
                       const st = statsByAssignment.get(a.id);
                       return (
-                        <tr
-                          key={a.id}
-                          className="group transition-colors hover:bg-muted/30"
-                        >
+                        <tr key={a.id} className="group transition-colors hover:bg-muted/30">
                           <td className="px-6 py-3.5">
                             <Link
                               href={`/t/assignments/${a.id}`}
@@ -301,15 +300,15 @@ export default async function TeacherAssignmentsPage({
                                   : `${relativeTime(a.dueAt)}截止`}
                             </div>
                           </td>
-                          <td className="px-6 py-3.5 text-right num text-muted-foreground">
+                          <td className="num px-6 py-3.5 text-right text-muted-foreground">
                             {a._count.problems}
                           </td>
-                          <td className="px-6 py-3.5 text-right text-xs num">
+                          <td className="num px-6 py-3.5 text-right text-xs">
                             <span className="text-foreground">{a._count.submissions}</span>
                             <span className="text-muted-foreground"> / </span>
                             <span className="text-muted-foreground">{st?.graded ?? 0}</span>
                           </td>
-                          <td className="px-6 py-3.5 text-right num">
+                          <td className="num px-6 py-3.5 text-right">
                             {st?.avg != null ? (
                               <span
                                 className={
