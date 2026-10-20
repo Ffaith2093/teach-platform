@@ -3,56 +3,8 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
-import { AuthError } from "next-auth";
-import { signIn, signOut } from "@/auth";
+import { signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
-
-const loginSchema = z.object({
-  identifier: z.string().min(1, "请输入邮箱 / 学号 / 工号"),
-  password: z.string().min(1, "请输入密码"),
-  role: z.enum(["STUDENT", "TEACHER", "ADMIN"]),
-});
-
-export type LoginState = {
-  success?: boolean;
-  error?: string;
-  fieldErrors?: { identifier?: string; password?: string };
-};
-
-export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
-  const parsed = loginSchema.safeParse({
-    identifier: formData.get("identifier"),
-    password: formData.get("password"),
-    role: formData.get("role"),
-  });
-
-  if (!parsed.success) {
-    const fieldErrors: LoginState["fieldErrors"] = {};
-    for (const issue of parsed.error.issues) {
-      const key = issue.path[0] as keyof NonNullable<LoginState["fieldErrors"]>;
-      fieldErrors[key] = issue.message;
-    }
-    return { error: "请检查输入", fieldErrors };
-  }
-
-  try {
-    await signIn("credentials", {
-      identifier: parsed.data.identifier,
-      password: parsed.data.password,
-      role: parsed.data.role,
-      redirect: false,
-    });
-    return { success: true }; // 成功由客户端 router.refresh + 跳转处理
-  } catch (e) {
-    if (e instanceof AuthError) {
-      if (e.type === "CredentialsSignin") {
-        return { error: "账号、密码或所选角色错误" };
-      }
-      return { error: e.message };
-    }
-    throw e;
-  }
-}
 
 const changePasswordSchema = z
   .object({

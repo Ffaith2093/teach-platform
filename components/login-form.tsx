@@ -1,44 +1,62 @@
 "use client";
 
 import * as React from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useActionState } from "react";
+import { useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Lock, Eye, EyeOff, Check, GraduationCap, Presentation, ShieldCheck } from "lucide-react";
-import { loginAction, type LoginState } from "@/app/(public)/login/actions";
-
-const initial: LoginState = {};
 
 export function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const [state, formAction, pending] = useActionState(loginAction, initial);
   const [showPwd, setShowPwd] = React.useState(false);
   const [selectedRole, setSelectedRole] = React.useState<"STUDENT" | "TEACHER" | "ADMIN">("STUDENT");
+  const [pending, setPending] = React.useState(false);
+  const [error, setError] = React.useState<string>();
   const errorParam = searchParams.get("error");
 
-  async function handleSuccess() {
-    // 拉一次 session（middleware 已经写好了 cookie），按角色跳转
-    const res = await fetch("/api/auth/session");
-    const session = await res.json();
-    const dest =
-      session?.user?.role === "ADMIN"
-        ? "/admin"
-        : session?.user?.role === "TEACHER"
-          ? "/t/dashboard"
-          : "/dashboard";
-    router.push(session?.user?.mustChangePassword ? "/change-password" : dest);
-    router.refresh();
-  }
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setError(undefined);
 
-  // 在成功提交后跳转
-  React.useEffect(() => {
-    if (state.success) void handleSuccess();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.success]);
+    const formData = new FormData(event.currentTarget);
+    try {
+      const result = await signIn("credentials", {
+        identifier: String(formData.get("identifier") ?? ""),
+        password: String(formData.get("password") ?? ""),
+        role: selectedRole,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("账号、密码或所选角色错误");
+        return;
+      }
+
+      const response = await fetch("/api/auth/session", { cache: "no-store" });
+      const session = response.ok ? await response.json() : null;
+      if (!session?.user?.role) {
+        setError("登录状态未能保存，请刷新页面后重试");
+        return;
+      }
+
+      const destination =
+        session.user.role === "ADMIN"
+          ? "/admin"
+          : session.user.role === "TEACHER"
+            ? "/t/dashboard"
+            : "/dashboard";
+
+      window.location.assign(session.user.mustChangePassword ? "/change-password" : destination);
+    } catch {
+      setError("登录请求失败，请检查网络后重试");
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
     <Card className="w-full max-w-md animate-fade-up">
@@ -50,7 +68,7 @@ export function LoginForm() {
           <h1 className="mt-3 text-xl font-semibold">登录 PyLearn</h1>
           <p className="text-sm text-muted-foreground">教师与学生账号由管理员统一创建</p>
         </div>
-        <form action={formAction} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <input type="hidden" name="role" value={selectedRole} />
           <div className="space-y-1.5">
             <Label>登录角色</Label>
@@ -92,9 +110,6 @@ export function LoginForm() {
               required
               autoComplete="username"
             />
-            {state?.fieldErrors?.identifier && (
-              <p className="text-xs text-danger">{state.fieldErrors.identifier}</p>
-            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="password">密码</Label>
@@ -116,14 +131,11 @@ export function LoginForm() {
                 {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            {state?.fieldErrors?.password && (
-              <p className="text-xs text-danger">{state.fieldErrors.password}</p>
-            )}
           </div>
 
-          {state?.error && (
+          {error && (
             <div className="rounded-lg border border-danger/30 bg-danger-subtle/40 px-3 py-2 text-xs text-danger">
-              {state.error}
+              {error}
             </div>
           )}
           {errorParam === "CredentialsSignin" && (
