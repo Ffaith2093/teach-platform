@@ -1,12 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { unstable_isUnrecognizedActionError } from "next/navigation";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const RELOAD_KEY = "pylearn:deployment-mismatch-reload";
 const RELOAD_GUARD_MS = 30_000;
+
+function isDeploymentMismatch(error: Error & { digest?: string }) {
+  const details = `${error.name} ${error.message} ${error.digest ?? ""}`.toLowerCase();
+
+  return (
+    details.includes("failed to find server action") ||
+    details.includes("unrecognized server action") ||
+    (details.includes("server action") && details.includes("not found"))
+  );
+}
 
 export default function AppError({
   error,
@@ -15,7 +24,7 @@ export default function AppError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const deploymentMismatch = unstable_isUnrecognizedActionError(error);
+  const deploymentMismatch = isDeploymentMismatch(error);
   const [recovering, setRecovering] = useState(deploymentMismatch);
 
   useEffect(() => {

@@ -23,3 +23,9 @@ test("authenticated users are redirected before public routes are allowed", () =
   assert.ok(loginRedirect < publicBypass, "login redirect must run before the public-route bypass");
   assert.ok(rootRedirect < publicBypass, "root redirect must run before the public-route bypass");
 });
+
+test("the client error boundary does not depend on an unstable Next.js export", () => {
+  const source = readFileSync("app/error.tsx", "utf8");
+
+  assert.doesNotMatch(source, /unstable_isUnrecognizedActionError/);
+});
